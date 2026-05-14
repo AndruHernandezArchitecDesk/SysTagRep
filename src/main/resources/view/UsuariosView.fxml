@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.tag.sysTagRep.controller.UsuarioController"
+            prefHeight="600.0" prefWidth="800.0">
+    <top>
+        <HBox spacing="10" alignment="CENTER_LEFT" styleClass="header">
+            <Label text="Gestión de Usuarios" styleClass="titulo"/>
+
+            <Button fx:id="btnToggleForm"
+                    onAction="#toggleFormulario"
+                    styleClass="btn-icono">
+                <graphic>
+                    <FontIcon iconLiteral="fas-chevron-left" iconSize="16"/>
+                </graphic>
+            </Button>
+        </HBox>
+    </top>
+
+    <center>
+        <SplitPane fx:id="splitPane" dividerPositions="0.35">
+
+            <!-- FORMULARIO -->
+            <ScrollPane fx:id="formPane" fitToWidth="true">
+                <VBox spacing="15" styleClass="formulario">
+                    <HBox spacing="6" alignment="CENTER_LEFT">
+                        <StackPane prefWidth="20">
+                            <FontIcon iconLiteral="fas-hashtag" iconSize="14"/>
+                        </StackPane>
+                        <Label text="ID" prefWidth="100"/>
+                        <TextField fx:id="txtId" disable="true" HBox.hgrow="ALWAYS"/>
+                    </HBox>
+                    <HBox spacing="6" alignment="CENTER_LEFT">
+                        <StackPane prefWidth="20">
+                            <FontIcon iconLiteral="fas-user" iconSize="14"/>
+                        </StackPane>
+                        <Label text="Nombre" prefWidth="100"/>
+                        <TextField fx:id="txtNombre" HBox.hgrow="ALWAYS"/>
+                    </HBox>
+                    <HBox spacing="6" alignment="CENTER_LEFT">
+                        <StackPane prefWidth="20">
+                            <FontIcon iconLiteral="fas-user" iconSize="14"/>
+                        </StackPane>
+                        <Label text="Apellido" prefWidth="100"/>
+                        <TextField fx:id="txtApellido" HBox.hgrow="ALWAYS"/>
+                    </HBox>
+                    <HBox spacing="6" alignment="CENTER_LEFT">
+                        <StackPane prefWidth="20">
+                            <FontIcon iconLiteral="fas-envelope" iconSize="14"/>
+                        </StackPane>
+                        <Label text="Email" prefWidth="100"/>
+                        <TextField fx:id="txtCorreo" HBox.hgrow="ALWAYS"/>
+                    </HBox>
+                    <HBox spacing="30" alignment="CENTER_LEFT">
+                        <StackPane prefWidth="24">
+                            <FontIcon iconLiteral="fas-user-tag" iconSize="14"/>
+                        </StackPane>
+                        <Label text="Rol del Usuario"/>
+                        <ComboBox fx:id="cmbRol"/>
+                    </HBox>
+                    <HBox spacing="30" alignment="CENTER_LEFT">
+                        <StackPane prefWidth="24">
+                            <FontIcon iconLiteral="fas-power-off" iconSize="14"/>
+                        </StackPane>
+                        <Label text="Estado del Usuario"/>
+                        <ComboBox fx:id="cmbEstado"/>
+                    </HBox>
+
+                    <HBox spacing="10" alignment="CENTER">
+                        <Button fx:id="btnGuardar"
+                                text=" GUARDAR"
+                                styleClass="btn-guardar"
+                                onAction="#guardar">
+                            <graphic>
+                                <FontIcon iconLiteral="fas-save" iconSize="18"/>
+                            </graphic>
+                        </Button>
+                    </HBox>
+                </VBox>
+            </ScrollPane>
+
+            <!-- Cuadro de busqueda -->
+            <VBox spacing="20">
+                <HBox spacing="6" alignment="CENTER_LEFT">
+                    <TextField fx:id="txtBuscar"
+                               promptText="Buscar:"/>
+                    <FontIcon iconLiteral="fas-search" iconSize="14"/>
+                </HBox>
+
+                <!-- TABLA -->
+                <TableView fx:id="tblUsuarios">
+                    <columns>
+                        <TableColumn fx:id="colId" text="ID" prefWidth="50"/>
+                        <TableColumn fx:id="colNombre" text="Nombre" prefWidth="150"/>
+                        <TableColumn fx:id="colApellido" text="Apellido" prefWidth="150"/>
+                        <TableColumn fx:id="colCorreo" text="Correo" prefWidth="180"/>
+                        <TableColumn fx:id="colRol" text="Rol" prefWidth="180"/>
+                        <TableColumn fx:id="colFechaCreacion" text="Fecha de Creación" prefWidth="180"/>
+                        <TableColumn fx:id="colUltimoLogin" text="Ultimo Login" prefWidth="180"/>
+                        <TableColumn fx:id="colEstado" text="Estado" prefWidth="70"/>
+                        <TableColumn fx:id="colAcciones" text="Acciones" prefWidth="160"/>
+                    </columns>
+                </TableView>
+            </VBox>
+        </SplitPane>
+    </center>
+</BorderPane>

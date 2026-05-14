@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.image.Image?>
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.tag.sysTagRep.controller.MainController"
+            prefHeight="400.0" prefWidth="600.0"
+            styleClass="root-pane">
+
+    <!-- MENÚ SUPERIOR -->
+    <top>
+        <MenuBar>
+            <Menu text="Negocio">
+                <MenuItem text="Inventario" onAction="#irInventario"/>
+                <MenuItem text="Nota de Venta" onAction="#irNotaVenta"/>
+            </Menu>
+            <Menu text="Administración">
+                <MenuItem text="Vendedores" onAction="#irVendedores"/>
+                <MenuItem text="Usuarios" onAction="#irUsuarios"/>
+                <MenuItem text="Proveedores" onAction="#irProveedores"/>
+            </Menu>
+        </MenuBar>
+    </top>
+
+    <!-- CONTENIDO -->
+<!--    <center>-->
+<!--        <StackPane fx:id="contenedor"/>-->
+<!--    </center>-->
+    <center>
+        <StackPane fx:id="contenedor">
+            <VBox spacing="15"
+                  alignment="CENTER">
+
+                <!-- LOGO -->
+                <ImageView fitWidth="180"
+                           preserveRatio="true">
+                    <image>
+                        <Image url="@/img/logoTag.jpeg"/>
+                    </image>
+                </ImageView>
+
+                <!-- NOMBRE DEL NEGOCIO -->
+                <Label text="SysTag Repuestos Automotrices"
+                       styleClass="titulo-negocio"/>
+
+                <!-- SUBTÍTULO -->
+                <Label text="Sistema de Gestión Comercial"
+                       styleClass="subtitulo-negocio"/>
+
+                <Label text="Control · Inventario · Ventas"
+                       styleClass="subtitulo-negocio"/>
+
+            </VBox>
+        </StackPane>
+    </center>
+</BorderPane>
+
