@@ -78,6 +78,8 @@ public class NotaVentaController implements Initializable {
         
         iniciarTablaInventario();
         iniciarTablaDetalle();
+
+        // No se necesita listener para ajustar altura de tblDetalle, el FXML lo maneja
     }
 
     private void cargarListaClientes() {
@@ -110,7 +112,7 @@ public class NotaVentaController implements Initializable {
                 txtIdentificacion.setText(cliente.getIdentificacion());
                 txtDireccion.setText(cliente.getDireccion());
                 txtCorreo.setText(cliente.getCorreo());
-                txtTelefono.setText(cliente.getTelefono() + " - " + (cliente.getCelular() != null ? cliente.getCelular() : ""));
+                txtTelefono.setText(cliente.getTelefono() + " - " + (cliente.getCelular() != null && !cliente.getCelular().isEmpty() ? cliente.getCelular() : ""));
             }
         });
     }
@@ -212,6 +214,8 @@ public class NotaVentaController implements Initializable {
             lblRazonSocial.setText(e.getRazonSocial());
             lblDireccion.setText(e.getDireccionCallePrincipal() + " y " + e.getDireccionCalleSecundaria());
             lblRuc.setText(e.getRuc());
+            lblCorreo.setText(e.getCorreo());
+            lblTelefono.setText(e.getTelefono() + " / " + e.getCelular());
         }
     }
 

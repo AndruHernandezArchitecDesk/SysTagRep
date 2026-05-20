@@ -8,7 +8,7 @@
 <BorderPane xmlns="http://javafx.com/javafx/21"
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.tag.sysTagRep.controller.NotaVentaController"
-            prefHeight="850.0" prefWidth="1100.0">
+            prefHeight="950.0" prefWidth="1100.0">
 
     <top>
         <HBox styleClass="nota-header" alignment="CENTER_LEFT" spacing="20" style="-fx-padding: 10; -fx-background-color: #f9fafb;">
@@ -16,6 +16,8 @@
             <VBox alignment="CENTER" HBox.hgrow="ALWAYS">
                 <Label text="SysTag Repuestos" fx:id="lblRazonSocial" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
                 <Label text="Dirección de la Empresa" fx:id="lblDireccion" style="-fx-font-size: 12px;"/>
+                <Label fx:id="lblCorreo" text="Correo: info@systag.com" style="-fx-font-size: 11px;"/>
+                <Label fx:id="lblTelefono" text="Tel: 0999999999 / Cel: 099999990" style="-fx-font-size: 11px;"/>
             </VBox>
             <VBox alignment="CENTER_RIGHT" spacing="5">
                 <Label text="NOTA DE VENTA" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
@@ -26,104 +28,107 @@
     </top>
 
     <center>
-        <VBox spacing="15" style="-fx-padding: 15;">
+        <!-- ScrollPane para que toda la sección central tenga scroll si es necesario -->
+        <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS">
+            <VBox spacing="15" style="-fx-padding: 15;">
 
-            <!-- SECCIÓN CLIENTE (TODOS LOS CAMPOS RESTAURADOS) -->
-            <TitledPane text="Información del Cliente" collapsible="false" style="-fx-font-weight: bold;">
-                <VBox spacing="10">
+                <!-- SECCIÓN CLIENTE -->
+                <TitledPane text="Información del Cliente" collapsible="false" style="-fx-font-weight: bold;">
+                    <VBox spacing="10">
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <FontIcon iconLiteral="fas-search" iconSize="14"/>
+                            <Label text="Buscar Cliente:" />
+                            <ComboBox fx:id="cmbCliente" editable="true" HBox.hgrow="ALWAYS" maxWidth="Infinity" promptText="Seleccione o busque un cliente..."/>
+                        </HBox>
+
+                        <GridPane hgap="15" vgap="10">
+                            <columnConstraints>
+                                <ColumnConstraints minWidth="80" halignment="RIGHT"/>
+                                <ColumnConstraints hgrow="ALWAYS" />
+                                <ColumnConstraints minWidth="80" halignment="RIGHT"/>
+                                <ColumnConstraints hgrow="ALWAYS" />
+                                <ColumnConstraints minWidth="80" halignment="RIGHT"/>
+                                <ColumnConstraints hgrow="ALWAYS" />
+                            </columnConstraints>
+
+                            <Label text="Nombre:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                            <TextField fx:id="txtNombre" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                            <Label text="RUC/Cédula:" GridPane.rowIndex="0" GridPane.columnIndex="2"/>
+                            <TextField fx:id="txtIdentificacion" GridPane.rowIndex="0" GridPane.columnIndex="3"/>
+
+                            <Label text="Fecha:" GridPane.rowIndex="0" GridPane.columnIndex="4"/>
+                            <DatePicker fx:id="dpFechaNotaVenta" GridPane.rowIndex="0" GridPane.columnIndex="5" maxWidth="Infinity"/>
+
+                            <Label text="Dirección:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                            <TextField fx:id="txtDireccion" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+                            <Label text="Correo:" GridPane.rowIndex="1" GridPane.columnIndex="2"/>
+                            <TextField fx:id="txtCorreo" GridPane.rowIndex="1" GridPane.columnIndex="3"/>
+
+                            <Label text="Teléfono:" GridPane.rowIndex="1" GridPane.columnIndex="4"/>
+                            <TextField fx:id="txtTelefono" GridPane.rowIndex="1" GridPane.columnIndex="5"/>
+                        </GridPane>
+                    </VBox>
+                </TitledPane>
+
+                <!-- SECCIÓN SELECCIONAR PRODUCTO (Tabla de búsqueda de Inventario) -->
+                <VBox spacing="8" style="-fx-background-color: #f0f2f5; -fx-padding: 10; -fx-border-color: #d1d5db; -fx-border-radius: 5;">
                     <HBox spacing="10" alignment="CENTER_LEFT">
-                        <FontIcon iconLiteral="fas-search" iconSize="14"/>
-                        <Label text="Buscar Cliente:" />
-                        <ComboBox fx:id="cmbCliente" editable="true" HBox.hgrow="ALWAYS" maxWidth="Infinity" promptText="Seleccione o busque un cliente..."/>
+                        <Label text="INVENTARIO DISPONIBLE" style="-fx-font-weight: bold; -fx-text-fill: #34495e;"/>
+                        <TextField fx:id="txtBuscarProducto" promptText="Filtrar por nombre o código..." HBox.hgrow="ALWAYS" />
+                        <Button fx:id="btnAgregarProducto" text="AÑADIR A LA VENTA" onAction="#agregarProducto" style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 6 15;">
+                            <graphic><FontIcon iconLiteral="fas-plus" iconColor="WHITE"/></graphic>
+                        </Button>
                     </HBox>
-
-                    <GridPane hgap="15" vgap="10">
-                        <columnConstraints>
-                            <ColumnConstraints minWidth="80" halignment="RIGHT"/>
-                            <ColumnConstraints hgrow="ALWAYS" />
-                            <ColumnConstraints minWidth="80" halignment="RIGHT"/>
-                            <ColumnConstraints hgrow="ALWAYS" />
-                            <ColumnConstraints minWidth="80" halignment="RIGHT"/>
-                            <ColumnConstraints hgrow="ALWAYS" />
-                        </columnConstraints>
-
-                        <Label text="Nombre:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
-                        <TextField fx:id="txtNombre" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
-
-                        <Label text="RUC/Cédula:" GridPane.rowIndex="0" GridPane.columnIndex="2"/>
-                        <TextField fx:id="txtIdentificacion" GridPane.rowIndex="0" GridPane.columnIndex="3"/>
-
-                        <Label text="Fecha:" GridPane.rowIndex="0" GridPane.columnIndex="4"/>
-                        <DatePicker fx:id="dpFechaNotaVenta" GridPane.rowIndex="0" GridPane.columnIndex="5" maxWidth="Infinity"/>
-
-                        <Label text="Dirección:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
-                        <TextField fx:id="txtDireccion" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
-
-                        <Label text="Correo:" GridPane.rowIndex="1" GridPane.columnIndex="2"/>
-                        <TextField fx:id="txtCorreo" GridPane.rowIndex="1" GridPane.columnIndex="3"/>
-
-                        <Label text="Teléfono:" GridPane.rowIndex="1" GridPane.columnIndex="4"/>
-                        <TextField fx:id="txtTelefono" GridPane.rowIndex="1" GridPane.columnIndex="5"/>
-                    </GridPane>
+                    <TableView fx:id="tblInventarioBusqueda" prefHeight="100" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="colInvCodigo" text="Código" prefWidth="120"/>
+                            <TableColumn fx:id="colInvDescripcion" text="Descripción" prefWidth="450"/>
+                            <TableColumn fx:id="colInvStock" text="Stock" prefWidth="100"/>
+                            <TableColumn fx:id="colInvPrecio" text="Precio Unitario" prefWidth="120"/>
+                        </columns>
+                    </TableView>
                 </VBox>
-            </TitledPane>
 
-            <!-- SECCIÓN SELECCIONAR PRODUCTO (ESPACIO VERTICAL AUMENTADO) -->
-            <VBox spacing="8" style="-fx-background-color: #f0f2f5; -fx-padding: 10; -fx-border-color: #d1d5db; -fx-border-radius: 5;">
-                <HBox spacing="10" alignment="CENTER_LEFT">
-                    <Label text="INVENTARIO DISPONIBLE" style="-fx-font-weight: bold; -fx-text-fill: #34495e;"/>
-                    <TextField fx:id="txtBuscarProducto" promptText="Filtrar por nombre o código..." HBox.hgrow="ALWAYS" />
-                    <Button fx:id="btnAgregarProducto" text="AÑADIR A LA VENTA" onAction="#agregarProducto" style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 6 15;">
-                        <graphic><FontIcon iconLiteral="fas-plus" iconColor="WHITE"/></graphic>
-                    </Button>
+                <!-- TABLA DETALLE VENTA (Altura dinámica) -->
+                <VBox spacing="2"> <!-- Eliminado VBox.vgrow="ALWAYS" -->
+                    <Label text="RESUMEN DE VENTA" style="-fx-font-weight: bold;"/>
+                    <TableView fx:id="tblDetalle"> <!-- Eliminado prefHeight y VBox.vgrow="ALWAYS" -->
+                        <columns>
+                            <TableColumn fx:id="colCodigo" text="Código" prefWidth="120"/>
+                            <TableColumn fx:id="colDescripcion" text="Descripción" prefWidth="450"/>
+                            <TableColumn fx:id="colCantidad" text="Cant." prefWidth="80"/>
+                            <TableColumn fx:id="colPrecioUnitario" text="P. Unit" prefWidth="110"/>
+                            <TableColumn fx:id="colPrecioTotal" text="Total" prefWidth="110"/>
+                            <TableColumn fx:id="colAcciones" text="Eliminar" prefWidth="80"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+
+                <!-- TOTALES -->
+                <HBox alignment="CENTER_RIGHT" spacing="20" style="-fx-padding: 10 0;">
+                    <VBox spacing="5">
+                        <HBox alignment="CENTER_RIGHT" spacing="10">
+                            <Label text="Subtotal:" style="-fx-font-weight: bold;"/>
+                            <Label fx:id="lblSubtotal" text="0.00" prefWidth="100" alignment="CENTER_RIGHT"/>
+                        </HBox>
+                        <HBox alignment="CENTER_RIGHT" spacing="10">
+                            <Label text="IVA (15%):" style="-fx-font-weight: bold;"/>
+                            <Label fx:id="lblIva" text="0.00" prefWidth="100" alignment="CENTER_RIGHT"/>
+                        </HBox>
+                        <Separator />
+                        <HBox alignment="CENTER_RIGHT" spacing="10">
+                            <Label text="TOTAL A PAGAR:" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+                            <Label fx:id="lblTotal" text="0.00" prefWidth="120" alignment="CENTER_RIGHT" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1a252f;"/>
+                        </HBox>
+                    </VBox>
                 </HBox>
-                <TableView fx:id="tblInventarioBusqueda" prefHeight="300" VBox.vgrow="ALWAYS">
-                    <columns>
-                        <TableColumn fx:id="colInvCodigo" text="Código" prefWidth="120"/>
-                        <TableColumn fx:id="colInvDescripcion" text="Descripción" prefWidth="450"/>
-                        <TableColumn fx:id="colInvStock" text="Stock" prefWidth="100"/>
-                        <TableColumn fx:id="colInvPrecio" text="Precio Unitario" prefWidth="120"/>
-                    </columns>
-                </TableView>
+
+                <HBox alignment="CENTER">
+                    <Button fx:id="btnGuardar" text="GENERAR COMPROBANTE Y REGISTRAR" onAction="#guardar" styleClass="btn-guardar" prefWidth="400" style="-fx-font-size: 14px;"/>
+                </HBox>
             </VBox>
-
-            <!-- TABLA DETALLE VENTA -->
-            <VBox spacing="5" VBox.vgrow="ALWAYS">
-                <Label text="RESUMEN DE VENTA" style="-fx-font-weight: bold;"/>
-                <TableView fx:id="tblDetalle" prefHeight="200" VBox.vgrow="ALWAYS">
-                    <columns>
-                        <TableColumn fx:id="colCodigo" text="Código" prefWidth="120"/>
-                        <TableColumn fx:id="colDescripcion" text="Descripción" prefWidth="450"/>
-                        <TableColumn fx:id="colCantidad" text="Cant." prefWidth="80"/>
-                        <TableColumn fx:id="colPrecioUnitario" text="P. Unit" prefWidth="110"/>
-                        <TableColumn fx:id="colPrecioTotal" text="Total" prefWidth="110"/>
-                        <TableColumn fx:id="colAcciones" text="Eliminar" prefWidth="80"/>
-                    </columns>
-                </TableView>
-            </VBox>
-
-            <!-- TOTALES -->
-            <HBox alignment="CENTER_RIGHT" spacing="20" style="-fx-padding: 10 0;">
-                <VBox spacing="5">
-                    <HBox alignment="CENTER_RIGHT" spacing="10">
-                        <Label text="Subtotal:" style="-fx-font-weight: bold;"/>
-                        <Label fx:id="lblSubtotal" text="0.00" prefWidth="100" alignment="CENTER_RIGHT"/>
-                    </HBox>
-                    <HBox alignment="CENTER_RIGHT" spacing="10">
-                        <Label text="IVA (15%):" style="-fx-font-weight: bold;"/>
-                        <Label fx:id="lblIva" text="0.00" prefWidth="100" alignment="CENTER_RIGHT"/>
-                    </HBox>
-                    <Separator />
-                    <HBox alignment="CENTER_RIGHT" spacing="10">
-                        <Label text="TOTAL A PAGAR:" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
-                        <Label fx:id="lblTotal" text="0.00" prefWidth="120" alignment="CENTER_RIGHT" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1a252f;"/>
-                    </HBox>
-                </VBox>
-            </HBox>
-
-            <HBox alignment="CENTER">
-                <Button fx:id="btnGuardar" text="GENERAR COMPROBANTE Y REGISTRAR" onAction="#guardar" styleClass="btn-guardar" prefWidth="400" style="-fx-font-size: 14px;"/>
-            </HBox>
-        </VBox>
+        </ScrollPane>
     </center>
 </BorderPane>
