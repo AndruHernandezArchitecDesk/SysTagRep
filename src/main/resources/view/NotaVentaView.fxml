@@ -37,8 +37,10 @@
                     <VBox spacing="10">
                         <HBox spacing="10" alignment="CENTER_LEFT">
                             <FontIcon iconLiteral="fas-search" iconSize="14"/>
-                            <Label text="Buscar Cliente:" />
-                            <ComboBox fx:id="cmbCliente" editable="true" HBox.hgrow="ALWAYS" maxWidth="Infinity" promptText="Seleccione o busque un cliente..."/>
+                            <Label text="Buscar:" minWidth="45"/>
+                            <TextField fx:id="txtBuscarCliente" promptText="Nombre o cédula..." prefWidth="250" maxWidth="250"/>
+                            <Label text="Seleccionar:" minWidth="70"/>
+                            <ComboBox fx:id="cmbCliente" prefWidth="350" maxWidth="350"/>
                         </HBox>
 
                         <GridPane hgap="15" vgap="10">
@@ -83,25 +85,25 @@
                     </HBox>
                     <TableView fx:id="tblInventarioBusqueda" prefHeight="100" VBox.vgrow="ALWAYS">
                         <columns>
-                            <TableColumn fx:id="colInvCodigo" text="Código" prefWidth="120"/>
-                            <TableColumn fx:id="colInvDescripcion" text="Descripción" prefWidth="450"/>
-                            <TableColumn fx:id="colInvStock" text="Stock" prefWidth="100"/>
-                            <TableColumn fx:id="colInvPrecio" text="Precio Unitario" prefWidth="120"/>
+                            <TableColumn fx:id="colInvCodigo" text="Código" minWidth="100" prefWidth="120"/>
+                            <TableColumn fx:id="colInvDescripcion" text="Descripción" minWidth="200"/>
+                            <TableColumn fx:id="colInvStock" text="Stock" minWidth="80" prefWidth="100"/>
+                            <TableColumn fx:id="colInvPrecio" text="Precio Unitario" minWidth="100" prefWidth="120"/>
                         </columns>
                     </TableView>
                 </VBox>
 
                 <!-- TABLA DETALLE VENTA (Altura dinámica) -->
-                <VBox spacing="2"> <!-- Eliminado VBox.vgrow="ALWAYS" -->
+                <VBox spacing="2">
                     <Label text="RESUMEN DE VENTA" style="-fx-font-weight: bold;"/>
-                    <TableView fx:id="tblDetalle"> <!-- Eliminado prefHeight y VBox.vgrow="ALWAYS" -->
+                    <TableView fx:id="tblDetalle" prefHeight="120">
                         <columns>
-                            <TableColumn fx:id="colCodigo" text="Código" prefWidth="120"/>
-                            <TableColumn fx:id="colDescripcion" text="Descripción" prefWidth="450"/>
-                            <TableColumn fx:id="colCantidad" text="Cant." prefWidth="80"/>
-                            <TableColumn fx:id="colPrecioUnitario" text="P. Unit" prefWidth="110"/>
-                            <TableColumn fx:id="colPrecioTotal" text="Total" prefWidth="110"/>
-                            <TableColumn fx:id="colAcciones" text="Eliminar" prefWidth="80"/>
+                            <TableColumn fx:id="colCodigo" text="Código" minWidth="100" prefWidth="120"/>
+                            <TableColumn fx:id="colDescripcion" text="Descripción" minWidth="200"/>
+                            <TableColumn fx:id="colCantidad" text="Cant." minWidth="70" prefWidth="80"/>
+                            <TableColumn fx:id="colPrecioUnitario" text="P. Unit" minWidth="90" prefWidth="110"/>
+                            <TableColumn fx:id="colPrecioTotal" text="Total" minWidth="90" prefWidth="110"/>
+                            <TableColumn fx:id="colAcciones" text="Eliminar" minWidth="70" prefWidth="80"/>
                         </columns>
                     </TableView>
                 </VBox>
@@ -109,6 +111,10 @@
                 <!-- TOTALES -->
                 <HBox alignment="CENTER_RIGHT" spacing="20" style="-fx-padding: 10 0;">
                     <VBox spacing="5">
+                        <HBox alignment="CENTER_RIGHT" spacing="10">
+                            <Label text="Forma de Pago:" style="-fx-font-weight: bold;"/>
+                            <ComboBox fx:id="cmbFormaPago" prefWidth="200"/>
+                        </HBox>
                         <HBox alignment="CENTER_RIGHT" spacing="10">
                             <Label text="Subtotal:" style="-fx-font-weight: bold;"/>
                             <Label fx:id="lblSubtotal" text="0.00" prefWidth="100" alignment="CENTER_RIGHT"/>

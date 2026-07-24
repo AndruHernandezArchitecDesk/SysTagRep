@@ -101,4 +101,17 @@ public class InventarioDAO {
             e.printStackTrace();
         }
     }
+
+    public void descontarStock(int productoId, int cantidad) {
+        String sql = "UPDATE inventario SET cantidad = cantidad - ? WHERE id = ? AND cantidad >= ?";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, cantidad);
+            ps.setInt(2, productoId);
+            ps.setInt(3, cantidad);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 }

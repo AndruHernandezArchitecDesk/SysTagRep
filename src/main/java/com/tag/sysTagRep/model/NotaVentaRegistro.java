@@ -7,64 +7,39 @@ public class NotaVentaRegistro {
     private int empresaId;
     private int clienteId;
     private LocalDateTime fecha;
-    private int codigo;
+    private String codigo;
+    private String formaPago;
     private LocalDateTime fechaRegistro;
 
     public NotaVentaRegistro(){}
 
-    public NotaVentaRegistro(int empresa_id, int cliente_id, LocalDateTime fecha, int codigo, LocalDateTime fecha_registro){
+    public NotaVentaRegistro(int empresa_id, int cliente_id, LocalDateTime fecha, String codigo, String formaPago, LocalDateTime fecha_registro){
         this.empresaId = empresa_id;
         this.clienteId = cliente_id;
         this.fecha = fecha;
         this.codigo = codigo;
+        this.formaPago = formaPago;
         this.fechaRegistro = fecha_registro;
     }
 
-    public int getId() {
-        return id;
-    }
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
 
-    public void setId(int id) {
-        this.id = id;
-    }
+    public int getEmpresaId() { return empresaId; }
+    public void setEmpresaId(int empresaId) { this.empresaId = empresaId; }
 
-    public int getEmpresaId() {
-        return empresaId;
-    }
+    public int getClienteId() { return clienteId; }
+    public void setClienteId(int clienteId) { this.clienteId = clienteId; }
 
-    public void setEmpresaId(int empresaId) {
-        this.empresaId = empresaId;
-    }
+    public LocalDateTime getFecha() { return fecha; }
+    public void setFecha(LocalDateTime fecha) { this.fecha = fecha; }
 
-    public int getClienteId() {
-        return clienteId;
-    }
+    public String getCodigo() { return codigo; }
+    public void setCodigo(String codigo) { this.codigo = codigo; }
 
-    public void setClienteId(int clienteId) {
-        this.clienteId = clienteId;
-    }
+    public String getFormaPago() { return formaPago; }
+    public void setFormaPago(String formaPago) { this.formaPago = formaPago; }
 
-    public LocalDateTime getFecha() {
-        return fecha;
-    }
-
-    public void setFecha(LocalDateTime fecha) {
-        this.fecha = fecha;
-    }
-
-    public int getCodigo() {
-        return codigo;
-    }
-
-    public void setCodigo(int codigo) {
-        this.codigo = codigo;
-    }
-
-    public LocalDateTime getFechaRegistro() {
-        return fechaRegistro;
-    }
-
-    public void setFechaRegistro(LocalDateTime fechaRegistro) {
-        this.fechaRegistro = fechaRegistro;
-    }
+    public LocalDateTime getFechaRegistro() { return fechaRegistro; }
+    public void setFechaRegistro(LocalDateTime fechaRegistro) { this.fechaRegistro = fechaRegistro; }
 }

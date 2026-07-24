@@ -22,7 +22,7 @@ public class NotaVentaRegistroDAO {
             while (rs.next()) {
                 NotaVentaRegistro n = new NotaVentaRegistro();
                 n.setId(rs.getInt("id"));
-                n.setCodigo(rs.getInt("codigo"));
+                n.setCodigo(rs.getString("codigo"));
                 lista.add(n);
             }
 
@@ -33,4 +33,22 @@ public class NotaVentaRegistroDAO {
         return lista;
     }
 
+    public int insertar(NotaVentaRegistro nvr) {
+        String sql = "INSERT INTO nota_venta_registro(empresa_id, cliente_id, fecha, codigo, forma_pago, fecha_registro) " +
+                     "VALUES (?, ?, ?, ?, ?, ?) RETURNING id";
+        try (Connection con = new DatabaseConnection().getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, nvr.getEmpresaId());
+            ps.setInt(2, nvr.getClienteId());
+            ps.setObject(3, nvr.getFecha());
+            ps.setString(4, nvr.getCodigo());
+            ps.setString(5, nvr.getFormaPago());
+            ps.setObject(6, nvr.getFechaRegistro());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt("id");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
 }

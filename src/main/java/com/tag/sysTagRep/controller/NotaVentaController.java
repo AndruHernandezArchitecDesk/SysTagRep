@@ -3,8 +3,10 @@ package com.tag.sysTagRep.controller;
 import com.tag.sysTagRep.dao.ClienteDAO;
 import com.tag.sysTagRep.dao.EmpresaDAO;
 import com.tag.sysTagRep.dao.InventarioDAO;
+import com.tag.sysTagRep.dao.NotaVentaDetalleDAO;
 import com.tag.sysTagRep.dao.NotaVentaRegistroDAO;
 import com.tag.sysTagRep.model.*;
+import com.tag.sysTagRep.util.NotaVentaPDF;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -22,10 +24,15 @@ import javafx.util.StringConverter;
 import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
 import org.kordamp.ikonli.javafx.FontIcon;
 
+import java.io.File;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URL;
+import java.awt.Desktop;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -36,6 +43,7 @@ public class NotaVentaController implements Initializable {
     
     // Cliente
     @FXML private ComboBox<Cliente> cmbCliente;
+    @FXML private TextField txtBuscarCliente;
     @FXML private TextField txtNombre, txtIdentificacion, txtDireccion, txtCorreo, txtTelefono;
     @FXML private DatePicker dpFechaNotaVenta;
     
@@ -55,11 +63,15 @@ public class NotaVentaController implements Initializable {
 
     // Totales
     @FXML private Label lblSubtotal, lblIva, lblTotal;
+    @FXML private ComboBox<String> cmbFormaPago;
 
     private final EmpresaDAO daoEmpresa = new EmpresaDAO();
     private final ClienteDAO daoCliente = new ClienteDAO();
     private final InventarioDAO daoInventario = new InventarioDAO();
     private final NotaVentaRegistroDAO daoNotaVentaRegistro = new NotaVentaRegistroDAO();
+    private final NotaVentaDetalleDAO daoNotaVentaDetalle = new NotaVentaDetalleDAO();
+
+    private Empresa empresaActual;
 
     private ObservableList<Cliente> clientes;
     private FilteredList<Cliente> clientesFiltrados;
@@ -74,28 +86,33 @@ public class NotaVentaController implements Initializable {
         obtenerNumNotaVenta();
         
         cargarListaClientes();
-        cargarInfoCliente();
+        cargarFormasPago();
         
         iniciarTablaInventario();
         iniciarTablaDetalle();
 
-        // No se necesita listener para ajustar altura de tblDetalle, el FXML lo maneja
+        tblInventarioBusqueda.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        tblDetalle.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+    }
+
+    private void cargarFormasPago() {
+        cmbFormaPago.setItems(FXCollections.observableArrayList(
+            "Efectivo", "Tarjeta de Crédito", "Tarjeta de Débito",
+            "Transferencia", "Depósito", "Cheque"
+        ));
+        cmbFormaPago.getSelectionModel().selectFirst();
     }
 
     private void cargarListaClientes() {
         clientes = FXCollections.observableArrayList(daoCliente.obtenerListaClientes());
         clientesFiltrados = new FilteredList<>(clientes, p -> true);
         cmbCliente.setItems(clientesFiltrados);
-        cmbCliente.setEditable(true);
-
         cmbCliente.setConverter(new StringConverter<Cliente>() {
             @Override public String toString(Cliente c) { return c == null ? "" : c.getNombre() + " - " + c.getIdentificacion(); }
             @Override public Cliente fromString(String s) { return null; }
         });
 
-        cmbCliente.getEditor().textProperty().addListener((obs, oldText, newText) -> {
-            if (cmbCliente.getValue() != null && newText.equals(cmbCliente.getConverter().toString(cmbCliente.getValue()))) return;
-            
+        txtBuscarCliente.textProperty().addListener((obs, oldText, newText) -> {
             clientesFiltrados.setPredicate(cliente -> {
                 if (newText == null || newText.isEmpty()) return true;
                 String filtro = newText.toLowerCase();
@@ -103,9 +120,7 @@ public class NotaVentaController implements Initializable {
             });
             if (!cmbCliente.isShowing()) cmbCliente.show();
         });
-    }
 
-    private void cargarInfoCliente(){
         cmbCliente.valueProperty().addListener((obs, old, cliente) -> {
             if (cliente != null) {
                 txtNombre.setText(cliente.getNombre());
@@ -124,10 +139,10 @@ public class NotaVentaController implements Initializable {
         colInvPrecio.setCellValueFactory(new PropertyValueFactory<>("precioVenta"));
 
         listaInventario.setAll(daoInventario.listar());
-        FilteredList<Inventario> filtradosProd = new FilteredList<>(listaInventario, p -> true);
+        FilteredList<Inventario> filtradosProd = new FilteredList<>(listaInventario, p -> false);
         
         txtBuscarProducto.textProperty().addListener((obs, old, val) -> {
-            filtradosProd.setPredicate(i -> val == null || val.isEmpty() || 
+            filtradosProd.setPredicate(i -> val == null || val.isEmpty() ? false : 
                 i.getDescripcion().toLowerCase().contains(val.toLowerCase()) || 
                 i.getCodigo().toLowerCase().contains(val.toLowerCase()));
         });
@@ -164,15 +179,34 @@ public class NotaVentaController implements Initializable {
         Inventario i = tblInventarioBusqueda.getSelectionModel().getSelectedItem();
         if (i == null) return;
 
+        int stockDisponible = calcularStockDisponible(i);
+        if (stockDisponible <= 0) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Stock insuficiente");
+            alert.setHeaderText(null);
+            alert.setContentText("No hay stock disponible para: " + i.getDescripcion());
+            alert.showAndWait();
+            return;
+        }
+
         TextInputDialog dialog = new TextInputDialog("1");
         dialog.setTitle("Cantidad");
         dialog.setHeaderText(i.getDescripcion());
-        dialog.setContentText("Cantidad a vender:");
+        dialog.setContentText("Stock disponible: " + stockDisponible + "\nCantidad a vender:");
 
         dialog.showAndWait().ifPresent(cantStr -> {
             try {
                 int cant = Integer.parseInt(cantStr);
                 if (cant <= 0) return;
+
+                if (cant > stockDisponible) {
+                    Alert alert = new Alert(Alert.AlertType.WARNING);
+                    alert.setTitle("Stock insuficiente");
+                    alert.setHeaderText(null);
+                    alert.setContentText("La cantidad ingresada (" + cant + ") excede el stock disponible (" + stockDisponible + ").");
+                    alert.showAndWait();
+                    return;
+                }
 
                 boolean existe = false;
                 for (DetalleVenta d : itemsDetalle) {
@@ -193,6 +227,17 @@ public class NotaVentaController implements Initializable {
         });
     }
 
+    private int calcularStockDisponible(Inventario inventario) {
+        int stockTotal = inventario.getCantidad();
+        int cantidadEnDetalle = 0;
+        for (DetalleVenta d : itemsDetalle) {
+            if (d.getProductoId() == inventario.getId()) {
+                cantidadEnDetalle += d.getCantidad();
+            }
+        }
+        return stockTotal - cantidadEnDetalle;
+    }
+
     private void calcularTotales() {
         BigDecimal subtotal = itemsDetalle.stream().map(DetalleVenta::getPrecioTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal iva = subtotal.multiply(new BigDecimal("0.15")).setScale(2, RoundingMode.HALF_UP);
@@ -210,7 +255,8 @@ public class NotaVentaController implements Initializable {
     private void obtenerDatosEmpresa() {
         List<Empresa> empresas = daoEmpresa.listar();
         if (!empresas.isEmpty()) {
-            Empresa e = empresas.get(0);
+            empresaActual = empresas.get(0);
+            Empresa e = empresaActual;
             lblRazonSocial.setText(e.getRazonSocial());
             lblDireccion.setText(e.getDireccionCallePrincipal() + " y " + e.getDireccionCalleSecundaria());
             lblRuc.setText(e.getRuc());
@@ -221,9 +267,110 @@ public class NotaVentaController implements Initializable {
 
     private void obtenerNumNotaVenta() {
         List<NotaVentaRegistro> nvr = daoNotaVentaRegistro.obtenerNumNotaVenta();
-        int nextId = nvr.isEmpty() ? 1 : nvr.get(0).getCodigo() + 1;
+        int nextId = 1;
+        for (NotaVentaRegistro r : nvr) {
+            try {
+                int num = Integer.parseInt(r.getCodigo().replaceAll("\\D+", ""));
+                if (num >= nextId) nextId = num + 1;
+            } catch (Exception ignored) {}
+        }
         lblNumNotaVenta.setText("TAGVIC-" + String.format("%06d", nextId));
     }
 
-    @FXML private void guardar() { }
+    @FXML
+    private void guardar() {
+        if (cmbCliente.getValue() == null) {
+            new Alert(Alert.AlertType.WARNING, "Debe seleccionar un cliente.").showAndWait();
+            return;
+        }
+        if (itemsDetalle.isEmpty()) {
+            new Alert(Alert.AlertType.WARNING, "Debe agregar al menos un producto.").showAndWait();
+            return;
+        }
+        if (empresaActual == null) {
+            new Alert(Alert.AlertType.WARNING, "No se encontraron datos de la empresa.").showAndWait();
+            return;
+        }
+
+        int clienteId = cmbCliente.getValue().getId();
+        int empresaId = empresaActual.getId();
+        String codigo = lblNumNotaVenta.getText();
+        LocalDateTime ahora = LocalDateTime.now();
+
+        NotaVentaRegistro nvr = new NotaVentaRegistro(empresaId, clienteId, ahora, codigo, cmbFormaPago.getValue(), ahora);
+        int notaVentaId = daoNotaVentaRegistro.insertar(nvr);
+
+        if (notaVentaId == -1) {
+            new Alert(Alert.AlertType.ERROR, "Error al registrar la nota de venta.").showAndWait();
+            return;
+        }
+
+        daoNotaVentaDetalle.insertarDetalle(notaVentaId, itemsDetalle);
+
+        for (DetalleVenta d : itemsDetalle) {
+            daoInventario.descontarStock(d.getProductoId(), d.getCantidad());
+        }
+
+        listaInventario.setAll(daoInventario.listar());
+
+        // Generar PDF
+        BigDecimal sub = itemsDetalle.stream().map(DetalleVenta::getPrecioTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal ivaCalc = sub.multiply(new BigDecimal("0.15")).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal totCalc = sub.add(ivaCalc).setScale(2, RoundingMode.HALF_UP);
+
+        List<String[]> filasPDF = new ArrayList<>();
+        for (DetalleVenta d : itemsDetalle) {
+            filasPDF.add(new String[]{
+                    d.getCodigo(),
+                    d.getDescripcion(),
+                    String.valueOf(d.getCantidad()),
+                    d.getPrecioUnitario().setScale(2, RoundingMode.HALF_UP).toString(),
+                    d.getPrecioTotal().setScale(2, RoundingMode.HALF_UP).toString()
+            });
+        }
+
+        String fechaStr = ahora.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+        String nombreCliente = cmbCliente.getValue().getNombre() + " - " + cmbCliente.getValue().getIdentificacion();
+
+        String rutaPDF = System.getProperty("user.home") + File.separator + "Desktop" + File.separator
+                + "NotaVenta_" + codigo.replace(" ", "_") + ".pdf";
+
+        NotaVentaPDF.generar(rutaPDF, codigo, fechaStr,
+                empresaActual.getRazonSocial(), empresaActual.getRuc(),
+                empresaActual.getDireccionCallePrincipal() + " y " + empresaActual.getDireccionCalleSecundaria(),
+                empresaActual.getTelefono() + " / " + empresaActual.getCelular(),
+                empresaActual.getCorreo(),
+                cmbCliente.getValue().getNombre(),
+                cmbCliente.getValue().getIdentificacion(),
+                txtDireccion.getText(),
+                txtTelefono.getText(),
+                cmbFormaPago.getValue(),
+                filasPDF, sub, ivaCalc, totCalc);
+
+        Alert alertExito = new Alert(Alert.AlertType.INFORMATION);
+        alertExito.setTitle("Nota de venta registrada");
+        alertExito.setHeaderText(null);
+        alertExito.setContentText("Nota de venta " + codigo + " registrada exitosamente.\nPDF guardado en: " + rutaPDF);
+        alertExito.showAndWait();
+
+        // Abrir PDF automaticamente
+        try {
+            if (Desktop.isDesktopSupported()) {
+                Desktop.getDesktop().open(new File(rutaPDF));
+            }
+        } catch (Exception ignored) {}
+
+        itemsDetalle.clear();
+        tblDetalle.refresh();
+        calcularTotales();
+        cmbCliente.getSelectionModel().clearSelection();
+        txtBuscarCliente.clear();
+        txtNombre.clear();
+        txtIdentificacion.clear();
+        txtDireccion.clear();
+        txtCorreo.clear();
+        txtTelefono.clear();
+        txtBuscarProducto.clear();
+        obtenerNumNotaVenta();
+    }
 }
