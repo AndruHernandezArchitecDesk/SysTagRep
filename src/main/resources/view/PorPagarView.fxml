@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.tag.sysTagRep.controller.PorPagarController"
+            prefHeight="700.0" prefWidth="1100.0"
+            style="-fx-padding: 15;">
+
+    <top>
+        <VBox spacing="10">
+            <Label text="CUENTAS POR PAGAR" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #c0392b;"/>
+            <Separator/>
+        </VBox>
+    </top>
+
+    <center>
+        <VBox spacing="15">
+
+            <!-- SECCION 1: Creditos activos a proveedores -->
+            <TitledPane text="Creditos Activos a Proveedores" collapsible="false" style="-fx-font-weight: bold;">
+                <content>
+                    <VBox spacing="5">
+                        <Label text="Verde: Inicio del plazo  |  Naranja: Mas de la mitad  |  Rojo: Plazo vencido" style="-fx-font-size: 11px; -fx-text-fill: #7f8c8d;"/>
+                        <TableView fx:id="tblCreditosActivos" prefHeight="200" VBox.vgrow="ALWAYS">
+                            <columns>
+                                <TableColumn fx:id="colProveedor" text="Proveedor" minWidth="180"/>
+                                <TableColumn fx:id="colCodigo" text="Codigo" minWidth="120"/>
+                                <TableColumn fx:id="colDescripcion" text="Articulo" minWidth="200"/>
+                                <TableColumn fx:id="colProgreso" text="Estado" minWidth="250"/>
+                                <TableColumn fx:id="colVerDetalle" text="" minWidth="60" maxWidth="60"/>
+                            </columns>
+                        </TableView>
+                    </VBox>
+                </content>
+            </TitledPane>
+
+            <!-- SECCION 2: Detalle y abono -->
+            <TitledPane text="Detalle de Credito y Abono" collapsible="false" style="-fx-font-weight: bold;">
+                <content>
+                    <VBox spacing="10">
+                        <HBox spacing="15" alignment="CENTER_LEFT">
+                            <Label text="Filtrar por proveedor:" style="-fx-font-weight: bold;"/>
+                            <TextField fx:id="txtFiltroProveedor" promptText="Nombre o identificacion..." prefWidth="300"/>
+                            <Button text="FILTRAR" onAction="#filtrarPorProveedor" style="-fx-background-color: #3498db; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 6 15;">
+                                <graphic><FontIcon iconLiteral="fas-search" iconColor="WHITE"/></graphic>
+                            </Button>
+                            <Button text="LIMPIAR" onAction="#limpiarFiltro" style="-fx-background-color: #95a5a6; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 6 15;"/>
+                        </HBox>
+
+                        <TableView fx:id="tblDetalleCredito" prefHeight="200">
+                            <columns>
+                                <TableColumn fx:id="colDetProveedor" text="Proveedor" minWidth="150"/>
+                                <TableColumn fx:id="colDetCodigo" text="Codigo" minWidth="100"/>
+                                <TableColumn fx:id="colDetDescripcion" text="Articulo" minWidth="150"/>
+                                <TableColumn fx:id="colDetFecha" text="Fecha Compra" minWidth="110"/>
+                                <TableColumn fx:id="colDetPlazo" text="Plazo" minWidth="80"/>
+                                <TableColumn fx:id="colDetTotal" text="Total" minWidth="100"/>
+                                <TableColumn fx:id="colDetAdelanto" text="Saldo Pagado" minWidth="100"/>
+                                <TableColumn fx:id="colDetPendiente" text="Saldo Pendiente" minWidth="110"/>
+                                <TableColumn fx:id="colDetAccion" text="Abono" minWidth="130"/>
+                            </columns>
+                        </TableView>
+                    </VBox>
+                </content>
+            </TitledPane>
+
+        </VBox>
+    </center>
+</BorderPane>

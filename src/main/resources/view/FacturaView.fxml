@@ -7,7 +7,7 @@
 
 <BorderPane xmlns="http://javafx.com/javafx/21"
             xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.tag.sysTagRep.controller.NotaVentaController"
+            fx:controller="com.tag.sysTagRep.controller.FacturaController"
             prefHeight="950.0" prefWidth="1100.0">
 
     <top>
@@ -20,66 +20,67 @@
                 <Label fx:id="lblTelefono" text="Tel: 0999999999 / Cel: 099999990" style="-fx-font-size: 11px;"/>
             </VBox>
             <VBox alignment="CENTER_RIGHT" spacing="5">
-                <Label text="NOTA DE VENTA" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
+                <Label text="FACTURA ELECTRÓNICA" style="-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #1a252f;"/>
                 <Label fx:id="lblRuc" text="RUC: 0000000000001" style="-fx-font-size: 12px;"/>
-                <Label text="N° 000000" fx:id="lblNumNotaVenta" style="-fx-text-fill: red; -fx-font-weight: bold;"/>
+                <Label text="N° 000000" fx:id="lblNumFactura" style="-fx-text-fill: red; -fx-font-weight: bold;"/>
             </VBox>
         </HBox>
     </top>
 
     <center>
-        <!-- ScrollPane para que toda la sección central tenga scroll si es necesario -->
         <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS">
             <VBox spacing="15" style="-fx-padding: 15;">
 
                 <!-- SECCIÓN CLIENTE -->
                 <TitledPane text="Información del Cliente" collapsible="false" style="-fx-font-weight: bold;">
-                    <VBox spacing="10">
-                        <HBox spacing="10" alignment="CENTER_LEFT">
-                            <FontIcon iconLiteral="fas-search" iconSize="14"/>
-                            <Label text="Buscar:" minWidth="45"/>
-                            <TextField fx:id="txtBuscarCliente" promptText="Nombre o cédula..." prefWidth="350" maxWidth="350"/>
-                            <Label text="Seleccionar:" minWidth="70"/>
-                            <ComboBox fx:id="cmbCliente" prefWidth="350" maxWidth="350"/>
-                        </HBox>
+                    <content>
+                        <VBox spacing="10">
+                            <HBox spacing="10" alignment="CENTER_LEFT">
+                                <FontIcon iconLiteral="fas-search" iconSize="14"/>
+                                <Label text="Buscar:" minWidth="45"/>
+                                <TextField fx:id="txtBuscarCliente" promptText="Nombre o cédula..." prefWidth="350" maxWidth="350"/>
+                                <Label text="Seleccionar:" minWidth="70"/>
+                                <ComboBox fx:id="cmbCliente" prefWidth="350" maxWidth="350"/>
+                            </HBox>
 
-                        <GridPane hgap="15" vgap="10">
-                            <columnConstraints>
-                                <ColumnConstraints minWidth="80" halignment="RIGHT"/>
-                                <ColumnConstraints hgrow="ALWAYS" />
-                                <ColumnConstraints minWidth="80" halignment="RIGHT"/>
-                                <ColumnConstraints hgrow="ALWAYS" />
-                                <ColumnConstraints minWidth="80" halignment="RIGHT"/>
-                                <ColumnConstraints hgrow="ALWAYS" />
-                            </columnConstraints>
+                            <GridPane hgap="15" vgap="10">
+                                <columnConstraints>
+                                    <ColumnConstraints minWidth="80" halignment="RIGHT"/>
+                                    <ColumnConstraints hgrow="ALWAYS" />
+                                    <ColumnConstraints minWidth="80" halignment="RIGHT"/>
+                                    <ColumnConstraints hgrow="ALWAYS" />
+                                    <ColumnConstraints minWidth="80" halignment="RIGHT"/>
+                                    <ColumnConstraints hgrow="ALWAYS" />
+                                </columnConstraints>
 
-                            <Label text="Nombre:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
-                            <TextField fx:id="txtNombre" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                                <Label text="Nombre:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                                <TextField fx:id="txtNombre" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
 
-                            <Label text="RUC/Cédula:" GridPane.rowIndex="0" GridPane.columnIndex="2"/>
-                            <TextField fx:id="txtIdentificacion" GridPane.rowIndex="0" GridPane.columnIndex="3"/>
+                                <Label text="RUC/Cédula:" GridPane.rowIndex="0" GridPane.columnIndex="2"/>
+                                <TextField fx:id="txtIdentificacion" GridPane.rowIndex="0" GridPane.columnIndex="3"/>
 
-                            <Label text="Fecha:" GridPane.rowIndex="0" GridPane.columnIndex="4"/>
-                            <DatePicker fx:id="dpFechaNotaVenta" GridPane.rowIndex="0" GridPane.columnIndex="5" maxWidth="Infinity"/>
+                                <Label text="Fecha:" GridPane.rowIndex="0" GridPane.columnIndex="4"/>
+                                <DatePicker fx:id="dpFechaFactura" GridPane.rowIndex="0" GridPane.columnIndex="5" maxWidth="Infinity"/>
 
-                            <Label text="Dirección:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
-                            <TextField fx:id="txtDireccion" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                                <Label text="Dirección:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                                <TextField fx:id="txtDireccion" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
 
-                            <Label text="Correo:" GridPane.rowIndex="1" GridPane.columnIndex="2"/>
-                            <TextField fx:id="txtCorreo" GridPane.rowIndex="1" GridPane.columnIndex="3"/>
+                                <Label text="Correo:" GridPane.rowIndex="1" GridPane.columnIndex="2"/>
+                                <TextField fx:id="txtCorreo" GridPane.rowIndex="1" GridPane.columnIndex="3"/>
 
-                            <Label text="Teléfono:" GridPane.rowIndex="1" GridPane.columnIndex="4"/>
-                            <TextField fx:id="txtTelefono" GridPane.rowIndex="1" GridPane.columnIndex="5"/>
-                        </GridPane>
-                    </VBox>
+                                <Label text="Teléfono:" GridPane.rowIndex="1" GridPane.columnIndex="4"/>
+                                <TextField fx:id="txtTelefono" GridPane.rowIndex="1" GridPane.columnIndex="5"/>
+                            </GridPane>
+                        </VBox>
+                    </content>
                 </TitledPane>
 
-                <!-- SECCIÓN SELECCIONAR PRODUCTO (Tabla de búsqueda de Inventario) -->
+                <!-- SECCIÓN SELECCIONAR PRODUCTO -->
                 <VBox spacing="8" style="-fx-background-color: #f0f2f5; -fx-padding: 10; -fx-border-color: #d1d5db; -fx-border-radius: 5;">
                     <HBox spacing="10" alignment="CENTER_LEFT">
                         <Label text="INVENTARIO DISPONIBLE" style="-fx-font-weight: bold; -fx-text-fill: #34495e;"/>
                         <TextField fx:id="txtBuscarProducto" promptText="Filtrar por nombre o código..." HBox.hgrow="ALWAYS" />
-                        <Button fx:id="btnAgregarProducto" text="AÑADIR A LA VENTA" onAction="#agregarProducto" style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 6 15;">
+                        <Button fx:id="btnAgregarProducto" text="AÑADIR A LA FACTURA" onAction="#agregarProducto" style="-fx-background-color: #2980b9; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 6 15;">
                             <graphic><FontIcon iconLiteral="fas-plus" iconColor="WHITE"/></graphic>
                         </Button>
                     </HBox>
@@ -93,9 +94,9 @@
                     </TableView>
                 </VBox>
 
-                <!-- TABLA DETALLE VENTA (Altura dinámica) -->
+                <!-- TABLA DETALLE -->
                 <VBox spacing="2">
-                    <Label text="RESUMEN DE VENTA" style="-fx-font-weight: bold;"/>
+                    <Label text="DETALLE DE FACTURA" style="-fx-font-weight: bold;"/>
                     <TableView fx:id="tblDetalle" prefHeight="120">
                         <columns>
                             <TableColumn fx:id="colCodigo" text="Código" minWidth="100" prefWidth="120"/>
@@ -138,7 +139,7 @@
                 </HBox>
 
                 <HBox alignment="CENTER">
-                    <Button fx:id="btnGuardar" text="GENERAR COMPROBANTE Y REGISTRAR" onAction="#guardar" styleClass="btn-guardar" prefWidth="400" style="-fx-font-size: 14px;"/>
+                    <Button fx:id="btnGuardar" text="GENERAR FACTURA ELECTRÓNICA" onAction="#guardar" styleClass="btn-guardar" prefWidth="400" style="-fx-font-size: 14px;"/>
                 </HBox>
             </VBox>
         </ScrollPane>

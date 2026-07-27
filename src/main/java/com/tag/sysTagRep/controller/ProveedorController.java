@@ -1,5 +1,6 @@
 package com.tag.sysTagRep.controller;
 
+import com.tag.sysTagRep.dao.LogDAO;
 import com.tag.sysTagRep.dao.ProveedorDAO;
 import com.tag.sysTagRep.model.Proveedor;
 import javafx.beans.property.ReadOnlyObjectWrapper;
@@ -47,6 +48,7 @@ public class ProveedorController implements Initializable {
     @FXML private TableColumn<Proveedor, Void> colAcciones;
 
     private final ProveedorDAO dao = new ProveedorDAO();
+    private final LogDAO logDAO = new LogDAO();
     private ObservableList<Proveedor> listaProveedores = FXCollections.observableArrayList();
 
     @Override
@@ -154,28 +156,34 @@ public class ProveedorController implements Initializable {
 
     @FXML
     private void guardar() {
-        if (!validarCampos()) {
-            return;
+        try {
+            if (!validarCampos()) {
+                return;
+            }
+
+            Proveedor v = new Proveedor();
+            v.setNombre(txtNombre.getText().trim());
+            v.setIdentificacion(txtIdentificacion.getText().trim());
+            v.setDireccion(txtDireccion.getText().trim());
+            v.setCorreo(txtCorreo.getText().trim());
+            v.setTelefono(txtTelefono.getText().trim());
+            v.setCelular(txtCelular.getText().trim());
+            v.setEstado(cmbEstado.getValue().equals("ACTIVO"));
+
+            if (txtId.getText() == null || txtId.getText().isEmpty()) {
+                dao.guardar(v);
+            } else {
+                v.setId(Integer.parseInt(txtId.getText()));
+                dao.actualizar(v);
+            }
+
+            limpiarFrm();
+            cargarDatos();
+            new Alert(Alert.AlertType.INFORMATION, "Guardado correctamente.").showAndWait();
+        } catch (Exception e) {
+            logDAO.guardar("ProveedorController", "guardar", e.getMessage(), e);
+            new Alert(Alert.AlertType.ERROR, "Error al guardar: " + e.getMessage()).showAndWait();
         }
-
-        Proveedor v = new Proveedor();
-        v.setNombre(txtNombre.getText().trim());
-        v.setIdentificacion(txtIdentificacion.getText().trim());
-        v.setDireccion(txtDireccion.getText().trim());
-        v.setCorreo(txtCorreo.getText().trim());
-        v.setTelefono(txtTelefono.getText().trim());
-        v.setCelular(txtCelular.getText().trim());
-        v.setEstado(cmbEstado.getValue().equals("ACTIVO"));
-
-        if (txtId.getText() == null || txtId.getText().isEmpty()) {
-            dao.guardar(v);
-        } else {
-            v.setId(Integer.parseInt(txtId.getText()));
-            dao.actualizar(v);
-        }
-
-        limpiarFrm();
-        cargarDatos();
     }
 
     private boolean validarCampos() {

@@ -2,168 +2,163 @@
 
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-
 <?import org.kordamp.ikonli.javafx.FontIcon?>
+
 <BorderPane xmlns="http://javafx.com/javafx/21"
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.tag.sysTagRep.controller.InventarioController"
-            prefHeight="600.0" prefWidth="800.0">
+            prefHeight="600.0" prefWidth="800.0"
+            style="-fx-padding: 10;">
 
     <top>
-        <HBox spacing="10" alignment="CENTER_LEFT" styleClass="header">
+        <HBox spacing="10" alignment="CENTER_LEFT" styleClass="header" style="-fx-padding: 5 0 10 0;">
             <Label text="Gestión de Inventario" styleClass="titulo"/>
-
-            <Button fx:id="btnToggleForm"
-                    onAction="#toggleFormulario"
-                    styleClass="btn-icono">
-                <graphic>
-                    <FontIcon iconLiteral="fas-chevron-left" iconSize="16"/>
-                </graphic>
+            <Button fx:id="btnToggleForm" onAction="#toggleFormulario" styleClass="btn-icono">
+                <graphic><FontIcon iconLiteral="fas-chevron-left" iconSize="16"/></graphic>
             </Button>
         </HBox>
     </top>
-
 
     <center>
         <SplitPane fx:id="splitPane" dividerPositions="0.35">
 
             <!-- FORMULARIO -->
             <ScrollPane fx:id="formPane" fitToWidth="true">
-                <VBox spacing="15" styleClass="formulario">
-                    <HBox spacing="6" alignment="CENTER_LEFT">
-                        <StackPane prefWidth="20">
-                            <FontIcon iconLiteral="fas-hashtag" iconSize="14"/>
-                        </StackPane>
-                        <Label text="ID" prefWidth="100"/>
-                        <TextField fx:id="txtId" disable="true" HBox.hgrow="ALWAYS"/>
-                    </HBox>
-                    <HBox spacing="6" alignment="CENTER_LEFT">
-                        <StackPane prefWidth="20">
-                            <FontIcon iconLiteral="fas-align-left" iconSize="14"/>
-                        </StackPane>
-                        <Label text="Descripción" prefWidth="100"/>
-                        <TextField fx:id="txtDescripcion" HBox.hgrow="ALWAYS"/>
-                    </HBox>
-                    <HBox spacing="6" alignment="CENTER_LEFT">
-                        <StackPane prefWidth="20">
-                            <FontIcon iconLiteral="fas-layer-group" iconSize="14"/>
-                        </StackPane>
-                        <Label text="Grupo" prefWidth="100"/>
-                        <TextField fx:id="txtGrupo" HBox.hgrow="ALWAYS"/>
-                    </HBox>
-                    <HBox spacing="6" alignment="CENTER_LEFT">
-                        <StackPane prefWidth="20">
-                            <FontIcon iconLiteral="fas-trademark" iconSize="14"/>
-                        </StackPane>
-                        <Label text="Marca" prefWidth="100"/>
-                        <TextField fx:id="txtMarca" HBox.hgrow="ALWAYS"/>
-                    </HBox>
-                    <HBox spacing="6" alignment="CENTER_LEFT">
-                        <StackPane prefWidth="20">
-                            <FontIcon iconLiteral="fas-map-marker-alt" iconSize="14"/>
-                        </StackPane>
-                        <Label text="Ubicación en la Percha" prefWidth="100" wrapText="true"/>
-                        <TextField fx:id="txtUbicacionPercha" HBox.hgrow="ALWAYS"/>
-                    </HBox>
-                    <HBox spacing="6" alignment="CENTER_LEFT">
-                        <StackPane prefWidth="20">
-                            <FontIcon iconLiteral="fas-map-marker-alt" iconSize="14"/>
-                        </StackPane>
-                        <Label text="Código de Producto" prefWidth="100" wrapText="true"/>
-                        <TextField fx:id="txtCodigo" HBox.hgrow="ALWAYS"/>
-                    </HBox>
-                    <HBox spacing="6" alignment="CENTER_LEFT">
-                        <StackPane prefWidth="20">
-                            <FontIcon iconLiteral="fas-calendar-alt" iconSize="14"/>
-                        </StackPane>
-                        <Label text="Proveedor" prefWidth="100" wrapText="true"/>
-                        <ComboBox fx:id="cmbProveedor"
-                                  maxWidth="Infinity"
-                                  HBox.hgrow="ALWAYS"  styleClass="combo-limpio"/>
-                    </HBox>
-                    <HBox spacing="30" alignment="CENTER_LEFT">
+                <VBox spacing="12" style="-fx-padding: 10;">
 
-                        <!-- Costo sin IVA -->
-                        <VBox spacing="6" HBox.hgrow="ALWAYS">
-                            <HBox spacing="10" alignment="CENTER_LEFT">
-                                <StackPane prefWidth="24">
-                                    <FontIcon iconLiteral="fas-dollar-sign" iconSize="14"/>
-                                </StackPane>
-                                <Label text="Costo sin IVA"/>
-                            </HBox>
-                            <TextField fx:id="txtCostoSinIVA" maxWidth="Infinity"/>
-                        </VBox>
+                    <!-- Sección: Información General -->
+                    <TitledPane text="Información General" collapsible="false"
+                                style="-fx-font-weight: bold; -fx-background-color: #f8f9fa; -fx-background-radius: 8; -fx-padding: 8;">
+                        <content>
+                            <VBox spacing="8" style="-fx-padding: 5;">
+                                <HBox spacing="6" alignment="CENTER_LEFT">
+                                    <StackPane prefWidth="20"><FontIcon iconLiteral="fas-hashtag" iconSize="14"/></StackPane>
+                                    <Label text="ID" prefWidth="100"/>
+                                    <TextField fx:id="txtId" disable="true" HBox.hgrow="ALWAYS"/>
+                                </HBox>
+                                <HBox spacing="6" alignment="CENTER_LEFT">
+                                    <StackPane prefWidth="20"><FontIcon iconLiteral="fas-align-left" iconSize="14"/></StackPane>
+                                    <Label text="Descripción" prefWidth="100"/>
+                                    <TextField fx:id="txtDescripcion" HBox.hgrow="ALWAYS"/>
+                                </HBox>
+                                <HBox spacing="6" alignment="CENTER_LEFT">
+                                    <StackPane prefWidth="20"><FontIcon iconLiteral="fas-layer-group" iconSize="14"/></StackPane>
+                                    <Label text="Grupo" prefWidth="100"/>
+                                    <ComboBox fx:id="cmbGrupo" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                                    <Button fx:id="btnAddGrupo" onAction="#irAGrupo" style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 4 8; -fx-cursor: hand;">
+                                        <graphic><FontIcon iconLiteral="fas-plus" iconSize="12"/></graphic>
+                                    </Button>
+                                </HBox>
+                                <HBox spacing="6" alignment="CENTER_LEFT">
+                                    <StackPane prefWidth="20"><FontIcon iconLiteral="fas-trademark" iconSize="14"/></StackPane>
+                                    <Label text="Marca" prefWidth="100"/>
+                                    <ComboBox fx:id="cmbMarca" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                                    <Button fx:id="btnAddMarca" onAction="#irAMarca" style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 4 8; -fx-cursor: hand;">
+                                        <graphic><FontIcon iconLiteral="fas-plus" iconSize="12"/></graphic>
+                                    </Button>
+                                </HBox>
+                                <HBox spacing="6" alignment="CENTER_LEFT">
+                                    <StackPane prefWidth="20"><FontIcon iconLiteral="fas-map-marker-alt" iconSize="14"/></StackPane>
+                                    <Label text="Ubicación" prefWidth="100"/>
+                                    <ComboBox fx:id="cmbUbicacion" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                                    <Button onAction="#irAUbicacion" style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 4 8; -fx-cursor: hand;">
+                                        <graphic><FontIcon iconLiteral="fas-plus" iconSize="12"/></graphic>
+                                    </Button>
+                                </HBox>
+                                <HBox spacing="6" alignment="CENTER_LEFT">
+                                    <StackPane prefWidth="20"><FontIcon iconLiteral="fas-barcode" iconSize="14"/></StackPane>
+                                    <Label text="Código" prefWidth="100"/>
+                                    <TextField fx:id="txtCodigo" HBox.hgrow="ALWAYS" editable="false" style="-fx-opacity: 0.85;"/>
+                                </HBox>
+                                <HBox spacing="6" alignment="CENTER_LEFT">
+                                    <StackPane prefWidth="20"><FontIcon iconLiteral="fas-truck" iconSize="14"/></StackPane>
+                                    <Label text="Proveedor" prefWidth="100"/>
+                                    <ComboBox fx:id="cmbProveedor" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                                    <Button onAction="#irAProveedor" style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 4 8; -fx-cursor: hand;">
+                                        <graphic><FontIcon iconLiteral="fas-plus" iconSize="12"/></graphic>
+                                    </Button>
+                                </HBox>
+                            </VBox>
+                        </content>
+                    </TitledPane>
 
-                        <!-- Margen -->
-                        <VBox spacing="6" HBox.hgrow="ALWAYS">
-                            <HBox spacing="10" alignment="CENTER_LEFT">
-                                <StackPane prefWidth="24">
-                                    <FontIcon iconLiteral="fas-percentage" iconSize="14"/>
-                                </StackPane>
-                                <Label text="Porcentaje de Margen"/>
-                            </HBox>
-                            <ComboBox fx:id="cmbGanancia" maxWidth="Infinity" />
-                        </VBox>
+                    <!-- Sección: Precios y Stock -->
+                    <TitledPane text="Precios y Stock" collapsible="false"
+                                style="-fx-font-weight: bold; -fx-background-color: #f8f9fa; -fx-background-radius: 8; -fx-padding: 8;">
+                        <content>
+                            <VBox spacing="8" style="-fx-padding: 5;">
+                                <HBox spacing="20" alignment="CENTER_LEFT">
+                                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                        <Label text="Costo sin IVA" style="-fx-font-size: 11px;"/>
+                                        <TextField fx:id="txtCostoSinIVA" maxWidth="Infinity"/>
+                                    </VBox>
+                                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                        <Label text="Porcentaje de Margen" style="-fx-font-size: 11px;"/>
+                                        <ComboBox fx:id="cmbGanancia" maxWidth="Infinity"/>
+                                    </VBox>
+                                </HBox>
+                                <HBox spacing="20" alignment="CENTER_LEFT">
+                                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                        <Label text="Precio Venta Unit." style="-fx-font-size: 11px;"/>
+                                        <TextField fx:id="txtPrecioVenta" maxWidth="Infinity"/>
+                                    </VBox>
+                                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                        <Label text="Cantidad" style="-fx-font-size: 11px;"/>
+                                        <Spinner fx:id="spCantidad" maxWidth="Infinity"/>
+                                    </VBox>
+                                </HBox>
+                            </VBox>
+                        </content>
+                    </TitledPane>
 
-                    </HBox>
+                    <!-- Sección: Forma de Pago -->
+                    <TitledPane text="Forma de Pago" collapsible="false"
+                                style="-fx-font-weight: bold; -fx-background-color: #f8f9fa; -fx-background-radius: 8; -fx-padding: 8;">
+                        <content>
+                            <VBox spacing="8" style="-fx-padding: 5;">
+                                <HBox spacing="6" alignment="CENTER_LEFT">
+                                    <StackPane prefWidth="20"><FontIcon iconLiteral="fas-credit-card" iconSize="14"/></StackPane>
+                                    <Label text="Forma de Pago" prefWidth="100"/>
+                                    <ComboBox fx:id="cmbFormaPago" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                                </HBox>
+                                <HBox fx:id="pnlCredito" spacing="10" visible="false" managed="false" alignment="CENTER_RIGHT">
+                                    <Label text="Meses Plazo:"/>
+                                    <ComboBox fx:id="cmbMesesPlazo" prefWidth="80"/>
+                                    <Label text="Interés %:"/>
+                                    <ComboBox fx:id="cmbInteres" prefWidth="80"/>
+                                </HBox>
+                            </VBox>
+                        </content>
+                    </TitledPane>
 
-                    <HBox spacing="30" alignment="CENTER_LEFT">
+                    <!-- Sección: Registro -->
+                    <TitledPane text="Registro" collapsible="false"
+                                style="-fx-font-weight: bold; -fx-background-color: #f8f9fa; -fx-background-radius: 8; -fx-padding: 8;">
+                        <content>
+                            <VBox spacing="8" style="-fx-padding: 5;">
+                                <HBox spacing="6" alignment="CENTER_LEFT">
+                                    <StackPane prefWidth="20"><FontIcon iconLiteral="fas-calendar-alt" iconSize="14"/></StackPane>
+                                    <Label text="Fecha de Ingreso"/>
+                                    <DatePicker fx:id="dpFechaIngreso" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                                </HBox>
+                                <HBox spacing="10" alignment="CENTER">
+                                    <Button fx:id="btnGuardar" text=" GUARDAR" styleClass="btn-guardar" onAction="#guardar">
+                                        <graphic><FontIcon iconLiteral="fas-save" iconSize="18"/></graphic>
+                                    </Button>
+                                </HBox>
+                            </VBox>
+                        </content>
+                    </TitledPane>
 
-                        <!-- Precio de Venta -->
-                        <VBox spacing="6" HBox.hgrow="ALWAYS">
-                            <HBox spacing="10" alignment="CENTER_LEFT">
-                                <StackPane prefWidth="24">
-                                    <FontIcon iconLiteral="fas-cash-register" iconSize="14"/>
-                                </StackPane>
-                                <Label text="Precio de Venta Unitario"/>
-                            </HBox>
-                            <TextField fx:id="txtPrecioVenta" maxWidth="Infinity"/>
-                        </VBox>
-
-                        <!-- Cantidad -->
-                        <VBox spacing="6" HBox.hgrow="ALWAYS">
-                            <HBox spacing="10" alignment="CENTER_LEFT">
-                                <StackPane prefWidth="24">
-                                    <FontIcon iconLiteral="fas-sort-numeric-up" iconSize="14"/>
-                                </StackPane>
-                                <Label text="Cantidad"/>
-                            </HBox>
-                            <Spinner fx:id="spCantidad" maxWidth="Infinity"/>
-                        </VBox>
-                    </HBox>
-
-
-                    <HBox spacing="6" alignment="CENTER_LEFT">
-                        <StackPane prefWidth="20">
-                            <FontIcon iconLiteral="fas-calendar-alt" iconSize="14"/>
-                        </StackPane>
-                        <Label text="Fecha de Ingreso"/>
-                        <DatePicker fx:id="dpFechaIngreso" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
-                    </HBox>
-
-                    <HBox spacing="10" alignment="CENTER">
-                        <Button fx:id="btnGuardar"
-                                text=" GUARDAR"
-                                styleClass="btn-guardar"
-                                onAction="#guardar">
-                            <graphic>
-                                <FontIcon iconLiteral="fas-save" iconSize="18"/>
-                            </graphic>
-                        </Button>
-
-                    </HBox>
                 </VBox>
             </ScrollPane>
 
-            <!-- Cuadro de busqueda -->
-            <VBox spacing="20">
+            <!-- Cuadro de busqueda y tabla -->
+            <VBox spacing="20" style="-fx-padding: 5;">
                 <HBox spacing="6" alignment="CENTER_LEFT">
-                    <TextField fx:id="txtBuscar"
-                               promptText="Buscar:"/>
+                    <TextField fx:id="txtBuscar" promptText="Buscar:"/>
                     <FontIcon iconLiteral="fas-search" iconSize="14"/>
                 </HBox>
-
-                <!-- TABLA -->
                 <TableView fx:id="tblInventario">
                     <columns>
                         <TableColumn fx:id="colId" text="ID" prefWidth="50"/>
@@ -184,5 +179,4 @@
             </VBox>
         </SplitPane>
     </center>
-
 </BorderPane>

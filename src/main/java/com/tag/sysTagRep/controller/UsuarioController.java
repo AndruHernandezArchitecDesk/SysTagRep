@@ -1,5 +1,6 @@
 package com.tag.sysTagRep.controller;
 
+import com.tag.sysTagRep.dao.LogDAO;
 import com.tag.sysTagRep.dao.UsuarioDAO;
 import com.tag.sysTagRep.model.Usuario;
 import javafx.beans.property.ReadOnlyObjectWrapper;
@@ -46,6 +47,7 @@ public class UsuarioController implements Initializable {
     @FXML private TableColumn<Usuario, Void> colAcciones;
 
     private final UsuarioDAO dao = new UsuarioDAO();
+    private final LogDAO logDAO = new LogDAO();
     private ObservableList<Usuario> listaUsuarios = FXCollections.observableArrayList();
 
     @Override
@@ -111,24 +113,30 @@ public class UsuarioController implements Initializable {
 
     @FXML
     private void guardar() {
-        if (!validarCampos()) return;
+        try {
+            if (!validarCampos()) return;
 
-        Usuario u = new Usuario();
-        u.setNombre(txtNombre.getText().trim());
-        u.setApellido(txtApellido.getText().trim());
-        u.setCorreo(txtCorreo.getText().trim());
-        u.setRol(cmbRol.getValue());
-        u.setEstado(cmbEstado.getValue().equals("ACTIVO"));
+            Usuario u = new Usuario();
+            u.setNombre(txtNombre.getText().trim());
+            u.setApellido(txtApellido.getText().trim());
+            u.setCorreo(txtCorreo.getText().trim());
+            u.setRol(cmbRol.getValue());
+            u.setEstado(cmbEstado.getValue().equals("ACTIVO"));
 
-        if (txtId.getText() == null || txtId.getText().isEmpty()) {
-            dao.guardar(u);
-        } else {
-            u.setId(Integer.parseInt(txtId.getText()));
-            dao.actualizar(u);
+            if (txtId.getText() == null || txtId.getText().isEmpty()) {
+                dao.guardar(u);
+            } else {
+                u.setId(Integer.parseInt(txtId.getText()));
+                dao.actualizar(u);
+            }
+
+            limpiarFrm();
+            cargarDatos();
+            new Alert(Alert.AlertType.INFORMATION, "Guardado correctamente.").showAndWait();
+        } catch (Exception e) {
+            logDAO.guardar("UsuarioController", "guardar", e.getMessage(), e);
+            new Alert(Alert.AlertType.ERROR, "Error al guardar: " + e.getMessage()).showAndWait();
         }
-
-        limpiarFrm();
-        cargarDatos();
     }
 
     private boolean validarCampos() {

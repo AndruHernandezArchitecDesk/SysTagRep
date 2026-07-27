@@ -7,8 +7,8 @@ import com.tag.sysTagRep.dao.LogDAO;
 import com.tag.sysTagRep.util.EmailService;
 import com.tag.sysTagRep.dao.CuentaPorCobrarDAO;
 import com.tag.sysTagRep.dao.ComprobanteDAO;
-import com.tag.sysTagRep.dao.NotaVentaDetalleDAO;
-import com.tag.sysTagRep.dao.NotaVentaRegistroDAO;
+import com.tag.sysTagRep.dao.FacturaDetalleDAO;
+import com.tag.sysTagRep.dao.FacturaRegistroDAO;
 import com.tag.sysTagRep.model.*;
 import com.tag.sysTagRep.util.NotaVentaPDF;
 import com.tag.sysTagRep.util.ClaveAcceso;
@@ -27,7 +27,6 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
-import javafx.scene.paint.Color;
 import javafx.util.StringConverter;
 import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
 import org.kordamp.ikonli.javafx.FontIcon;
@@ -44,32 +43,28 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
-public class NotaVentaController implements Initializable {
+public class FacturaController implements Initializable {
 
     @FXML private ImageView imgLogo;
-    @FXML private Label lblRazonSocial, lblRuc, lblDireccion, lblCorreo, lblTelefono, lblNumNotaVenta;
-    
-    // Cliente
+    @FXML private Label lblRazonSocial, lblRuc, lblDireccion, lblCorreo, lblTelefono, lblNumFactura;
+
     @FXML private ComboBox<Cliente> cmbCliente;
     @FXML private TextField txtBuscarCliente;
     @FXML private TextField txtNombre, txtIdentificacion, txtDireccion, txtCorreo, txtTelefono;
-    @FXML private DatePicker dpFechaNotaVenta;
-    
-    // Tabla Busqueda Inventario
+    @FXML private DatePicker dpFechaFactura;
+
     @FXML private TextField txtBuscarProducto;
     @FXML private TableView<Inventario> tblInventarioBusqueda;
     @FXML private TableColumn<Inventario, String> colInvCodigo, colInvDescripcion;
     @FXML private TableColumn<Inventario, Integer> colInvStock;
     @FXML private TableColumn<Inventario, BigDecimal> colInvPrecio;
 
-    // Tabla Detalle
-    @FXML private TableView<DetalleVenta> tblDetalle;
-    @FXML private TableColumn<DetalleVenta, String> colCodigo, colDescripcion;
-    @FXML private TableColumn<DetalleVenta, Integer> colCantidad;
-    @FXML private TableColumn<DetalleVenta, BigDecimal> colPrecioUnitario, colPrecioTotal;
-    @FXML private TableColumn<DetalleVenta, Void> colAcciones;
+    @FXML private TableView<FacturaDetalle> tblDetalle;
+    @FXML private TableColumn<FacturaDetalle, String> colCodigo, colDescripcion;
+    @FXML private TableColumn<FacturaDetalle, Integer> colCantidad;
+    @FXML private TableColumn<FacturaDetalle, BigDecimal> colPrecioUnitario, colPrecioTotal;
+    @FXML private TableColumn<FacturaDetalle, Void> colAcciones;
 
-    // Totales
     @FXML private Label lblSubtotal, lblIva, lblTotal;
     @FXML private ComboBox<String> cmbFormaPago;
     @FXML private HBox pnlCredito;
@@ -79,10 +74,10 @@ public class NotaVentaController implements Initializable {
     private final EmpresaDAO daoEmpresa = new EmpresaDAO();
     private final ClienteDAO daoCliente = new ClienteDAO();
     private final InventarioDAO daoInventario = new InventarioDAO();
-    private final NotaVentaRegistroDAO daoNotaVentaRegistro = new NotaVentaRegistroDAO();
-    private final NotaVentaDetalleDAO daoNotaVentaDetalle = new NotaVentaDetalleDAO();
-    private final CuentaPorCobrarDAO daoCuentaPorCobrar = new CuentaPorCobrarDAO();
+    private final FacturaRegistroDAO daoFacturaRegistro = new FacturaRegistroDAO();
+    private final FacturaDetalleDAO daoFacturaDetalle = new FacturaDetalleDAO();
     private final ComprobanteDAO daoComprobante = new ComprobanteDAO();
+    private final CuentaPorCobrarDAO daoCuentaPorCobrar = new CuentaPorCobrarDAO();
     private final LogDAO logDAO = new LogDAO();
 
     private Empresa empresaActual;
@@ -90,19 +85,19 @@ public class NotaVentaController implements Initializable {
     private ObservableList<Cliente> clientes;
     private FilteredList<Cliente> clientesFiltrados;
     private ObservableList<Inventario> listaInventario = FXCollections.observableArrayList();
-    private ObservableList<DetalleVenta> itemsDetalle = FXCollections.observableArrayList();
+    private ObservableList<FacturaDetalle> itemsDetalle = FXCollections.observableArrayList();
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        dpFechaNotaVenta.setValue(LocalDate.now());
+        dpFechaFactura.setValue(LocalDate.now());
         cargarLogo();
         obtenerDatosEmpresa();
-        obtenerNumNotaVenta();
-        
+        obtenerNumFactura();
+
         cargarListaClientes();
         cargarFormasPago();
         cargarCredito();
-        
+
         iniciarTablaInventario();
         iniciarTablaDetalle();
 
@@ -169,13 +164,13 @@ public class NotaVentaController implements Initializable {
 
         listaInventario.setAll(daoInventario.listar());
         FilteredList<Inventario> filtradosProd = new FilteredList<>(listaInventario, p -> false);
-        
+
         txtBuscarProducto.textProperty().addListener((obs, old, val) -> {
-            filtradosProd.setPredicate(i -> val == null || val.isEmpty() ? false : 
-                i.getDescripcion().toLowerCase().contains(val.toLowerCase()) || 
+            filtradosProd.setPredicate(i -> val == null || val.isEmpty() ? false :
+                i.getDescripcion().toLowerCase().contains(val.toLowerCase()) ||
                 i.getCodigo().toLowerCase().contains(val.toLowerCase()));
         });
-        
+
         tblInventarioBusqueda.setItems(filtradosProd);
     }
 
@@ -185,7 +180,7 @@ public class NotaVentaController implements Initializable {
         colCantidad.setCellValueFactory(new PropertyValueFactory<>("cantidad"));
         colPrecioUnitario.setCellValueFactory(new PropertyValueFactory<>("precioUnitario"));
         colPrecioTotal.setCellValueFactory(new PropertyValueFactory<>("precioTotal"));
-        
+
         colAcciones.setCellFactory(param -> new TableCell<>() {
             private final Button btn = new Button();
             {
@@ -195,7 +190,7 @@ public class NotaVentaController implements Initializable {
             }
             @Override protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty) { setGraphic(null); } 
+                if (empty) { setGraphic(null); }
                 else { setGraphic(btn); setAlignment(Pos.CENTER); }
             }
         });
@@ -210,18 +205,14 @@ public class NotaVentaController implements Initializable {
 
         int stockDisponible = calcularStockDisponible(i);
         if (stockDisponible <= 0) {
-            Alert alert = new Alert(Alert.AlertType.WARNING);
-            alert.setTitle("Stock insuficiente");
-            alert.setHeaderText(null);
-            alert.setContentText("No hay stock disponible para: " + i.getDescripcion());
-            alert.showAndWait();
+            new Alert(Alert.AlertType.WARNING, "No hay stock disponible para: " + i.getDescripcion()).showAndWait();
             return;
         }
 
         TextInputDialog dialog = new TextInputDialog("1");
         dialog.setTitle("Cantidad");
         dialog.setHeaderText(i.getDescripcion());
-        dialog.setContentText("Stock disponible: " + stockDisponible + "\nCantidad a vender:");
+        dialog.setContentText("Stock disponible: " + stockDisponible + "\nCantidad a facturar:");
 
         dialog.showAndWait().ifPresent(cantStr -> {
             try {
@@ -229,17 +220,13 @@ public class NotaVentaController implements Initializable {
                 if (cant <= 0) return;
 
                 if (cant > stockDisponible) {
-                    Alert alert = new Alert(Alert.AlertType.WARNING);
-                    alert.setTitle("Stock insuficiente");
-                    alert.setHeaderText(null);
-                    alert.setContentText("La cantidad ingresada (" + cant + ") excede el stock disponible (" + stockDisponible + ").");
-                    alert.showAndWait();
+                    new Alert(Alert.AlertType.WARNING, "La cantidad ingresada (" + cant + ") excede el stock disponible (" + stockDisponible + ").").showAndWait();
                     return;
                 }
 
                 boolean existe = false;
-                for (DetalleVenta d : itemsDetalle) {
-                    if (d.getProductoId() == i.getId()) {
+                for (FacturaDetalle d : itemsDetalle) {
+                    if (d.getInventarioId() == i.getId()) {
                         d.setCantidad(d.getCantidad() + cant);
                         existe = true;
                         break;
@@ -247,7 +234,7 @@ public class NotaVentaController implements Initializable {
                 }
 
                 if (!existe) {
-                    itemsDetalle.add(new DetalleVenta(i.getId(), i.getCodigo(), i.getDescripcion(), cant, i.getPrecioVenta()));
+                    itemsDetalle.add(new FacturaDetalle(i.getId(), i.getCodigo(), i.getDescripcion(), cant, i.getPrecioVenta()));
                 }
 
                 tblDetalle.refresh();
@@ -259,8 +246,8 @@ public class NotaVentaController implements Initializable {
     private int calcularStockDisponible(Inventario inventario) {
         int stockTotal = inventario.getCantidad();
         int cantidadEnDetalle = 0;
-        for (DetalleVenta d : itemsDetalle) {
-            if (d.getProductoId() == inventario.getId()) {
+        for (FacturaDetalle d : itemsDetalle) {
+            if (d.getInventarioId() == inventario.getId()) {
                 cantidadEnDetalle += d.getCantidad();
             }
         }
@@ -268,10 +255,10 @@ public class NotaVentaController implements Initializable {
     }
 
     private void calcularTotales() {
-        BigDecimal subtotal = itemsDetalle.stream().map(DetalleVenta::getPrecioTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal subtotal = itemsDetalle.stream().map(FacturaDetalle::getPrecioTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal iva = subtotal.multiply(new BigDecimal("0.15")).setScale(2, RoundingMode.HALF_UP);
         BigDecimal total = subtotal.add(iva).setScale(2, RoundingMode.HALF_UP);
-        
+
         lblSubtotal.setText(subtotal.setScale(2, RoundingMode.HALF_UP).toString());
         lblIva.setText(iva.toString());
         lblTotal.setText(total.toString());
@@ -294,16 +281,16 @@ public class NotaVentaController implements Initializable {
         }
     }
 
-    private void obtenerNumNotaVenta() {
-        List<NotaVentaRegistro> nvr = daoNotaVentaRegistro.obtenerNumNotaVenta();
+    private void obtenerNumFactura() {
+        List<FacturaRegistro> lista = daoFacturaRegistro.obtenerNumFactura();
         int nextId = 1;
-        for (NotaVentaRegistro r : nvr) {
+        for (FacturaRegistro r : lista) {
             try {
                 int num = Integer.parseInt(r.getCodigo().replaceAll("\\D+", ""));
                 if (num >= nextId) nextId = num + 1;
             } catch (Exception ignored) {}
         }
-        lblNumNotaVenta.setText("TAGVIC-" + String.format("%06d", nextId));
+        lblNumFactura.setText("TAGFAC-" + String.format("%06d", nextId));
     }
 
     @FXML
@@ -324,53 +311,60 @@ public class NotaVentaController implements Initializable {
 
         int clienteId = cmbCliente.getValue().getId();
         int empresaId = empresaActual.getId();
-        String codigo = lblNumNotaVenta.getText();
+        String codigo = lblNumFactura.getText();
         LocalDateTime ahora = LocalDateTime.now();
 
-        NotaVentaRegistro nvr = new NotaVentaRegistro(empresaId, clienteId, ahora, codigo, cmbFormaPago.getValue(), ahora);
-        int notaVentaId = daoNotaVentaRegistro.insertar(nvr);
-
-        if (notaVentaId == -1) {
-            new Alert(Alert.AlertType.ERROR, "Error al registrar la nota de venta.").showAndWait();
-            return;
-        }
-
-        daoNotaVentaDetalle.insertarDetalle(notaVentaId, itemsDetalle);
-
-        for (DetalleVenta d : itemsDetalle) {
-            daoInventario.descontarStock(d.getProductoId(), d.getCantidad());
-        }
-
-        listaInventario.setAll(daoInventario.listar());
-
-        // Generar PDF
-        BigDecimal sub = itemsDetalle.stream().map(DetalleVenta::getPrecioTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal sub = itemsDetalle.stream().map(FacturaDetalle::getPrecioTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal ivaCalc = sub.multiply(new BigDecimal("0.15")).setScale(2, RoundingMode.HALF_UP);
         BigDecimal totCalc = sub.add(ivaCalc).setScale(2, RoundingMode.HALF_UP);
 
-        // Guardar crédito si aplica
-        if ("TAG Crédito".equals(cmbFormaPago.getValue())) {
-            int meses = cmbMesesPlazo.getValue();
-            BigDecimal tasaInteres = new BigDecimal(cmbInteres.getValue()).divide(new BigDecimal("100"));
-            BigDecimal totalConInteres = totCalc.multiply(BigDecimal.ONE.add(tasaInteres)).setScale(2, RoundingMode.HALF_UP);
-            BigDecimal cuotaMensual = totalConInteres.divide(new BigDecimal(meses), 2, RoundingMode.HALF_UP);
-
-            CuentaPorCobrar cpc = new CuentaPorCobrar(notaVentaId, clienteId, totCalc, meses,
-                    new BigDecimal(cmbInteres.getValue()), cuotaMensual);
-            daoCuentaPorCobrar.insertar(cpc);
-        }
-
-        // --- Facturación Electrónica SRI ---
         String ambienteSri = "PRUEBAS";
         String codEstab = "001";
         String codPtoEmi = "001";
         int secuencialFE = daoComprobante.obtenerSecuencial("01");
         String claveAcceso = ClaveAcceso.generar("01", empresaActual.getRuc(), ambienteSri, codEstab, codPtoEmi, secuencialFE);
         String fechaEmisionFE = ahora.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        String numComprobante = codEstab + "-" + codPtoEmi + "-" + String.format("%09d", secuencialFE);
+
+        FacturaRegistro fr = new FacturaRegistro(empresaId, clienteId, ahora, codigo, cmbFormaPago.getValue(),
+                sub, ivaCalc, totCalc, claveAcceso, numComprobante, ambienteSri);
+        fr.setEstadoSri("PENDIENTE");
+        int facturaId = daoFacturaRegistro.insertar(fr);
+
+        if (facturaId == -1) {
+            new Alert(Alert.AlertType.ERROR, "Error al registrar la factura.").showAndWait();
+            return;
+        }
+
+        List<FacturaDetalle> detallesDb = new ArrayList<>();
+        for (FacturaDetalle d : itemsDetalle) {
+            FacturaDetalle fd = new FacturaDetalle(d.getInventarioId(), d.getCodigo(), d.getDescripcion(), d.getCantidad(), d.getPrecioUnitario());
+            fd.setFacturaRegistroId(facturaId);
+            detallesDb.add(fd);
+        }
+        daoFacturaDetalle.insertarDetalle(facturaId, detallesDb);
+
+        for (FacturaDetalle d : itemsDetalle) {
+            daoInventario.descontarStock(d.getInventarioId(), d.getCantidad());
+        }
+
+        listaInventario.setAll(daoInventario.listar());
+
+        if ("TAG Crédito".equals(cmbFormaPago.getValue())) {
+            int meses = cmbMesesPlazo.getValue();
+            BigDecimal tasaInteres = new BigDecimal(cmbInteres.getValue()).divide(new BigDecimal("100"));
+            BigDecimal totalConInteres = totCalc.multiply(BigDecimal.ONE.add(tasaInteres)).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal cuotaMensual = totalConInteres.divide(new BigDecimal(meses), 2, RoundingMode.HALF_UP);
+
+            CuentaPorCobrar cpc = new CuentaPorCobrar(facturaId, clienteId, totCalc, meses,
+                    new BigDecimal(cmbInteres.getValue()), cuotaMensual);
+            daoCuentaPorCobrar.insertar(cpc);
+        }
+
         String tipoIdComp = cmbCliente.getValue().getIdentificacion().length() == 13 ? "05" : "04";
 
         List<Object[]> detallesXml = new ArrayList<>();
-        for (DetalleVenta d : itemsDetalle) {
+        for (FacturaDetalle d : itemsDetalle) {
             BigDecimal precioSinIva = d.getPrecioUnitario().divide(new BigDecimal("1.15"), 6, RoundingMode.HALF_UP);
             BigDecimal totalDetSinIva = precioSinIva.multiply(new BigDecimal(d.getCantidad())).setScale(2, RoundingMode.HALF_UP);
             String desc = d.getDescripcion();
@@ -390,21 +384,21 @@ public class NotaVentaController implements Initializable {
                 ivaCalc.setScale(2, RoundingMode.HALF_UP).toString(), totCalc.setScale(2, RoundingMode.HALF_UP).toString(),
                 "0.00", cmbFormaPago.getValue(), fechaEmisionFE, detallesXml);
 
-        String numComprobante = codEstab + "-" + codPtoEmi + "-" + String.format("%09d", secuencialFE);
-        daoComprobante.insertar(claveAcceso, notaVentaId, numComprobante, ambienteSri, xmlGenerado);
+        daoComprobante.insertar(claveAcceso, facturaId, numComprobante, ambienteSri, xmlGenerado);
 
         try {
             SRIWebService sriWs = new SRIWebService(ambienteSri);
             SRIWebService.SRIResponse sriResp = sriWs.validarComprobante(xmlGenerado, claveAcceso);
             if ("AUTORIZADO".equals(sriResp.getEstado())) {
                 daoComprobante.actualizarEstado(claveAcceso, "AUTORIZADO", sriResp.getMensaje(), xmlGenerado);
+                daoFacturaRegistro.actualizarEstado(claveAcceso, "AUTORIZADO");
             }
         } catch (Exception e) {
-            logDAO.guardar("NotaVentaController", "validarSRI", e.getMessage(), e);
+            logDAO.guardar("FacturaController", "validarSRI", e.getMessage(), e);
         }
 
         List<Object[]> detallesPDF = new ArrayList<>();
-        for (DetalleVenta d : itemsDetalle) {
+        for (FacturaDetalle d : itemsDetalle) {
             BigDecimal precioSinIva = d.getPrecioUnitario().divide(new BigDecimal("1.15"), 6, RoundingMode.HALF_UP);
             BigDecimal totalDetSinIva = precioSinIva.multiply(new BigDecimal(d.getCantidad())).setScale(2, RoundingMode.HALF_UP);
             String desc = d.getDescripcion();
@@ -414,7 +408,7 @@ public class NotaVentaController implements Initializable {
         }
 
         String rutaPDF = System.getProperty("user.home") + File.separator + "Desktop" + File.separator
-                + "Factura_" + numComprobante.replace("-", "") + ".pdf";
+                + "FacturaElectronica_" + numComprobante.replace("-", "") + ".pdf";
 
         PdfElectronico.generar(rutaPDF, claveAcceso,
                 empresaActual.getRuc(), empresaActual.getRazonSocial(),
@@ -426,19 +420,17 @@ public class NotaVentaController implements Initializable {
                 detallesPDF, sub, ivaCalc, totCalc);
 
         Alert alertExito = new Alert(Alert.AlertType.INFORMATION);
-        alertExito.setTitle("Factura electrónica registrada");
+        alertExito.setTitle("Factura Electrónica registrada");
         alertExito.setHeaderText(null);
         alertExito.setContentText("Factura " + numComprobante + " registrada exitosamente.\nClave de acceso: " + claveAcceso + "\nPDF guardado en: " + rutaPDF);
         alertExito.showAndWait();
 
-        // Abrir PDF automaticamente
         try {
             if (Desktop.isDesktopSupported()) {
                 Desktop.getDesktop().open(new File(rutaPDF));
             }
         } catch (Exception ignored) {}
 
-        // Enviar correo al cliente
         String correoCliente = txtCorreo.getText();
         if (correoCliente != null && !correoCliente.trim().isEmpty()) {
             try {
@@ -447,10 +439,10 @@ public class NotaVentaController implements Initializable {
                 if (enviado) {
                     new Alert(Alert.AlertType.INFORMATION, "Correo enviado exitosamente a " + correoCliente).showAndWait();
                 } else {
-                    new Alert(Alert.AlertType.WARNING, "No se pudo enviar el correo a " + correoCliente + ". Verifique la direccion de correo.").showAndWait();
+                    new Alert(Alert.AlertType.WARNING, "No se pudo enviar el correo a " + correoCliente + ". Verifique la dirección de correo.").showAndWait();
                 }
             } catch (Exception e) {
-                logDAO.guardar("NotaVentaController", "enviarCorreo", e.getMessage(), e);
+                logDAO.guardar("FacturaController", "enviarCorreo", e.getMessage(), e);
                 new Alert(Alert.AlertType.WARNING, "Error al enviar correo: " + e.getMessage()).showAndWait();
             }
         }
@@ -466,9 +458,9 @@ public class NotaVentaController implements Initializable {
         txtCorreo.clear();
         txtTelefono.clear();
         txtBuscarProducto.clear();
-        obtenerNumNotaVenta();
+        obtenerNumFactura();
     } catch (Exception e) {
-        logDAO.guardar("NotaVentaController", "guardar", e.getMessage(), e);
+        logDAO.guardar("FacturaController", "guardar", e.getMessage(), e);
         new Alert(Alert.AlertType.ERROR, "Error al guardar: " + e.getMessage()).showAndWait();
     }
     }

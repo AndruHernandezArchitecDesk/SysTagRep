@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.tag.sysTagRep.controller.MarcaController"
+            prefHeight="500.0" prefWidth="700.0"
+            style="-fx-padding: 10;">
+
+    <top>
+        <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 5 0 10 0;">
+            <Label text="Gestión de Marcas" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+        </HBox>
+    </top>
+
+    <center>
+        <SplitPane dividerPositions="0.4">
+            <ScrollPane fitToWidth="true">
+                <VBox spacing="12" style="-fx-padding: 10;">
+                    <TitledPane text="Datos de la Marca" collapsible="false"
+                                style="-fx-font-weight: bold; -fx-background-color: #f8f9fa; -fx-background-radius: 8; -fx-padding: 8;">
+                        <content>
+                            <VBox spacing="8" style="-fx-padding: 5;">
+                                <HBox spacing="6" alignment="CENTER_LEFT">
+                                    <StackPane prefWidth="20"><FontIcon iconLiteral="fas-hashtag" iconSize="14"/></StackPane>
+                                    <Label text="ID" prefWidth="80"/>
+                                    <TextField fx:id="txtId" disable="true" HBox.hgrow="ALWAYS"/>
+                                </HBox>
+                                <HBox spacing="6" alignment="CENTER_LEFT">
+                                    <StackPane prefWidth="20"><FontIcon iconLiteral="fas-trademark" iconSize="14"/></StackPane>
+                                    <Label text="Nombre" prefWidth="80"/>
+                                    <TextField fx:id="txtNombre" HBox.hgrow="ALWAYS"/>
+                                </HBox>
+                                <HBox spacing="6" alignment="CENTER_LEFT">
+                                    <StackPane prefWidth="20"><FontIcon iconLiteral="fas-power-off" iconSize="14"/></StackPane>
+                                    <Label text="Estado" prefWidth="80"/>
+                                    <ComboBox fx:id="cmbEstado" HBox.hgrow="ALWAYS"/>
+                                </HBox>
+                                <HBox spacing="10" alignment="CENTER">
+                                    <Button fx:id="btnGuardar" text=" GUARDAR" onAction="#guardar">
+                                        <graphic><FontIcon iconLiteral="fas-save" iconSize="18"/></graphic>
+                                    </Button>
+                                </HBox>
+                            </VBox>
+                        </content>
+                    </TitledPane>
+                </VBox>
+            </ScrollPane>
+            <VBox spacing="20" style="-fx-padding: 5;">
+                <HBox spacing="6" alignment="CENTER_LEFT">
+                    <TextField fx:id="txtBuscar" promptText="Buscar:"/>
+                    <FontIcon iconLiteral="fas-search" iconSize="14"/>
+                </HBox>
+                <TableView fx:id="tblMarca">
+                    <columns>
+                        <TableColumn fx:id="colId" text="ID" prefWidth="60"/>
+                        <TableColumn fx:id="colNombre" text="Nombre" prefWidth="250"/>
+                        <TableColumn fx:id="colEstado" text="Estado" prefWidth="100"/>
+                        <TableColumn fx:id="colAcciones" text="Acciones" prefWidth="150"/>
+                    </columns>
+                </TableView>
+            </VBox>
+        </SplitPane>
+    </center>
+</BorderPane>

@@ -15,8 +15,14 @@ public class Inventario {
     private LocalDateTime fecha_ingreso;
     private Boolean estado;
     private String codigo;
-    private String proveedor; // Nombre para mostrar en tabla
-    private int proveedorId; // ID para guardar/editar
+    private String proveedor;
+    private int proveedorId;
+    private int grupoId;
+    private int marcaId;
+    private int ubicacionPerchaId;
+    private String formaPago;
+    private int mesesPlazo;
+    private BigDecimal interes;
 
     public Inventario() {}
 
@@ -59,4 +65,22 @@ public class Inventario {
 
     public int getProveedorId() { return proveedorId; }
     public void setProveedorId(int proveedorId) { this.proveedorId = proveedorId; }
+
+    public int getGrupoId() { return grupoId; }
+    public void setGrupoId(int grupoId) { this.grupoId = grupoId; }
+
+    public int getMarcaId() { return marcaId; }
+    public void setMarcaId(int marcaId) { this.marcaId = marcaId; }
+
+    public int getUbicacionPerchaId() { return ubicacionPerchaId; }
+    public void setUbicacionPerchaId(int ubicacionPerchaId) { this.ubicacionPerchaId = ubicacionPerchaId; }
+
+    public String getFormaPago() { return formaPago; }
+    public void setFormaPago(String formaPago) { this.formaPago = formaPago; }
+
+    public int getMesesPlazo() { return mesesPlazo; }
+    public void setMesesPlazo(int mesesPlazo) { this.mesesPlazo = mesesPlazo; }
+
+    public BigDecimal getInteres() { return interes; }
+    public void setInteres(BigDecimal interes) { this.interes = interes; }
 }

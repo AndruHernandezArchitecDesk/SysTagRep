@@ -1,25 +1,39 @@
 package com.tag.sysTagRep.controller;
 
+import com.tag.sysTagRep.dao.CuentaPorPagarDAO;
+import com.tag.sysTagRep.dao.GrupoDAO;
 import com.tag.sysTagRep.dao.InventarioDAO;
+import com.tag.sysTagRep.dao.MarcaDAO;
 import com.tag.sysTagRep.dao.ProveedorDAO;
+import com.tag.sysTagRep.dao.UbicacionPerchaDAO;
+import com.tag.sysTagRep.model.CuentaPorPagar;
+import com.tag.sysTagRep.model.Grupo;
 import com.tag.sysTagRep.model.Inventario;
+import com.tag.sysTagRep.model.Marca;
 import com.tag.sysTagRep.model.Proveedor;
+import com.tag.sysTagRep.model.UbicacionPercha;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import javafx.util.StringConverter;
 import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
 import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URL;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -29,16 +43,20 @@ public class InventarioController implements Initializable {
 
     @FXML private TextField txtId;
     @FXML private TextField txtDescripcion;
-    @FXML private TextField txtGrupo;
-    @FXML private TextField txtMarca;
+    @FXML private ComboBox<Grupo> cmbGrupo;
+    @FXML private ComboBox<Marca> cmbMarca;
     @FXML private TextField txtCostoSinIVA;
     @FXML private Spinner<Integer> spCantidad;
-    @FXML private TextField txtUbicacionPercha;
+    @FXML private ComboBox<UbicacionPercha> cmbUbicacion;
     @FXML private TextField txtPrecioVenta;
     @FXML private DatePicker dpFechaIngreso;
     @FXML private ComboBox<Integer> cmbGanancia;
     @FXML private TextField txtCodigo;
     @FXML private ComboBox<Proveedor> cmbProveedor;
+    @FXML private ComboBox<String> cmbFormaPago;
+    @FXML private ComboBox<Integer> cmbMesesPlazo;
+    @FXML private ComboBox<String> cmbInteres;
+    @FXML private HBox pnlCredito;
 
     @FXML private TableView<Inventario> tblInventario;
     @FXML private TableColumn<Inventario, Integer> colId;
@@ -63,11 +81,22 @@ public class InventarioController implements Initializable {
     private FilteredList<Inventario> inventarioFiltrado;
     private final InventarioDAO dao = new InventarioDAO();
     private final ProveedorDAO proveedorDAO = new ProveedorDAO();
+    private final GrupoDAO grupoDAO = new GrupoDAO();
+    private final MarcaDAO marcaDAO = new MarcaDAO();
+    private final UbicacionPerchaDAO ubicacionDAO = new UbicacionPerchaDAO();
+    private final CuentaPorPagarDAO cuentaPorPagarDAO = new CuentaPorPagarDAO();
+    private final com.tag.sysTagRep.dao.LogDAO logDAO = new com.tag.sysTagRep.dao.LogDAO();
     private ObservableList<Inventario> listaInventario = FXCollections.observableArrayList();
     private ObservableList<Proveedor> listaProveedores = FXCollections.observableArrayList();
+    private ObservableList<Grupo> listaGrupos = FXCollections.observableArrayList();
+    private ObservableList<Marca> listaMarcas = FXCollections.observableArrayList();
+    private ObservableList<UbicacionPercha> listaUbicaciones = FXCollections.observableArrayList();
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        iniciarCbGrupos();
+        iniciarCbMarcas();
+        iniciarCbUbicaciones();
         iniciarCbProveedores();
         iniciarSpCantidad();
         iniciarCbMargen();
@@ -77,13 +106,42 @@ public class InventarioController implements Initializable {
         cargarAcciones();
         configurarCalculoPrecio();
         validarSoloNumeros();
+        configurarCodigoAuto();
+        iniciarCbFormaPago();
         filtroBusqueda();
+    }
+
+    private void iniciarCbGrupos() {
+        listaGrupos.setAll(grupoDAO.listar());
+        cmbGrupo.setItems(listaGrupos);
+        cmbGrupo.setConverter(new StringConverter<>() {
+            @Override public String toString(Grupo g) { return (g == null) ? "" : g.getNombre(); }
+            @Override public Grupo fromString(String s) { return null; }
+        });
+    }
+
+    private void iniciarCbMarcas() {
+        listaMarcas.setAll(marcaDAO.listar());
+        cmbMarca.setItems(listaMarcas);
+        cmbMarca.setConverter(new StringConverter<>() {
+            @Override public String toString(Marca m) { return (m == null) ? "" : m.getNombre(); }
+            @Override public Marca fromString(String s) { return null; }
+        });
+    }
+
+    private void iniciarCbUbicaciones() {
+        listaUbicaciones.setAll(ubicacionDAO.listar());
+        cmbUbicacion.setItems(listaUbicaciones);
+        cmbUbicacion.setConverter(new StringConverter<>() {
+            @Override public String toString(UbicacionPercha u) { return (u == null) ? "" : u.getNombre(); }
+            @Override public UbicacionPercha fromString(String s) { return null; }
+        });
     }
 
     private void iniciarCbProveedores() {
         listaProveedores.setAll(proveedorDAO.listar());
         FilteredList<Proveedor> filteredProveedores = new FilteredList<>(listaProveedores, p -> true);
-        
+
         cmbProveedor.setItems(filteredProveedores);
         cmbProveedor.setEditable(true);
 
@@ -98,10 +156,10 @@ public class InventarioController implements Initializable {
 
         cmbProveedor.getEditor().textProperty().addListener((obs, oldVal, newVal) -> {
             final Proveedor selected = cmbProveedor.getSelectionModel().getSelectedItem();
-            if (selected == null || !selected.getNombre().equals(newVal)) {
+            if (selected == null || (selected.getNombre() != null && !selected.getNombre().equals(newVal))) {
                 filteredProveedores.setPredicate(p -> {
                     if (newVal == null || newVal.isEmpty()) return true;
-                    return p.getNombre().toLowerCase().contains(newVal.toLowerCase());
+                    return p.getNombre() != null && p.getNombre().toLowerCase().contains(newVal.toLowerCase());
                 });
                 cmbProveedor.show();
             }
@@ -115,18 +173,38 @@ public class InventarioController implements Initializable {
         }
     }
 
+    private String generarCodigo(String desc, Grupo grupo, Marca marca, BigDecimal costoSinIVA) {
+        String d = (desc != null && desc.length() >= 3)
+                ? desc.substring(0, 3).toUpperCase()
+                : (desc != null ? desc.toUpperCase() : "XXX");
+        String g = (grupo != null && grupo.getNombre() != null && grupo.getNombre().length() >= 3)
+                ? grupo.getNombre().substring(0, 3).toUpperCase() : (grupo != null ? grupo.getNombre().toUpperCase() : "SIN");
+        String m = (marca != null && marca.getNombre() != null && marca.getNombre().length() >= 3)
+                ? marca.getNombre().substring(0, 3).toUpperCase() : (marca != null ? marca.getNombre().toUpperCase() : "SIN");
+        int costo = (costoSinIVA != null) ? costoSinIVA.intValue() : 0;
+        return d + g + m + costo;
+    }
+
     @FXML
     private void guardar() {
         try {
             Inventario i = new Inventario();
             i.setDescripcion(txtDescripcion.getText());
-            i.setGrupo(txtGrupo.getText());
-            i.setMarca(txtMarca.getText());
+
+            Grupo g = cmbGrupo.getValue();
+            i.setGrupoId(g != null ? g.getId() : 0);
+
+            Marca m = cmbMarca.getValue();
+            i.setMarcaId(m != null ? m.getId() : 0);
+
             i.setCostoSinIVA(new BigDecimal(txtCostoSinIVA.getText().replace(",", ".")));
             i.setCantidad(spCantidad.getValue());
-            i.setUbicacionPercha(txtUbicacionPercha.getText());
+
+            UbicacionPercha ub = cmbUbicacion.getValue();
+            i.setUbicacionPerchaId(ub != null ? ub.getId() : 0);
+
             i.setPrecioVenta(new BigDecimal(txtPrecioVenta.getText().replace(",", ".")));
-            i.setCodigo(txtCodigo.getText());
+            i.setCodigo(generarCodigo(txtDescripcion.getText(), g, m, new BigDecimal(txtCostoSinIVA.getText().replace(",", "."))));
             i.setFecha_ingreso(dpFechaIngreso.getValue() != null ? dpFechaIngreso.getValue().atStartOfDay() : LocalDateTime.now());
 
             Proveedor p = cmbProveedor.getValue();
@@ -143,8 +221,20 @@ public class InventarioController implements Initializable {
                 i.setProveedorId(0);
             }
 
+            i.setFormaPago(cmbFormaPago.getValue());
+            if ("TAG Crédito".equals(cmbFormaPago.getValue())) {
+                i.setMesesPlazo(cmbMesesPlazo.getValue());
+                i.setInteres(new BigDecimal(cmbInteres.getValue()));
+            } else {
+                i.setMesesPlazo(0);
+                i.setInteres(BigDecimal.ZERO);
+            }
+
             if (txtId.getText() == null || txtId.getText().isEmpty()) {
-                dao.guardar(i);
+                int inventarioId = dao.guardar(i);
+                if ("TAG Crédito".equals(cmbFormaPago.getValue()) && p != null && inventarioId > 0) {
+                    crearCreditoProveedor(inventarioId, p.getId(), i.getCostoSinIVA().multiply(BigDecimal.valueOf(i.getCantidad())), i.getMesesPlazo(), i.getInteres());
+                }
             } else {
                 i.setId(Integer.parseInt(txtId.getText()));
                 dao.actualizar(i);
@@ -152,20 +242,40 @@ public class InventarioController implements Initializable {
 
             limpiarFrm();
             cargarDatos();
+            new Alert(Alert.AlertType.INFORMATION, "Guardado correctamente.").showAndWait();
         } catch (Exception e) {
-            Alert alert = new Alert(Alert.AlertType.ERROR, "Error al guardar: " + e.getMessage());
-            alert.show();
+            logDAO.guardar("InventarioController", "guardar", e.getMessage(), e);
+            new Alert(Alert.AlertType.ERROR, "Error al guardar: " + e.getMessage()).showAndWait();
         }
+    }
+
+    private void crearCreditoProveedor(int inventarioId, int proveedorId, BigDecimal total, int mesesPlazo, BigDecimal interesPct) {
+        BigDecimal tasa = interesPct.divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
+        BigDecimal totalConInteres = total.multiply(BigDecimal.ONE.add(tasa));
+        BigDecimal cuotaMensual = totalConInteres.divide(BigDecimal.valueOf(mesesPlazo), 2, RoundingMode.HALF_UP);
+
+        CuentaPorPagar cpp = new CuentaPorPagar(inventarioId, proveedorId, totalConInteres, mesesPlazo, interesPct, cuotaMensual);
+        cuentaPorPagarDAO.insertar(cpp);
     }
 
     private void cargarFormulario(Inventario i) {
         txtId.setText(String.valueOf(i.getId()));
         txtDescripcion.setText(i.getDescripcion());
-        txtGrupo.setText(i.getGrupo());
-        txtMarca.setText(i.getMarca());
+
+        for (Grupo g : listaGrupos) {
+            if (g.getId() == i.getGrupoId()) { cmbGrupo.setValue(g); break; }
+        }
+        for (Marca m : listaMarcas) {
+            if (m.getId() == i.getMarcaId()) { cmbMarca.setValue(m); break; }
+        }
+
         txtCostoSinIVA.setText(i.getCostoSinIVA().toString());
         spCantidad.getValueFactory().setValue(i.getCantidad());
-        txtUbicacionPercha.setText(i.getUbicacionPercha());
+
+        for (UbicacionPercha ub : listaUbicaciones) {
+            if (ub.getId() == i.getUbicacionPerchaId()) { cmbUbicacion.setValue(ub); break; }
+        }
+
         txtPrecioVenta.setText(i.getPrecioVenta().toString());
         txtCodigo.setText(i.getCodigo());
         dpFechaIngreso.setValue(i.getFecha_ingreso() != null ? i.getFecha_ingreso().toLocalDate() : null);
@@ -180,14 +290,27 @@ public class InventarioController implements Initializable {
         } else {
             cmbProveedor.setValue(null);
         }
+
+        cmbFormaPago.setValue(i.getFormaPago() != null ? i.getFormaPago() : "Efectivo");
+        if ("TAG Crédito".equals(i.getFormaPago())) {
+            cmbMesesPlazo.setValue(i.getMesesPlazo() > 0 ? i.getMesesPlazo() : 1);
+            cmbInteres.setValue(i.getInteres() != null ? i.getInteres().toString() : "0");
+        } else {
+            cmbMesesPlazo.getSelectionModel().selectFirst();
+            cmbInteres.getSelectionModel().selectFirst();
+        }
     }
 
     public void limpiarFrm(){
-        txtId.clear(); txtDescripcion.clear(); txtGrupo.clear(); txtMarca.clear();
+        txtId.clear(); txtDescripcion.clear();
+        cmbGrupo.setValue(null); cmbMarca.setValue(null);
         txtCostoSinIVA.clear(); spCantidad.getValueFactory().setValue(0);
-        txtUbicacionPercha.clear(); txtPrecioVenta.clear(); txtCodigo.clear();
+        cmbUbicacion.setValue(null); txtPrecioVenta.clear(); txtCodigo.clear();
         dpFechaIngreso.setValue(LocalDate.now()); cmbProveedor.setValue(null);
         cmbProveedor.getEditor().clear();
+        cmbFormaPago.getSelectionModel().selectFirst();
+        cmbMesesPlazo.getSelectionModel().selectFirst();
+        cmbInteres.getSelectionModel().selectFirst();
     }
 
     private void filtroBusqueda(){
@@ -247,9 +370,53 @@ public class InventarioController implements Initializable {
         });
     }
 
+    private void configurarCodigoAuto() {
+        txtCodigo.setEditable(false);
+        Runnable actualizarCodigo = () -> {
+            Grupo g = cmbGrupo.getValue();
+            Marca m = cmbMarca.getValue();
+            String desc = txtDescripcion.getText();
+            BigDecimal costo = null;
+            try {
+                costo = (!txtCostoSinIVA.getText().isEmpty())
+                        ? new BigDecimal(txtCostoSinIVA.getText().replace(",", "."))
+                        : null;
+            } catch (NumberFormatException ignored) {}
+            if (desc != null && !desc.isEmpty()) {
+                txtCodigo.setText(generarCodigo(desc, g, m, costo));
+            } else {
+                txtCodigo.clear();
+            }
+        };
+        txtDescripcion.textProperty().addListener((obs, o, n) -> actualizarCodigo.run());
+        txtCostoSinIVA.textProperty().addListener((obs, o, n) -> actualizarCodigo.run());
+        cmbGrupo.setOnAction(e -> actualizarCodigo.run());
+        cmbMarca.setOnAction(e -> actualizarCodigo.run());
+    }
+
     private void iniciarSpCantidad(){
         spCantidad.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 9999, 1));
         spCantidad.setEditable(true);
+    }
+
+    private void iniciarCbFormaPago() {
+        cmbFormaPago.setItems(FXCollections.observableArrayList(
+            "Efectivo", "Tarjeta de Crédito", "Tarjeta de Débito",
+            "Transferencia", "Depósito", "Cheque", "TAG Crédito"
+        ));
+        cmbFormaPago.getSelectionModel().selectFirst();
+
+        cmbMesesPlazo.setItems(FXCollections.observableArrayList(1, 2, 3, 4, 5, 6));
+        cmbMesesPlazo.getSelectionModel().selectFirst();
+
+        cmbInteres.setItems(FXCollections.observableArrayList("0", "3", "6", "9", "12", "15"));
+        cmbInteres.getSelectionModel().selectFirst();
+
+        cmbFormaPago.valueProperty().addListener((obs, old, valor) -> {
+            boolean esCredito = "TAG Crédito".equals(valor);
+            pnlCredito.setVisible(esCredito);
+            pnlCredito.setManaged(esCredito);
+        });
     }
 
     @FXML private void toggleFormulario() {
@@ -257,6 +424,62 @@ public class InventarioController implements Initializable {
         formPane.setVisible(visible); formPane.setManaged(visible);
         splitPane.setDividerPositions(visible ? 0.35 : 0.0);
         ((FontIcon) btnToggleForm.getGraphic()).setIconLiteral(visible ? "fas-chevron-left" : "fas-chevron-right");
+    }
+
+    @FXML
+    private void irAGrupo() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/GrupoView.fxml"));
+            Parent vista = loader.load();
+            Stage modal = new Stage();
+            modal.initModality(Modality.APPLICATION_MODAL);
+            modal.setTitle("Gestión de Grupos");
+            modal.setScene(new Scene(vista, 700, 500));
+            modal.showAndWait();
+            iniciarCbGrupos();
+        } catch (Exception e) { logDAO.guardar("InventarioController", "irAGrupo", e.getMessage(), e); }
+    }
+
+    @FXML
+    private void irAMarca() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/MarcaView.fxml"));
+            Parent vista = loader.load();
+            Stage modal = new Stage();
+            modal.initModality(Modality.APPLICATION_MODAL);
+            modal.setTitle("Gestión de Marcas");
+            modal.setScene(new Scene(vista, 700, 500));
+            modal.showAndWait();
+            iniciarCbMarcas();
+        } catch (Exception e) { logDAO.guardar("InventarioController", "irAMarca", e.getMessage(), e); }
+    }
+
+    @FXML
+    private void irAUbicacion() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/UbicacionView.fxml"));
+            Parent vista = loader.load();
+            Stage modal = new Stage();
+            modal.initModality(Modality.APPLICATION_MODAL);
+            modal.setTitle("Gestión de Ubicaciones en Percha");
+            modal.setScene(new Scene(vista, 700, 500));
+            modal.showAndWait();
+            iniciarCbUbicaciones();
+        } catch (Exception e) { logDAO.guardar("InventarioController", "irAUbicacion", e.getMessage(), e); }
+    }
+
+    @FXML
+    private void irAProveedor() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/ProveedorView.fxml"));
+            Parent vista = loader.load();
+            Stage modal = new Stage();
+            modal.initModality(Modality.APPLICATION_MODAL);
+            modal.setTitle("Gestión de Proveedores");
+            modal.setScene(new Scene(vista, 800, 600));
+            modal.showAndWait();
+            iniciarCbProveedores();
+        } catch (Exception e) { logDAO.guardar("InventarioController", "irAProveedor", e.getMessage(), e); }
     }
 
     private void cargarAcciones(){

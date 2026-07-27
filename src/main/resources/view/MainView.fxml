@@ -2,9 +2,12 @@
 
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.image.Image?>
+<?import javafx.scene.chart.BarChart?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.chart.PieChart?>
 <BorderPane xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.tag.sysTagRep.controller.MainController"
             prefHeight="400.0" prefWidth="600.0"
@@ -16,45 +19,92 @@
             <Menu text="Negocio">
                 <MenuItem text="Inventario" onAction="#irInventario"/>
                 <MenuItem text="Nota de Venta" onAction="#irNotaVenta"/>
+                <MenuItem text="Factura Electrónica" onAction="#irFactura"/>
+            </Menu>
+            <Menu text="Crédito">
+                <MenuItem text="Por Cobrar" onAction="#irPorCobrar"/>
+                <MenuItem text="Por Pagar" onAction="#irPorPagar"/>
             </Menu>
             <Menu text="Administración">
-                <MenuItem text="Vendedores" onAction="#irVendedores"/>
-                <MenuItem text="Usuarios" onAction="#irUsuarios"/>
-                <MenuItem text="Proveedores" onAction="#irProveedores"/>
+                <Menu text="Gestión de Usuarios">
+                    <MenuItem text="Vendedores" onAction="#irVendedores"/>
+                    <MenuItem text="Usuarios" onAction="#irUsuarios"/>
+                    <MenuItem text="Proveedores" onAction="#irProveedores"/>
+                </Menu>
+                <Menu text="Catálogos">
+                    <MenuItem text="Grupos" onAction="#irGrupos"/>
+                    <MenuItem text="Marcas" onAction="#irMarcas"/>
+                    <MenuItem text="Ubicaciones" onAction="#irUbicaciones"/>
+                </Menu>
             </Menu>
         </MenuBar>
     </top>
 
     <!-- CONTENIDO -->
-<!--    <center>-->
-<!--        <StackPane fx:id="contenedor"/>-->
-<!--    </center>-->
     <center>
         <StackPane fx:id="contenedor">
-            <VBox spacing="15"
-                  alignment="CENTER">
+        <ScrollPane fitToWidth="true" fitToHeight="true">
+            <VBox spacing="15" style="-fx-padding: 20;">
 
-                <!-- LOGO -->
-                <ImageView fitWidth="180"
-                           preserveRatio="true">
-                    <image>
-                        <Image url="@/img/logoTag.jpeg"/>
-                    </image>
-                </ImageView>
+                <!-- LOGO Y TÍTULO -->
+                <HBox alignment="CENTER" spacing="15">
+                    <ImageView fitWidth="80" preserveRatio="true">
+                        <image>
+                            <Image url="@/img/logoTag.jpeg"/>
+                        </image>
+                    </ImageView>
+                    <VBox alignment="CENTER_LEFT">
+                        <Label text="SysTag Repuestos Automotrices" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #1a252f;"/>
+                        <Label text="Sistema de Gestión Comercial" style="-fx-font-size: 13px; -fx-text-fill: #7f8c8d;"/>
+                    </VBox>
+                </HBox>
 
-                <!-- NOMBRE DEL NEGOCIO -->
-                <Label text="SysTag Repuestos Automotrices"
-                       styleClass="titulo-negocio"/>
+                <Separator/>
 
-                <!-- SUBTÍTULO -->
-                <Label text="Sistema de Gestión Comercial"
-                       styleClass="subtitulo-negocio"/>
+                <!-- FILA 1: GRÁFICOS DE BARRAS LADO A LADO -->
+                <HBox spacing="15" VBox.vgrow="ALWAYS">
+                    <!-- VENTAS -->
+                    <VBox spacing="5" HBox.hgrow="ALWAYS" style="-fx-border-color: #d1d5db; -fx-border-radius: 8; -fx-background-color: #ffffff; -fx-padding: 10; -fx-background-radius: 8;">
+                        <Label text="VENTAS POR DÍA (Últimos 30 días)" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+                        <BarChart fx:id="chartVentas" animated="true" prefHeight="260" VBox.vgrow="ALWAYS">
+                            <xAxis>
+                                <CategoryAxis label="Fecha"/>
+                            </xAxis>
+                            <yAxis>
+                                <NumberAxis label="Valor ($)" autoRanging="true"/>
+                            </yAxis>
+                        </BarChart>
+                    </VBox>
 
-                <Label text="Control · Inventario · Ventas"
-                       styleClass="subtitulo-negocio"/>
+                    <!-- COMPRAS -->
+                    <VBox spacing="5" HBox.hgrow="ALWAYS" style="-fx-border-color: #d1d5db; -fx-border-radius: 8; -fx-background-color: #ffffff; -fx-padding: 10; -fx-background-radius: 8;">
+                        <Label text="COMPRAS POR DÍA (Últimos 30 días)" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+                        <BarChart fx:id="chartCompras" animated="true" prefHeight="260" VBox.vgrow="ALWAYS">
+                            <xAxis>
+                                <CategoryAxis label="Fecha"/>
+                            </xAxis>
+                            <yAxis>
+                                <NumberAxis label="Valor ($)" autoRanging="true"/>
+                            </yAxis>
+                        </BarChart>
+                    </VBox>
+                </HBox>
+
+                <!-- FILA 2: GRÁFICOS DE PASTEL LADO A LADO -->
+                <HBox spacing="15" VBox.vgrow="ALWAYS">
+                    <!-- INVENTARIO POR MARCAS -->
+                    <VBox spacing="5" HBox.hgrow="ALWAYS" style="-fx-border-color: #d1d5db; -fx-border-radius: 8; -fx-background-color: #ffffff; -fx-padding: 10; -fx-background-radius: 8;">
+                        <PieChart fx:id="chartMarcas" animated="true" prefHeight="280" VBox.vgrow="ALWAYS"/>
+                    </VBox>
+
+                    <!-- INVENTARIO POR GRUPOS -->
+                    <VBox spacing="5" HBox.hgrow="ALWAYS" style="-fx-border-color: #d1d5db; -fx-border-radius: 8; -fx-background-color: #ffffff; -fx-padding: 10; -fx-background-radius: 8;">
+                        <PieChart fx:id="chartGrupos" animated="true" prefHeight="280" VBox.vgrow="ALWAYS"/>
+                    </VBox>
+                </HBox>
 
             </VBox>
+        </ScrollPane>
         </StackPane>
     </center>
 </BorderPane>
-

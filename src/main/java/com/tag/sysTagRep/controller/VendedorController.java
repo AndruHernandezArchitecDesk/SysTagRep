@@ -1,4 +1,5 @@
 package com.tag.sysTagRep.controller;
+import com.tag.sysTagRep.dao.LogDAO;
 import com.tag.sysTagRep.dao.VendedorDAO;
 import com.tag.sysTagRep.model.Vendedor;
 import javafx.beans.property.ReadOnlyObjectWrapper;
@@ -42,6 +43,7 @@ public class VendedorController implements Initializable{
     @FXML private TextField txtBuscar;
 
     private final VendedorDAO dao = new VendedorDAO();
+    private final LogDAO logDAO = new LogDAO();
     private ObservableList<Vendedor> listaVendedores = FXCollections.observableArrayList();
 
     @Override
@@ -105,26 +107,27 @@ public class VendedorController implements Initializable{
 
     @FXML
     private void guardar() {
+        try {
+            Vendedor v = new Vendedor();
+            v.setNombre(txtNombre.getText());
+            v.setIdentificacion(txtIdentificacion.getText());
+            v.setCorreo(txtCorreo.getText());
+            v.setEstado(cmbEstado.getValue().equals("ACTIVO"));
 
-        Vendedor v = new Vendedor();
-        v.setNombre(txtNombre.getText());
-        v.setIdentificacion(txtIdentificacion.getText());
-        v.setCorreo(txtCorreo.getText());
-        boolean estado = cmbEstado.getValue().equals("ACTIVO");
-        v.setEstado(cmbEstado.getValue().equals("ACTIVO"));
-        VendedorDAO dao = new VendedorDAO();
+            if (txtId.getText() == null || txtId.getText().isEmpty()) {
+                dao.guardar(v);
+            } else if (Integer.parseInt(txtId.getText()) != 0) {
+                v.setId(Integer.parseInt(txtId.getText()));
+                dao.actualizar(v);
+            }
 
-        if (txtId.getText() == null || txtId.getText().isEmpty()) {
-            // Guardar en BD
-            dao.guardar(v);
-        }else if(Integer.parseInt(txtId.getText())!=0) {
-            v.setId(Integer.parseInt(txtId.getText()));
-            // Actualizar en bd
-            dao.actualizar(v);
+            limpiarFrm();
+            cargarDatos();
+            new Alert(Alert.AlertType.INFORMATION, "Guardado correctamente.").showAndWait();
+        } catch (Exception e) {
+            logDAO.guardar("VendedorController", "guardar", e.getMessage(), e);
+            new Alert(Alert.AlertType.ERROR, "Error al guardar: " + e.getMessage()).showAndWait();
         }
-
-        limpiarFrm();
-        cargarDatos();
     }
 
     private void cargarAcciones(){
