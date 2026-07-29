@@ -61,8 +61,8 @@
                                     <StackPane prefWidth="20"><FontIcon iconLiteral="fas-map-marker-alt" iconSize="14"/></StackPane>
                                     <Label text="Ubicación" prefWidth="100"/>
                                     <ComboBox fx:id="cmbUbicacion" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
-                                    <Button onAction="#irAUbicacion" style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 4 8; -fx-cursor: hand;">
-                                        <graphic><FontIcon iconLiteral="fas-plus" iconSize="12"/></graphic>
+                                    <Button onAction="#irAUbicacionPerchero" style="-fx-background-color: #2980b9; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 4 8; -fx-cursor: hand;">
+                                        <graphic><FontIcon iconLiteral="fas-th" iconSize="12"/></graphic>
                                     </Button>
                                 </HBox>
                                 <HBox spacing="6" alignment="CENTER_LEFT">

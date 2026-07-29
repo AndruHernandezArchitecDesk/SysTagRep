@@ -321,12 +321,17 @@ public class MainController implements Initializable {
 
     @FXML
     private void irUbicacionPerchero() {
-        cargarVista("/view/UbicacionView.fxml");
+        cargarVista("/view/UbicacionPercheroView.fxml");
     }
 
     @FXML
     private void irGestionStock() {
         cargarVista("/view/GestionStockView.fxml");
+    }
+
+    @FXML
+    private void irHistorialProductos() {
+        cargarVista("/view/HistorialProductoView.fxml");
     }
 
     private void cargarVista(String ruta) {

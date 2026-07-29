@@ -1,0 +1,81 @@
+package com.tag.sysTagRep.controller;
+
+import com.tag.sysTagRep.dao.HistorialProductoDAO;
+import com.tag.sysTagRep.model.HistorialProducto;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
+import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
+import javafx.scene.control.Label;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
+import javafx.scene.control.cell.PropertyValueFactory;
+
+import java.math.BigDecimal;
+import java.net.URL;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ResourceBundle;
+
+public class HistorialProductoController implements Initializable {
+
+    @FXML private TextField txtBuscar;
+    @FXML private TableView<HistorialProducto> tblHistorial;
+    @FXML private TableColumn<HistorialProducto, Integer> colId;
+    @FXML private TableColumn<HistorialProducto, String> colCodigo;
+    @FXML private TableColumn<HistorialProducto, String> colDescripcion;
+    @FXML private TableColumn<HistorialProducto, Integer> colCantidad;
+    @FXML private TableColumn<HistorialProducto, BigDecimal> colPrecio;
+    @FXML private TableColumn<HistorialProducto, String> colTipo;
+    @FXML private TableColumn<HistorialProducto, String> colComprobante;
+    @FXML private TableColumn<HistorialProducto, String> colCliente;
+    @FXML private TableColumn<HistorialProducto, String> colProveedor;
+    @FXML private TableColumn<HistorialProducto, LocalDateTime> colFecha;
+
+    private final HistorialProductoDAO dao = new HistorialProductoDAO();
+    private ObservableList<HistorialProducto> lista = FXCollections.observableArrayList();
+
+    @Override
+    public void initialize(URL url, ResourceBundle rb) {
+        colId.setCellValueFactory(new PropertyValueFactory<>("id"));
+        colCodigo.setCellValueFactory(new PropertyValueFactory<>("productoCodigo"));
+        colDescripcion.setCellValueFactory(new PropertyValueFactory<>("productoDescripcion"));
+        colCantidad.setCellValueFactory(new PropertyValueFactory<>("cantidad"));
+        colPrecio.setCellValueFactory(new PropertyValueFactory<>("precioUnitario"));
+        colTipo.setCellValueFactory(new PropertyValueFactory<>("tipoComprobante"));
+        colComprobante.setCellValueFactory(new PropertyValueFactory<>("codigoComprobante"));
+        colCliente.setCellValueFactory(new PropertyValueFactory<>("clienteNombre"));
+        colProveedor.setCellValueFactory(new PropertyValueFactory<>("proveedorNombre"));
+        colFecha.setCellValueFactory(new PropertyValueFactory<>("fechaVenta"));
+
+        tblHistorial.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        cargarDatos();
+        filtroBusqueda();
+    }
+
+    private void cargarDatos() {
+        lista.setAll(dao.listar());
+        tblHistorial.setItems(lista);
+    }
+
+    private void filtroBusqueda() {
+        FilteredList<HistorialProducto> filtrados = new FilteredList<>(lista, p -> true);
+        tblHistorial.setItems(filtrados);
+        txtBuscar.textProperty().addListener((obs, old, val) -> {
+            if (val == null || val.trim().isEmpty()) {
+                filtrados.setPredicate(p -> true);
+            } else {
+                String texto = val.toLowerCase();
+                filtrados.setPredicate(h -> {
+                    String searchStr = (h.getProductoCodigo() + " " + h.getProductoDescripcion() + " " +
+                            h.getTipoComprobante() + " " + h.getCodigoComprobante() + " " +
+                            h.getClienteNombre() + " " + h.getProveedorNombre()).toLowerCase();
+                    return searchStr.contains(texto);
+                });
+            }
+        });
+    }
+}

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.tag.sysTagRep.controller.HistorialProductoController"
+            prefHeight="600.0" prefWidth="900.0"
+            style="-fx-padding: 10;">
+
+    <top>
+        <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 5 0 10 0;">
+            <Label text="Historial de Productos Vendidos" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+        </HBox>
+    </top>
+
+    <center>
+        <VBox spacing="10">
+            <HBox spacing="6" alignment="CENTER_LEFT">
+                <FontIcon iconLiteral="fas-search" iconSize="14"/>
+                <TextField fx:id="txtBuscar" promptText="Buscar por código, descripción, tipo, comprobante, cliente o proveedor..." HBox.hgrow="ALWAYS"/>
+            </HBox>
+            <TableView fx:id="tblHistorial">
+                <columns>
+                    <TableColumn fx:id="colId" text="ID" prefWidth="40"/>
+                    <TableColumn fx:id="colCodigo" text="Código" prefWidth="90"/>
+                    <TableColumn fx:id="colDescripcion" text="Producto" prefWidth="150"/>
+                    <TableColumn fx:id="colCantidad" text="Cant." prefWidth="60"/>
+                    <TableColumn fx:id="colPrecio" text="P. Unit." prefWidth="90"/>
+                    <TableColumn fx:id="colTipo" text="Tipo" prefWidth="100"/>
+                    <TableColumn fx:id="colComprobante" text="Comprobante" prefWidth="120"/>
+                    <TableColumn fx:id="colCliente" text="Cliente" prefWidth="130"/>
+                    <TableColumn fx:id="colProveedor" text="Proveedor" prefWidth="130"/>
+                    <TableColumn fx:id="colFecha" text="Fecha" prefWidth="130"/>
+                </columns>
+            </TableView>
+        </VBox>
+    </center>
+
+</BorderPane>

@@ -22,7 +22,7 @@ public class MainApp extends Application {
                 getClass().getResource("/view/MainView.fxml")
         );
 
-        stage.setTitle("TecBuum - Tag Repuestos Automotrices");
+        stage.setTitle("Tag Repuestos Automotrices");
 
         stage.getIcons().add(
                 new Image(getClass().getResourceAsStream("/img/inventario.png"))

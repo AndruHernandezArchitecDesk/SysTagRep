@@ -7,6 +7,7 @@ import com.tag.sysTagRep.dao.LogDAO;
 import com.tag.sysTagRep.util.EmailService;
 import com.tag.sysTagRep.dao.CuentaPorCobrarDAO;
 import com.tag.sysTagRep.dao.ComprobanteDAO;
+import com.tag.sysTagRep.dao.HistorialProductoDAO;
 import com.tag.sysTagRep.dao.FacturaDetalleDAO;
 import com.tag.sysTagRep.dao.FacturaRegistroDAO;
 import com.tag.sysTagRep.model.*;
@@ -79,6 +80,7 @@ public class FacturaController implements Initializable {
     private final ComprobanteDAO daoComprobante = new ComprobanteDAO();
     private final CuentaPorCobrarDAO daoCuentaPorCobrar = new CuentaPorCobrarDAO();
     private final LogDAO logDAO = new LogDAO();
+    private final HistorialProductoDAO historialProductoDAO = new HistorialProductoDAO();
 
     private Empresa empresaActual;
 
@@ -347,6 +349,16 @@ public class FacturaController implements Initializable {
         for (FacturaDetalle d : itemsDetalle) {
             daoInventario.descontarStock(d.getInventarioId(), d.getCantidad());
         }
+
+        String clienteNombre = cmbCliente.getValue().getNombre();
+        List<HistorialProducto> historial = new ArrayList<>();
+        for (FacturaDetalle d : itemsDetalle) {
+            String provNombre = daoInventario.obtenerProveedorNombre(d.getInventarioId());
+            historial.add(new HistorialProducto(d.getInventarioId(), d.getCodigo(), d.getDescripcion(),
+                    d.getCantidad(), d.getPrecioUnitario(), "FACTURA", codigo,
+                    clienteNombre, provNombre, ahora));
+        }
+        historialProductoDAO.insertar(historial);
 
         listaInventario.setAll(daoInventario.listar());
 

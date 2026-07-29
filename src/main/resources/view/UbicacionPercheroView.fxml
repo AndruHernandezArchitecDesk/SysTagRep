@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.tag.sysTagRep.controller.UbicacionPercheroController"
+            prefHeight="650.0" prefWidth="1000.0"
+            style="-fx-padding: 10;">
+
+    <top>
+        <VBox spacing="10">
+            <Label text="Gestión de Percheros y Ubicaciones" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+            <Separator/>
+            <HBox spacing="15" alignment="CENTER_LEFT" style="-fx-padding: 5 0;">
+                <Label text="Perchero:" style="-fx-font-weight: bold;"/>
+                <ComboBox fx:id="cmbPerchero" prefWidth="120" onAction="#seleccionarPerchero"/>
+                <Button fx:id="btnNuevaSeccion" text=" NUEVA SECCIÓN" onAction="#mostrarFormNuevaSeccion" disable="true">
+                    <graphic><FontIcon iconLiteral="fas-plus" iconSize="14"/></graphic>
+                </Button>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button fx:id="btnNuevoPerchero" text=" NUEVO PERCHERO" onAction="#mostrarFormNuevo">
+                    <graphic><FontIcon iconLiteral="fas-plus-circle" iconSize="16"/></graphic>
+                </Button>
+            </HBox>
+        </VBox>
+    </top>
+
+    <center>
+        <ScrollPane fx:id="scrollGrid" fitToWidth="true" fitToHeight="true" style="-fx-background: #f0f2f5;">
+            <VBox fx:id="contenedorSecciones" spacing="20" style="-fx-padding: 15;"/>
+        </ScrollPane>
+    </center>
+
+    <bottom>
+        <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 10 0 0 0;">
+            <Label text="Ubicación seleccionada:" style="-fx-font-weight: bold;"/>
+            <TextField fx:id="txtUbicacionSeleccionada" prefWidth="150" editable="false" style="-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #2c3e50;"/>
+            <Label fx:id="lblEstadoUbicacion" style="-fx-font-weight: bold;"/>
+        </HBox>
+    </bottom>
+
+</BorderPane>

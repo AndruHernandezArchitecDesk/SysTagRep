@@ -7,6 +7,7 @@ import com.tag.sysTagRep.dao.LogDAO;
 import com.tag.sysTagRep.util.EmailService;
 import com.tag.sysTagRep.dao.CuentaPorCobrarDAO;
 import com.tag.sysTagRep.dao.ComprobanteDAO;
+import com.tag.sysTagRep.dao.HistorialProductoDAO;
 import com.tag.sysTagRep.dao.NotaVentaDetalleDAO;
 import com.tag.sysTagRep.dao.NotaVentaRegistroDAO;
 import com.tag.sysTagRep.model.*;
@@ -84,6 +85,7 @@ public class NotaVentaController implements Initializable {
     private final CuentaPorCobrarDAO daoCuentaPorCobrar = new CuentaPorCobrarDAO();
     private final ComprobanteDAO daoComprobante = new ComprobanteDAO();
     private final LogDAO logDAO = new LogDAO();
+    private final HistorialProductoDAO historialProductoDAO = new HistorialProductoDAO();
 
     private Empresa empresaActual;
 
@@ -168,12 +170,18 @@ public class NotaVentaController implements Initializable {
         colInvPrecio.setCellValueFactory(new PropertyValueFactory<>("precioVenta"));
 
         listaInventario.setAll(daoInventario.listar());
-        FilteredList<Inventario> filtradosProd = new FilteredList<>(listaInventario, p -> false);
+        FilteredList<Inventario> filtradosProd = new FilteredList<>(listaInventario, p -> true);
         
         txtBuscarProducto.textProperty().addListener((obs, old, val) -> {
-            filtradosProd.setPredicate(i -> val == null || val.isEmpty() ? false : 
-                i.getDescripcion().toLowerCase().contains(val.toLowerCase()) || 
-                i.getCodigo().toLowerCase().contains(val.toLowerCase()));
+            if (val == null || val.trim().isEmpty()) {
+                filtradosProd.setPredicate(p -> true);
+            } else {
+                String texto = val.toLowerCase();
+                filtradosProd.setPredicate(inv -> {
+                    String searchStr = (inv.getCodigo() + " " + inv.getDescripcion() + " " + inv.getGrupo() + " " + inv.getMarca()).toLowerCase();
+                    return searchStr.contains(texto);
+                });
+            }
         });
         
         tblInventarioBusqueda.setItems(filtradosProd);
@@ -340,6 +348,16 @@ public class NotaVentaController implements Initializable {
         for (DetalleVenta d : itemsDetalle) {
             daoInventario.descontarStock(d.getProductoId(), d.getCantidad());
         }
+
+        String clienteNombre = cmbCliente.getValue().getNombre();
+        List<HistorialProducto> historial = new ArrayList<>();
+        for (DetalleVenta d : itemsDetalle) {
+            String provNombre = daoInventario.obtenerProveedorNombre(d.getProductoId());
+            historial.add(new HistorialProducto(d.getProductoId(), d.getCodigo(), d.getDescripcion(),
+                    d.getCantidad(), d.getPrecioUnitario(), "NOTA_VENTA", codigo,
+                    clienteNombre, provNombre, ahora));
+        }
+        historialProductoDAO.insertar(historial);
 
         listaInventario.setAll(daoInventario.listar());
 

@@ -123,6 +123,18 @@ public class InventarioDAO {
         }
     }
 
+    public String obtenerProveedorNombre(int productoId) {
+        String sql = "SELECT p.nombre FROM inventario i JOIN proveedor p ON p.id = i.proveedor_id WHERE i.id=?";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, productoId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getString("nombre");
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return "";
+    }
+
     public void descontarStock(int productoId, int cantidad) {
         String sql = "UPDATE inventario SET cantidad = cantidad - ? WHERE id = ? AND cantidad >= ?";
         try (Connection con = DatabaseConnection.getConnection();
@@ -134,5 +146,74 @@ public class InventarioDAO {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    public List<Inventario> listarActivosConStock() {
+        List<Inventario> lista = new ArrayList<>();
+        String sql = "SELECT i.*, p.nombre as nombre_proveedor, g.nombre as nombre_grupo, m.nombre as nombre_marca, u.nombre as nombre_ubicacion " +
+                     "FROM inventario i " +
+                     "LEFT JOIN proveedor p ON p.id = i.proveedor_id " +
+                     "LEFT JOIN grupo g ON g.id = i.grupo_id " +
+                     "LEFT JOIN marca m ON m.id = i.marca_id " +
+                     "LEFT JOIN ubicacion_percha u ON u.id = i.ubicacion_percha_id " +
+                     "WHERE i.estado=true AND i.cantidad >= 1 ORDER BY i.descripcion";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                Inventario v = new Inventario();
+                mapearInventario(rs, v);
+                lista.add(v);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return lista;
+    }
+
+    public Inventario obtenerPorId(int id) {
+        String sql = "SELECT i.*, p.nombre as nombre_proveedor, g.nombre as nombre_grupo, m.nombre as nombre_marca, u.nombre as nombre_ubicacion " +
+                     "FROM inventario i " +
+                     "LEFT JOIN proveedor p ON p.id = i.proveedor_id " +
+                     "LEFT JOIN grupo g ON g.id = i.grupo_id " +
+                     "LEFT JOIN marca m ON m.id = i.marca_id " +
+                     "LEFT JOIN ubicacion_percha u ON u.id = i.ubicacion_percha_id " +
+                     "WHERE i.id=?";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Inventario v = new Inventario();
+                    mapearInventario(rs, v);
+                    return v;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private void mapearInventario(ResultSet rs, Inventario v) throws SQLException {
+        v.setId(rs.getInt("id"));
+        v.setDescripcion(rs.getString("descripcion"));
+        v.setGrupo(rs.getString("nombre_grupo"));
+        v.setMarca(rs.getString("nombre_marca"));
+        v.setGrupoId(rs.getInt("grupo_id"));
+        v.setMarcaId(rs.getInt("marca_id"));
+        v.setUbicacionPercha(rs.getString("nombre_ubicacion"));
+        v.setUbicacionPerchaId(rs.getInt("ubicacion_percha_id"));
+        v.setCostoSinIVA(rs.getBigDecimal("costo_sin_iva"));
+        v.setCantidad(rs.getInt("cantidad"));
+        v.setPrecioVenta(rs.getBigDecimal("precio_venta"));
+        v.setFecha_ingreso(rs.getObject("fecha_ingreso", LocalDateTime.class));
+        v.setEstado(rs.getBoolean("estado"));
+        v.setCodigo(rs.getString("codigo"));
+        v.setProveedor(rs.getString("nombre_proveedor"));
+        v.setProveedorId(rs.getInt("proveedor_id"));
+        v.setFormaPago(rs.getString("forma_pago"));
+        v.setMesesPlazo(rs.getInt("meses_plazo"));
+        v.setInteres(rs.getBigDecimal("interes"));
     }
 }

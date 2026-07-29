@@ -35,13 +35,23 @@
                 <!-- SECCIÓN CLIENTE -->
                 <TitledPane text="Información del Cliente" collapsible="false" style="-fx-font-weight: bold;">
                     <VBox spacing="10">
-                        <HBox spacing="10" alignment="CENTER_LEFT">
-                            <FontIcon iconLiteral="fas-search" iconSize="14"/>
-                            <Label text="Buscar:" minWidth="45"/>
-                            <TextField fx:id="txtBuscarCliente" promptText="Nombre o cédula..." prefWidth="350" maxWidth="350"/>
-                            <Label text="Seleccionar:" minWidth="70"/>
-                            <ComboBox fx:id="cmbCliente" prefWidth="350" maxWidth="350"/>
-                        </HBox>
+                        <GridPane hgap="15" vgap="5">
+                            <columnConstraints>
+                                <ColumnConstraints hgrow="ALWAYS" percentWidth="50"/>
+                                <ColumnConstraints hgrow="ALWAYS" percentWidth="50"/>
+                            </columnConstraints>
+                            <VBox spacing="4" GridPane.rowIndex="0" GridPane.columnIndex="0">
+                                <Label text="Buscar Cliente:" style="-fx-font-weight: bold;"/>
+                                <HBox spacing="6" alignment="CENTER_LEFT">
+                                    <FontIcon iconLiteral="fas-search" iconSize="14"/>
+                                    <TextField fx:id="txtBuscarCliente" promptText="Nombre o cédula..." HBox.hgrow="ALWAYS"/>
+                                </HBox>
+                            </VBox>
+                            <VBox spacing="4" GridPane.rowIndex="0" GridPane.columnIndex="1">
+                                <Label text="Seleccionar Cliente:" style="-fx-font-weight: bold;"/>
+                                <ComboBox fx:id="cmbCliente" maxWidth="Infinity"/>
+                            </VBox>
+                        </GridPane>
 
                         <GridPane hgap="15" vgap="10">
                             <columnConstraints>

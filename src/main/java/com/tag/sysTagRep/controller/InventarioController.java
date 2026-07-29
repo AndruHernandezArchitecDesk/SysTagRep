@@ -5,12 +5,14 @@ import com.tag.sysTagRep.dao.GrupoDAO;
 import com.tag.sysTagRep.dao.InventarioDAO;
 import com.tag.sysTagRep.dao.MarcaDAO;
 import com.tag.sysTagRep.dao.ProveedorDAO;
+import com.tag.sysTagRep.dao.UbicacionDetalleDAO;
 import com.tag.sysTagRep.dao.UbicacionPerchaDAO;
 import com.tag.sysTagRep.model.CuentaPorPagar;
 import com.tag.sysTagRep.model.Grupo;
 import com.tag.sysTagRep.model.Inventario;
 import com.tag.sysTagRep.model.Marca;
 import com.tag.sysTagRep.model.Proveedor;
+import com.tag.sysTagRep.model.UbicacionDetalle;
 import com.tag.sysTagRep.model.UbicacionPercha;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
@@ -47,7 +49,7 @@ public class InventarioController implements Initializable {
     @FXML private ComboBox<Marca> cmbMarca;
     @FXML private TextField txtCostoSinIVA;
     @FXML private Spinner<Integer> spCantidad;
-    @FXML private ComboBox<UbicacionPercha> cmbUbicacion;
+    @FXML private ComboBox<UbicacionDetalle> cmbUbicacion;
     @FXML private TextField txtPrecioVenta;
     @FXML private DatePicker dpFechaIngreso;
     @FXML private ComboBox<Integer> cmbGanancia;
@@ -83,6 +85,7 @@ public class InventarioController implements Initializable {
     private final ProveedorDAO proveedorDAO = new ProveedorDAO();
     private final GrupoDAO grupoDAO = new GrupoDAO();
     private final MarcaDAO marcaDAO = new MarcaDAO();
+    private final UbicacionDetalleDAO ubicacionDetalleDAO = new UbicacionDetalleDAO();
     private final UbicacionPerchaDAO ubicacionDAO = new UbicacionPerchaDAO();
     private final CuentaPorPagarDAO cuentaPorPagarDAO = new CuentaPorPagarDAO();
     private final com.tag.sysTagRep.dao.LogDAO logDAO = new com.tag.sysTagRep.dao.LogDAO();
@@ -90,7 +93,7 @@ public class InventarioController implements Initializable {
     private ObservableList<Proveedor> listaProveedores = FXCollections.observableArrayList();
     private ObservableList<Grupo> listaGrupos = FXCollections.observableArrayList();
     private ObservableList<Marca> listaMarcas = FXCollections.observableArrayList();
-    private ObservableList<UbicacionPercha> listaUbicaciones = FXCollections.observableArrayList();
+    private ObservableList<UbicacionDetalle> listaUbicaciones = FXCollections.observableArrayList();
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -130,11 +133,16 @@ public class InventarioController implements Initializable {
     }
 
     private void iniciarCbUbicaciones() {
-        listaUbicaciones.setAll(ubicacionDAO.listar());
+        listaUbicaciones.setAll(ubicacionDetalleDAO.listarOcupados());
         cmbUbicacion.setItems(listaUbicaciones);
         cmbUbicacion.setConverter(new StringConverter<>() {
-            @Override public String toString(UbicacionPercha u) { return (u == null) ? "" : u.getNombre(); }
-            @Override public UbicacionPercha fromString(String s) { return null; }
+            @Override public String toString(UbicacionDetalle u) {
+                if (u == null) return "";
+                if (u.getIdProducto() != null && u.getMarcaNombre() != null && u.getProductoDescripcion() != null)
+                    return u.getCodigoUbicacion() + " - " + u.getMarcaNombre() + " " + u.getProductoDescripcion();
+                return u.getCodigoUbicacion();
+            }
+            @Override public UbicacionDetalle fromString(String s) { return null; }
         });
     }
 
@@ -200,8 +208,7 @@ public class InventarioController implements Initializable {
             i.setCostoSinIVA(new BigDecimal(txtCostoSinIVA.getText().replace(",", ".")));
             i.setCantidad(spCantidad.getValue());
 
-            UbicacionPercha ub = cmbUbicacion.getValue();
-            i.setUbicacionPerchaId(ub != null ? ub.getId() : 0);
+            UbicacionDetalle ub = cmbUbicacion.getValue();
 
             i.setPrecioVenta(new BigDecimal(txtPrecioVenta.getText().replace(",", ".")));
             i.setCodigo(generarCodigo(txtDescripcion.getText(), g, m, new BigDecimal(txtCostoSinIVA.getText().replace(",", "."))));
@@ -232,12 +239,18 @@ public class InventarioController implements Initializable {
 
             if (txtId.getText() == null || txtId.getText().isEmpty()) {
                 int inventarioId = dao.guardar(i);
+                if (ub != null && inventarioId > 0) {
+                    ubicacionDetalleDAO.ocupar(ub.getId(), inventarioId);
+                }
                 if ("TAG Crédito".equals(cmbFormaPago.getValue()) && p != null && inventarioId > 0) {
                     crearCreditoProveedor(inventarioId, p.getId(), i.getCostoSinIVA().multiply(BigDecimal.valueOf(i.getCantidad())), i.getMesesPlazo(), i.getInteres());
                 }
             } else {
                 i.setId(Integer.parseInt(txtId.getText()));
                 dao.actualizar(i);
+                if (ub != null) {
+                    ubicacionDetalleDAO.ocupar(ub.getId(), i.getId());
+                }
             }
 
             limpiarFrm();
@@ -272,8 +285,8 @@ public class InventarioController implements Initializable {
         txtCostoSinIVA.setText(i.getCostoSinIVA().toString());
         spCantidad.getValueFactory().setValue(i.getCantidad());
 
-        for (UbicacionPercha ub : listaUbicaciones) {
-            if (ub.getId() == i.getUbicacionPerchaId()) { cmbUbicacion.setValue(ub); break; }
+        for (UbicacionDetalle ub : listaUbicaciones) {
+            if (ub.getIdProducto() != null && ub.getIdProducto() == i.getId()) { cmbUbicacion.setValue(ub); break; }
         }
 
         txtPrecioVenta.setText(i.getPrecioVenta().toString());
@@ -455,17 +468,17 @@ public class InventarioController implements Initializable {
     }
 
     @FXML
-    private void irAUbicacion() {
+    private void irAUbicacionPerchero() {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/UbicacionView.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/UbicacionPercheroView.fxml"));
             Parent vista = loader.load();
             Stage modal = new Stage();
             modal.initModality(Modality.APPLICATION_MODAL);
-            modal.setTitle("Gestión de Ubicaciones en Percha");
-            modal.setScene(new Scene(vista, 700, 500));
+            modal.setTitle("Ubicaciones en Perchero");
+            modal.setScene(new Scene(vista, 900, 650));
             modal.showAndWait();
             iniciarCbUbicaciones();
-        } catch (Exception e) { logDAO.guardar("InventarioController", "irAUbicacion", e.getMessage(), e); }
+        } catch (Exception e) { logDAO.guardar("InventarioController", "irAUbicacionPerchero", e.getMessage(), e); }
     }
 
     @FXML
