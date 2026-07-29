@@ -319,6 +319,16 @@ public class MainController implements Initializable {
         cargarVista("/view/UbicacionView.fxml");
     }
 
+    @FXML
+    private void irUbicacionPerchero() {
+        cargarVista("/view/UbicacionView.fxml");
+    }
+
+    @FXML
+    private void irGestionStock() {
+        cargarVista("/view/GestionStockView.fxml");
+    }
+
     private void cargarVista(String ruta) {
         try {
             Parent vista = FXMLLoader.load(getClass().getResource(ruta));

@@ -17,10 +17,14 @@
     <!-- MENÚ SUPERIOR -->
     <top>
         <MenuBar>
-            <Menu text="Negocio">
-                <MenuItem text="Inventario" onAction="#irInventario"/>
+            <Menu text="Comprobantes">
                 <MenuItem text="Nota de Venta" onAction="#irNotaVenta"/>
                 <MenuItem text="Factura Electrónica" onAction="#irFactura"/>
+            </Menu>
+            <Menu text="Perchero">
+                <MenuItem text="Ubicacion" onAction="#irUbicacionPerchero"/>
+                <MenuItem text="Inventario" onAction="#irInventario"/>
+                <MenuItem text="Gestion de Stock" onAction="#irGestionStock"/>
             </Menu>
             <Menu text="Crédito">
                 <MenuItem text="Por Cobrar" onAction="#irPorCobrar"/>
