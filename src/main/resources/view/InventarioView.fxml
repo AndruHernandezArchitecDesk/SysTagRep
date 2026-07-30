@@ -159,7 +159,7 @@
                     <TextField fx:id="txtBuscar" promptText="Buscar:"/>
                     <FontIcon iconLiteral="fas-search" iconSize="14"/>
                 </HBox>
-                <TableView fx:id="tblInventario">
+                <TableView fx:id="tblInventario" VBox.vgrow="ALWAYS">
                     <columns>
                         <TableColumn fx:id="colId" text="ID" prefWidth="50"/>
                         <TableColumn fx:id="colDescripcion" text="Descripción" prefWidth="150"/>
@@ -176,6 +176,14 @@
                         <TableColumn fx:id="colAcciones" text="Acciones" prefWidth="100"/>
                     </columns>
                 </TableView>
+                <HBox spacing="10" alignment="CENTER" style="-fx-padding: 5 0 0 0;">
+                    <Label text="Registros por pág.:"/>
+                    <ComboBox fx:id="cmbPageSize" prefWidth="80"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button fx:id="btnAnterior" text="◀ Anterior" onAction="#irPaginaAnterior"/>
+                    <Label fx:id="lblPaginaInfo" text="Página 1 de 1 (0 registros)" style="-fx-font-weight: bold;"/>
+                    <Button fx:id="btnSiguiente" text="Siguiente ▶" onAction="#irPaginaSiguiente"/>
+                </HBox>
             </VBox>
         </SplitPane>
     </center>

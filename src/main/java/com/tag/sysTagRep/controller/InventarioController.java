@@ -80,7 +80,15 @@ public class InventarioController implements Initializable {
     @FXML private Button btnToggleForm;
     @FXML private TextField txtBuscar;
 
-    private FilteredList<Inventario> inventarioFiltrado;
+    @FXML private Label lblPaginaInfo;
+    @FXML private Button btnAnterior;
+    @FXML private Button btnSiguiente;
+    @FXML private ComboBox<Integer> cmbPageSize;
+
+    private int currentPage = 1;
+    private int pageSize = 25;
+    private int totalPages = 1;
+    private int totalCount = 0;
     private final InventarioDAO dao = new InventarioDAO();
     private final ProveedorDAO proveedorDAO = new ProveedorDAO();
     private final GrupoDAO grupoDAO = new GrupoDAO();
@@ -111,7 +119,8 @@ public class InventarioController implements Initializable {
         validarSoloNumeros();
         configurarCodigoAuto();
         iniciarCbFormaPago();
-        filtroBusqueda();
+        iniciarPageSize();
+        txtBuscar.textProperty().addListener((obs, old, val) -> { currentPage = 1; cargarDatos(); });
     }
 
     private void iniciarCbGrupos() {
@@ -175,10 +184,14 @@ public class InventarioController implements Initializable {
     }
 
     private void cargarDatos() {
-        listaInventario.setAll(dao.listar());
-        if (inventarioFiltrado != null) {
-            aplicarFiltro(txtBuscar.getText());
-        }
+        String filtro = txtBuscar.getText();
+        totalCount = dao.contar(filtro);
+        totalPages = Math.max(1, (int) Math.ceil((double) totalCount / pageSize));
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+        listaInventario.setAll(dao.listarPaginado(currentPage, pageSize, filtro));
+        tblInventario.setItems(listaInventario);
+        actualizarPaginaInfo();
     }
 
     private String generarCodigo(String desc, Grupo grupo, Marca marca, BigDecimal costoSinIVA) {
@@ -254,6 +267,7 @@ public class InventarioController implements Initializable {
             }
 
             limpiarFrm();
+            currentPage = 1;
             cargarDatos();
             new Alert(Alert.AlertType.INFORMATION, "Guardado correctamente.").showAndWait();
         } catch (Exception e) {
@@ -326,20 +340,24 @@ public class InventarioController implements Initializable {
         cmbInteres.getSelectionModel().selectFirst();
     }
 
-    private void filtroBusqueda(){
-        inventarioFiltrado = new FilteredList<>(listaInventario, p -> true);
-        tblInventario.setItems(inventarioFiltrado);
-        txtBuscar.textProperty().addListener((obs, old, val) -> aplicarFiltro(val));
+    private void iniciarPageSize() {
+        cmbPageSize.setItems(FXCollections.observableArrayList(25, 50, 100));
+        cmbPageSize.setValue(25);
+        cmbPageSize.setOnAction(e -> { pageSize = cmbPageSize.getValue(); currentPage = 1; cargarDatos(); });
     }
 
-    private void aplicarFiltro(String texto) {
-        if (texto == null || texto.trim().isEmpty()) { inventarioFiltrado.setPredicate(p -> true); return; }
-        String[] partes = texto.toLowerCase().split("%");
-        inventarioFiltrado.setPredicate(inv -> {
-            String searchStr = (inv.getDescripcion() + " " + inv.getGrupo() + " " + inv.getMarca() + " " + inv.getCodigo()).toLowerCase();
-            for (String p : partes) if (!p.isBlank() && !searchStr.contains(p)) return false;
-            return true;
-        });
+    @FXML private void irPaginaAnterior() {
+        if (currentPage > 1) { currentPage--; cargarDatos(); }
+    }
+
+    @FXML private void irPaginaSiguiente() {
+        if (currentPage < totalPages) { currentPage++; cargarDatos(); }
+    }
+
+    private void actualizarPaginaInfo() {
+        lblPaginaInfo.setText("Página " + currentPage + " de " + totalPages + " (" + totalCount + " registros)");
+        btnAnterior.setDisable(currentPage <= 1);
+        btnSiguiente.setDisable(currentPage >= totalPages);
     }
 
     private void iniciarTablaContenido(){
