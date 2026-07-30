@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.tag.sysTagRep.controller.GestionStockController"
+            prefHeight="600.0" prefWidth="1000.0"
+            style="-fx-padding: 10;">
+
+    <top>
+        <VBox spacing="8" style="-fx-padding: 5 0 10 0;">
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="Gestión de Stock" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+            </HBox>
+            <HBox spacing="6" alignment="CENTER_LEFT">
+                <FontIcon iconLiteral="fas-search" iconSize="14"/>
+                <TextField fx:id="txtBuscar" promptText="Buscar producto, proveedor, código..." HBox.hgrow="ALWAYS"/>
+                <Label text="Doble clic en Precio Venta para editarlo" style="-fx-text-fill: #7f8c8d; -fx-font-style: italic;"/>
+            </HBox>
+        </VBox>
+    </top>
+
+    <center>
+        <ScrollPane fitToWidth="true" style="-fx-background: transparent; -fx-border-color: transparent;">
+            <Accordion fx:id="accordionProductos"/>
+        </ScrollPane>
+    </center>
+
+</BorderPane>

@@ -7,20 +7,22 @@ import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Label;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextField;
+import javafx.scene.chart.PieChart;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 
 import java.math.BigDecimal;
 import java.net.URL;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.stream.Collectors;
 
 public class HistorialProductoController implements Initializable {
 
+    @FXML private DatePicker dpFecha;
     @FXML private TextField txtBuscar;
     @FXML private TableView<HistorialProducto> tblHistorial;
     @FXML private TableColumn<HistorialProducto, Integer> colId;
@@ -33,6 +35,7 @@ public class HistorialProductoController implements Initializable {
     @FXML private TableColumn<HistorialProducto, String> colCliente;
     @FXML private TableColumn<HistorialProducto, String> colProveedor;
     @FXML private TableColumn<HistorialProducto, LocalDateTime> colFecha;
+    @FXML private PieChart pieProductos;
 
     private final HistorialProductoDAO dao = new HistorialProductoDAO();
     private ObservableList<HistorialProducto> lista = FXCollections.observableArrayList();
@@ -52,13 +55,32 @@ public class HistorialProductoController implements Initializable {
 
         tblHistorial.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
+        dpFecha.setValue(LocalDate.now());
+        dpFecha.setOnAction(e -> cargarDatos());
+
         cargarDatos();
         filtroBusqueda();
     }
 
     private void cargarDatos() {
-        lista.setAll(dao.listar());
+        lista.setAll(dao.listarPorFecha(dpFecha.getValue()));
         tblHistorial.setItems(lista);
+        actualizarGrafico();
+    }
+
+    private void actualizarGrafico() {
+        Map<String, Integer> ventasPorProd = new LinkedHashMap<>();
+        for (HistorialProducto h : lista) {
+            ventasPorProd.merge(h.getProductoDescripcion(), h.getCantidad(), Integer::sum);
+        }
+
+        ObservableList<PieChart.Data> pieData = FXCollections.observableArrayList();
+        for (Map.Entry<String, Integer> e : ventasPorProd.entrySet()) {
+            pieData.add(new PieChart.Data(e.getKey() + " (" + e.getValue() + ")", e.getValue()));
+        }
+        pieProductos.setData(pieData);
+        pieProductos.setTitle("Productos más vendidos");
+        pieProductos.setLabelsVisible(true);
     }
 
     private void filtroBusqueda() {

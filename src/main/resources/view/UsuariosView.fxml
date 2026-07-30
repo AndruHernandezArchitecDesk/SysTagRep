@@ -49,6 +49,16 @@
                                     <Label text="Email" prefWidth="100"/>
                                     <TextField fx:id="txtCorreo" HBox.hgrow="ALWAYS"/>
                                 </HBox>
+                                <HBox spacing="6" alignment="CENTER_LEFT">
+                                    <StackPane prefWidth="20"><FontIcon iconLiteral="fas-user" iconSize="14"/></StackPane>
+                                    <Label text="Usuario" prefWidth="100"/>
+                                    <TextField fx:id="txtUsuario" HBox.hgrow="ALWAYS"/>
+                                </HBox>
+                                <HBox spacing="6" alignment="CENTER_LEFT">
+                                    <StackPane prefWidth="20"><FontIcon iconLiteral="fas-lock" iconSize="14"/></StackPane>
+                                    <Label text="Contraseña" prefWidth="100"/>
+                                    <PasswordField fx:id="txtPassword" HBox.hgrow="ALWAYS"/>
+                                </HBox>
                             </VBox>
                         </content>
                     </TitledPane>
@@ -67,7 +77,22 @@
                                     <Label text="Estado" prefWidth="100"/>
                                     <ComboBox fx:id="cmbEstado" HBox.hgrow="ALWAYS"/>
                                 </HBox>
-                                <HBox spacing="10" alignment="CENTER">
+                            </VBox>
+                        </content>
+                    </TitledPane>
+
+                    <TitledPane text="Permisos de Vistas" collapsible="false"
+                                style="-fx-font-weight: bold; -fx-background-color: #f8f9fa; -fx-background-radius: 8; -fx-padding: 8;">
+                        <content>
+                            <VBox spacing="5" style="-fx-padding: 5;">
+                                <Label text="Marque las vistas a las que el usuario tendrá acceso:" style="-fx-font-size: 11px; -fx-text-fill: #6c757d;"/>
+                                <TableView fx:id="tblPermisos" prefHeight="300">
+                                    <columns>
+                                        <TableColumn fx:id="colVista" text="Vista" prefWidth="260"/>
+                                        <TableColumn fx:id="colHabilitado" text="Acceso" prefWidth="70"/>
+                                    </columns>
+                                </TableView>
+                                <HBox spacing="10" alignment="CENTER" style="-fx-padding: 5 0 0 0;">
                                     <Button fx:id="btnGuardar" text=" GUARDAR" styleClass="btn-guardar" onAction="#guardar">
                                         <graphic><FontIcon iconLiteral="fas-save" iconSize="18"/></graphic>
                                     </Button>

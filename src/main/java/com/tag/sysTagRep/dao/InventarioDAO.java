@@ -8,6 +8,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +51,32 @@ public class InventarioDAO {
                 v.setMesesPlazo(rs.getInt("meses_plazo"));
                 v.setInteres(rs.getBigDecimal("interes"));
                 lista.add(v);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return lista;
+    }
+
+    public List<Inventario> listarPorRango(LocalDate desde, LocalDate hasta) {
+        List<Inventario> lista = new ArrayList<>();
+        String sql = "SELECT i.*, p.nombre as nombre_proveedor, g.nombre as nombre_grupo, m.nombre as nombre_marca, u.nombre as nombre_ubicacion " +
+                     "FROM inventario i " +
+                     "LEFT JOIN proveedor p ON p.id = i.proveedor_id " +
+                     "LEFT JOIN grupo g ON g.id = i.grupo_id " +
+                     "LEFT JOIN marca m ON m.id = i.marca_id " +
+                     "LEFT JOIN ubicacion_percha u ON u.id = i.ubicacion_percha_id " +
+                     "WHERE CAST(i.fecha_ingreso AS DATE) BETWEEN ? AND ? ORDER BY i.fecha_ingreso ASC";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setObject(1, desde != null ? desde : LocalDate.now());
+            ps.setObject(2, hasta != null ? hasta : LocalDate.now());
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Inventario v = new Inventario();
+                    mapearInventario(rs, v);
+                    lista.add(v);
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -106,6 +133,18 @@ public class InventarioDAO {
             if (inv.getMesesPlazo() > 0) ps.setInt(12, inv.getMesesPlazo()); else ps.setNull(12, java.sql.Types.INTEGER);
             if (inv.getInteres() != null && inv.getInteres().compareTo(BigDecimal.ZERO) > 0) ps.setBigDecimal(13, inv.getInteres()); else ps.setNull(13, java.sql.Types.DECIMAL);
             ps.setInt(14, inv.getId());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void actualizarPrecioVenta(int id, java.math.BigDecimal precio) {
+        String sql = "UPDATE inventario SET precio_venta=? WHERE id=?";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setBigDecimal(1, precio);
+            ps.setInt(2, id);
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();

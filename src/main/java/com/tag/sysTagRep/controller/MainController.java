@@ -2,6 +2,7 @@ package com.tag.sysTagRep.controller;
 
 import com.tag.sysTagRep.dao.DashboardDAO;
 import com.tag.sysTagRep.dao.LogDAO;
+import com.tag.sysTagRep.controller.LoginController;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -10,15 +11,19 @@ import javafx.application.Platform;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
 import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.chart.BarChart;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.PieChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.image.Image;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
+import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.URL;
@@ -332,6 +337,61 @@ public class MainController implements Initializable {
     @FXML
     private void irHistorialProductos() {
         cargarVista("/view/HistorialProductoView.fxml");
+    }
+
+    @FXML
+    private void irHistorialVentas() {
+        cargarVista("/view/HistorialVentaView.fxml");
+    }
+
+    @FXML
+    private void irComprobanteVentaReporte() {
+        cargarVista("/view/ComprobanteVentaReporteView.fxml");
+    }
+
+    @FXML
+    private void irCompraReporte() {
+        cargarVista("/view/CompraReporteView.fxml");
+    }
+
+    @FXML
+    private void acercaDe() {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Acerca de SysTag Repuestos");
+        alert.setHeaderText("SysTag Repuestos Automotrices");
+        alert.setContentText(
+            "Versión: 1.0\n\n" +
+            "Desarrollado por:\n" +
+            "Andrés Hernández\n" +
+            "The Toy Maker — Developer Software\n\n" +
+            "Soporte y contacto:\n" +
+            "📧 andreihernandez07@gmail.com\n" +
+            "📞 0998573896\n\n" +
+            "Para la creación de módulos personalizados\n" +
+            "o desarrollo de software, contácteme."
+        );
+        alert.showAndWait();
+    }
+
+    @FXML
+    private void cerrarSesion() {
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "¿Cerrar sesión?", ButtonType.YES, ButtonType.NO);
+        if (confirm.showAndWait().orElse(ButtonType.NO) != ButtonType.YES) return;
+
+        LoginController.usuarioAutenticado = null;
+        try {
+            Parent login = FXMLLoader.load(getClass().getResource("/view/LoginView.fxml"));
+            Stage stage = (Stage) contenedor.getScene().getWindow();
+            stage.setTitle("SysTag - Inicio de Sesión");
+            stage.getIcons().add(new Image(getClass().getResourceAsStream("/img/inventario.png")));
+            Scene scene = new Scene(login);
+            scene.getStylesheets().add(getClass().getResource("/css/app.css").toExternalForm());
+            stage.setScene(scene);
+            stage.setMaximized(false);
+            stage.centerOnScreen();
+        } catch (IOException e) {
+            logDAO.guardar("MainController", "cerrarSesion", e.getMessage(), e);
+        }
     }
 
     private void cargarVista(String ruta) {

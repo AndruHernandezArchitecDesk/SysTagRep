@@ -4,6 +4,7 @@ import com.tag.sysTagRep.config.DatabaseConnection;
 import com.tag.sysTagRep.model.HistorialProducto;
 
 import java.sql.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,26 +36,32 @@ public class HistorialProductoDAO {
     }
 
     public List<HistorialProducto> listar() {
+        return listarPorFecha(null);
+    }
+
+    public List<HistorialProducto> listarPorFecha(LocalDate fecha) {
         List<HistorialProducto> lista = new ArrayList<>();
-        String sql = "SELECT * FROM historial_producto ORDER BY fecha_venta DESC";
+        String sql = "SELECT * FROM historial_producto WHERE CAST(fecha_venta AS DATE) = ? ORDER BY fecha_venta DESC";
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                HistorialProducto h = new HistorialProducto();
-                h.setId(rs.getInt("id"));
-                h.setProductoId(rs.getInt("producto_id"));
-                h.setProductoCodigo(rs.getString("producto_codigo"));
-                h.setProductoDescripcion(rs.getString("producto_descripcion"));
-                h.setCantidad(rs.getInt("cantidad"));
-                h.setPrecioUnitario(rs.getBigDecimal("precio_unitario"));
-                h.setTipoComprobante(rs.getString("tipo_comprobante"));
-                h.setCodigoComprobante(rs.getString("codigo_comprobante"));
-                h.setClienteNombre(rs.getString("cliente_nombre"));
-                h.setProveedorNombre(rs.getString("proveedor_nombre"));
-                h.setFechaVenta(rs.getObject("fecha_venta", LocalDateTime.class));
-                h.setFechaRegistro(rs.getObject("fecha_registro", LocalDateTime.class));
-                lista.add(h);
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setObject(1, fecha != null ? fecha : LocalDate.now());
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    HistorialProducto h = new HistorialProducto();
+                    h.setId(rs.getInt("id"));
+                    h.setProductoId(rs.getInt("producto_id"));
+                    h.setProductoCodigo(rs.getString("producto_codigo"));
+                    h.setProductoDescripcion(rs.getString("producto_descripcion"));
+                    h.setCantidad(rs.getInt("cantidad"));
+                    h.setPrecioUnitario(rs.getBigDecimal("precio_unitario"));
+                    h.setTipoComprobante(rs.getString("tipo_comprobante"));
+                    h.setCodigoComprobante(rs.getString("codigo_comprobante"));
+                    h.setClienteNombre(rs.getString("cliente_nombre"));
+                    h.setProveedorNombre(rs.getString("proveedor_nombre"));
+                    h.setFechaVenta(rs.getObject("fecha_venta", LocalDateTime.class));
+                    h.setFechaRegistro(rs.getObject("fecha_registro", LocalDateTime.class));
+                    lista.add(h);
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();

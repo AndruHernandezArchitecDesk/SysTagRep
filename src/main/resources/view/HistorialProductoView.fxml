@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.chart.PieChart?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import org.kordamp.ikonli.javafx.FontIcon?>
@@ -17,26 +18,31 @@
     </top>
 
     <center>
-        <VBox spacing="10">
-            <HBox spacing="6" alignment="CENTER_LEFT">
-                <FontIcon iconLiteral="fas-search" iconSize="14"/>
-                <TextField fx:id="txtBuscar" promptText="Buscar por código, descripción, tipo, comprobante, cliente o proveedor..." HBox.hgrow="ALWAYS"/>
-            </HBox>
-            <TableView fx:id="tblHistorial">
-                <columns>
-                    <TableColumn fx:id="colId" text="ID" prefWidth="40"/>
-                    <TableColumn fx:id="colCodigo" text="Código" prefWidth="90"/>
-                    <TableColumn fx:id="colDescripcion" text="Producto" prefWidth="150"/>
-                    <TableColumn fx:id="colCantidad" text="Cant." prefWidth="60"/>
-                    <TableColumn fx:id="colPrecio" text="P. Unit." prefWidth="90"/>
-                    <TableColumn fx:id="colTipo" text="Tipo" prefWidth="100"/>
-                    <TableColumn fx:id="colComprobante" text="Comprobante" prefWidth="120"/>
-                    <TableColumn fx:id="colCliente" text="Cliente" prefWidth="130"/>
-                    <TableColumn fx:id="colProveedor" text="Proveedor" prefWidth="130"/>
-                    <TableColumn fx:id="colFecha" text="Fecha" prefWidth="130"/>
-                </columns>
-            </TableView>
-        </VBox>
+        <SplitPane dividerPositions="0.65" orientation="VERTICAL">
+            <VBox spacing="10">
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="Fecha:"/>
+                    <DatePicker fx:id="dpFecha"/>
+                    <FontIcon iconLiteral="fas-search" iconSize="14"/>
+                    <TextField fx:id="txtBuscar" promptText="Buscar..." HBox.hgrow="ALWAYS"/>
+                </HBox>
+                <TableView fx:id="tblHistorial" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colId" text="ID" prefWidth="40"/>
+                        <TableColumn fx:id="colCodigo" text="Código" prefWidth="90"/>
+                        <TableColumn fx:id="colDescripcion" text="Producto" prefWidth="150"/>
+                        <TableColumn fx:id="colCantidad" text="Cant." prefWidth="60"/>
+                        <TableColumn fx:id="colPrecio" text="P. Unit." prefWidth="90"/>
+                        <TableColumn fx:id="colTipo" text="Tipo" prefWidth="100"/>
+                        <TableColumn fx:id="colComprobante" text="Comprobante" prefWidth="120"/>
+                        <TableColumn fx:id="colCliente" text="Cliente" prefWidth="130"/>
+                        <TableColumn fx:id="colProveedor" text="Proveedor" prefWidth="130"/>
+                        <TableColumn fx:id="colFecha" text="Fecha" prefWidth="130"/>
+                    </columns>
+                </TableView>
+            </VBox>
+            <PieChart fx:id="pieProductos"/>
+        </SplitPane>
     </center>
 
 </BorderPane>

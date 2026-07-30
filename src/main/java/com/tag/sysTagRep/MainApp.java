@@ -5,36 +5,18 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import javafx.scene.image.Image;
 
 public class MainApp extends Application {
     @Override
     public void start(Stage stage) throws Exception {
-     /*   FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/VendedorView.fxml")
-        );
-
-        Scene scene = new Scene(loader.load());
-        scene.getStylesheets().add(
-                getClass().getResource("/css/app.css").toExternalForm()
-        );*/
         Parent root = FXMLLoader.load(
-                getClass().getResource("/view/MainView.fxml")
+                getClass().getResource("/view/LoginView.fxml")
         );
 
-        stage.setTitle("Tag Repuestos Automotrices");
-
-        stage.getIcons().add(
-                new Image(getClass().getResourceAsStream("/img/inventario.png"))
-        );
+        stage.setTitle("SysTag - Inicio de Sesión");
 
         Scene scene = new Scene(root);
-        scene.getStylesheets().add(
-                getClass().getResource("/css/app.css").toExternalForm()
-        );
-
         stage.setScene(scene);
-       // stage.setScene(new Scene(root));
         stage.show();
     }
 
@@ -42,4 +24,3 @@ public class MainApp extends Application {
         launch(args);
     }
 }
-

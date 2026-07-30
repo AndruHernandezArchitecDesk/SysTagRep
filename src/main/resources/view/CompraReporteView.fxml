@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.tag.sysTagRep.controller.CompraReporteController"
+            prefHeight="600.0" prefWidth="900.0"
+            style="-fx-padding: 10;">
+
+    <top>
+        <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 5 0 10 0;">
+            <Label text="Comprobantes de Compra" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+        </HBox>
+    </top>
+
+    <center>
+        <VBox spacing="10">
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="Desde:"/>
+                <DatePicker fx:id="dpDesde" maxWidth="160"/>
+                <Label text="Hasta:"/>
+                <DatePicker fx:id="dpHasta" maxWidth="160"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button onAction="#exportarExcel" style="-fx-background-color: #27ae60; -fx-text-fill: white;">
+                    <graphic>
+                        <FontIcon iconLiteral="fas-file-excel" iconSize="14"/>
+                    </graphic>
+                    Exportar a Excel
+                </Button>
+            </HBox>
+            <HBox spacing="6" alignment="CENTER_LEFT">
+                <FontIcon iconLiteral="fas-search" iconSize="14"/>
+                <TextField fx:id="txtBuscar" promptText="Buscar..." HBox.hgrow="ALWAYS"/>
+                <Label fx:id="lblTotal" style="-fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: #2c3e50;"/>
+            </HBox>
+            <TableView fx:id="tblReporte" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="colCodigo" text="Código" prefWidth="100"/>
+                    <TableColumn fx:id="colDescripcion" text="Producto" prefWidth="180"/>
+                    <TableColumn fx:id="colProveedor" text="Proveedor" prefWidth="150"/>
+                    <TableColumn fx:id="colCosto" text="Costo s/IVA" prefWidth="100"/>
+                    <TableColumn fx:id="colCantidad" text="Cant." prefWidth="60"/>
+                    <TableColumn fx:id="colTotal" text="Total" prefWidth="100"/>
+                    <TableColumn fx:id="colFormaPago" text="Forma de Pago" prefWidth="130"/>
+                    <TableColumn fx:id="colFecha" text="Fecha" prefWidth="140"/>
+                </columns>
+            </TableView>
+        </VBox>
+    </center>
+
+</BorderPane>

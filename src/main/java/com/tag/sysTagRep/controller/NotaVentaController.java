@@ -6,16 +6,11 @@ import com.tag.sysTagRep.dao.InventarioDAO;
 import com.tag.sysTagRep.dao.LogDAO;
 import com.tag.sysTagRep.util.EmailService;
 import com.tag.sysTagRep.dao.CuentaPorCobrarDAO;
-import com.tag.sysTagRep.dao.ComprobanteDAO;
 import com.tag.sysTagRep.dao.HistorialProductoDAO;
 import com.tag.sysTagRep.dao.NotaVentaDetalleDAO;
 import com.tag.sysTagRep.dao.NotaVentaRegistroDAO;
 import com.tag.sysTagRep.model.*;
 import com.tag.sysTagRep.util.NotaVentaPDF;
-import com.tag.sysTagRep.util.ClaveAcceso;
-import com.tag.sysTagRep.util.XmlSriBuilder;
-import com.tag.sysTagRep.util.SRIWebService;
-import com.tag.sysTagRep.util.PdfElectronico;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -37,7 +32,6 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URL;
-import java.awt.Desktop;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -83,7 +77,6 @@ public class NotaVentaController implements Initializable {
     private final NotaVentaRegistroDAO daoNotaVentaRegistro = new NotaVentaRegistroDAO();
     private final NotaVentaDetalleDAO daoNotaVentaDetalle = new NotaVentaDetalleDAO();
     private final CuentaPorCobrarDAO daoCuentaPorCobrar = new CuentaPorCobrarDAO();
-    private final ComprobanteDAO daoComprobante = new ComprobanteDAO();
     private final LogDAO logDAO = new LogDAO();
     private final HistorialProductoDAO historialProductoDAO = new HistorialProductoDAO();
 
@@ -378,81 +371,44 @@ public class NotaVentaController implements Initializable {
             daoCuentaPorCobrar.insertar(cpc);
         }
 
-        // --- Facturación Electrónica SRI ---
-        String ambienteSri = "PRUEBAS";
-        String codEstab = "001";
-        String codPtoEmi = "001";
-        int secuencialFE = daoComprobante.obtenerSecuencial("01");
-        String claveAcceso = ClaveAcceso.generar("01", empresaActual.getRuc(), ambienteSri, codEstab, codPtoEmi, secuencialFE);
-        String fechaEmisionFE = ahora.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-        String tipoIdComp = cmbCliente.getValue().getIdentificacion().length() == 13 ? "05" : "04";
+        // --- Generar PDF Nota de Venta ---
+        String rutaPDF = System.getProperty("java.io.tmpdir") + File.separator
+                + "NotaVenta_" + codigo.replace("-", "") + ".pdf";
 
-        List<Object[]> detallesXml = new ArrayList<>();
+        List<String[]> detallesPDF = new ArrayList<>();
         for (DetalleVenta d : itemsDetalle) {
-            BigDecimal precioSinIva = d.getPrecioUnitario().divide(new BigDecimal("1.15"), 6, RoundingMode.HALF_UP);
-            BigDecimal totalDetSinIva = precioSinIva.multiply(new BigDecimal(d.getCantidad())).setScale(2, RoundingMode.HALF_UP);
-            String desc = d.getDescripcion();
-            if (desc.length() > 99) desc = desc.substring(0, 99);
-            detallesXml.add(new Object[]{d.getCodigo(), desc, String.valueOf(d.getCantidad()),
-                    precioSinIva.setScale(2, RoundingMode.HALF_UP).toString(), "0.00", totalDetSinIva.toString()});
+            detallesPDF.add(new String[]{
+                d.getCodigo(),
+                d.getDescripcion(),
+                String.valueOf(d.getCantidad()),
+                "$" + d.getPrecioUnitario().setScale(2, RoundingMode.HALF_UP),
+                "$" + d.getPrecioTotal().setScale(2, RoundingMode.HALF_UP)
+            });
         }
 
-        String xmlGenerado = XmlSriBuilder.construirFactura(
-                claveAcceso, empresaActual.getRuc(), empresaActual.getRazonSocial(),
-                codEstab, codPtoEmi, secuencialFE,
+        String fechaStr = ahora.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+
+        NotaVentaPDF.generar(rutaPDF, codigo, fechaStr,
+                empresaActual.getRazonSocial(), empresaActual.getRuc(),
                 empresaActual.getDireccionCallePrincipal() + " y " + empresaActual.getDireccionCalleSecundaria(),
-                "", "SI",
-                tipoIdComp, cmbCliente.getValue().getNombre(), cmbCliente.getValue().getIdentificacion(),
-                txtDireccion.getText(),
-                sub.setScale(2, RoundingMode.HALF_UP).toString(), "0.00",
-                ivaCalc.setScale(2, RoundingMode.HALF_UP).toString(), totCalc.setScale(2, RoundingMode.HALF_UP).toString(),
-                "0.00", cmbFormaPago.getValue(), fechaEmisionFE, detallesXml);
-
-        String numComprobante = codEstab + "-" + codPtoEmi + "-" + String.format("%09d", secuencialFE);
-        daoComprobante.insertar(claveAcceso, notaVentaId, numComprobante, ambienteSri, xmlGenerado);
-
-        try {
-            SRIWebService sriWs = new SRIWebService(ambienteSri);
-            SRIWebService.SRIResponse sriResp = sriWs.validarComprobante(xmlGenerado, claveAcceso);
-            if ("AUTORIZADO".equals(sriResp.getEstado())) {
-                daoComprobante.actualizarEstado(claveAcceso, "AUTORIZADO", sriResp.getMensaje(), xmlGenerado);
-            }
-        } catch (Exception e) {
-            logDAO.guardar("NotaVentaController", "validarSRI", e.getMessage(), e);
-        }
-
-        List<Object[]> detallesPDF = new ArrayList<>();
-        for (DetalleVenta d : itemsDetalle) {
-            BigDecimal precioSinIva = d.getPrecioUnitario().divide(new BigDecimal("1.15"), 6, RoundingMode.HALF_UP);
-            BigDecimal totalDetSinIva = precioSinIva.multiply(new BigDecimal(d.getCantidad())).setScale(2, RoundingMode.HALF_UP);
-            String desc = d.getDescripcion();
-            if (desc.length() > 99) desc = desc.substring(0, 99);
-            detallesPDF.add(new Object[]{d.getCodigo(), desc, String.valueOf(d.getCantidad()),
-                    precioSinIva.setScale(2, RoundingMode.HALF_UP).toString(), "0.00", totalDetSinIva.toString()});
-        }
-
-        String rutaPDF = System.getProperty("user.home") + File.separator + "Desktop" + File.separator
-                + "Factura_" + numComprobante.replace("-", "") + ".pdf";
-
-        PdfElectronico.generar(rutaPDF, claveAcceso,
-                empresaActual.getRuc(), empresaActual.getRazonSocial(),
-                empresaActual.getDireccionCallePrincipal() + " y " + empresaActual.getDireccionCalleSecundaria(),
-                "", "SI", codEstab, codPtoEmi, secuencialFE,
-                fechaEmisionFE, tipoIdComp,
+                empresaActual.getTelefono() + " / " + empresaActual.getCelular(), empresaActual.getCorreo(),
                 cmbCliente.getValue().getNombre(), cmbCliente.getValue().getIdentificacion(),
-                txtDireccion.getText(), cmbFormaPago.getValue(),
-                detallesPDF, sub, ivaCalc, totCalc);
+                txtDireccion.getText(), txtTelefono.getText(),
+                cmbFormaPago.getValue(), detallesPDF, sub, ivaCalc, totCalc);
 
         Alert alertExito = new Alert(Alert.AlertType.INFORMATION);
-        alertExito.setTitle("Factura electrónica registrada");
+        alertExito.setTitle("Nota de Venta registrada");
         alertExito.setHeaderText(null);
-        alertExito.setContentText("Factura " + numComprobante + " registrada exitosamente.\nClave de acceso: " + claveAcceso + "\nPDF guardado en: " + rutaPDF);
+        alertExito.setContentText("Nota de Venta " + codigo + " registrada exitosamente.\nPDF: " + rutaPDF);
         alertExito.showAndWait();
 
-        // Abrir PDF automaticamente
+        // Abrir PDF
         try {
-            if (Desktop.isDesktopSupported()) {
-                Desktop.getDesktop().open(new File(rutaPDF));
+            String os = System.getProperty("os.name").toLowerCase();
+            if (os.contains("windows")) {
+                Runtime.getRuntime().exec(new String[]{"rundll32", "url.dll,FileProtocolHandler", rutaPDF});
+            } else {
+                Runtime.getRuntime().exec(new String[]{"xdg-open", rutaPDF});
             }
         } catch (Exception ignored) {}
 
