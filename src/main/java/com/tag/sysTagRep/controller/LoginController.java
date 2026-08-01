@@ -47,12 +47,18 @@ public class LoginController implements Initializable {
             return;
         }
 
-        Usuario u = dao.autenticar(user.trim(), pass);
-        if (u != null) {
-            usuarioAutenticado = u;
-            abrirMain();
-        } else {
-            new Alert(Alert.AlertType.ERROR, "Usuario o contraseña incorrectos.").showAndWait();
+        try {
+            Usuario u = dao.autenticar(user.trim(), pass);
+            if (u != null) {
+                usuarioAutenticado = u;
+                abrirMain();
+            } else {
+                new Alert(Alert.AlertType.ERROR, "Usuario o contraseña incorrectos.").showAndWait();
+            }
+        } catch (RuntimeException e) {
+            String error = "Error de conexión a la base de datos:\n" + e.getMessage();
+            new Alert(Alert.AlertType.ERROR, error).showAndWait();
+            e.printStackTrace();
         }
     }
 

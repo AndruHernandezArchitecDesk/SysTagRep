@@ -3,6 +3,8 @@ package com.tag.sysTagRep.controller;
 import com.tag.sysTagRep.dao.LogDAO;
 import com.tag.sysTagRep.dao.UsuarioDAO;
 import com.tag.sysTagRep.model.Usuario;
+import com.tag.sysTagRep.util.SortTable;
+import com.tag.sysTagRep.util.ComboFilter;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -61,7 +63,7 @@ public class UsuarioController implements Initializable {
 
     private static final LinkedHashMap<String, String> VISTAS = new LinkedHashMap<>();
     static {
-        VISTAS.put("comprobantes_nota_venta", "Comprobantes > Nota de Venta");
+        VISTAS.put("comprobantes_nota_venta", "Comprobantes > Proforma");
         VISTAS.put("comprobantes_factura", "Comprobantes > Factura Electrónica");
         VISTAS.put("perchero_ubicacion", "Perchero > Ubicación");
         VISTAS.put("perchero_inventario", "Perchero > Inventario");
@@ -70,6 +72,7 @@ public class UsuarioController implements Initializable {
         VISTAS.put("credito_por_pagar", "Crédito > Por Pagar");
         VISTAS.put("historial_productos", "Historial > Productos");
         VISTAS.put("historial_ventas", "Historial > Ventas");
+        VISTAS.put("historial_compras", "Historial > Compras");
         VISTAS.put("reportes_comprobantes_venta", "Reportes > Comprobantes de Venta");
         VISTAS.put("reportes_comprobantes_compra", "Reportes > Comprobantes de Compra");
         VISTAS.put("admin_vendedores", "Administración > Vendedores");
@@ -130,6 +133,7 @@ public class UsuarioController implements Initializable {
         colEstado.setCellValueFactory(new PropertyValueFactory<>("estado"));
 
         tblUsuarios.setItems(listaUsuarios);
+        SortTable.agregarBotones(tblUsuarios);
     }
 
     private void iniciarTablaPermisos() {
@@ -151,15 +155,16 @@ public class UsuarioController implements Initializable {
         colHabilitado.setCellValueFactory(cd -> cd.getValue().habilitadoProperty().asObject());
         tblPermisos.setItems(listaPermisos);
         tblPermisos.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        SortTable.agregarBotones(tblPermisos);
     }
 
     private void iniciarCmbEstado(){
-        cmbEstado.getItems().addAll("ACTIVO", "INACTIVO");
+        ComboFilter.habilitar(cmbEstado, FXCollections.observableArrayList("ACTIVO", "INACTIVO"));
         cmbEstado.setValue("ACTIVO");
     }
 
     private void iniciarCmbRol(){
-        cmbRol.getItems().addAll("ADMINISTRADOR", "VENDEDOR", "ALMACENERO");
+        ComboFilter.habilitar(cmbRol, FXCollections.observableArrayList("ADMINISTRADOR", "VENDEDOR", "ALMACENERO"));
         cmbRol.setValue("VENDEDOR");
     }
 
@@ -205,7 +210,7 @@ public class UsuarioController implements Initializable {
             u.setUsername(txtUsuario.getText().trim());
             u.setPassword(txtPassword.getText());
             u.setRol(cmbRol.getValue());
-            u.setEstado(cmbEstado.getValue().equals("ACTIVO"));
+            u.setEstado("ACTIVO".equals(cmbEstado.getValue()));
 
             String permisosStr = listaPermisos.stream()
                     .filter(VistaPermiso::isHabilitado)

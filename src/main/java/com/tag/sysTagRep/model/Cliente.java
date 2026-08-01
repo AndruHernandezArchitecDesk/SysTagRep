@@ -1,5 +1,7 @@
 package com.tag.sysTagRep.model;
 
+import java.time.LocalDateTime;
+
 public class Cliente {
     private int id;
     private String nombre;
@@ -8,6 +10,8 @@ public class Cliente {
     private String correo;
     private String telefono;
     private String celular;
+    private LocalDateTime fecha_registro;
+    private boolean estado;
 
     public Cliente(){}
 
@@ -75,5 +79,21 @@ public class Cliente {
 
     public void setCelular(String celular) {
         this.celular = celular;
+    }
+
+    public LocalDateTime getFecha_registro() {
+        return fecha_registro;
+    }
+
+    public void setFecha_registro(LocalDateTime fecha_registro) {
+        this.fecha_registro = fecha_registro;
+    }
+
+    public boolean isEstado() {
+        return estado;
+    }
+
+    public void setEstado(boolean estado) {
+        this.estado = estado;
     }
 }

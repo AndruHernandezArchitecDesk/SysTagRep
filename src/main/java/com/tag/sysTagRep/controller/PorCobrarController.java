@@ -1,6 +1,7 @@
 package com.tag.sysTagRep.controller;
 
 import com.tag.sysTagRep.dao.CuentaPorCobrarDAO;
+import com.tag.sysTagRep.util.SortTable;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -50,6 +51,8 @@ public class PorCobrarController implements Initializable {
     public void initialize(URL url, ResourceBundle rb) {
         configurarTablaCreditos();
         configurarTablaDetalle();
+        SortTable.agregarBotones(tblCreditosActivos);
+        SortTable.agregarBotones(tblDetalleCredito);
         cargarCreditos();
     }
 
@@ -65,14 +68,14 @@ public class PorCobrarController implements Initializable {
                     setGraphic(null);
                 } else {
                     Object[] fila = getTableView().getItems().get(getIndex());
-                    int meses = (int) fila[8];
+                    int dias = (int) fila[8];
                     Timestamp fechaReg = (Timestamp) fila[13];
                     if (fechaReg == null) {
                         setGraphic(new Label("Sin fecha"));
                         return;
                     }
                     LocalDateTime inicio = fechaReg.toLocalDateTime();
-                    LocalDateTime fin = inicio.plusMonths(meses);
+                    LocalDateTime fin = inicio.plusDays(dias);
                     long totalDias = ChronoUnit.DAYS.between(inicio, fin);
                     long diasTranscurridos = ChronoUnit.DAYS.between(inicio, LocalDateTime.now());
                     double progreso = totalDias > 0 ? (double) diasTranscurridos / totalDias : 1.0;
@@ -113,7 +116,7 @@ public class PorCobrarController implements Initializable {
                 icon.setIconColor(javafx.scene.paint.Color.WHITE);
                 btnVer.setGraphic(icon);
                 btnVer.setStyle("-fx-background-color: #3498db; -fx-cursor: hand; -fx-padding: 4 8;");
-                btnVer.setTooltip(new Tooltip("Ver detalle de nota de venta"));
+                btnVer.setTooltip(new Tooltip("Ver detalle de proforma"));
                 btnVer.setOnAction(e -> {
                     Object[] fila = getTableView().getItems().get(getIndex());
                     mostrarDetalleNota(fila);
@@ -149,8 +152,8 @@ public class PorCobrarController implements Initializable {
             return new ReadOnlyObjectWrapper<>(sb.toString());
         });
         colDetTiempoPago.setCellValueFactory(data -> {
-            int meses = (int) data.getValue()[8];
-            return new ReadOnlyObjectWrapper<>(meses + " meses");
+            int dias = (int) data.getValue()[8];
+            return new ReadOnlyObjectWrapper<>(dias + " días");
         });
         colDetTotal.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>((BigDecimal) data.getValue()[7]));
         colDetAdelanto.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>((BigDecimal) data.getValue()[11]));
@@ -236,7 +239,7 @@ public class PorCobrarController implements Initializable {
         String factura = (String) fila[5];
         Timestamp fecha = (Timestamp) fila[6];
         BigDecimal total = (BigDecimal) fila[7];
-        int meses = (int) fila[8];
+        int dias = (int) fila[8];
         BigDecimal interes = (BigDecimal) fila[9];
         BigDecimal cuotaMensual = (BigDecimal) fila[10];
         BigDecimal adelanto = (BigDecimal) fila[11];
@@ -246,14 +249,14 @@ public class PorCobrarController implements Initializable {
 
         Stage modal = new Stage();
         modal.initModality(Modality.APPLICATION_MODAL);
-        modal.setTitle("Detalle Nota de Venta " + factura);
+        modal.setTitle("Detalle Proforma " + factura);
         modal.setResizable(true);
 
         VBox contenido = new VBox(12);
         contenido.setPadding(new Insets(20));
         contenido.setStyle("-fx-background-color: white;");
 
-        Label lblTitulo = new Label("Detalle de Nota de Venta");
+        Label lblTitulo = new Label("Detalle de Proforma");
         lblTitulo.setFont(Font.font("System", FontWeight.BOLD, 16));
 
         GridPane info = new GridPane();
@@ -267,10 +270,10 @@ public class PorCobrarController implements Initializable {
         info.add(crearLabel("Fecha:"), 0, 2);
         info.add(crearLabelBold(fecha != null ? fecha.toLocalDateTime().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")) : ""), 1, 2);
         info.add(crearLabel("Plazo:"), 2, 0);
-        info.add(crearLabelBold(meses + " meses"), 3, 0);
+        info.add(crearLabelBold(dias + " días"), 3, 0);
         info.add(crearLabel("Interés:"), 2, 1);
         info.add(crearLabelBold(interes + "%"), 3, 1);
-        info.add(crearLabel("Cuota mensual:"), 2, 2);
+        info.add(crearLabel("Cuota:"), 2, 2);
         info.add(crearLabelBold("$" + cuotaMensual.setScale(2, RoundingMode.HALF_UP)), 3, 2);
 
         TableView<String[]> tblDetalles = new TableView<>();

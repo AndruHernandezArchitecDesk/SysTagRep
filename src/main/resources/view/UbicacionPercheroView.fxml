@@ -21,6 +21,9 @@
                     <graphic><FontIcon iconLiteral="fas-plus" iconSize="14"/></graphic>
                 </Button>
                 <Region HBox.hgrow="ALWAYS"/>
+                <Button fx:id="btnEliminarPerchero" text=" ELIMINAR PERCHERO" onAction="#eliminarPerchero" disable="true" style="-fx-background-color: #dc3545; -fx-text-fill: white;">
+                    <graphic><FontIcon iconLiteral="fas-trash" iconSize="14"/></graphic>
+                </Button>
                 <Button fx:id="btnNuevoPerchero" text=" NUEVO PERCHERO" onAction="#mostrarFormNuevo">
                     <graphic><FontIcon iconLiteral="fas-plus-circle" iconSize="16"/></graphic>
                 </Button>

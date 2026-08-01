@@ -11,6 +11,7 @@ public class UbicacionDetalle {
     private String productoDescripcion;
     private String productoCodigo;
     private int cantidad;
+    private Integer stockAsignado;
     private String grupoNombre;
     private String marcaNombre;
 
@@ -45,6 +46,9 @@ public class UbicacionDetalle {
 
     public int getCantidad() { return cantidad; }
     public void setCantidad(int cantidad) { this.cantidad = cantidad; }
+
+    public Integer getStockAsignado() { return stockAsignado; }
+    public void setStockAsignado(Integer stockAsignado) { this.stockAsignado = stockAsignado; }
 
     public String getGrupoNombre() { return grupoNombre; }
     public void setGrupoNombre(String grupoNombre) { this.grupoNombre = grupoNombre; }

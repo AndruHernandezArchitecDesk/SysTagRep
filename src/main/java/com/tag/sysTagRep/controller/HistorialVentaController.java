@@ -2,6 +2,7 @@ package com.tag.sysTagRep.controller;
 
 import com.tag.sysTagRep.dao.VentaResumenDAO;
 import com.tag.sysTagRep.model.VentaResumen;
+import com.tag.sysTagRep.util.SortTable;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -51,6 +52,7 @@ public class HistorialVentaController implements Initializable {
         colTotal.setCellValueFactory(new PropertyValueFactory<>("total"));
 
         tblVentas.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        SortTable.agregarBotones(tblVentas);
 
         dpFecha.setValue(LocalDate.now());
         dpFecha.setOnAction(e -> cargarDatos());

@@ -2,6 +2,8 @@ package com.tag.sysTagRep.controller;
 import com.tag.sysTagRep.dao.LogDAO;
 import com.tag.sysTagRep.dao.VendedorDAO;
 import com.tag.sysTagRep.model.Vendedor;
+import com.tag.sysTagRep.util.SortTable;
+import com.tag.sysTagRep.util.ComboFilter;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -56,6 +58,7 @@ public class VendedorController implements Initializable{
         colEstado.setCellValueFactory(new PropertyValueFactory<>("estado"));
 
         tblVendedores.setItems(listaVendedores);
+        SortTable.agregarBotones(tblVendedores);
 
         cargarDatos();
         cargarAcciones();
@@ -88,7 +91,7 @@ public class VendedorController implements Initializable{
     }
 
     private void iniciarCmbEstado(){
-        cmbEstado.getItems().addAll("ACTIVO", "INACTIVO");
+        ComboFilter.habilitar(cmbEstado, FXCollections.observableArrayList("ACTIVO", "INACTIVO"));
         cmbEstado.setValue("ACTIVO");
     }
 
@@ -112,7 +115,7 @@ public class VendedorController implements Initializable{
             v.setNombre(txtNombre.getText());
             v.setIdentificacion(txtIdentificacion.getText());
             v.setCorreo(txtCorreo.getText());
-            v.setEstado(cmbEstado.getValue().equals("ACTIVO"));
+            v.setEstado("ACTIVO".equals(cmbEstado.getValue()));
 
             if (txtId.getText() == null || txtId.getText().isEmpty()) {
                 dao.guardar(v);

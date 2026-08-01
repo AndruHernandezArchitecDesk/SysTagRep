@@ -32,27 +32,27 @@
                                 <HBox spacing="6" alignment="CENTER_LEFT">
                                     <StackPane prefWidth="20"><FontIcon iconLiteral="fas-hashtag" iconSize="14"/></StackPane>
                                     <Label text="ID" prefWidth="100"/>
-                                    <TextField fx:id="txtId" disable="true" HBox.hgrow="ALWAYS"/>
+                                    <TextField fx:id="txtId" disable="true" HBox.hgrow="ALWAYS" prefHeight="36"/>
                                 </HBox>
                                 <HBox spacing="6" alignment="CENTER_LEFT">
                                     <StackPane prefWidth="20"><FontIcon iconLiteral="fas-building" iconSize="14"/></StackPane>
                                     <Label text="Nombre" prefWidth="100"/>
-                                    <TextField fx:id="txtNombre" HBox.hgrow="ALWAYS"/>
+                                    <TextField fx:id="txtNombre" HBox.hgrow="ALWAYS" prefHeight="36"/>
                                 </HBox>
                                 <HBox spacing="6" alignment="CENTER_LEFT">
                                     <StackPane prefWidth="20"><FontIcon iconLiteral="fas-id-card" iconSize="14"/></StackPane>
                                     <Label text="Identificación" prefWidth="100"/>
-                                    <TextField fx:id="txtIdentificacion" HBox.hgrow="ALWAYS"/>
+                                    <TextField fx:id="txtIdentificacion" HBox.hgrow="ALWAYS" prefHeight="36"/>
                                 </HBox>
                                 <HBox spacing="6" alignment="CENTER_LEFT">
                                     <StackPane prefWidth="20"><FontIcon iconLiteral="fas-map-marker-alt" iconSize="14"/></StackPane>
                                     <Label text="Dirección" prefWidth="100"/>
-                                    <TextField fx:id="txtDireccion" HBox.hgrow="ALWAYS"/>
+                                    <TextField fx:id="txtDireccion" HBox.hgrow="ALWAYS" prefHeight="36"/>
                                 </HBox>
                                 <HBox spacing="6" alignment="CENTER_LEFT">
                                     <StackPane prefWidth="20"><FontIcon iconLiteral="fas-envelope" iconSize="14"/></StackPane>
                                     <Label text="Email" prefWidth="100"/>
-                                    <TextField fx:id="txtCorreo" HBox.hgrow="ALWAYS"/>
+                                    <TextField fx:id="txtCorreo" HBox.hgrow="ALWAYS" prefHeight="36"/>
                                 </HBox>
                             </VBox>
                         </content>
@@ -65,12 +65,12 @@
                                 <HBox spacing="6" alignment="CENTER_LEFT">
                                     <StackPane prefWidth="20"><FontIcon iconLiteral="fas-phone" iconSize="14"/></StackPane>
                                     <Label text="Teléfono" prefWidth="100"/>
-                                    <TextField fx:id="txtTelefono" HBox.hgrow="ALWAYS"/>
+                                    <TextField fx:id="txtTelefono" HBox.hgrow="ALWAYS" prefHeight="36"/>
                                 </HBox>
                                 <HBox spacing="6" alignment="CENTER_LEFT">
                                     <StackPane prefWidth="20"><FontIcon iconLiteral="fas-mobile-alt" iconSize="14"/></StackPane>
                                     <Label text="Celular" prefWidth="100"/>
-                                    <TextField fx:id="txtCelular" HBox.hgrow="ALWAYS"/>
+                                    <TextField fx:id="txtCelular" HBox.hgrow="ALWAYS" prefHeight="36"/>
                                 </HBox>
                             </VBox>
                         </content>
@@ -83,7 +83,7 @@
                                 <HBox spacing="6" alignment="CENTER_LEFT">
                                     <StackPane prefWidth="20"><FontIcon iconLiteral="fas-power-off" iconSize="14"/></StackPane>
                                     <Label text="Estado" prefWidth="100"/>
-                                    <ComboBox fx:id="cmbEstado" HBox.hgrow="ALWAYS"/>
+                                    <ComboBox fx:id="cmbEstado" HBox.hgrow="ALWAYS" prefHeight="36"/>
                                 </HBox>
                                 <HBox spacing="10" alignment="CENTER">
                                     <Button fx:id="btnGuardar" text=" GUARDAR" styleClass="btn-guardar" onAction="#guardar">

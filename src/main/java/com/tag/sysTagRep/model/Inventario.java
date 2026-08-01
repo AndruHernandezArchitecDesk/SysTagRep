@@ -15,6 +15,7 @@ public class Inventario {
     private LocalDateTime fecha_ingreso;
     private Boolean estado;
     private String codigo;
+    private String tagCodigo;
     private String proveedor;
     private int proveedorId;
     private int grupoId;
@@ -23,6 +24,7 @@ public class Inventario {
     private String formaPago;
     private int mesesPlazo;
     private BigDecimal interes;
+    private String numeroFactura;
 
     public Inventario() {}
 
@@ -60,6 +62,9 @@ public class Inventario {
     public String getCodigo() { return codigo; }
     public void setCodigo(String codigo) { this.codigo = codigo; }
 
+    public String getTagCodigo() { return tagCodigo; }
+    public void setTagCodigo(String tagCodigo) { this.tagCodigo = tagCodigo; }
+
     public String getProveedor() { return proveedor; }
     public void setProveedor(String proveedor) { this.proveedor = proveedor; }
 
@@ -83,4 +88,7 @@ public class Inventario {
 
     public BigDecimal getInteres() { return interes; }
     public void setInteres(BigDecimal interes) { this.interes = interes; }
+
+    public String getNumeroFactura() { return numeroFactura; }
+    public void setNumeroFactura(String numeroFactura) { this.numeroFactura = numeroFactura; }
 }

@@ -21,15 +21,16 @@ public class InventarioDAO {
 
     public List<Inventario> listarPaginado(int page, int pageSize, String filtro) {
         List<Inventario> lista = new ArrayList<>();
-        String base = "SELECT i.*, p.nombre as nombre_proveedor, g.nombre as nombre_grupo, m.nombre as nombre_marca, u.nombre as nombre_ubicacion " +
+        String base = "SELECT i.*, p.nombre as nombre_proveedor, g.nombre as nombre_grupo, m.nombre as nombre_marca, COALESCE(ub.codigo_ubicacion, u.nombre) as nombre_ubicacion " +
                       "FROM inventario i " +
                       "LEFT JOIN proveedor p ON p.id = i.proveedor_id " +
                       "LEFT JOIN grupo g ON g.id = i.grupo_id " +
                       "LEFT JOIN marca m ON m.id = i.marca_id " +
-                      "LEFT JOIN ubicacion_percha u ON u.id = i.ubicacion_percha_id";
+                      "LEFT JOIN ubicacion_percha u ON u.id = i.ubicacion_percha_id " +
+                      "LEFT JOIN ubicacion ub ON ub.id_producto = i.id";
         String where = buildWhereClause(filtro);
         boolean paginar = page > 0 && pageSize > 0;
-        String sql = base + " " + where + " ORDER BY i.id" + (paginar ? " LIMIT ? OFFSET ?" : "");
+        String sql = base + " " + where + " ORDER BY i.fecha_ingreso DESC, i.id DESC" + (paginar ? " LIMIT ? OFFSET ?" : "");
 
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -100,12 +101,13 @@ public class InventarioDAO {
 
     public List<Inventario> listarPorRango(LocalDate desde, LocalDate hasta) {
         List<Inventario> lista = new ArrayList<>();
-        String sql = "SELECT i.*, p.nombre as nombre_proveedor, g.nombre as nombre_grupo, m.nombre as nombre_marca, u.nombre as nombre_ubicacion " +
+        String sql = "SELECT i.*, p.nombre as nombre_proveedor, g.nombre as nombre_grupo, m.nombre as nombre_marca, COALESCE(ub.codigo_ubicacion, u.nombre) as nombre_ubicacion " +
                      "FROM inventario i " +
                      "LEFT JOIN proveedor p ON p.id = i.proveedor_id " +
                      "LEFT JOIN grupo g ON g.id = i.grupo_id " +
                      "LEFT JOIN marca m ON m.id = i.marca_id " +
                      "LEFT JOIN ubicacion_percha u ON u.id = i.ubicacion_percha_id " +
+                     "LEFT JOIN (SELECT id_producto, STRING_AGG(codigo_ubicacion, ', ' ORDER BY codigo_ubicacion) AS codigo_ubicacion FROM ubicacion WHERE id_producto IS NOT NULL GROUP BY id_producto) ub ON ub.id_producto = i.id " +
                      "WHERE CAST(i.fecha_ingreso AS DATE) BETWEEN ? AND ? ORDER BY i.fecha_ingreso ASC";
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -125,8 +127,8 @@ public class InventarioDAO {
     }
 
     public int guardar(Inventario inv) {
-        String sql = "INSERT INTO inventario(descripcion, grupo_id, marca_id, costo_sin_iva, cantidad, ubicacion_percha_id, precio_venta, fecha_ingreso, estado, codigo, proveedor_id, forma_pago, meses_plazo, interes) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO inventario(descripcion, grupo_id, marca_id, costo_sin_iva, cantidad, ubicacion_percha_id, precio_venta, fecha_ingreso, estado, tag_codigo, codigo, proveedor_id, forma_pago, meses_plazo, interes, numero_factura) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql, java.sql.Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, inv.getDescripcion());
@@ -138,12 +140,14 @@ public class InventarioDAO {
             ps.setBigDecimal(7, inv.getPrecioVenta());
             ps.setObject(8, LocalDateTime.now());
             ps.setObject(9, true);
-            ps.setString(10, inv.getCodigo());
-            if (inv.getProveedorId() > 0) ps.setInt(11, inv.getProveedorId());
-            else ps.setNull(11, java.sql.Types.INTEGER);
-            ps.setString(12, inv.getFormaPago());
-            if (inv.getMesesPlazo() > 0) ps.setInt(13, inv.getMesesPlazo()); else ps.setNull(13, java.sql.Types.INTEGER);
-            if (inv.getInteres() != null && inv.getInteres().compareTo(BigDecimal.ZERO) > 0) ps.setBigDecimal(14, inv.getInteres()); else ps.setNull(14, java.sql.Types.DECIMAL);
+            ps.setString(10, inv.getTagCodigo());
+            ps.setString(11, inv.getCodigo());
+            if (inv.getProveedorId() > 0) ps.setInt(12, inv.getProveedorId());
+            else ps.setNull(12, java.sql.Types.INTEGER);
+            ps.setString(13, inv.getFormaPago());
+            if (inv.getMesesPlazo() > 0) ps.setInt(14, inv.getMesesPlazo()); else ps.setNull(14, java.sql.Types.INTEGER);
+            if (inv.getInteres() != null && inv.getInteres().compareTo(BigDecimal.ZERO) > 0) ps.setBigDecimal(15, inv.getInteres()); else ps.setNull(15, java.sql.Types.DECIMAL);
+            ps.setString(16, inv.getNumeroFactura());
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 if (keys.next()) return keys.getInt(1);
@@ -155,7 +159,7 @@ public class InventarioDAO {
     }
 
     public void actualizar(Inventario inv) {
-        String sql = "UPDATE inventario SET descripcion=?, grupo_id=?, marca_id=?, costo_sin_iva=?, cantidad=?, ubicacion_percha_id=?, precio_venta=?, fecha_ingreso=?, codigo=?, proveedor_id=?, forma_pago=?, meses_plazo=?, interes=? WHERE id=?";
+        String sql = "UPDATE inventario SET descripcion=?, grupo_id=?, marca_id=?, costo_sin_iva=?, cantidad=?, ubicacion_percha_id=?, precio_venta=?, fecha_ingreso=?, tag_codigo=?, codigo=?, proveedor_id=?, forma_pago=?, meses_plazo=?, interes=?, numero_factura=? WHERE id=?";
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, inv.getDescripcion());
@@ -166,13 +170,15 @@ public class InventarioDAO {
             if (inv.getUbicacionPerchaId() > 0) ps.setInt(6, inv.getUbicacionPerchaId()); else ps.setNull(6, java.sql.Types.INTEGER);
             ps.setBigDecimal(7, inv.getPrecioVenta());
             ps.setObject(8, inv.getFecha_ingreso());
-            ps.setString(9, inv.getCodigo());
-            if (inv.getProveedorId() > 0) ps.setInt(10, inv.getProveedorId());
-            else ps.setNull(10, java.sql.Types.INTEGER);
-            ps.setString(11, inv.getFormaPago());
-            if (inv.getMesesPlazo() > 0) ps.setInt(12, inv.getMesesPlazo()); else ps.setNull(12, java.sql.Types.INTEGER);
-            if (inv.getInteres() != null && inv.getInteres().compareTo(BigDecimal.ZERO) > 0) ps.setBigDecimal(13, inv.getInteres()); else ps.setNull(13, java.sql.Types.DECIMAL);
-            ps.setInt(14, inv.getId());
+            ps.setString(9, inv.getTagCodigo());
+            ps.setString(10, inv.getCodigo());
+            if (inv.getProveedorId() > 0) ps.setInt(11, inv.getProveedorId());
+            else ps.setNull(11, java.sql.Types.INTEGER);
+            ps.setString(12, inv.getFormaPago());
+            if (inv.getMesesPlazo() > 0) ps.setInt(13, inv.getMesesPlazo()); else ps.setNull(13, java.sql.Types.INTEGER);
+            if (inv.getInteres() != null && inv.getInteres().compareTo(BigDecimal.ZERO) > 0) ps.setBigDecimal(14, inv.getInteres()); else ps.setNull(14, java.sql.Types.DECIMAL);
+            ps.setString(15, inv.getNumeroFactura());
+            ps.setInt(16, inv.getId());
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -229,12 +235,13 @@ public class InventarioDAO {
 
     public List<Inventario> listarActivosConStock() {
         List<Inventario> lista = new ArrayList<>();
-        String sql = "SELECT i.*, p.nombre as nombre_proveedor, g.nombre as nombre_grupo, m.nombre as nombre_marca, u.nombre as nombre_ubicacion " +
+        String sql = "SELECT i.*, p.nombre as nombre_proveedor, g.nombre as nombre_grupo, m.nombre as nombre_marca, COALESCE(ub.codigo_ubicacion, u.nombre) as nombre_ubicacion " +
                      "FROM inventario i " +
                      "LEFT JOIN proveedor p ON p.id = i.proveedor_id " +
                      "LEFT JOIN grupo g ON g.id = i.grupo_id " +
                      "LEFT JOIN marca m ON m.id = i.marca_id " +
                      "LEFT JOIN ubicacion_percha u ON u.id = i.ubicacion_percha_id " +
+                     "LEFT JOIN (SELECT id_producto, STRING_AGG(codigo_ubicacion, ', ' ORDER BY codigo_ubicacion) AS codigo_ubicacion FROM ubicacion WHERE id_producto IS NOT NULL GROUP BY id_producto) ub ON ub.id_producto = i.id " +
                      "WHERE i.estado=true AND i.cantidad >= 1 ORDER BY i.descripcion";
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql);
@@ -251,12 +258,13 @@ public class InventarioDAO {
     }
 
     public Inventario obtenerPorId(int id) {
-        String sql = "SELECT i.*, p.nombre as nombre_proveedor, g.nombre as nombre_grupo, m.nombre as nombre_marca, u.nombre as nombre_ubicacion " +
+        String sql = "SELECT i.*, p.nombre as nombre_proveedor, g.nombre as nombre_grupo, m.nombre as nombre_marca, COALESCE(ub.codigo_ubicacion, u.nombre) as nombre_ubicacion " +
                      "FROM inventario i " +
                      "LEFT JOIN proveedor p ON p.id = i.proveedor_id " +
                      "LEFT JOIN grupo g ON g.id = i.grupo_id " +
                      "LEFT JOIN marca m ON m.id = i.marca_id " +
                      "LEFT JOIN ubicacion_percha u ON u.id = i.ubicacion_percha_id " +
+                     "LEFT JOIN (SELECT id_producto, STRING_AGG(codigo_ubicacion, ', ' ORDER BY codigo_ubicacion) AS codigo_ubicacion FROM ubicacion WHERE id_producto IS NOT NULL GROUP BY id_producto) ub ON ub.id_producto = i.id " +
                      "WHERE i.id=?";
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -289,10 +297,12 @@ public class InventarioDAO {
         v.setFecha_ingreso(rs.getObject("fecha_ingreso", LocalDateTime.class));
         v.setEstado(rs.getBoolean("estado"));
         v.setCodigo(rs.getString("codigo"));
+        v.setTagCodigo(rs.getString("tag_codigo"));
         v.setProveedor(rs.getString("nombre_proveedor"));
         v.setProveedorId(rs.getInt("proveedor_id"));
         v.setFormaPago(rs.getString("forma_pago"));
         v.setMesesPlazo(rs.getInt("meses_plazo"));
         v.setInteres(rs.getBigDecimal("interes"));
+        v.setNumeroFactura(rs.getString("numero_factura"));
     }
 }

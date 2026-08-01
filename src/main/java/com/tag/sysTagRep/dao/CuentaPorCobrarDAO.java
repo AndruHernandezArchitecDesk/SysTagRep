@@ -40,7 +40,7 @@ public class CuentaPorCobrarDAO {
                      "INNER JOIN cliente cl ON cl.id = cpc.cliente_id " +
                      "INNER JOIN nota_venta_registro nv ON nv.id = cpc.nota_venta_id " +
                      "WHERE cpc.estado = 'Pendiente' " +
-                     "ORDER BY (cpc.fecha_registro + (cpc.meses_plazo || ' months')::interval) ASC";
+                     "ORDER BY (cpc.fecha_registro + (cpc.meses_plazo || ' days')::interval) ASC";
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {

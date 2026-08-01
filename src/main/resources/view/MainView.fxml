@@ -19,11 +19,12 @@
         <HBox spacing="0" alignment="CENTER_LEFT">
             <MenuBar HBox.hgrow="ALWAYS">
                 <Menu text="Comprobantes">
-                    <MenuItem text="Nota de Venta" onAction="#irNotaVenta"/>
+                    <MenuItem text="Proforma" onAction="#irNotaVenta"/>
                     <MenuItem text="Factura Electrónica" onAction="#irFactura"/>
                 </Menu>
                 <Menu text="Perchero">
                     <MenuItem text="Ubicacion" onAction="#irUbicacionPerchero"/>
+                    <MenuItem text="Ingreso de Factura" onAction="#irIngresoFactura"/>
                     <MenuItem text="Inventario" onAction="#irInventario"/>
                     <MenuItem text="Gestion de Stock" onAction="#irGestionStock"/>
                 </Menu>
@@ -34,6 +35,8 @@
                 <Menu text="Historial">
                     <MenuItem text="de Productos" onAction="#irHistorialProductos"/>
                     <MenuItem text="de Ventas" onAction="#irHistorialVentas"/>
+                    <MenuItem text="de Compras" onAction="#irHistorialCompras"/>
+                    <MenuItem text="de Facturas" onAction="#irHistorialFacturas"/>
                 </Menu>
                 <Menu text="Reportes">
                     <MenuItem text="Comprobantes de venta" onAction="#irComprobanteVentaReporte"/>
@@ -41,19 +44,24 @@
                 </Menu>
                 <Menu text="Administración">
                     <Menu text="Gestión de Usuarios">
+                        <MenuItem text="Clientes" onAction="#irClientes"/>
                         <MenuItem text="Usuarios" onAction="#irUsuarios"/>
                         <MenuItem text="Proveedores" onAction="#irProveedores"/>
                     </Menu>
                     <Menu text="Catálogos">
+                        <MenuItem text="Códigos" onAction="#irCodigos"/>
                         <MenuItem text="Grupos" onAction="#irGrupos"/>
                         <MenuItem text="Marcas" onAction="#irMarcas"/>
                     </Menu>
+                    <MenuItem text="Numeración de Documentos" onAction="#irNumeracion"/>
+                    <MenuItem text="Firma Electrónica" onAction="#irFirma"/>
                 </Menu>
                 <Menu text="Ayuda">
                     <MenuItem text="Acerca de" onAction="#acercaDe"/>
                 </Menu>
             </MenuBar>
             <Region HBox.hgrow="NEVER"/>
+            <Label fx:id="lblUsuarioSesion" text="" style="-fx-font-weight: bold; -fx-text-fill: #1a252f; -fx-padding: 0 12 0 0;"/>
             <Button text="Cerrar Sesión" onAction="#cerrarSesion"
                     style="-fx-background-color: #c0392b; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 0; -fx-padding: 5 15; -fx-cursor: hand;"/>
         </HBox>

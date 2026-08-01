@@ -20,7 +20,7 @@
                 <Label fx:id="lblTelefono" text="Tel: 0999999999 / Cel: 099999990" style="-fx-font-size: 11px;"/>
             </VBox>
             <VBox alignment="CENTER_RIGHT" spacing="5">
-                <Label text="NOTA DE VENTA" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
+                <Label text="PROFORMA" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
                 <Label fx:id="lblRuc" text="RUC: 0000000000001" style="-fx-font-size: 12px;"/>
                 <Label text="N° 000000" fx:id="lblNumNotaVenta" style="-fx-text-fill: red; -fx-font-weight: bold;"/>
             </VBox>
@@ -35,23 +35,11 @@
                 <!-- SECCIÓN CLIENTE -->
                 <TitledPane text="Información del Cliente" collapsible="false" style="-fx-font-weight: bold;">
                     <VBox spacing="10">
-                        <GridPane hgap="15" vgap="5">
-                            <columnConstraints>
-                                <ColumnConstraints hgrow="ALWAYS" percentWidth="50"/>
-                                <ColumnConstraints hgrow="ALWAYS" percentWidth="50"/>
-                            </columnConstraints>
-                            <VBox spacing="4" GridPane.rowIndex="0" GridPane.columnIndex="0">
-                                <Label text="Buscar Cliente:" style="-fx-font-weight: bold;"/>
-                                <HBox spacing="6" alignment="CENTER_LEFT">
-                                    <FontIcon iconLiteral="fas-search" iconSize="14"/>
-                                    <TextField fx:id="txtBuscarCliente" promptText="Nombre o cédula..." HBox.hgrow="ALWAYS"/>
-                                </HBox>
-                            </VBox>
-                            <VBox spacing="4" GridPane.rowIndex="0" GridPane.columnIndex="1">
-                                <Label text="Seleccionar Cliente:" style="-fx-font-weight: bold;"/>
-                                <ComboBox fx:id="cmbCliente" maxWidth="Infinity"/>
-                            </VBox>
-                        </GridPane>
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <FontIcon iconLiteral="fas-search" iconSize="14"/>
+                            <Label text="Seleccionar Cliente:" minWidth="70"/>
+                            <ComboBox fx:id="cmbCliente" prefWidth="350" maxWidth="350" promptText="Seleccionar Cliente"/>
+                        </HBox>
 
                         <GridPane hgap="15" vgap="10">
                             <columnConstraints>
@@ -125,11 +113,17 @@
                             <Label text="Forma de Pago:" style="-fx-font-weight: bold;"/>
                             <ComboBox fx:id="cmbFormaPago" prefWidth="200"/>
                             <HBox fx:id="pnlCredito" spacing="10" visible="false" managed="false" alignment="CENTER_RIGHT">
-                                <Label text="Meses:" style="-fx-font-weight: bold;"/>
+                                <Label text="Días:" style="-fx-font-weight: bold;"/>
                                 <ComboBox fx:id="cmbMesesPlazo" prefWidth="100" maxWidth="100"/>
                                 <Label text="Interés %:" style="-fx-font-weight: bold;"/>
                                 <ComboBox fx:id="cmbInteres" prefWidth="100" maxWidth="100"/>
                             </HBox>
+                        </HBox>
+                        <HBox alignment="CENTER_RIGHT" spacing="10">
+                            <Label text="Descuento:" style="-fx-font-weight: bold;"/>
+                            <ComboBox fx:id="cmbDescuento" prefWidth="110"/>
+                            <Label text="-" prefWidth="10"/>
+                            <Label fx:id="lblDescuento" text="0.00" prefWidth="100" alignment="CENTER_RIGHT"/>
                         </HBox>
                         <HBox alignment="CENTER_RIGHT" spacing="10">
                             <Label text="Subtotal:" style="-fx-font-weight: bold;"/>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.tag.sysTagRep.controller.TerminosController"
+            prefWidth="560.0" prefHeight="480.0"
+            style="-fx-padding: 15;">
+
+    <top>
+        <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 0 0 10 0;">
+            <Label text="Términos y Condiciones" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+        </HBox>
+    </top>
+
+    <center>
+        <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;">
+            <TextArea editable="false" wrapText="true" styleClass="texto-terminos" prefHeight="340">
+                <text>
+TÉRMINOS Y CONDICIONES DE LA FIRMA ELECTRÓNICA - SysTag Repuestos Automotrices
+
+1. OBJETO
+El presente documento regula el almacenamiento local de la firma electrónica (.p12) y su contraseña en el sistema SysTag Repuestos, con la única finalidad de agilizar el proceso de emisión de facturas electrónicas ante el SRI.
+
+2. CONSENTIMIENTO
+Al aceptar estos términos, el usuario autoriza a SysTag Repuestos a guardar de forma LOCAL en este equipo la ruta del certificado digital y la contraseña de la firma electrónica, de manera ENCRIPTADA (AES-128/GCM), de modo que no se solicite cada vez que se emite una factura.
+
+3. RESPONSABILIDAD DEL USUARIO
+El usuario es el único responsable de:
+- Custodiar el certificado digital (.p12) y su contraseña.
+- Mantener en secreto la contraseña de la firma.
+- Notificar de inmediato cualquier uso no autorizado de su firma electrónica.
+
+4. ALCANCE DEL ALMACENAMIENTO
+El sistema únicamente almacena la ruta del archivo .p12 y la contraseña cifrada en el directorio de usuario (~/.systag). El sistema no transmite la contraseña a terceros y la usa exclusivamente para firmar digitalmente los comprobantes electrónicos generados en este equipo.
+
+5. VALIDEZ LEGAL
+La firma electrónica tiene el mismo valor jurídico que la firma autógrafa, conforme a la Ley de Comercio Electrónico, Firmas Electrónicas y Mensajes de Datos del Ecuador y su reglamento.
+
+6. ACEPTACIÓN
+Marcar la casilla "He leído y acepto los términos y condiciones" y guardar la configuración implica la aceptación plena y expresa de los presentes términos.
+
+SysTag Repuestos Automotrices
+                </text>
+            </TextArea>
+        </ScrollPane>
+    </center>
+
+    <bottom>
+        <HBox alignment="CENTER" spacing="10" style="-fx-padding: 12 0 0 0;">
+            <Button fx:id="btnCerrar" text="CERRAR" styleClass="btn-guardar" onAction="#cerrar" prefWidth="160"/>
+        </HBox>
+    </bottom>
+
+</BorderPane>

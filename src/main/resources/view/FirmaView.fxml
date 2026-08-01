@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.tag.sysTagRep.controller.FirmaController"
+            prefHeight="620.0" prefWidth="640.0"
+            style="-fx-padding: 10;">
+
+    <top>
+        <HBox spacing="10" alignment="CENTER_LEFT" styleClass="header" style="-fx-padding: 5 0 10 0;">
+            <Label text="Firma Electrónica (SRI)" styleClass="titulo"/>
+        </HBox>
+    </top>
+
+    <center>
+        <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;">
+            <VBox spacing="12" style="-fx-padding: 10;">
+
+                <Label fx:id="lblEstado" text="La firma no está configurada aún." style="-fx-font-size: 12px; -fx-text-fill: #c0392b;"/>
+
+                <TitledPane text="Certificado Digital" collapsible="false"
+                            style="-fx-font-weight: bold; -fx-background-color: #f8f9fa; -fx-background-radius: 8; -fx-padding: 8;">
+                    <content>
+                        <VBox spacing="8" style="-fx-padding: 5;">
+                            <HBox spacing="6" alignment="CENTER_LEFT">
+                                <StackPane prefWidth="20"><FontIcon iconLiteral="fas-file-alt" iconSize="14"/></StackPane>
+                                <Label text="Archivo .p12" prefWidth="110"/>
+                                <TextField fx:id="txtRutaP12" promptText="Ruta del certificado digital (.p12)" HBox.hgrow="ALWAYS" prefHeight="36"/>
+                                <Button text="Examinar..." onAction="#seleccionarFirma" prefWidth="100" prefHeight="36"/>
+                            </HBox>
+                            <HBox spacing="6" alignment="CENTER_LEFT">
+                                <StackPane prefWidth="20"><FontIcon iconLiteral="fas-lock" iconSize="14"/></StackPane>
+                                <Label text="Contraseña" prefWidth="110"/>
+                                <PasswordField fx:id="txtClaveP12" promptText="Contraseña de la firma electrónica" HBox.hgrow="ALWAYS" prefHeight="36"/>
+                            </HBox>
+                        </VBox>
+                    </content>
+                </TitledPane>
+
+                <TitledPane text="Autorización" collapsible="false"
+                            style="-fx-font-weight: bold; -fx-background-color: #f8f9fa; -fx-background-radius: 8; -fx-padding: 8;">
+                    <content>
+                        <VBox spacing="8" style="-fx-padding: 5;">
+                            <CheckBox fx:id="chkTerminos"
+                                      text="He leído y acepto los términos y condiciones"
+                                      style="-fx-font-weight: normal;"/>
+                            <Hyperlink fx:id="lnkTerminos" text="Ver términos y condiciones" onAction="#abrirTerminos" style="-fx-font-size: 12px;"/>
+                            <Label text="La contraseña se guardará ENCRIPTADA de forma local para agilizar la facturación electrónica."
+                                   style="-fx-font-size: 11px; -fx-text-fill: #7f8c8d;" wrapText="true"/>
+                        </VBox>
+                    </content>
+                </TitledPane>
+
+                <HBox spacing="10" alignment="CENTER">
+                    <Button fx:id="btnGuardar" text=" GUARDAR" styleClass="btn-guardar" onAction="#guardar" prefWidth="220" prefHeight="40">
+                        <graphic><FontIcon iconLiteral="fas-save" iconSize="18"/></graphic>
+                    </Button>
+                </HBox>
+
+            </VBox>
+        </ScrollPane>
+    </center>
+</BorderPane>

@@ -7,7 +7,7 @@
 <BorderPane xmlns="http://javafx.com/javafx/21"
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.tag.sysTagRep.controller.CompraReporteController"
-            prefHeight="600.0" prefWidth="900.0"
+            prefHeight="650.0" prefWidth="900.0"
             style="-fx-padding: 10;">
 
     <top>
@@ -20,9 +20,9 @@
         <VBox spacing="10">
             <HBox spacing="10" alignment="CENTER_LEFT">
                 <Label text="Desde:"/>
-                <DatePicker fx:id="dpDesde" maxWidth="160"/>
+                <DatePicker fx:id="dpDesde" maxWidth="150"/>
                 <Label text="Hasta:"/>
-                <DatePicker fx:id="dpHasta" maxWidth="160"/>
+                <DatePicker fx:id="dpHasta" maxWidth="150"/>
                 <Region HBox.hgrow="ALWAYS"/>
                 <Button onAction="#exportarExcel" style="-fx-background-color: #27ae60; -fx-text-fill: white;">
                     <graphic>
@@ -31,23 +31,39 @@
                     Exportar a Excel
                 </Button>
             </HBox>
+
+            <TitledPane text="Facturas" collapsible="false">
+                <TableView fx:id="tblFacturas" prefHeight="250">
+                    <columns>
+                        <TableColumn fx:id="colFactura" text="Nº Factura" prefWidth="140"/>
+                        <TableColumn fx:id="colFacturaProveedor" text="Proveedor" prefWidth="200"/>
+                        <TableColumn fx:id="colFacturaFecha" text="Fecha" prefWidth="140"/>
+                        <TableColumn fx:id="colFacturaTotal" text="Total" prefWidth="120"/>
+                    </columns>
+                </TableView>
+            </TitledPane>
+
             <HBox spacing="6" alignment="CENTER_LEFT">
+                <Label text="Productos de la factura seleccionada:" style="-fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+                <Region HBox.hgrow="ALWAYS"/>
                 <FontIcon iconLiteral="fas-search" iconSize="14"/>
-                <TextField fx:id="txtBuscar" promptText="Buscar..." HBox.hgrow="ALWAYS"/>
-                <Label fx:id="lblTotal" style="-fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: #2c3e50;"/>
+                <TextField fx:id="txtBuscar" promptText="Buscar producto..." prefWidth="220"/>
             </HBox>
-            <TableView fx:id="tblReporte" VBox.vgrow="ALWAYS">
+
+            <TableView fx:id="tblDetalle" VBox.vgrow="ALWAYS">
                 <columns>
-                    <TableColumn fx:id="colCodigo" text="Código" prefWidth="100"/>
-                    <TableColumn fx:id="colDescripcion" text="Producto" prefWidth="180"/>
-                    <TableColumn fx:id="colProveedor" text="Proveedor" prefWidth="150"/>
-                    <TableColumn fx:id="colCosto" text="Costo s/IVA" prefWidth="100"/>
-                    <TableColumn fx:id="colCantidad" text="Cant." prefWidth="60"/>
-                    <TableColumn fx:id="colTotal" text="Total" prefWidth="100"/>
-                    <TableColumn fx:id="colFormaPago" text="Forma de Pago" prefWidth="130"/>
-                    <TableColumn fx:id="colFecha" text="Fecha" prefWidth="140"/>
+                    <TableColumn fx:id="colDetCodigo" text="Código" prefWidth="110"/>
+                    <TableColumn fx:id="colDetDescripcion" text="Producto" prefWidth="220"/>
+                    <TableColumn fx:id="colDetCantidad" text="Cant." prefWidth="60"/>
+                    <TableColumn fx:id="colDetCosto" text="Costo s/IVA" prefWidth="110"/>
+                    <TableColumn fx:id="colDetIva" text="IVA" prefWidth="90"/>
+                    <TableColumn fx:id="colDetTotal" text="Total" prefWidth="110"/>
                 </columns>
             </TableView>
+
+            <HBox spacing="6" alignment="CENTER_RIGHT">
+                <Label fx:id="lblTotal" style="-fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: #27ae60;"/>
+            </HBox>
         </VBox>
     </center>
 

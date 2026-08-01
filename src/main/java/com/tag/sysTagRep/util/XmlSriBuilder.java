@@ -21,7 +21,7 @@ import java.util.List;
  */
 public class XmlSriBuilder {
 
-    public static String construirFactura(String claveAcceso, String ruc, String razonSocial,
+    public static String construirFactura(String ambiente, String claveAcceso, String ruc, String razonSocial,
                                            String codEstablecimiento, String codPuntoEmision,
                                            int secuencial, String dirEstablecimiento,
                                            String contribuyenteEspecial, String obligadoContabilidad,
@@ -47,7 +47,7 @@ public class XmlSriBuilder {
 
             // infoTributaria
             Element infoTributaria = doc.createElement("infoTributaria");
-            agregarElemento(infoTributaria, "ambiente", "2"); // 2=PRUEBAS, 1=PRODUCCION
+            agregarElemento(infoTributaria, "ambiente", "PRODUCCION".equalsIgnoreCase(ambiente) ? "1" : "2"); // 2=PRUEBAS, 1=PRODUCCION
             agregarElemento(infoTributaria, "tipoEmision", "1");
             agregarElemento(infoTributaria, "razonSocial", razonSocial);
             agregarElemento(infoTributaria, "ruc", ruc);

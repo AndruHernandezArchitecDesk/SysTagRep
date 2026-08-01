@@ -3,6 +3,8 @@ package com.tag.sysTagRep.controller;
 import com.tag.sysTagRep.dao.LogDAO;
 import com.tag.sysTagRep.dao.ProveedorDAO;
 import com.tag.sysTagRep.model.Proveedor;
+import com.tag.sysTagRep.util.SortTable;
+import com.tag.sysTagRep.util.ComboFilter;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -66,9 +68,9 @@ public class ProveedorController implements Initializable {
             if (newValue != null && newValue.length() > 30) txtNombre.setText(old);
         });
 
-        // Nombre: max 30
+        // Correo: max 60
         txtCorreo.textProperty().addListener((obs, old, newValue) -> {
-            if (newValue != null && newValue.length() > 20) txtCorreo.setText(old);
+            if (newValue != null && newValue.length() > 60) txtCorreo.setText(old);
         });
 
         // Identificación: solo números y max 13
@@ -82,9 +84,9 @@ public class ProveedorController implements Initializable {
             }
         });
 
-        // Dirección: max 30
+        // Dirección: max 70
         txtDireccion.setTextFormatter(new TextFormatter<>(change -> 
-            change.getControlNewText().length() <= 30 ? change : null));
+            change.getControlNewText().length() <= 70 ? change : null));
 
         // Teléfono: solo números y max 10
         txtTelefono.textProperty().addListener((obs, old, newValue) -> {
@@ -121,11 +123,12 @@ public class ProveedorController implements Initializable {
         colFechaRegistro.setCellValueFactory(new PropertyValueFactory<>("fecha_registro"));
 
         tblProveedores.setItems(listaProveedores);
+        SortTable.agregarBotones(tblProveedores);
     }
 
 
     private void iniciarCmbEstado(){
-        cmbEstado.getItems().addAll("ACTIVO", "INACTIVO");
+        ComboFilter.habilitar(cmbEstado, FXCollections.observableArrayList("ACTIVO", "INACTIVO"));
         cmbEstado.setValue("ACTIVO");
     }
 
@@ -168,7 +171,7 @@ public class ProveedorController implements Initializable {
             v.setCorreo(txtCorreo.getText().trim());
             v.setTelefono(txtTelefono.getText().trim());
             v.setCelular(txtCelular.getText().trim());
-            v.setEstado(cmbEstado.getValue().equals("ACTIVO"));
+            v.setEstado("ACTIVO".equals(cmbEstado.getValue()));
 
             if (txtId.getText() == null || txtId.getText().isEmpty()) {
                 dao.guardar(v);

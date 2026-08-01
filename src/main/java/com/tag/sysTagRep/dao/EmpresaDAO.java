@@ -31,6 +31,8 @@ public class EmpresaDAO {
                 e.setCelular(rs.getString("celular"));
                 e.setCorreo(rs.getString("correo"));
                 e.setLogoUrl(rs.getString("logo_url"));
+                e.setAgenteRetencion(rs.getString("agente_retencion"));
+                e.setResolucion(rs.getString("resolucion"));
                 lista.add(e);
             }
 

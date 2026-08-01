@@ -43,6 +43,15 @@ public class PercheroDAO {
         } catch (SQLException e) { e.printStackTrace(); }
     }
 
+    public void eliminarPorNombre(String nombrePerchero) {
+        String sql = "DELETE FROM perchero WHERE nombre_perchero=?";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, nombrePerchero);
+            ps.executeUpdate();
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
+
     public List<Perchero> listar() {
         List<Perchero> lista = new ArrayList<>();
         String sql = "SELECT id, nombre_perchero, seccion, cantidad_lugares, estado FROM perchero ORDER BY nombre_perchero, seccion";

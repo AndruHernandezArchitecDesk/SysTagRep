@@ -2,6 +2,7 @@ package com.tag.sysTagRep.controller;
 
 import com.tag.sysTagRep.dao.InventarioDAO;
 import com.tag.sysTagRep.model.Inventario;
+import com.tag.sysTagRep.util.SortTable;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -126,6 +127,7 @@ public class GestionStockController implements Initializable {
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         table.setPrefHeight(Math.min(items.size() * 30 + 30, 200));
         table.getColumns().addAll(colFecha, colProveedor, colCosto, colPrecio, colCant, colForma);
+        SortTable.agregarBotones(table);
 
         return table;
     }

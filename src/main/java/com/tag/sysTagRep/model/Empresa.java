@@ -11,6 +11,8 @@ public class Empresa {
     private String celular;
     private String correo;
     private String logoUrl;
+    private String agenteRetencion;
+    private String resolucion;
     private boolean estado;
 
     public Empresa(){}
@@ -105,6 +107,22 @@ public class Empresa {
 
     public void setLogoUrl(String logoUrl) {
         this.logoUrl = logoUrl;
+    }
+
+    public String getAgenteRetencion() {
+        return agenteRetencion;
+    }
+
+    public void setAgenteRetencion(String agenteRetencion) {
+        this.agenteRetencion = agenteRetencion;
+    }
+
+    public String getResolucion() {
+        return resolucion;
+    }
+
+    public void setResolucion(String resolucion) {
+        this.resolucion = resolucion;
     }
 
     public boolean isEstado() {

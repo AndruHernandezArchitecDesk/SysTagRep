@@ -2,6 +2,7 @@ package com.tag.sysTagRep.controller;
 
 import com.tag.sysTagRep.dao.HistorialProductoDAO;
 import com.tag.sysTagRep.model.HistorialProducto;
+import com.tag.sysTagRep.util.SortTable;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -54,6 +55,7 @@ public class HistorialProductoController implements Initializable {
         colFecha.setCellValueFactory(new PropertyValueFactory<>("fechaVenta"));
 
         tblHistorial.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        SortTable.agregarBotones(tblHistorial);
 
         dpFecha.setValue(LocalDate.now());
         dpFecha.setOnAction(e -> cargarDatos());

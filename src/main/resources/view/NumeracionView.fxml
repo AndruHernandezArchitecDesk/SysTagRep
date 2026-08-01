@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.tag.sysTagRep.controller.NumeracionController"
+            prefHeight="560.0" prefWidth="700.0"
+            style="-fx-padding: 10;">
+
+    <top>
+        <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 5 0 10 0;">
+            <StackPane><FontIcon iconLiteral="fas-sort-numeric-up" iconSize="20" iconColor="#2c3e50"/></StackPane>
+            <Label text="Numeración de Documentos" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+        </HBox>
+    </top>
+
+    <center>
+        <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;">
+        <VBox spacing="15" alignment="TOP_CENTER">
+            <TitledPane text="Proforma" collapsible="false" maxWidth="650"
+                        style="-fx-font-weight: bold; -fx-background-color: #f8f9fa; -fx-background-radius: 8; -fx-padding: 8;">
+                <content>
+                    <VBox spacing="10" style="-fx-padding: 5;">
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <Label text="Siguiente número a usar:" style="-fx-font-weight: bold;"/>
+                            <Label fx:id="lblSiguienteProforma" text="-" style="-fx-font-weight: bold; -fx-text-fill: #27ae60; -fx-font-size: 14px;"/>
+                        </HBox>
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <Label text="Código establecimiento:" prefWidth="140"/>
+                            <TextField fx:id="txtEstabProforma" prefWidth="80" maxWidth="80" promptText="001"/>
+                            <Label text="Punto de emisión:" prefWidth="110"/>
+                            <TextField fx:id="txtPtoProforma" prefWidth="80" maxWidth="80" promptText="001"/>
+                        </HBox>
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <Label text="Iniciar secuencial en número:" prefWidth="140"/>
+                            <TextField fx:id="txtInicioProforma" prefWidth="140" promptText="Ej: 500"/>
+                            <Button text="Establecer" onAction="#establecerProforma" styleClass="btn-guardar">
+                                <graphic><FontIcon iconLiteral="fas-check" iconSize="14"/></graphic>
+                            </Button>
+                        </HBox>
+                        <Label text="La próxima proforma se generará como 001-001-000000500. Solo se permite aumentar el secuencial." style="-fx-font-size: 11px; -fx-text-fill: #7f8c8d;"/>
+                    </VBox>
+                </content>
+            </TitledPane>
+
+            <TitledPane text="Factura Electrónica" collapsible="false" maxWidth="650"
+                        style="-fx-font-weight: bold; -fx-background-color: #f8f9fa; -fx-background-radius: 8; -fx-padding: 8;">
+                <content>
+                    <VBox spacing="10" style="-fx-padding: 5;">
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <Label text="Siguiente número a usar:" style="-fx-font-weight: bold;"/>
+                            <Label fx:id="lblSiguienteFactura" text="-" style="-fx-font-weight: bold; -fx-text-fill: #e67e22; -fx-font-size: 14px;"/>
+                        </HBox>
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <Label text="Código establecimiento:" prefWidth="140"/>
+                            <TextField fx:id="txtEstabFactura" prefWidth="80" maxWidth="80" promptText="001"/>
+                            <Label text="Punto de emisión:" prefWidth="110"/>
+                            <TextField fx:id="txtPtoFactura" prefWidth="80" maxWidth="80" promptText="001"/>
+                        </HBox>
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <Label text="Iniciar secuencial en número:" prefWidth="140"/>
+                            <TextField fx:id="txtInicioFactura" prefWidth="140" promptText="Ej: 1000"/>
+                            <Button text="Establecer" onAction="#establecerFactura" styleClass="btn-guardar">
+                                <graphic><FontIcon iconLiteral="fas-check" iconSize="14"/></graphic>
+                            </Button>
+                        </HBox>
+                        <Label text="La próxima factura se generará como 001-001-000001000. Solo se permite aumentar el secuencial." style="-fx-font-size: 11px; -fx-text-fill: #7f8c8d;"/>
+                    </VBox>
+                </content>
+            </TitledPane>
+        </VBox>
+        </ScrollPane>
+    </center>
+</BorderPane>

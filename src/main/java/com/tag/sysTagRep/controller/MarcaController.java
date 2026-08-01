@@ -3,6 +3,8 @@ package com.tag.sysTagRep.controller;
 import com.tag.sysTagRep.dao.LogDAO;
 import com.tag.sysTagRep.dao.MarcaDAO;
 import com.tag.sysTagRep.model.Marca;
+import com.tag.sysTagRep.util.SortTable;
+import com.tag.sysTagRep.util.ComboFilter;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -44,10 +46,11 @@ public class MarcaController implements Initializable {
         colNombre.setCellValueFactory(new PropertyValueFactory<>("nombre"));
         colEstado.setCellValueFactory(new PropertyValueFactory<>("estado"));
 
-        cmbEstado.getItems().addAll("ACTIVO", "INACTIVO");
+        ComboFilter.habilitar(cmbEstado, FXCollections.observableArrayList("ACTIVO", "INACTIVO"));
         cmbEstado.setValue("ACTIVO");
 
         tblMarca.setItems(listaMarca);
+        SortTable.agregarBotones(tblMarca);
         cargarDatos();
         cargarAcciones();
         filtroBusqueda();

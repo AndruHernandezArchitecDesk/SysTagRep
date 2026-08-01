@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.tag.sysTagRep.controller.HistorialFacturaController"
+            prefHeight="600.0" prefWidth="1000.0"
+            style="-fx-padding: 10;">
+
+    <top>
+        <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 5 0 10 0;">
+            <Label text="Historial de Facturas" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="btnConsultarSri" text=" Consultar SRI" onAction="#consultarSri"
+                    style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold;">
+                <graphic><FontIcon iconLiteral="fas-sync-alt" iconColor="WHITE"/></graphic>
+            </Button>
+        </HBox>
+    </top>
+
+    <center>
+        <VBox spacing="10">
+            <HBox spacing="6" alignment="CENTER_LEFT">
+                <FontIcon iconLiteral="fas-search" iconSize="14"/>
+                <TextField fx:id="txtBuscar" promptText="Buscar por código, comprobante, cliente, forma de pago o estado..." HBox.hgrow="ALWAYS"/>
+            </HBox>
+            <TableView fx:id="tblFacturas" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="colCodigo" text="Numeración" prefWidth="130"/>
+                    <TableColumn fx:id="colNumComprobante" text="Comprobante" prefWidth="140"/>
+                    <TableColumn fx:id="colFecha" text="Fecha" prefWidth="140"/>
+                    <TableColumn fx:id="colCliente" text="Cliente" prefWidth="160"/>
+                    <TableColumn fx:id="colFormaPago" text="Forma de Pago" prefWidth="110"/>
+                    <TableColumn fx:id="colSubtotal" text="Subtotal" prefWidth="90"/>
+                    <TableColumn fx:id="colIva" text="IVA" prefWidth="70"/>
+                    <TableColumn fx:id="colTotal" text="Total" prefWidth="90"/>
+                    <TableColumn fx:id="colEstado" text="Estado SRI" prefWidth="150"/>
+                    <TableColumn fx:id="colMensaje" text="Mensaje SRI" prefWidth="240"/>
+                </columns>
+            </TableView>
+            <HBox spacing="10" alignment="CENTER" style="-fx-padding: 5 0 0 0;">
+                <Label text="Registros por pág.:"/>
+                <ComboBox fx:id="cmbPageSize" prefWidth="80"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button fx:id="btnAnterior" text="◀ Anterior" onAction="#irPaginaAnterior"/>
+                <Label fx:id="lblPaginaInfo" text="Página 1 de 1 (0 registros)" style="-fx-font-weight: bold;"/>
+                <Button fx:id="btnSiguiente" text="Siguiente ▶" onAction="#irPaginaSiguiente"/>
+            </HBox>
+        </VBox>
+    </center>
+
+</BorderPane>

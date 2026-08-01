@@ -9,8 +9,11 @@ import com.tag.sysTagRep.dao.CuentaPorCobrarDAO;
 import com.tag.sysTagRep.dao.HistorialProductoDAO;
 import com.tag.sysTagRep.dao.NotaVentaDetalleDAO;
 import com.tag.sysTagRep.dao.NotaVentaRegistroDAO;
+import com.tag.sysTagRep.dao.SecuenciaDocumentoDAO;
 import com.tag.sysTagRep.model.*;
 import com.tag.sysTagRep.util.NotaVentaPDF;
+import com.tag.sysTagRep.util.SortTable;
+import com.tag.sysTagRep.util.ComboFilter;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -46,7 +49,6 @@ public class NotaVentaController implements Initializable {
     
     // Cliente
     @FXML private ComboBox<Cliente> cmbCliente;
-    @FXML private TextField txtBuscarCliente;
     @FXML private TextField txtNombre, txtIdentificacion, txtDireccion, txtCorreo, txtTelefono;
     @FXML private DatePicker dpFechaNotaVenta;
     
@@ -65,8 +67,9 @@ public class NotaVentaController implements Initializable {
     @FXML private TableColumn<DetalleVenta, Void> colAcciones;
 
     // Totales
-    @FXML private Label lblSubtotal, lblIva, lblTotal;
+    @FXML private Label lblSubtotal, lblIva, lblDescuento, lblTotal;
     @FXML private ComboBox<String> cmbFormaPago;
+    @FXML private ComboBox<String> cmbDescuento;
     @FXML private HBox pnlCredito;
     @FXML private ComboBox<Integer> cmbMesesPlazo;
     @FXML private ComboBox<String> cmbInteres;
@@ -75,6 +78,7 @@ public class NotaVentaController implements Initializable {
     private final ClienteDAO daoCliente = new ClienteDAO();
     private final InventarioDAO daoInventario = new InventarioDAO();
     private final NotaVentaRegistroDAO daoNotaVentaRegistro = new NotaVentaRegistroDAO();
+    private final SecuenciaDocumentoDAO secuenciaDAO = new SecuenciaDocumentoDAO();
     private final NotaVentaDetalleDAO daoNotaVentaDetalle = new NotaVentaDetalleDAO();
     private final CuentaPorCobrarDAO daoCuentaPorCobrar = new CuentaPorCobrarDAO();
     private final LogDAO logDAO = new LogDAO();
@@ -83,7 +87,6 @@ public class NotaVentaController implements Initializable {
     private Empresa empresaActual;
 
     private ObservableList<Cliente> clientes;
-    private FilteredList<Cliente> clientesFiltrados;
     private ObservableList<Inventario> listaInventario = FXCollections.observableArrayList();
     private ObservableList<DetalleVenta> itemsDetalle = FXCollections.observableArrayList();
 
@@ -97,16 +100,19 @@ public class NotaVentaController implements Initializable {
         cargarListaClientes();
         cargarFormasPago();
         cargarCredito();
+        cargarDescuento();
         
         iniciarTablaInventario();
         iniciarTablaDetalle();
 
         tblInventarioBusqueda.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         tblDetalle.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        SortTable.agregarBotones(tblInventarioBusqueda);
+        SortTable.agregarBotones(tblDetalle);
     }
 
     private void cargarFormasPago() {
-        cmbFormaPago.setItems(FXCollections.observableArrayList(
+        ComboFilter.habilitar(cmbFormaPago, FXCollections.observableArrayList(
             "Efectivo", "Tarjeta de Crédito", "Tarjeta de Débito",
             "Transferencia", "Depósito", "Cheque", "TAG Crédito"
         ));
@@ -114,10 +120,10 @@ public class NotaVentaController implements Initializable {
     }
 
     private void cargarCredito() {
-        cmbMesesPlazo.setItems(FXCollections.observableArrayList(1, 2, 3, 4, 5, 6));
+        ComboFilter.habilitarEnteros(cmbMesesPlazo, FXCollections.observableArrayList(5, 10, 15, 20, 25, 30));
         cmbMesesPlazo.getSelectionModel().selectFirst();
 
-        cmbInteres.setItems(FXCollections.observableArrayList("0", "3", "6", "9", "12", "15"));
+        ComboFilter.habilitar(cmbInteres, FXCollections.observableArrayList("0", "3", "6", "9", "12", "15"));
         cmbInteres.getSelectionModel().selectFirst();
 
         cmbFormaPago.valueProperty().addListener((obs, old, valor) -> {
@@ -127,22 +133,19 @@ public class NotaVentaController implements Initializable {
         });
     }
 
+    private void cargarDescuento() {
+        ObservableList<String> descuentos = FXCollections.observableArrayList();
+        for (int i = 0; i <= 100; i += 5) descuentos.add(String.valueOf(i));
+        ComboFilter.habilitar(cmbDescuento, descuentos);
+        cmbDescuento.setValue("0");
+        cmbDescuento.valueProperty().addListener((obs, old, val) -> calcularTotales());
+    }
+
     private void cargarListaClientes() {
         clientes = FXCollections.observableArrayList(daoCliente.obtenerListaClientes());
-        clientesFiltrados = new FilteredList<>(clientes, p -> true);
-        cmbCliente.setItems(clientesFiltrados);
-        cmbCliente.setConverter(new StringConverter<Cliente>() {
+        ComboFilter.habilitar(cmbCliente, clientes, new StringConverter<Cliente>() {
             @Override public String toString(Cliente c) { return c == null ? "" : c.getNombre() + " - " + c.getIdentificacion(); }
             @Override public Cliente fromString(String s) { return null; }
-        });
-
-        txtBuscarCliente.textProperty().addListener((obs, oldText, newText) -> {
-            clientesFiltrados.setPredicate(cliente -> {
-                if (newText == null || newText.isEmpty()) return true;
-                String filtro = newText.toLowerCase();
-                return cliente.getNombre().toLowerCase().contains(filtro) || cliente.getIdentificacion().toLowerCase().contains(filtro);
-            });
-            if (!cmbCliente.isShowing()) cmbCliente.show();
         });
 
         cmbCliente.valueProperty().addListener((obs, old, cliente) -> {
@@ -271,11 +274,22 @@ public class NotaVentaController implements Initializable {
     private void calcularTotales() {
         BigDecimal subtotal = itemsDetalle.stream().map(DetalleVenta::getPrecioTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal iva = subtotal.multiply(new BigDecimal("0.15")).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal total = subtotal.add(iva).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal totalBruto = subtotal.add(iva);
+        BigDecimal descuento = calcularDescuento(totalBruto);
+        BigDecimal total = totalBruto.subtract(descuento).setScale(2, RoundingMode.HALF_UP);
         
         lblSubtotal.setText(subtotal.setScale(2, RoundingMode.HALF_UP).toString());
         lblIva.setText(iva.toString());
+        lblDescuento.setText(descuento.toString());
         lblTotal.setText(total.toString());
+    }
+
+    private BigDecimal calcularDescuento(BigDecimal totalBruto) {
+        BigDecimal pct = BigDecimal.ZERO;
+        try {
+            pct = new BigDecimal(cmbDescuento.getValue() != null ? cmbDescuento.getValue() : "0");
+        } catch (NumberFormatException ignored) {}
+        return totalBruto.multiply(pct).divide(new BigDecimal("100")).setScale(2, RoundingMode.HALF_UP);
     }
 
     private void cargarLogo() {
@@ -296,15 +310,8 @@ public class NotaVentaController implements Initializable {
     }
 
     private void obtenerNumNotaVenta() {
-        List<NotaVentaRegistro> nvr = daoNotaVentaRegistro.obtenerNumNotaVenta();
-        int nextId = 1;
-        for (NotaVentaRegistro r : nvr) {
-            try {
-                int num = Integer.parseInt(r.getCodigo().replaceAll("\\D+", ""));
-                if (num >= nextId) nextId = num + 1;
-            } catch (Exception ignored) {}
-        }
-        lblNumNotaVenta.setText("TAGVIC-" + String.format("%06d", nextId));
+        SecuenciaDocumento sec = secuenciaDAO.obtener("PROFORMA");
+        lblNumNotaVenta.setText(sec.getProximoCodigo());
     }
 
     @FXML
@@ -328,26 +335,30 @@ public class NotaVentaController implements Initializable {
         String codigo = lblNumNotaVenta.getText();
         LocalDateTime ahora = LocalDateTime.now();
 
+        if (secuenciaDAO.existeCodigoNotaVenta(codigo)) {
+            new Alert(Alert.AlertType.ERROR, "El número " + codigo + " ya existe en la base de datos, no se puede repetir.").showAndWait();
+            obtenerNumNotaVenta();
+            return;
+        }
+
         NotaVentaRegistro nvr = new NotaVentaRegistro(empresaId, clienteId, ahora, codigo, cmbFormaPago.getValue(), ahora);
         int notaVentaId = daoNotaVentaRegistro.insertar(nvr);
 
         if (notaVentaId == -1) {
-            new Alert(Alert.AlertType.ERROR, "Error al registrar la nota de venta.").showAndWait();
+            new Alert(Alert.AlertType.ERROR, "Error al registrar la proforma.").showAndWait();
             return;
         }
 
-        daoNotaVentaDetalle.insertarDetalle(notaVentaId, itemsDetalle);
+        secuenciaDAO.marcarUsado("PROFORMA");
 
-        for (DetalleVenta d : itemsDetalle) {
-            daoInventario.descontarStock(d.getProductoId(), d.getCantidad());
-        }
+        daoNotaVentaDetalle.insertarDetalle(notaVentaId, itemsDetalle);
 
         String clienteNombre = cmbCliente.getValue().getNombre();
         List<HistorialProducto> historial = new ArrayList<>();
         for (DetalleVenta d : itemsDetalle) {
             String provNombre = daoInventario.obtenerProveedorNombre(d.getProductoId());
             historial.add(new HistorialProducto(d.getProductoId(), d.getCodigo(), d.getDescripcion(),
-                    d.getCantidad(), d.getPrecioUnitario(), "NOTA_VENTA", codigo,
+                    d.getCantidad(), d.getPrecioUnitario(), "PROFORMA", codigo,
                     clienteNombre, provNombre, ahora));
         }
         historialProductoDAO.insertar(historial);
@@ -357,23 +368,25 @@ public class NotaVentaController implements Initializable {
         // Generar PDF
         BigDecimal sub = itemsDetalle.stream().map(DetalleVenta::getPrecioTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal ivaCalc = sub.multiply(new BigDecimal("0.15")).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal totCalc = sub.add(ivaCalc).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal totalBruto = sub.add(ivaCalc);
+        BigDecimal descCalc = calcularDescuento(totalBruto);
+        BigDecimal totCalc = totalBruto.subtract(descCalc).setScale(2, RoundingMode.HALF_UP);
 
         // Guardar crédito si aplica
         if ("TAG Crédito".equals(cmbFormaPago.getValue())) {
-            int meses = cmbMesesPlazo.getValue();
+            int dias = cmbMesesPlazo.getValue();
             BigDecimal tasaInteres = new BigDecimal(cmbInteres.getValue()).divide(new BigDecimal("100"));
             BigDecimal totalConInteres = totCalc.multiply(BigDecimal.ONE.add(tasaInteres)).setScale(2, RoundingMode.HALF_UP);
-            BigDecimal cuotaMensual = totalConInteres.divide(new BigDecimal(meses), 2, RoundingMode.HALF_UP);
+            BigDecimal cuotaMensual = totalConInteres.divide(new BigDecimal(dias), 2, RoundingMode.HALF_UP);
 
-            CuentaPorCobrar cpc = new CuentaPorCobrar(notaVentaId, clienteId, totCalc, meses,
+            CuentaPorCobrar cpc = new CuentaPorCobrar(notaVentaId, clienteId, totCalc, dias,
                     new BigDecimal(cmbInteres.getValue()), cuotaMensual);
             daoCuentaPorCobrar.insertar(cpc);
         }
 
-        // --- Generar PDF Nota de Venta ---
+        // --- Generar PDF Proforma ---
         String rutaPDF = System.getProperty("java.io.tmpdir") + File.separator
-                + "NotaVenta_" + codigo.replace("-", "") + ".pdf";
+                + "Proforma_" + codigo.replace("-", "") + ".pdf";
 
         List<String[]> detallesPDF = new ArrayList<>();
         for (DetalleVenta d : itemsDetalle) {
@@ -393,13 +406,13 @@ public class NotaVentaController implements Initializable {
                 empresaActual.getDireccionCallePrincipal() + " y " + empresaActual.getDireccionCalleSecundaria(),
                 empresaActual.getTelefono() + " / " + empresaActual.getCelular(), empresaActual.getCorreo(),
                 cmbCliente.getValue().getNombre(), cmbCliente.getValue().getIdentificacion(),
-                txtDireccion.getText(), txtTelefono.getText(),
-                cmbFormaPago.getValue(), detallesPDF, sub, ivaCalc, totCalc);
+                txtDireccion.getText(), txtTelefono.getText(), txtCorreo.getText(),
+                cmbFormaPago.getValue(), detallesPDF, sub, ivaCalc, descCalc, totCalc);
 
         Alert alertExito = new Alert(Alert.AlertType.INFORMATION);
-        alertExito.setTitle("Nota de Venta registrada");
+        alertExito.setTitle("Proforma registrada");
         alertExito.setHeaderText(null);
-        alertExito.setContentText("Nota de Venta " + codigo + " registrada exitosamente.\nPDF: " + rutaPDF);
+        alertExito.setContentText("Proforma " + codigo + " registrada exitosamente.\nPDF: " + rutaPDF);
         alertExito.showAndWait();
 
         // Abrir PDF
@@ -417,7 +430,7 @@ public class NotaVentaController implements Initializable {
         if (correoCliente != null && !correoCliente.trim().isEmpty()) {
             try {
                 EmailService emailService = new EmailService();
-                boolean enviado = emailService.enviarCorreoConPDF(correoCliente.trim(), cmbCliente.getValue().getNombre(), codigo, new File(rutaPDF));
+                boolean enviado = emailService.enviarCorreoConPDF(correoCliente.trim(), cmbCliente.getValue().getNombre(), codigo, "PROFORMA", new File(rutaPDF));
                 if (enviado) {
                     new Alert(Alert.AlertType.INFORMATION, "Correo enviado exitosamente a " + correoCliente).showAndWait();
                 } else {
@@ -431,9 +444,10 @@ public class NotaVentaController implements Initializable {
 
         itemsDetalle.clear();
         tblDetalle.refresh();
+        cmbDescuento.setValue("0");
         calcularTotales();
         cmbCliente.getSelectionModel().clearSelection();
-        txtBuscarCliente.clear();
+        cmbCliente.getEditor().clear();
         txtNombre.clear();
         txtIdentificacion.clear();
         txtDireccion.clear();

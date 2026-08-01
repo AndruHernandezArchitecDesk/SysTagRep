@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.tag.sysTagRep.controller.ClienteController"
+            prefHeight="600.0" prefWidth="800.0"
+            style="-fx-padding: 10;">
+
+    <top>
+        <HBox spacing="10" alignment="CENTER_LEFT" styleClass="header" style="-fx-padding: 5 0 10 0;">
+            <Label text="Gestión de Clientes" styleClass="titulo"/>
+            <Button fx:id="btnToggleForm" onAction="#toggleFormulario" styleClass="btn-icono">
+                <graphic><FontIcon iconLiteral="fas-chevron-left" iconSize="16"/></graphic>
+            </Button>
+        </HBox>
+    </top>
+
+    <center>
+        <SplitPane fx:id="splitPane" dividerPositions="0.35">
+
+            <ScrollPane fx:id="formPane" fitToWidth="true">
+                <VBox spacing="12" style="-fx-padding: 10;">
+
+                    <TitledPane text="Datos del Cliente" collapsible="false"
+                                style="-fx-font-weight: bold; -fx-background-color: #f8f9fa; -fx-background-radius: 8; -fx-padding: 8;">
+                        <content>
+                            <VBox spacing="8" style="-fx-padding: 5;">
+                                <HBox spacing="6" alignment="CENTER_LEFT">
+                                    <StackPane prefWidth="20"><FontIcon iconLiteral="fas-hashtag" iconSize="14"/></StackPane>
+                                    <Label text="ID" prefWidth="100"/>
+                                    <TextField fx:id="txtId" disable="true" HBox.hgrow="ALWAYS" prefHeight="36"/>
+                                </HBox>
+                                <HBox spacing="6" alignment="CENTER_LEFT">
+                                    <StackPane prefWidth="20"><FontIcon iconLiteral="fas-user" iconSize="14"/></StackPane>
+                                    <Label text="Nombre" prefWidth="100"/>
+                                    <TextField fx:id="txtNombre" HBox.hgrow="ALWAYS" prefHeight="36"/>
+                                </HBox>
+                                <HBox spacing="6" alignment="CENTER_LEFT">
+                                    <StackPane prefWidth="20"><FontIcon iconLiteral="fas-id-card" iconSize="14"/></StackPane>
+                                    <Label text="Identificación" prefWidth="100"/>
+                                    <TextField fx:id="txtIdentificacion" HBox.hgrow="ALWAYS" prefHeight="36"/>
+                                </HBox>
+                                <HBox spacing="6" alignment="CENTER_LEFT">
+                                    <StackPane prefWidth="20"><FontIcon iconLiteral="fas-map-marker-alt" iconSize="14"/></StackPane>
+                                    <Label text="Dirección" prefWidth="100"/>
+                                    <TextField fx:id="txtDireccion" HBox.hgrow="ALWAYS" prefHeight="36"/>
+                                </HBox>
+                                <HBox spacing="6" alignment="CENTER_LEFT">
+                                    <StackPane prefWidth="20"><FontIcon iconLiteral="fas-envelope" iconSize="14"/></StackPane>
+                                    <Label text="Email" prefWidth="100"/>
+                                    <TextField fx:id="txtCorreo" HBox.hgrow="ALWAYS" prefHeight="36"/>
+                                </HBox>
+                            </VBox>
+                        </content>
+                    </TitledPane>
+
+                    <TitledPane text="Contacto" collapsible="false"
+                                style="-fx-font-weight: bold; -fx-background-color: #f8f9fa; -fx-background-radius: 8; -fx-padding: 8;">
+                        <content>
+                            <VBox spacing="8" style="-fx-padding: 5;">
+                                <HBox spacing="6" alignment="CENTER_LEFT">
+                                    <StackPane prefWidth="20"><FontIcon iconLiteral="fas-phone" iconSize="14"/></StackPane>
+                                    <Label text="Teléfono" prefWidth="100"/>
+                                    <TextField fx:id="txtTelefono" HBox.hgrow="ALWAYS" prefHeight="36"/>
+                                </HBox>
+                                <HBox spacing="6" alignment="CENTER_LEFT">
+                                    <StackPane prefWidth="20"><FontIcon iconLiteral="fas-mobile-alt" iconSize="14"/></StackPane>
+                                    <Label text="Celular" prefWidth="100"/>
+                                    <TextField fx:id="txtCelular" HBox.hgrow="ALWAYS" prefHeight="36"/>
+                                </HBox>
+                            </VBox>
+                        </content>
+                    </TitledPane>
+
+                    <TitledPane text="Estado" collapsible="false"
+                                style="-fx-font-weight: bold; -fx-background-color: #f8f9fa; -fx-background-radius: 8; -fx-padding: 8;">
+                        <content>
+                            <VBox spacing="8" style="-fx-padding: 5;">
+                                <HBox spacing="6" alignment="CENTER_LEFT">
+                                    <StackPane prefWidth="20"><FontIcon iconLiteral="fas-power-off" iconSize="14"/></StackPane>
+                                    <Label text="Estado" prefWidth="100"/>
+                                    <ComboBox fx:id="cmbEstado" HBox.hgrow="ALWAYS" prefHeight="36"/>
+                                </HBox>
+                                <HBox spacing="10" alignment="CENTER">
+                                    <Button fx:id="btnGuardar" text=" GUARDAR" styleClass="btn-guardar" onAction="#guardar">
+                                        <graphic><FontIcon iconLiteral="fas-save" iconSize="18"/></graphic>
+                                    </Button>
+                                </HBox>
+                            </VBox>
+                        </content>
+                    </TitledPane>
+
+                </VBox>
+            </ScrollPane>
+
+            <VBox spacing="20" style="-fx-padding: 5;">
+                <HBox spacing="6" alignment="CENTER_LEFT">
+                    <TextField fx:id="txtBuscar" promptText="Buscar:"/>
+                    <FontIcon iconLiteral="fas-search" iconSize="14"/>
+                </HBox>
+                <TableView fx:id="tblClientes">
+                    <columns>
+                        <TableColumn fx:id="colId" text="ID" prefWidth="50"/>
+                        <TableColumn fx:id="colNombre" text="Nombre" prefWidth="150"/>
+                        <TableColumn fx:id="colIdentificacion" text="Identificación" prefWidth="120"/>
+                        <TableColumn fx:id="colDireccion" text="Dirección" prefWidth="120"/>
+                        <TableColumn fx:id="colCorreo" text="Correo" prefWidth="150"/>
+                        <TableColumn fx:id="colTelefono" text="Teléfono" prefWidth="110"/>
+                        <TableColumn fx:id="colCelular" text="Celular" prefWidth="110"/>
+                        <TableColumn fx:id="colFechaRegistro" text="Fecha Registro" prefWidth="140"/>
+                        <TableColumn fx:id="colEstado" text="Estado" prefWidth="70"/>
+                        <TableColumn fx:id="colAcciones" text="Acciones" prefWidth="160"/>
+                    </columns>
+                </TableView>
+            </VBox>
+        </SplitPane>
+    </center>
+</BorderPane>

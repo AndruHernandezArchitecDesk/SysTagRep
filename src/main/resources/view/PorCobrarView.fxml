@@ -50,7 +50,7 @@
                     <TableView fx:id="tblDetalleCredito" prefHeight="200">
                         <columns>
                             <TableColumn fx:id="colDetCliente" text="Cliente" minWidth="150"/>
-                            <TableColumn fx:id="colDetNota" text="N° Nota" minWidth="110"/>
+                            <TableColumn fx:id="colDetNota" text="N° Proforma" minWidth="110"/>
                             <TableColumn fx:id="colDetFecha" text="Fecha Emisión" minWidth="110"/>
                             <TableColumn fx:id="colDetArticulos" text="Artículos" minWidth="200"/>
                             <TableColumn fx:id="colDetTiempoPago" text="Plazo" minWidth="80"/>

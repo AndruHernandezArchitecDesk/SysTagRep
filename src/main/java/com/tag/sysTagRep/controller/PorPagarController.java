@@ -1,6 +1,7 @@
 package com.tag.sysTagRep.controller;
 
 import com.tag.sysTagRep.dao.CuentaPorPagarDAO;
+import com.tag.sysTagRep.util.SortTable;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -49,6 +50,8 @@ public class PorPagarController implements Initializable {
     public void initialize(URL url, ResourceBundle rb) {
         configurarTablaCreditos();
         configurarTablaDetalle();
+        SortTable.agregarBotones(tblCreditosActivos);
+        SortTable.agregarBotones(tblDetalleCredito);
         cargarCreditos();
     }
 

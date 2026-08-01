@@ -19,6 +19,7 @@ import javafx.scene.chart.PieChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
@@ -50,12 +51,24 @@ public class MainController implements Initializable {
     @FXML
     private PieChart chartGrupos;
 
+    @FXML
+    private Label lblUsuarioSesion;
+
     private final DashboardDAO dashboardDAO = new DashboardDAO();
     private final LogDAO logDAO = new LogDAO();
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         cargarGraficos();
+        mostrarUsuarioSesion();
+    }
+
+    private void mostrarUsuarioSesion() {
+        if (LoginController.usuarioAutenticado == null) return;
+        String apellido = LoginController.usuarioAutenticado.getApellido();
+        String nombre = LoginController.usuarioAutenticado.getNombre();
+        lblUsuarioSesion.setText((apellido != null ? apellido.trim() : "")
+                + (nombre != null && !nombre.trim().isEmpty() ? " " + nombre.trim() : ""));
     }
 
     private void cargarGraficos() {
@@ -86,7 +99,7 @@ public class MainController implements Initializable {
             todosDias.addAll(ventasFact.keySet());
 
             XYChart.Series<String, Number> serieNV = new XYChart.Series<>();
-            serieNV.setName("Nota de Venta");
+            serieNV.setName("Proforma");
             XYChart.Series<String, Number> serieFact = new XYChart.Series<>();
             serieFact.setName("Factura Electrónica");
 
@@ -275,6 +288,11 @@ public class MainController implements Initializable {
     }
 
     @FXML
+    private void irIngresoFactura() {
+        cargarVista("/view/IngresoMercaderiaView.fxml");
+    }
+
+    @FXML
     private void irInventario() {
         cargarVista("/view/InventarioView.fxml");
     }
@@ -297,6 +315,16 @@ public class MainController implements Initializable {
     @FXML
     private void irProveedores() {
         cargarVista("/view/ProveedorView.fxml");
+    }
+
+    @FXML
+    private void irClientes() {
+        cargarVista("/view/ClienteView.fxml");
+    }
+
+    @FXML
+    private void irCodigos() {
+        cargarVista("/view/CodigoView.fxml");
     }
 
     @FXML
@@ -345,6 +373,16 @@ public class MainController implements Initializable {
     }
 
     @FXML
+    private void irHistorialCompras() {
+        cargarVista("/view/HistorialCompraView.fxml");
+    }
+
+    @FXML
+    private void irHistorialFacturas() {
+        cargarVista("/view/HistorialFacturaView.fxml");
+    }
+
+    @FXML
     private void irComprobanteVentaReporte() {
         cargarVista("/view/ComprobanteVentaReporteView.fxml");
     }
@@ -352,6 +390,16 @@ public class MainController implements Initializable {
     @FXML
     private void irCompraReporte() {
         cargarVista("/view/CompraReporteView.fxml");
+    }
+
+    @FXML
+    private void irNumeracion() {
+        cargarVista("/view/NumeracionView.fxml");
+    }
+
+    @FXML
+    private void irFirma() {
+        cargarVista("/view/FirmaView.fxml");
     }
 
     @FXML

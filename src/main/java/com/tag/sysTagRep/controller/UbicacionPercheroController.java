@@ -7,6 +7,7 @@ import com.tag.sysTagRep.dao.UbicacionDetalleDAO;
 import com.tag.sysTagRep.model.Inventario;
 import com.tag.sysTagRep.model.Perchero;
 import com.tag.sysTagRep.model.UbicacionDetalle;
+import com.tag.sysTagRep.util.ComboFilter;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -34,6 +35,7 @@ public class UbicacionPercheroController implements Initializable {
     @FXML private ScrollPane scrollGrid;
     @FXML private Button btnNuevaSeccion;
     @FXML private Button btnNuevoPerchero;
+    @FXML private Button btnEliminarPerchero;
 
     private final PercheroDAO percheroDAO = new PercheroDAO();
     private final UbicacionDetalleDAO ubicacionDAO = new UbicacionDetalleDAO();
@@ -45,7 +47,7 @@ public class UbicacionPercheroController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        cmbPerchero.setItems(listaNombresPerchero);
+        ComboFilter.habilitar(cmbPerchero, listaNombresPerchero);
         cargarNombresPerchero();
     }
 
@@ -71,15 +73,18 @@ public class UbicacionPercheroController implements Initializable {
         if (nombre == null || nombre.isEmpty()) {
             contenedorSecciones.getChildren().clear();
             btnNuevaSeccion.setDisable(true);
+            btnEliminarPerchero.setDisable(true);
             txtUbicacionSeleccionada.clear();
             lblEstadoUbicacion.setText("");
             return;
         }
         btnNuevaSeccion.setDisable(false);
+        btnEliminarPerchero.setDisable(false);
         cargarSecciones(nombre);
     }
 
     private void cargarSecciones(String nombrePerchero) {
+        if (nombrePerchero == null || nombrePerchero.isEmpty()) return;
         contenedorSecciones.getChildren().clear();
         txtUbicacionSeleccionada.clear();
         lblEstadoUbicacion.setText("");
@@ -92,6 +97,55 @@ public class UbicacionPercheroController implements Initializable {
         for (Perchero seccion : secciones) {
             VBox filaSeccion = crearFilaSeccion(seccion);
             contenedorSecciones.getChildren().add(filaSeccion);
+        }
+    }
+
+    @FXML
+    private void eliminarPerchero() {
+        String nombre = cmbPerchero.getValue();
+        if (nombre == null || nombre.isEmpty()) return;
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
+                "¿Eliminar el perchero \"" + nombre + "\" con todas sus secciones y lugares?",
+                ButtonType.YES, ButtonType.NO);
+        if (alert.showAndWait().orElse(ButtonType.NO) == ButtonType.YES) {
+            try {
+                percheroDAO.eliminarPorNombre(nombre);
+                cargarNombresPerchero();
+            } catch (Exception e) {
+                logDAO.guardar("UbicacionPercheroController", "eliminarPerchero", e.getMessage(), e);
+                new Alert(Alert.AlertType.ERROR, "Error al eliminar perchero: " + e.getMessage()).showAndWait();
+            }
+        }
+    }
+
+    private void eliminarSeccion(Perchero seccion) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
+                "¿Eliminar la sección " + seccion.getSeccion() + " del perchero " + seccion.getNombrePerchero()
+                        + " con sus " + seccion.getCantidadLugares() + " lugares?",
+                ButtonType.YES, ButtonType.NO);
+        if (alert.showAndWait().orElse(ButtonType.NO) == ButtonType.YES) {
+            try {
+                percheroDAO.eliminar(seccion.getId());
+                cargarSecciones(cmbPerchero.getValue());
+            } catch (Exception e) {
+                logDAO.guardar("UbicacionPercheroController", "eliminarSeccion", e.getMessage(), e);
+                new Alert(Alert.AlertType.ERROR, "Error al eliminar sección: " + e.getMessage()).showAndWait();
+            }
+        }
+    }
+
+    private void eliminarLugar(UbicacionDetalle u) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
+                "¿Eliminar el lugar " + u.getCodigoUbicacion() + "?",
+                ButtonType.YES, ButtonType.NO);
+        if (alert.showAndWait().orElse(ButtonType.NO) == ButtonType.YES) {
+            try {
+                ubicacionDAO.eliminarLugar(u.getId());
+                cargarSecciones(cmbPerchero.getValue());
+            } catch (Exception e) {
+                logDAO.guardar("UbicacionPercheroController", "eliminarLugar", e.getMessage(), e);
+                new Alert(Alert.AlertType.ERROR, "Error al eliminar lugar: " + e.getMessage()).showAndWait();
+            }
         }
     }
 
@@ -115,6 +169,17 @@ public class UbicacionPercheroController implements Initializable {
         lblSeccion.setFont(Font.font("Arial", FontWeight.BOLD, 14));
         lblSeccion.setTextFill(javafx.scene.paint.Color.web("#2c3e50"));
 
+        Button btnEliminarSeccion = new Button("✕");
+        btnEliminarSeccion.setStyle("-fx-background-color: #dc3545; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 2 8; -fx-cursor: hand;");
+        btnEliminarSeccion.setTooltip(new Tooltip("Eliminar sección"));
+        btnEliminarSeccion.setOnAction(e -> eliminarSeccion(seccion));
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        HBox cabecera = new HBox(10, lblSeccion, spacer, btnEliminarSeccion);
+        cabecera.setAlignment(Pos.CENTER_LEFT);
+
         HBox filaBloques = new HBox(10);
         filaBloques.setAlignment(Pos.CENTER_LEFT);
 
@@ -123,7 +188,7 @@ public class UbicacionPercheroController implements Initializable {
             filaBloques.getChildren().add(bloque);
         }
 
-        contenedor.getChildren().addAll(lblSeccion, filaBloques);
+        contenedor.getChildren().addAll(cabecera, filaBloques);
         return contenedor;
     }
 
@@ -173,12 +238,24 @@ public class UbicacionPercheroController implements Initializable {
                 lblModelo.setTextFill(javafx.scene.paint.Color.web("#f5b7b1"));
                 bloque.getChildren().add(lblModelo);
             }
+            if (u.getStockAsignado() != null) {
+                Label lblStock = new Label("Stock: " + u.getStockAsignado());
+                lblStock.setFont(Font.font("Arial", FontWeight.BOLD, 8));
+                lblStock.setTextFill(javafx.scene.paint.Color.WHITE);
+                bloque.getChildren().add(lblStock);
+            }
             bloque.setOnMouseClicked(event -> {
                 if (event.getButton() == MouseButton.PRIMARY) {
                     mostrarDialogoDetalleOcupado(u);
                 }
             });
         }
+
+        ContextMenu menu = new ContextMenu();
+        MenuItem miEliminarLugar = new MenuItem("Eliminar lugar");
+        miEliminarLugar.setOnAction(e -> eliminarLugar(u));
+        menu.getItems().add(miEliminarLugar);
+        bloque.setOnContextMenuRequested(e -> menu.show(bloque, e.getScreenX(), e.getScreenY()));
 
         Tooltip tt = new Tooltip(crearTooltipText(u));
         tt.setStyle("-fx-font-size: 12px; -fx-background-color: #2c3e50; -fx-text-fill: white; -fx-padding: 8;");
@@ -203,7 +280,8 @@ public class UbicacionPercheroController implements Initializable {
             sb.append("Código: ").append(u.getProductoCodigo() != null ? u.getProductoCodigo() : "-").append("\n");
             sb.append("Grupo: ").append(u.getGrupoNombre() != null ? u.getGrupoNombre() : "-").append("\n");
             sb.append("Marca: ").append(u.getMarcaNombre() != null ? u.getMarcaNombre() : "-").append("\n");
-            sb.append("Cantidad: ").append(u.getCantidad());
+            sb.append("Cantidad (inventario): ").append(u.getCantidad()).append("\n");
+            sb.append("Stock en este lugar: ").append(u.getStockAsignado() != null ? u.getStockAsignado() : 0);
         }
         return sb.toString();
     }
@@ -224,15 +302,15 @@ public class UbicacionPercheroController implements Initializable {
     }
 
     private void mostrarDialogoAsignarProducto(VBox bloque, UbicacionDetalle u) {
-        List<Inventario> productos = inventarioDAO.listarActivosConStock();
+        List<Inventario> productos = ubicacionDAO.listarProductosDisponibles();
         if (productos.isEmpty()) {
-            new Alert(Alert.AlertType.INFORMATION, "No hay productos activos con stock disponible.").showAndWait();
+            new Alert(Alert.AlertType.INFORMATION, "No hay productos libres. Todos los productos ya tienen su stock asignado en algún lugar.").showAndWait();
             return;
         }
 
-        Dialog<Inventario> dialog = new Dialog<>();
+        Dialog<AsignacionProducto> dialog = new Dialog<>();
         dialog.setTitle("Asignar Producto");
-        dialog.setHeaderText("Seleccione un producto para la ubicación " + u.getCodigoUbicacion());
+        dialog.setHeaderText("Seleccione un producto libre para la ubicación " + u.getCodigoUbicacion());
 
         ButtonType btnAsignar = new ButtonType("Asignar", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(btnAsignar, ButtonType.CANCEL);
@@ -251,8 +329,8 @@ public class UbicacionPercheroController implements Initializable {
         colDescripcion.setPrefWidth(300);
         colDescripcion.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("descripcion"));
 
-        TableColumn<Inventario, Integer> colCantidad = new TableColumn<>("Stock");
-        colCantidad.setPrefWidth(80);
+        TableColumn<Inventario, Integer> colCantidad = new TableColumn<>("Stock libre");
+        colCantidad.setPrefWidth(100);
         colCantidad.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("cantidad"));
 
         tblProductos.getColumns().addAll(colCodigo, colDescripcion, colCantidad);
@@ -260,6 +338,20 @@ public class UbicacionPercheroController implements Initializable {
         ObservableList<Inventario> listaProductos = FXCollections.observableArrayList(productos);
         FilteredList<Inventario> productosFiltrados = new FilteredList<>(listaProductos, p -> true);
         tblProductos.setItems(productosFiltrados);
+
+        Spinner<Integer> spnCantidad = new Spinner<>(1, 1, 1);
+        spnCantidad.setEditable(true);
+        spnCantidad.setPrefWidth(100);
+
+        tblProductos.getSelectionModel().selectedItemProperty().addListener((obs, old, sel) -> {
+            if (sel != null) {
+                int max = Math.max(1, sel.getCantidad());
+                spnCantidad.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, max, Math.min(1, max)));
+            }
+        });
+        if (!listaProductos.isEmpty()) {
+            tblProductos.getSelectionModel().selectFirst();
+        }
 
         txtBuscar.textProperty().addListener((obs, old, val) -> {
             if (val == null || val.trim().isEmpty()) {
@@ -277,28 +369,36 @@ public class UbicacionPercheroController implements Initializable {
             TableRow<Inventario> row = new TableRow<>();
             row.setOnMouseClicked(e -> {
                 if (e.getClickCount() == 2 && !row.isEmpty()) {
-                    dialog.setResult(row.getItem());
+                    Inventario sel = row.getItem();
+                    int cant = spnCantidad.getValue() != null ? spnCantidad.getValue() : 1;
+                    dialog.setResult(new AsignacionProducto(sel, cant));
                     dialog.close();
                 }
             });
             return row;
         });
 
-        VBox content = new VBox(10, txtBuscar, tblProductos);
+        HBox filaCantidad = new HBox(8, new Label("Stock a colocar:"), spnCantidad);
+        filaCantidad.setAlignment(Pos.CENTER_LEFT);
+
+        VBox content = new VBox(10, txtBuscar, tblProductos, filaCantidad);
         content.setPadding(new Insets(10));
         dialog.getDialogPane().setContent(content);
 
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == btnAsignar) {
-                return tblProductos.getSelectionModel().getSelectedItem();
+                Inventario sel = tblProductos.getSelectionModel().getSelectedItem();
+                if (sel == null) return null;
+                int cant = spnCantidad.getValue() != null ? spnCantidad.getValue() : 1;
+                return new AsignacionProducto(sel, cant);
             }
             return null;
         });
 
-        Optional<Inventario> result = dialog.showAndWait();
-        result.ifPresent(producto -> {
+        Optional<AsignacionProducto> result = dialog.showAndWait();
+        result.ifPresent(a -> {
             try {
-                ubicacionDAO.ocupar(u.getId(), producto.getId());
+                ubicacionDAO.ocupar(u.getId(), a.producto.getId(), a.cantidad);
                 cargarSecciones(cmbPerchero.getValue());
             } catch (Exception e) {
                 logDAO.guardar("UbicacionPercheroController", "mostrarDialogoAsignarProducto", e.getMessage(), e);
@@ -331,6 +431,7 @@ public class UbicacionPercheroController implements Initializable {
             sb.append("Costo sin IVA: $").append(producto.getCostoSinIVA() != null ? producto.getCostoSinIVA() : "0").append("\n");
             sb.append("Precio Venta: $").append(producto.getPrecioVenta() != null ? producto.getPrecioVenta() : "0").append("\n");
             sb.append("Stock: ").append(producto.getCantidad()).append("\n");
+            sb.append("Stock en este lugar: ").append(u.getStockAsignado() != null ? u.getStockAsignado() : 0).append("\n");
             sb.append("Fecha Ingreso: ").append(producto.getFecha_ingreso() != null ? producto.getFecha_ingreso().toLocalDate() : "-").append("\n");
             sb.append("Forma Pago: ").append(nvl(producto.getFormaPago())).append("\n");
             sb.append("Estado: ").append(Boolean.TRUE.equals(producto.getEstado()) ? "Activo" : "Inactivo").append("\n");
@@ -345,17 +446,22 @@ public class UbicacionPercheroController implements Initializable {
         alert.setContentText(sb.toString());
 
         ButtonType btnLiberar = new ButtonType("Liberar Ubicación", ButtonBar.ButtonData.LEFT);
+        ButtonType btnEliminarLugar = new ButtonType("Eliminar Lugar", ButtonBar.ButtonData.LEFT);
         ButtonType btnCerrar = new ButtonType("Cerrar", ButtonBar.ButtonData.CANCEL_CLOSE);
-        alert.getButtonTypes().setAll(btnLiberar, btnCerrar);
+        alert.getButtonTypes().setAll(btnLiberar, btnEliminarLugar, btnCerrar);
 
         Optional<ButtonType> result = alert.showAndWait();
-        if (result.isPresent() && result.get() == btnLiberar) {
+        if (result.isPresent()) {
             try {
-                ubicacionDAO.liberar(u.getId());
-                cargarSecciones(cmbPerchero.getValue());
+                if (result.get() == btnLiberar) {
+                    ubicacionDAO.liberar(u.getId());
+                    cargarSecciones(cmbPerchero.getValue());
+                } else if (result.get() == btnEliminarLugar) {
+                    eliminarLugar(u);
+                }
             } catch (Exception e) {
                 logDAO.guardar("UbicacionPercheroController", "mostrarDialogoDetalleOcupado", e.getMessage(), e);
-                new Alert(Alert.AlertType.ERROR, "Error al liberar: " + e.getMessage()).showAndWait();
+                new Alert(Alert.AlertType.ERROR, "Error: " + e.getMessage()).showAndWait();
             }
         }
     }
@@ -492,4 +598,6 @@ public class UbicacionPercheroController implements Initializable {
     public UbicacionDetalle getUbicacionSeleccionada() {
         return ubicacionSeleccionada;
     }
+
+    private record AsignacionProducto(Inventario producto, int cantidad) {}
 }

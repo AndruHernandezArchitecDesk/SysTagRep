@@ -33,7 +33,7 @@ public class UsuarioDAO {
                 if (rs.next()) return mapear(rs);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Error de conexión a BD: " + e.getMessage(), e);
         }
         return null;
     }

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.chart.PieChart?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.tag.sysTagRep.controller.HistorialCompraController"
+            prefHeight="600.0" prefWidth="900.0"
+            style="-fx-padding: 10;">
+
+    <top>
+        <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 5 0 10 0;">
+            <Label text="Historial de Compras" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+        </HBox>
+    </top>
+
+    <center>
+        <SplitPane dividerPositions="0.65" orientation="VERTICAL">
+            <VBox spacing="10">
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="Fecha:" style="-fx-font-weight: bold;"/>
+                    <DatePicker fx:id="dpFecha" maxWidth="200"/>
+                    <FontIcon iconLiteral="fas-search" iconSize="14"/>
+                    <TextField fx:id="txtBuscar" promptText="Buscar..." HBox.hgrow="ALWAYS"/>
+                </HBox>
+                <TableView fx:id="tblCompras" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colFactura" text="N° Factura" prefWidth="130"/>
+                        <TableColumn fx:id="colProveedor" text="Proveedor" prefWidth="200"/>
+                        <TableColumn fx:id="colFecha" text="Fecha" prefWidth="140"/>
+                        <TableColumn fx:id="colItems" text="Items" prefWidth="60"/>
+                        <TableColumn fx:id="colTotal" text="Total" prefWidth="110"/>
+                    </columns>
+                </TableView>
+            </VBox>
+            <PieChart fx:id="pieProveedores"/>
+        </SplitPane>
+    </center>
+
+</BorderPane>
