@@ -60,10 +60,12 @@
                     <MenuItem text="Acerca de" onAction="#acercaDe"/>
                 </Menu>
             </MenuBar>
-            <Region HBox.hgrow="NEVER"/>
-            <Label fx:id="lblUsuarioSesion" text="" style="-fx-font-weight: bold; -fx-text-fill: #1a252f; -fx-padding: 0 12 0 0;"/>
-            <Button text="Cerrar Sesión" onAction="#cerrarSesion"
-                    style="-fx-background-color: #c0392b; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 0; -fx-padding: 5 15; -fx-cursor: hand;"/>
+            <MenuBar>
+                <Menu text="Cuenta">
+                    <MenuItem fx:id="lblUsuarioSesion" text="Bienvenido"/>
+                    <MenuItem text="Cerrar Sesión" onAction="#cerrarSesion"/>
+                </Menu>
+            </MenuBar>
         </HBox>
     </top>
 
@@ -81,7 +83,7 @@
                         </image>
                     </ImageView>
                     <VBox alignment="CENTER_LEFT">
-                        <Label text="SysTag Repuestos Automotrices" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #1a252f;"/>
+                        <Label fx:id="lblTitulo" text="SYSTAG Repuestos Automotrices" style="-fx-font-family: 'Monospaced'; -fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #1a252f;"/>
                         <Label text="Sistema de Gestión Comercial" style="-fx-font-size: 13px; -fx-text-fill: #7f8c8d;"/>
                     </VBox>
                 </HBox>

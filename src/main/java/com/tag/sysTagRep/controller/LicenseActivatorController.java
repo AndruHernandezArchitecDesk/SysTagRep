@@ -31,7 +31,13 @@ public class LicenseActivatorController {
             lblStatus.setText("");
             return;
         }
-        var vencimiento = LicenseManager.getVencimientoDeClave(key.trim());
+        String cleanKey = key.trim();
+        if (LicenseManager.isPerpetua(cleanKey)) {
+            lblStatus.setText("Licencia VITALICIA — no expira.");
+            lblStatus.setStyle("-fx-text-fill: #00ffcc;");
+            return;
+        }
+        var vencimiento = LicenseManager.getVencimientoDeClave(cleanKey);
         if (vencimiento != null) {
             if (vencimiento.isBefore(java.time.LocalDate.now())) {
                 lblStatus.setText("Esta licencia ya venció (" + vencimiento + ").");
@@ -55,8 +61,9 @@ public class LicenseActivatorController {
             return;
         }
 
+        boolean perpetua = LicenseManager.isPerpetua(key);
         var vencimiento = LicenseManager.getVencimientoDeClave(key);
-        if (vencimiento == null) {
+        if (vencimiento == null && !perpetua) {
             lblStatus.setText("Formato de licencia inválido.");
             lblStatus.setStyle("-fx-text-fill: red;");
             return;
@@ -65,7 +72,10 @@ public class LicenseActivatorController {
         if (LicenseManager.validateLicenseKey(code, key)) {
             LicenseManager.saveActivation(code, key);
             activated = true;
-            lblStatus.setText("Licencia activada correctamente (vence: " + vencimiento + ").");
+            String msg = perpetua
+                    ? "Licencia VITALICIA activada correctamente."
+                    : "Licencia activada correctamente (vence: " + vencimiento + ").";
+            lblStatus.setText(msg);
             lblStatus.setStyle("-fx-text-fill: green;");
             Stage stage = (Stage) btnActivate.getScene().getWindow();
             stage.close();

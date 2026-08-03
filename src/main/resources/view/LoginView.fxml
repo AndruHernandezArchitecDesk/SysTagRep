@@ -21,7 +21,7 @@
             </image>
         </ImageView>
 
-        <Text text="SysTag Repuestos" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-fill: #1a252f;"/>
+        <Text fx:id="txtTitulo" text="TAG Repuestos Automotrices" style="-fx-font-family: 'Monospaced'; -fx-font-size: 18px; -fx-font-weight: bold; -fx-fill: #1a252f;"/>
         <Text text="Sistema de Inventario y Facturación" style="-fx-font-size: 12px; -fx-fill: #7f8c8d;"/>
 
         <Separator prefWidth="280"/>

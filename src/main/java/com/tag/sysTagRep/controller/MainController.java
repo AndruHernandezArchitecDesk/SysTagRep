@@ -3,6 +3,8 @@ package com.tag.sysTagRep.controller;
 import com.tag.sysTagRep.dao.DashboardDAO;
 import com.tag.sysTagRep.dao.LogDAO;
 import com.tag.sysTagRep.controller.LoginController;
+import com.tag.sysTagRep.util.AboutDialog;
+import com.tag.sysTagRep.util.ScrambleText;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -20,6 +22,7 @@ import javafx.scene.chart.XYChart;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
@@ -52,13 +55,17 @@ public class MainController implements Initializable {
     private PieChart chartGrupos;
 
     @FXML
-    private Label lblUsuarioSesion;
+    private MenuItem lblUsuarioSesion;
+
+    @FXML
+    private Label lblTitulo;
 
     private final DashboardDAO dashboardDAO = new DashboardDAO();
     private final LogDAO logDAO = new LogDAO();
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        new ScrambleText(lblTitulo, "SYSTAG Repuestos Automotrices").repeat(true).play();
         cargarGraficos();
         mostrarUsuarioSesion();
     }
@@ -67,8 +74,9 @@ public class MainController implements Initializable {
         if (LoginController.usuarioAutenticado == null) return;
         String apellido = LoginController.usuarioAutenticado.getApellido();
         String nombre = LoginController.usuarioAutenticado.getNombre();
-        lblUsuarioSesion.setText((apellido != null ? apellido.trim() : "")
-                + (nombre != null && !nombre.trim().isEmpty() ? " " + nombre.trim() : ""));
+        String nombreCompleto = (apellido != null ? apellido.trim() : "")
+                + (nombre != null && !nombre.trim().isEmpty() ? " " + nombre.trim() : "");
+        lblUsuarioSesion.setText("Bienvenido " + nombreCompleto);
     }
 
     private void cargarGraficos() {
@@ -404,21 +412,7 @@ public class MainController implements Initializable {
 
     @FXML
     private void acercaDe() {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Acerca de SysTag Repuestos");
-        alert.setHeaderText("SysTag Repuestos Automotrices");
-        alert.setContentText(
-            "Versión: 1.0\n\n" +
-            "Desarrollado por:\n" +
-            "Andrés Hernández\n" +
-            "The Toy Maker — Developer Software\n\n" +
-            "Soporte y contacto:\n" +
-            "📧 andreihernandez07@gmail.com\n" +
-            "📞 0998573896\n\n" +
-            "Para la creación de módulos personalizados\n" +
-            "o desarrollo de software, contácteme."
-        );
-        alert.showAndWait();
+        AboutDialog.show(contenedor.getScene().getWindow());
     }
 
     @FXML

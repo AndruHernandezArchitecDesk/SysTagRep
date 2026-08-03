@@ -22,6 +22,7 @@ public class LicenseManager {
     private static final int VALIDEZ_DIAS = 30;
     private static final int HMAC_LEN = 20;
     private static final int EXPIRY_LEN = 8;
+    public static final String PERPETUA_MARKER = "00000000";
 
     private static String cachedMachineCode;
 
@@ -61,9 +62,15 @@ public class LicenseManager {
         return generateLicenseKey(machineCode, getFechaVencimiento());
     }
 
+    public static String generateLicenseKeyPermanente(String machineCode) {
+        return generateLicenseKey(machineCode, null);
+    }
+
     public static String generateLicenseKey(String machineCode, LocalDate expiryDate) {
         try {
-            String expiryStr = expiryDate.toString().replace("-", "");
+            String expiryStr = expiryDate == null
+                    ? PERPETUA_MARKER
+                    : expiryDate.toString().replace("-", "");
             byte[] hmac = calcularHmac(machineCode + "|" + expiryStr);
             String hex = bytesToHex(hmac).substring(0, HMAC_LEN);
             return formatKey(hex) + "-" + expiryStr;
@@ -81,11 +88,19 @@ public class LicenseManager {
         String clean = licenseKey.replace("-", "").replace(" ", "");
         if (clean.length() != HMAC_LEN + EXPIRY_LEN) return null;
         String expiryStr = clean.substring(HMAC_LEN);
+        if (PERPETUA_MARKER.equals(expiryStr)) return null;
         try {
             return LocalDate.parse(expiryStr, DateTimeFormatter.BASIC_ISO_DATE);
         } catch (DateTimeParseException e) {
             return null;
         }
+    }
+
+    public static boolean isPerpetua(String licenseKey) {
+        if (licenseKey == null) return false;
+        String clean = licenseKey.replace("-", "").replace(" ", "");
+        return clean.length() == HMAC_LEN + EXPIRY_LEN
+                && PERPETUA_MARKER.equals(clean.substring(HMAC_LEN));
     }
 
     public static boolean validateLicenseKey(String machineCode, String licenseKey) {
@@ -94,14 +109,15 @@ public class LicenseManager {
         if (clean.length() != HMAC_LEN + EXPIRY_LEN) return false;
 
         String expiryStr = clean.substring(HMAC_LEN);
-        LocalDate expiry;
-        try {
-            expiry = LocalDate.parse(expiryStr, DateTimeFormatter.BASIC_ISO_DATE);
-        } catch (DateTimeParseException e) {
-            return false;
+        boolean perpetua = PERPETUA_MARKER.equals(expiryStr);
+        if (!perpetua) {
+            try {
+                LocalDate expiry = LocalDate.parse(expiryStr, DateTimeFormatter.BASIC_ISO_DATE);
+                if (expiry.isBefore(LocalDate.now())) return false;
+            } catch (DateTimeParseException e) {
+                return false;
+            }
         }
-
-        if (expiry.isBefore(LocalDate.now())) return false;
 
         try {
             byte[] hmac = calcularHmac(machineCode + "|" + expiryStr);

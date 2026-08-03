@@ -2,6 +2,7 @@ package com.tag.sysTagRep.controller;
 
 import com.tag.sysTagRep.dao.UsuarioDAO;
 import com.tag.sysTagRep.model.Usuario;
+import com.tag.sysTagRep.util.ScrambleText;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -12,6 +13,7 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
@@ -22,6 +24,7 @@ public class LoginController implements Initializable {
 
     @FXML private TextField txtUsuario;
     @FXML private PasswordField txtPassword;
+    @FXML private Text txtTitulo;
 
     public static Usuario usuarioAutenticado;
 
@@ -29,6 +32,7 @@ public class LoginController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        new ScrambleText(txtTitulo, "TAG Repuestos Automotrices").play();
         txtPassword.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.ENTER) ingresar();
         });
