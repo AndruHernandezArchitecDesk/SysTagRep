@@ -169,7 +169,9 @@ public class SRIWebService {
     private SRIResponse parsearRecepcion(String respuestaXml, String estadoEsperado) {
         SRIResponse r = new SRIResponse();
         try {
-            Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder()
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setNamespaceAware(true);
+            Document doc = factory.newDocumentBuilder()
                     .parse(new ByteArrayInputStream(respuestaXml.getBytes(StandardCharsets.UTF_8)));
             r.setEstado(valorPrimero(doc, "estado", estadoEsperado));
             r.setMensaje(concatMensajes(doc));
@@ -186,7 +188,9 @@ public class SRIWebService {
     private SRIResponse parsearAutorizacion(String respuestaXml) {
         SRIResponse r = new SRIResponse();
         try {
-            Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder()
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setNamespaceAware(true);
+            Document doc = factory.newDocumentBuilder()
                     .parse(new ByteArrayInputStream(respuestaXml.getBytes(StandardCharsets.UTF_8)));
             r.setEstado(valorPrimero(doc, "estado", "PENDIENTE"));
             r.setMensaje(concatMensajes(doc));
@@ -214,12 +218,17 @@ public class SRIWebService {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < lista.getLength(); i++) {
             Element m = (Element) lista.item(i);
+            if (m.getElementsByTagNameNS("*", "identificador").getLength() == 0) continue;
             String texto = textoDeHijo(m, "mensaje");
             String tipo = textoDeHijo(m, "tipo");
+            String adicional = textoDeHijo(m, "informacionAdicional");
             if (texto == null) texto = m.getTextContent();
             if (texto == null || texto.trim().isEmpty()) continue;
             if (sb.length() > 0) sb.append(" | ");
             sb.append(tipo != null && !tipo.isEmpty() ? "[" + tipo + "] " : "").append(texto.trim());
+            if (adicional != null && !adicional.trim().isEmpty()) {
+                sb.append(": ").append(adicional.trim());
+            }
         }
         return sb.toString();
     }

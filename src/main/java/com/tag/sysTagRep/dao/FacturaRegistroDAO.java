@@ -117,7 +117,7 @@ public class FacturaRegistroDAO {
                      "LEFT JOIN cliente c ON c.id = fr.cliente_id " +
                      "LEFT JOIN comprobantes_electronicos ce ON ce.clave_acceso = fr.clave_acceso " +
                      buildWhereClause(filtro) +
-                     " ORDER BY CAST(regexp_replace(fr.codigo, '\\D', '', 'g') AS INTEGER) ASC, fr.id ASC " +
+                     " ORDER BY CAST(regexp_replace(fr.codigo, '\\D', '', 'g') AS BIGINT) ASC, fr.id ASC " +
                      "LIMIT ? OFFSET ?";
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {

@@ -8,7 +8,7 @@ public class ComprobanteDAO {
 
     public int obtenerSecuencial(String tipoComprobante) {
         String insertar = "INSERT INTO secuenciales(tipo_comprobante, secuencial, punto_emision, establecimiento) " +
-                          "VALUES (?, 1, '001', '001') ON CONFLICT (tipo_comprobante) DO NOTHING";
+                          "VALUES (?, 0, '001', '001') ON CONFLICT (tipo_comprobante) DO NOTHING";
         String actualizar = "UPDATE secuenciales SET secuencial = secuencial + 1 WHERE tipo_comprobante = ? RETURNING secuencial";
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement psIns = con.prepareStatement(insertar)) {
@@ -43,16 +43,17 @@ public class ComprobanteDAO {
     }
 
     public void actualizarEstado(String claveAcceso, String estado, String mensaje,
-                                  String xmlAutorizado, String numeroAutorizacion) {
+                                  String xmlAutorizado, String numeroAutorizacion, String fechaAutorizacion) {
         String sql = "UPDATE comprobantes_electronicos SET estado_sri = ?, mensaje_sri = ?, " +
-                     "xml_autorizado = ?, fecha_autorizacion = NOW(), numero_autorizacion = ? WHERE clave_acceso = ?";
+                     "xml_autorizado = ?, numero_autorizacion = ?, fecha_autorizacion = ? WHERE clave_acceso = ?";
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, estado);
             ps.setString(2, mensaje);
             ps.setString(3, xmlAutorizado);
             ps.setString(4, numeroAutorizacion);
-            ps.setString(5, claveAcceso);
+            ps.setTimestamp(5, parsearFechaAutorizacion(fechaAutorizacion));
+            ps.setString(6, claveAcceso);
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -61,11 +62,10 @@ public class ComprobanteDAO {
 
     public void guardarEnvio(String claveAcceso, String numeroComprobante, String ambiente,
                              String xmlEnviado, String respuestaRecepcion, String respuestaAutorizacion,
-                             String estado, String mensaje, String numeroAutorizacion) {
+                             String estado, String mensaje, String numeroAutorizacion, String fechaAutorizacion) {
         String sql = "INSERT INTO xml_enviados(clave_acceso, numero_comprobante, ambiente, tipo_comprobante, " +
                      "xml_enviado, respuesta_recepcion, respuesta_autorizacion, estado_sri, mensaje_sri, " +
-                     "numero_autorizacion, fecha_autorizacion) VALUES (?, ?, ?, '01', ?, ?, ?, ?, ?, ?, " +
-                     "CASE WHEN ? IS NULL THEN NULL ELSE NOW() END)";
+                     "numero_autorizacion, fecha_autorizacion) VALUES (?, ?, ?, '01', ?, ?, ?, ?, ?, ?, ?)";
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, claveAcceso);
@@ -77,10 +77,28 @@ public class ComprobanteDAO {
             ps.setString(7, estado);
             ps.setString(8, mensaje);
             ps.setString(9, numeroAutorizacion);
-            ps.setString(10, numeroAutorizacion);
+            ps.setTimestamp(10, parsearFechaAutorizacion(fechaAutorizacion));
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * Convierte la fecha de autorización devuelta por el SRI (ISO-8601, ej.
+     * "2026-08-02T22:41:00.000-05:00" o "...Z") a timestamp local. Devuelve null
+     * si el valor es nulo o no es parseable.
+     */
+    private java.sql.Timestamp parsearFechaAutorizacion(String fecha) {
+        if (fecha == null || fecha.trim().isEmpty()) return null;
+        try {
+            String valor = fecha.trim().replace("Z", "+00:00");
+            java.time.OffsetDateTime odt = java.time.OffsetDateTime.parse(valor,
+                    java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+            return java.sql.Timestamp.valueOf(
+                    odt.atZoneSameInstant(java.time.ZoneId.systemDefault()).toLocalDateTime());
+        } catch (Exception e) {
+            return null;
         }
     }
 

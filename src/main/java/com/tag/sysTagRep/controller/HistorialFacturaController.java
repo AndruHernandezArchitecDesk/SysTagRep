@@ -165,7 +165,7 @@ public class HistorialFacturaController implements Initializable {
                         SRIWebService.SRIResponse r = new SRIWebService(ambiente).consultarAutorizacion(clave);
                         String estado = r.getEstado();
                         if ("AUTORIZADO".equals(estado) || "RECHAZADA".equals(estado) || "DEVUELTA".equals(estado)) {
-                            ceDAO.actualizarEstado(clave, estado, r.getMensaje(), null, r.getNumeroAutorizacion());
+                            ceDAO.actualizarEstado(clave, estado, r.getMensaje(), null, r.getNumeroAutorizacion(), r.getFechaAutorizacion());
                             dao.actualizarEstado(clave, estado);
                             if ("AUTORIZADO".equals(estado)) autorizadas++; else rechazadas++;
                         } else if ("ERROR".equals(estado)) {

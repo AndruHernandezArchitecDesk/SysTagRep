@@ -18,7 +18,18 @@ public class ComboFilter {
         combo.setEditable(true);
         FilteredList<T> filtrados = new FilteredList<>(items, p -> true);
         combo.setItems(filtrados);
-        combo.setConverter(converter);
+        StringConverter<T> conv = new StringConverter<>() {
+            @Override public String toString(T t) { return texto(converter, t); }
+            @Override public T fromString(String s) {
+                if (s == null || s.trim().isEmpty()) return null;
+                for (T item : items) {
+                    String t = texto(converter, item);
+                    if (t != null && t.equalsIgnoreCase(s.trim())) return item;
+                }
+                return converter.fromString(s);
+            }
+        };
+        combo.setConverter(conv);
 
         combo.getEditor().textProperty().addListener((obs, oldVal, newVal) -> {
             String texto = newVal == null ? "" : newVal.trim();

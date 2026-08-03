@@ -119,6 +119,11 @@ public class IngresoMercaderiaController implements Initializable {
         validarSoloNumeros();
         configurarCodigoAuto();
         configurarTablaProductos();
+        txtDescripcion.textProperty().addListener((obs, oldText, newText) -> {
+            if (newText != null && !newText.equals(newText.toUpperCase())) {
+                txtDescripcion.setText(newText.toUpperCase());
+            }
+        });
         limpiarFrm();
     }
 

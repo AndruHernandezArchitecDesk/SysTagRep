@@ -565,9 +565,9 @@ public class FacturaController implements Initializable {
             progreso.close();
             Throwable exSRI = tareaSRI.getException();
             logDAO.guardar("FacturaController", "validarSRI", String.valueOf(exSRI));
-            daoComprobante.actualizarEstado(claveFinal, "PENDIENTE", "Error de conexión", xmlFinal, null);
+            daoComprobante.actualizarEstado(claveFinal, "PENDIENTE", "Error de conexión", xmlFinal, null, null);
             daoComprobante.guardarEnvio(claveFinal, numCompFinal, ambienteFinal, xmlFinal,
-                    null, null, "PENDIENTE", "Error de conexión", null);
+                    null, null, "PENDIENTE", "Error de conexión", null, null);
             new Alert(Alert.AlertType.ERROR, "Error al consultar el SRI: "
                     + (exSRI != null ? exSRI.getMessage() : "desconocido")).showAndWait();
         });
@@ -590,22 +590,22 @@ public class FacturaController implements Initializable {
         String fechaAutorizacion = sriResp.getFechaAutorizacion();
 
         if ("AUTORIZADO".equals(estadoSri)) {
-            daoComprobante.actualizarEstado(claveAcceso, "AUTORIZADO", sriResp.getMensaje(), xmlFirmado, numeroAutorizacion);
+            daoComprobante.actualizarEstado(claveAcceso, "AUTORIZADO", sriResp.getMensaje(), xmlFirmado, numeroAutorizacion, fechaAutorizacion);
             daoFacturaRegistro.actualizarEstado(claveAcceso, "AUTORIZADO");
         } else if ("RECHAZADA".equals(estadoSri) || "DEVUELTA".equals(estadoSri)) {
-            daoComprobante.actualizarEstado(claveAcceso, estadoSri, sriResp.getMensaje(), xmlFirmado, numeroAutorizacion);
+            daoComprobante.actualizarEstado(claveAcceso, estadoSri, sriResp.getMensaje(), xmlFirmado, numeroAutorizacion, null);
             daoFacturaRegistro.actualizarEstado(claveAcceso, estadoSri);
             new Alert(Alert.AlertType.ERROR, "El SRI " + (estadoSri.equals("RECHAZADA") ? "rechazó" : "devolvió")
                     + " el comprobante:\n" + sriResp.getMensaje()).showAndWait();
         } else if (!firmaOk) {
-            daoComprobante.actualizarEstado(claveAcceso, "PENDIENTE", "Sin envío: firma no configurada", xmlFirmado, null);
+            daoComprobante.actualizarEstado(claveAcceso, "PENDIENTE", "Sin envío: firma no configurada", xmlFirmado, null, null);
         } else {
-            daoComprobante.actualizarEstado(claveAcceso, estadoSri, sriResp.getMensaje(), xmlFirmado, numeroAutorizacion);
+            daoComprobante.actualizarEstado(claveAcceso, estadoSri, sriResp.getMensaje(), xmlFirmado, numeroAutorizacion, fechaAutorizacion);
         }
 
         daoComprobante.guardarEnvio(claveAcceso, numComprobante, ambienteSri, xmlFirmado,
                 sriResp.getRespuestaRecepcionXml(), sriResp.getRespuestaAutorizacionXml(),
-                estadoSri, sriResp.getMensaje(), numeroAutorizacion);
+                estadoSri, sriResp.getMensaje(), numeroAutorizacion, fechaAutorizacion);
 
         List<Object[]> detallesPDF = armarDetalles(descCalc);
 

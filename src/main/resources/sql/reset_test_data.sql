@@ -4,6 +4,8 @@
 --   · empresa (datos de la empresa)
 --   · usuarios (usuarios del sistema)
 -- Reinicia la numeración de documentos a 001-001-000000001.
+-- También reinicia la secuencia SRI (tabla secuenciales): la siguiente
+-- factura electrónica usará el secuencial 001-001-000000001.
 -- =============================================================
 BEGIN;
 
