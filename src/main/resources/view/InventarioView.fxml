@@ -39,7 +39,7 @@
                     <TableColumn fx:id="colProveedor" text="Proveedor" prefWidth="110"/>
                     <TableColumn fx:id="colFechaIngreso" text="Fecha Ingreso" prefWidth="100"/>
                     <TableColumn fx:id="colEstado" text="Estado" prefWidth="80"/>
-                    <TableColumn fx:id="colAcciones" text="Acciones" prefWidth="90"/>
+                    <TableColumn fx:id="colAcciones" text="Acciones" prefWidth="120"/>
                 </columns>
             </TableView>
             <HBox spacing="10" alignment="CENTER" style="-fx-padding: 5 0 0 0;">

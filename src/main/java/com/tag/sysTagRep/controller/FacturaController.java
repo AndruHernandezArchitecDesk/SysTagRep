@@ -28,14 +28,18 @@ import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
-import javafx.util.StringConverter;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
 import org.kordamp.ikonli.javafx.FontIcon;
 
@@ -46,6 +50,7 @@ import java.math.RoundingMode;
 import java.net.URL;
 import java.awt.Desktop;
 import java.nio.charset.StandardCharsets;
+import javafx.util.StringConverter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDate;
@@ -61,6 +66,7 @@ public class FacturaController implements Initializable {
     @FXML private Label lblRazonSocial, lblRuc, lblDireccion, lblCorreo, lblTelefono, lblNumFactura;
 
     @FXML private ComboBox<Cliente> cmbCliente;
+    @FXML private Button btnAgregarCliente;
     @FXML private TextField txtNombre, txtIdentificacion, txtDireccion, txtCorreo, txtTelefono;
     @FXML private DatePicker dpFechaFactura;
 
@@ -254,6 +260,22 @@ public class FacturaController implements Initializable {
                 txtTelefono.setText(cliente.getTelefono() + " - " + (cliente.getCelular() != null && !cliente.getCelular().isEmpty() ? cliente.getCelular() : ""));
             }
         });
+    }
+
+    @FXML
+    private void abrirCRUDClientes() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/ClienteView.fxml"));
+            Parent vista = loader.load();
+            Stage stage = new Stage();
+            stage.setTitle("Administración de Clientes");
+            stage.setScene(new Scene(vista, 900, 600));
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.showAndWait();
+            cargarListaClientes();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void iniciarTablaInventario() {

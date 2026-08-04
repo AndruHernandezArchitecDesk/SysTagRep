@@ -30,18 +30,18 @@ public class NotaVentaPDF {
                                List<String[]> detalles,
                                BigDecimal subtotal, BigDecimal iva, BigDecimal descuento, BigDecimal total) {
 
-        Document doc = new Document(PageSize.A4, 36, 36, 36, 36);
+        Document doc = new Document(new Rectangle(PageSize.A4.getWidth(), PageSize.A4.getHeight() / 2), 15, 15, 10, 10);
 
         try {
             PdfWriter.getInstance(doc, new FileOutputStream(rutaArchivo));
             doc.open();
 
-            Font fontTitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16);
-            Font fontSubtitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11);
-            Font fontNormal = FontFactory.getFont(FontFactory.HELVETICA, 10);
-            Font fontNegrita = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10);
-            Font fontPequena = FontFactory.getFont(FontFactory.HELVETICA, 9);
-            Font fontPequenaNegrita = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9);
+            Font fontTitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 13);
+            Font fontSubtitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9);
+            Font fontNormal = FontFactory.getFont(FontFactory.HELVETICA, 8);
+            Font fontNegrita = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8);
+            Font fontPequena = FontFactory.getFont(FontFactory.HELVETICA, 7);
+            Font fontPequenaNegrita = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 7);
 
             // === ENCABEZADO: logo + datos empresa a la altura del icono ===
             PdfPTable tablaEncabezado = new PdfPTable(new float[]{15, 70, 15});
@@ -54,7 +54,7 @@ public class NotaVentaPDF {
                 java.io.InputStream logoStream = NotaVentaPDF.class.getResourceAsStream("/img/logoTag.jpeg");
                 if (logoStream != null) {
                     Image logo = Image.getInstance(logoStream.readAllBytes());
-                    logo.scaleToFit(70, 70);
+                    logo.scaleToFit(50, 50);
                     logo.setAlignment(Element.ALIGN_LEFT);
                     celdaLogo.addElement(logo);
                 }
@@ -89,14 +89,10 @@ public class NotaVentaPDF {
 
             doc.add(tablaEncabezado);
 
-            doc.add(new Paragraph(" "));
-
             // === NUMERO DE NOTA ===
             Paragraph pNumNota = new Paragraph("PROFORMA  N° " + numNota, fontSubtitulo);
             pNumNota.setAlignment(Element.ALIGN_CENTER);
             doc.add(pNumNota);
-
-            doc.add(new Paragraph(" "));
 
             // === CLIENTE (3 columnas) ===
             Paragraph pClienteTitulo = new Paragraph("DATOS DEL CLIENTE", fontNegrita);
@@ -116,8 +112,6 @@ public class NotaVentaPDF {
 
             doc.add(tablaCliente);
 
-            doc.add(new Paragraph(" "));
-
             // === TABLA DETALLE ===
             PdfPTable tabla = new PdfPTable(new float[]{15, 35, 10, 15, 25});
             tabla.setWidthPercentage(100);
@@ -128,7 +122,7 @@ public class NotaVentaPDF {
                 PdfPCell cell = new PdfPCell(new Phrase(h, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, java.awt.Color.WHITE)));
                 cell.setBackgroundColor(new java.awt.Color(52, 73, 94));
                 cell.setHorizontalAlignment(Element.ALIGN_CENTER);
-                cell.setPadding(5);
+                cell.setPadding(2);
                 tabla.addCell(cell);
             }
 
@@ -140,7 +134,7 @@ public class NotaVentaPDF {
                 for (int i = 0; i < fila.length; i++) {
                     PdfPCell cell = new PdfPCell(new Phrase(fila[i], fontPequena));
                     cell.setBackgroundColor(bgColor);
-                    cell.setPadding(4);
+                    cell.setPadding(2);
                     if (i == 2 || i == 3 || i == 4) {
                         cell.setHorizontalAlignment(Element.ALIGN_RIGHT);
                     }
@@ -149,8 +143,18 @@ public class NotaVentaPDF {
                 alternate = !alternate;
             }
 
+            int filasVacias = 10 - detalles.size();
+            for (int i = 0; i < filasVacias; i++) {
+                PdfPCell spacer = new PdfPCell(new Phrase(""));
+                spacer.setFixedHeight(15);
+                spacer.setBorder(PdfPCell.NO_BORDER);
+                spacer.setBackgroundColor(java.awt.Color.WHITE);
+                for (int j = 0; j < tabla.getNumberOfColumns(); j++) {
+                    tabla.addCell(spacer);
+                }
+            }
+
             doc.add(tabla);
-            doc.add(new Paragraph(" "));
 
             // === FORMA DE PAGO Y RECUADRO (izquierda) + TOTALES (derecha) ===
             PdfPTable tablaTotales = new PdfPTable(2);
@@ -177,17 +181,15 @@ public class NotaVentaPDF {
             celdaIzq.addElement(new Paragraph(" "));
 
             String textoLegal = "Deberé y pagaré incondicionalmente a la orden de Tag Repuestos Automotrices "
-                    + "en el lugar y fecha establecida, el valor expresado en esta factura y el máximo interés "
-                    + "por mora más todos los gastos que ocasione su cobro. Renuncio a domicilio y me someto "
-                    + "a los jueces competentes del D.M de Quito y al trámite ejecutivo o verbal sumario "
-                    + "a elección de Tag Repuestos Automotrices.";
+                    + "el valor expresado en esta factura. Renuncio a domicilio y me someto "
+                    + "a los jueces competentes del D.M de Quito.";
 
             PdfPTable tablaRecuadro = new PdfPTable(1);
             tablaRecuadro.setWidthPercentage(100);
 
             PdfPCell celdaRecuadro = new PdfPCell(new Phrase(textoLegal, fontPequena));
             celdaRecuadro.setBorder(PdfPCell.BOX);
-            celdaRecuadro.setPadding(6);
+            celdaRecuadro.setPadding(3);
             tablaRecuadro.addCell(celdaRecuadro);
 
             celdaIzq.addElement(tablaRecuadro);
@@ -206,7 +208,6 @@ public class NotaVentaPDF {
 
             doc.add(filaPie);
 
-            doc.add(new Paragraph(" "));
             doc.add(new Paragraph(" "));
 
             // === FIRMAS ===
@@ -228,25 +229,25 @@ public class NotaVentaPDF {
     private static PdfPCell celdaCliente(String texto) {
         PdfPCell cell = new PdfPCell(new Phrase(texto, fontPequena()));
         cell.setBorder(PdfPCell.NO_BORDER);
-        cell.setPadding(3);
+        cell.setPadding(2);
         return cell;
     }
 
     private static Font fontPequena() {
-        return FontFactory.getFont(FontFactory.HELVETICA, 9);
+        return FontFactory.getFont(FontFactory.HELVETICA, 7);
     }
 
     private static void addFilaTotal(PdfPTable tabla, String etiqueta, String valor, Font fontValor, Font fontEtiqueta) {
         PdfPCell cellEtiqueta = new PdfPCell(new Phrase(etiqueta, fontEtiqueta));
         cellEtiqueta.setBorder(PdfPCell.NO_BORDER);
         cellEtiqueta.setHorizontalAlignment(Element.ALIGN_RIGHT);
-        cellEtiqueta.setPadding(3);
+        cellEtiqueta.setPadding(2);
         tabla.addCell(cellEtiqueta);
 
         PdfPCell cellValor = new PdfPCell(new Phrase(valor, fontValor));
         cellValor.setBorder(PdfPCell.NO_BORDER);
         cellValor.setHorizontalAlignment(Element.ALIGN_RIGHT);
-        cellValor.setPadding(3);
+        cellValor.setPadding(2);
         tabla.addCell(cellValor);
     }
 }

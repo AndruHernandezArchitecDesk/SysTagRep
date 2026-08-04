@@ -196,8 +196,11 @@ public class IngresoMercaderiaController implements Initializable {
                 ? grupo.getNombre().substring(0, 3).toUpperCase() : (grupo != null ? grupo.getNombre().toUpperCase() : "SIN");
         String m = (marca != null && marca.getNombre() != null && marca.getNombre().length() >= 3)
                 ? marca.getNombre().substring(0, 3).toUpperCase() : (marca != null ? marca.getNombre().toUpperCase() : "SIN");
-        int costo = (costoSinIVA != null) ? costoSinIVA.intValue() : 0;
-        return d + g + m + costo;
+        BigDecimal costoConIVA = costoSinIVA != null
+                ? costoSinIVA.multiply(BigDecimal.valueOf(1.15)).setScale(0, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+        String costoCifrado = com.tag.sysTagRep.util.EtiquetaUtil.cifrarPrecio(costoConIVA.toPlainString());
+        return d + g + m + costoCifrado;
     }
 
     private Proveedor proveedorSeleccionado() {

@@ -39,6 +39,11 @@
                                 <FontIcon iconLiteral="fas-search" iconSize="14"/>
                                 <Label text="Seleccionar Cliente:" minWidth="70"/>
                                 <ComboBox fx:id="cmbCliente" prefWidth="350" maxWidth="350" promptText="Seleccionar Cliente"/>
+                                <Button fx:id="btnAgregarCliente" onAction="#abrirCRUDClientes">
+                                    <graphic>
+                                        <FontIcon iconLiteral="fas-user-plus" iconSize="16"/>
+                                    </graphic>
+                                </Button>
                             </HBox>
 
                             <GridPane hgap="15" vgap="10">

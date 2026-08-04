@@ -20,7 +20,7 @@
             <MenuBar HBox.hgrow="ALWAYS">
                 <Menu text="Comprobantes">
                     <MenuItem text="Proforma" onAction="#irNotaVenta"/>
-                    <MenuItem text="Factura Electrónica" onAction="#irFactura"/>
+                    <MenuItem text="Factura" onAction="#irFactura"/>
                 </Menu>
                 <Menu text="Perchero">
                     <MenuItem text="Ubicacion" onAction="#irUbicacionPerchero"/>

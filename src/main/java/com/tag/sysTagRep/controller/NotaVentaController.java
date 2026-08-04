@@ -19,14 +19,19 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import javafx.util.StringConverter;
 import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
 import org.kordamp.ikonli.javafx.FontIcon;
@@ -49,6 +54,7 @@ public class NotaVentaController implements Initializable {
     
     // Cliente
     @FXML private ComboBox<Cliente> cmbCliente;
+    @FXML private Button btnAgregarCliente;
     @FXML private TextField txtNombre, txtIdentificacion, txtDireccion, txtCorreo, txtTelefono;
     @FXML private DatePicker dpFechaNotaVenta;
     
@@ -157,6 +163,22 @@ public class NotaVentaController implements Initializable {
                 txtTelefono.setText(cliente.getTelefono() + " - " + (cliente.getCelular() != null && !cliente.getCelular().isEmpty() ? cliente.getCelular() : ""));
             }
         });
+    }
+
+    @FXML
+    private void abrirCRUDClientes() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/ClienteView.fxml"));
+            Parent vista = loader.load();
+            Stage stage = new Stage();
+            stage.setTitle("Administración de Clientes");
+            stage.setScene(new Scene(vista, 900, 600));
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.showAndWait();
+            cargarListaClientes();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void iniciarTablaInventario() {

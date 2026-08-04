@@ -3,6 +3,8 @@
 -- Conserva únicamente los datos esenciales:
 --   · empresa (datos de la empresa)
 --   · usuarios (usuarios del sistema)
+--   · secuenciales (secuencia SRI para comprobantes electrónicos)
+--   · secuencia_documento (numeración de documentos)
 -- Reinicia la numeración de documentos a 001-001-000000001.
 -- También reinicia la secuencia SRI (tabla secuenciales): la siguiente
 -- factura electrónica usará el secuencial 001-001-000000001.
@@ -15,7 +17,7 @@ TRUNCATE TABLE
   comprobantes_electronicos, xml_enviados, factura_detalle,
   factura_registro, factura_proveedor, nota_venta_detalle,
   nota_venta_registro, inventario, ubicacion, perchero,
-  ubicacion_percha, secuenciales, logs, codigo, cliente,
+  ubicacion_percha, logs, codigo, cliente,
   vendedor, grupo, marca, proveedor
 RESTART IDENTITY CASCADE;
 

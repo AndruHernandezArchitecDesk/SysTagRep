@@ -1,7 +1,10 @@
 package com.tag.sysTagRep.controller;
 
+import com.tag.sysTagRep.dao.EmpresaDAO;
 import com.tag.sysTagRep.dao.InventarioDAO;
+import com.tag.sysTagRep.model.Empresa;
 import com.tag.sysTagRep.model.Inventario;
+import com.tag.sysTagRep.util.EtiquetaUtil;
 import com.tag.sysTagRep.util.SortTable;
 import com.tag.sysTagRep.util.ComboFilter;
 import javafx.beans.property.ReadOnlyObjectWrapper;
@@ -22,9 +25,11 @@ import javafx.stage.Stage;
 import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
 import org.kordamp.ikonli.javafx.FontIcon;
 
+import java.io.File;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.ResourceBundle;
 
 /**
@@ -61,6 +66,7 @@ public class InventarioController implements Initializable {
     private int totalCount = 0;
     private final InventarioDAO dao = new InventarioDAO();
     private final com.tag.sysTagRep.dao.LogDAO logDAO = new com.tag.sysTagRep.dao.LogDAO();
+    private final EmpresaDAO daoEmpresa = new EmpresaDAO();
     private final ObservableList<Inventario> listaInventario = FXCollections.observableArrayList();
 
     @Override
@@ -170,20 +176,60 @@ public class InventarioController implements Initializable {
         colAcciones.setCellFactory(param -> new TableCell<>() {
             private final Button btnActualizar = new Button();
             private final Button btnEliminar = new Button();
+            private final Button btnEtiqueta = new Button();
             private final HBox hbox = new HBox(10);
             {
                 FontIcon iconEdit = new FontIcon(FontAwesomeSolid.EDIT); iconEdit.setIconSize(16); iconEdit.setIconColor(Color.DODGERBLUE);
                 FontIcon iconTrash = new FontIcon(FontAwesomeSolid.TRASH); iconTrash.setIconSize(16); iconTrash.setIconColor(Color.RED);
-                btnActualizar.setGraphic(iconEdit); btnEliminar.setGraphic(iconTrash);
-                btnActualizar.setStyle("-fx-background-color: transparent;"); btnEliminar.setStyle("-fx-background-color: transparent;");
-                hbox.setAlignment(Pos.CENTER); hbox.getChildren().addAll(btnActualizar, btnEliminar);
+                FontIcon iconEtiqueta = new FontIcon(FontAwesomeSolid.TAG); iconEtiqueta.setIconSize(16); iconEtiqueta.setIconColor(Color.MEDIUMSEAGREEN);
+                btnActualizar.setGraphic(iconEdit); btnEliminar.setGraphic(iconTrash); btnEtiqueta.setGraphic(iconEtiqueta);
+                btnActualizar.setStyle("-fx-background-color: transparent;"); btnEliminar.setStyle("-fx-background-color: transparent;"); btnEtiqueta.setStyle("-fx-background-color: transparent;");
+                hbox.setAlignment(Pos.CENTER); hbox.getChildren().addAll(btnActualizar, btnEliminar, btnEtiqueta);
                 btnActualizar.setOnAction(e -> abrirModalEdicion(getTableView().getItems().get(getIndex())));
                 btnEliminar.setOnAction(e -> eliminar(getTableView().getItems().get(getIndex())));
+                btnEtiqueta.setOnAction(e -> {
+                    Inventario item = getTableView().getItems().get(getIndex());
+                    if (item.getUbicacionPercha() != null && !item.getUbicacionPercha().trim().isEmpty()) {
+                        generarEtiqueta(item);
+                    }
+                });
             }
             @Override protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
-                setGraphic(empty ? null : hbox);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    int idx = getIndex();
+                    if (idx >= 0 && idx < getTableView().getItems().size()) {
+                        Inventario inv = getTableView().getItems().get(idx);
+                        btnEtiqueta.setVisible(inv.getUbicacionPercha() != null && !inv.getUbicacionPercha().trim().isEmpty());
+                        btnEtiqueta.setManaged(inv.getUbicacionPercha() != null && !inv.getUbicacionPercha().trim().isEmpty());
+                    }
+                    setGraphic(hbox);
+                }
             }
         });
+    }
+
+    private void generarEtiqueta(Inventario item) {
+        new Thread(() -> {
+            try {
+                List<Empresa> empresas = daoEmpresa.listar();
+                String razonSocial = empresas.isEmpty() ? "Tag Repuestos" : empresas.get(0).getRazonSocial();
+                File etiqueta = EtiquetaUtil.generarEtiqueta(item, "/img/logoTag.jpeg", razonSocial);
+                if (etiqueta != null && etiqueta.exists()) {
+                    String msg = "Etiqueta generada en:\n" + etiqueta.getAbsolutePath();
+                    javafx.application.Platform.runLater(() -> {
+                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                        alert.setTitle("Etiqueta generada");
+                        alert.setHeaderText(null);
+                        alert.setContentText(msg);
+                        alert.showAndWait();
+                    });
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
     }
 }
