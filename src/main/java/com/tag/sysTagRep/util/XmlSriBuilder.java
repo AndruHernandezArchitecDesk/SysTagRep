@@ -47,7 +47,7 @@ public class XmlSriBuilder {
 
             // infoTributaria
             Element infoTributaria = doc.createElement("infoTributaria");
-            agregarElemento(infoTributaria, "ambiente", "PRODUCCION".equalsIgnoreCase(ambiente) ? "1" : "2"); // 2=PRUEBAS, 1=PRODUCCION
+            agregarElemento(infoTributaria, "ambiente", "PRODUCCION".equalsIgnoreCase(ambiente) ? "2" : "1"); // 1=PRUEBAS, 2=PRODUCCION
             agregarElemento(infoTributaria, "tipoEmision", "1");
             agregarElemento(infoTributaria, "razonSocial", razonSocial);
             agregarElemento(infoTributaria, "ruc", ruc);
@@ -60,7 +60,6 @@ public class XmlSriBuilder {
             if (contribuyenteEspecial != null && !contribuyenteEspecial.isEmpty()) {
                 agregarElemento(infoTributaria, "contribuyenteEspecial", contribuyenteEspecial);
             }
-            agregarElemento(infoTributaria, "obligadoContabilidad", obligadoContabilidad != null ? obligadoContabilidad : "SI");
             factura.appendChild(infoTributaria);
 
             // infoFactura
@@ -82,7 +81,7 @@ public class XmlSriBuilder {
 
             // totalConImpuestos
             Element totalConImpuestosEl = doc.createElement("totalConImpuestos");
-            Element impuesto = doc.createElement("impuesto");
+            Element impuesto = doc.createElement("totalImpuesto");
             agregarElemento(impuesto, "codigo", "2"); // 2=IVA
             agregarElemento(impuesto, "codigoPorcentaje", "2"); // 2=IVA 15%
             agregarElemento(impuesto, "baseImponible", totalSinImpuestos);
@@ -93,13 +92,15 @@ public class XmlSriBuilder {
             agregarElemento(infoFactura, "propina", propina != null ? propina : "0.00");
             agregarElemento(infoFactura, "importeTotal", totalConImpuestos);
 
-            // formaPago
-            Element formaPagoEl = doc.createElement("formaPago");
-            agregarElemento(formaPagoEl, "formaPago", mapearFormaPago(formaPago));
-            agregarElemento(formaPagoEl, "total", totalConImpuestos);
-            agregarElemento(formaPagoEl, "plazo", "0");
-            agregarElemento(formaPagoEl, "unidadTiempo", "DIAS");
-            infoFactura.appendChild(formaPagoEl);
+            // pagos
+            Element pagosEl = doc.createElement("pagos");
+            Element pagoEl = doc.createElement("pago");
+            agregarElemento(pagoEl, "formaPago", mapearFormaPago(formaPago));
+            agregarElemento(pagoEl, "total", totalConImpuestos);
+            agregarElemento(pagoEl, "plazo", "0");
+            agregarElemento(pagoEl, "unidadTiempo", "DIAS");
+            pagosEl.appendChild(pagoEl);
+            infoFactura.appendChild(pagosEl);
 
             factura.appendChild(infoFactura);
 

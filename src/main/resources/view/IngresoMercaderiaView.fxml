@@ -119,6 +119,10 @@
                                         <Label text="Precio Venta Unit." style="-fx-font-size: 11px;"/>
                                         <TextField fx:id="txtPrecioVenta" maxWidth="Infinity"/>
                                     </VBox>
+                                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                        <Label text="Descuento %" style="-fx-font-size: 11px;"/>
+                                        <ComboBox fx:id="cmbDescuento" maxWidth="Infinity"/>
+                                    </VBox>
                                 </HBox>
                             </VBox>
 
@@ -139,6 +143,7 @@
                                     <TableColumn fx:id="colTotalLinea" text="Total" prefWidth="90"/>
                                     <TableColumn fx:id="colPrecioVenta" text="P. Venta" prefWidth="90"/>
                                     <TableColumn fx:id="colMargen" text="Margen %" prefWidth="80"/>
+                                    <TableColumn fx:id="colEditar" text="" prefWidth="50"/>
                                     <TableColumn fx:id="colEliminar" text="" prefWidth="50"/>
                                 </columns>
                             </TableView>

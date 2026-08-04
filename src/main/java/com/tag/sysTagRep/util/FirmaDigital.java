@@ -44,6 +44,7 @@ public class FirmaDigital {
 
     private PrivateKey privateKey;
     private X509Certificate certificate;
+    private X509Certificate[] certificateChain;
 
     private static XMLSignatureFactory obtenerFactory() {
         try {
@@ -70,6 +71,15 @@ public class FirmaDigital {
                 if (keyStore.isKeyEntry(alias)) {
                     privateKey = (PrivateKey) keyStore.getKey(alias, password.toCharArray());
                     certificate = (X509Certificate) keyStore.getCertificate(alias);
+                    java.security.cert.Certificate[] cadena = keyStore.getCertificateChain(alias);
+                    if (cadena != null && cadena.length > 0) {
+                        certificateChain = new X509Certificate[cadena.length];
+                        for (int i = 0; i < cadena.length; i++) {
+                            certificateChain[i] = (X509Certificate) cadena[i];
+                        }
+                    } else {
+                        certificateChain = new X509Certificate[] { certificate };
+                    }
                     return privateKey != null && certificate != null;
                 }
             }
@@ -116,12 +126,23 @@ public class FirmaDigital {
                 Collections.singletonList(ref));
 
         KeyInfoFactory kif = FACTORY.getKeyInfoFactory();
-        X509Data x509Data = kif.newX509Data(Collections.singletonList(certificate));
-        KeyInfo keyInfo = kif.newKeyInfo(Collections.singletonList(x509Data));
-
-        XMLSignature firma = FACTORY.newXMLSignature(signedInfo, keyInfo);
-        DOMSignContext context = new DOMSignContext(privateKey, raiz);
-        firma.sign(context);
+        if (certificateChain != null && certificateChain.length > 0) {
+            java.util.List<Object> cadena = new java.util.ArrayList<>();
+            for (X509Certificate c : certificateChain) {
+                if (c != null) cadena.add(c);
+            }
+            X509Data x509Data = kif.newX509Data(cadena);
+            KeyInfo keyInfo = kif.newKeyInfo(java.util.Collections.singletonList(x509Data));
+            XMLSignature firma = FACTORY.newXMLSignature(signedInfo, keyInfo);
+            DOMSignContext context = new DOMSignContext(privateKey, raiz);
+            firma.sign(context);
+        } else {
+            X509Data x509Data = kif.newX509Data(Collections.singletonList(certificate));
+            KeyInfo keyInfo = kif.newKeyInfo(Collections.singletonList(x509Data));
+            XMLSignature firma = FACTORY.newXMLSignature(signedInfo, keyInfo);
+            DOMSignContext context = new DOMSignContext(privateKey, raiz);
+            firma.sign(context);
+        }
 
         TransformerFactory tf = TransformerFactory.newInstance();
         Transformer transformer = tf.newTransformer();

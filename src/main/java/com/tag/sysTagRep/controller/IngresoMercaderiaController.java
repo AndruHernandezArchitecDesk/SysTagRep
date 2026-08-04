@@ -64,6 +64,7 @@ public class IngresoMercaderiaController implements Initializable {
     @FXML private TextField txtPrecioVenta;
     @FXML private DatePicker dpFechaIngreso;
     @FXML private ComboBox<Integer> cmbGanancia;
+    @FXML private ComboBox<Integer> cmbDescuento;
     @FXML private TextField txtCodigo;
     @FXML private ComboBox<Codigo> cmbCodigo;
     @FXML private ComboBox<Proveedor> cmbProveedor;
@@ -85,6 +86,7 @@ public class IngresoMercaderiaController implements Initializable {
     @FXML private TableColumn<FilaProducto, Number> colPrecioVenta;
     @FXML private TableColumn<FilaProducto, Number> colMargen;
     @FXML private TableColumn<FilaProducto, FilaProducto> colEliminar;
+    @FXML private TableColumn<FilaProducto, FilaProducto> colEditar;
     @FXML private Label lblTotalFactura;
     @FXML private HBox hbTotalFactura;
 
@@ -114,6 +116,7 @@ public class IngresoMercaderiaController implements Initializable {
         iniciarCbCodigos();
         iniciarSpCantidad();
         iniciarCbMargen();
+        iniciarCbDescuento();
         iniciarCbFormaPago();
         configurarCalculoPrecio();
         validarSoloNumeros();
@@ -266,10 +269,44 @@ public class IngresoMercaderiaController implements Initializable {
         calcularTotalFactura();
     }
 
+    private void cargarProductoEnFormulario(FilaProducto fp) {
+        txtDescripcion.setText(fp.getDescripcion());
+        for (Grupo g : listaGrupos) {
+            if (g.getId() == fp.getGrupoId()) { cmbGrupo.setValue(g); break; }
+        }
+        for (Marca m : listaMarcas) {
+            if (m.getId() == fp.getMarcaId()) { cmbMarca.setValue(m); break; }
+        }
+        txtCostoSinIVA.setText(BigDecimal.valueOf(fp.getCostoSinIVA()).setScale(2, RoundingMode.HALF_UP).toPlainString());
+        spCantidad.getValueFactory().setValue(fp.getCantidad());
+        txtPrecioVenta.setText(BigDecimal.valueOf(fp.getPrecioVenta()).setScale(2, RoundingMode.HALF_UP).toPlainString());
+        txtCodigo.setText(fp.getCodigo());
+        if (fp.getCodigoManual() != null && !fp.getCodigoManual().isEmpty()) {
+            for (Codigo c : listaCodigos) {
+                if (c.getNombre().equalsIgnoreCase(fp.getCodigoManual())) {
+                    cmbCodigo.setValue(c);
+                    break;
+                }
+            }
+            cmbCodigo.getEditor().setText(fp.getCodigoManual());
+        } else {
+            cmbCodigo.setValue(null);
+            cmbCodigo.getEditor().clear();
+        }
+        cmbGanancia.setValue(fp.getMargen());
+        eliminarProducto(fp);
+    }
+
     private void calcularTotalFactura() {
         BigDecimal total = BigDecimal.ZERO;
         for (FilaProducto fp : listaProductos) {
             total = total.add(BigDecimal.valueOf(fp.getTotalLinea()));
+        }
+        int pct = cmbDescuento.getValue() != null ? cmbDescuento.getValue() : 0;
+        if (pct > 0) {
+            BigDecimal desc = total.multiply(BigDecimal.valueOf(pct)).divide(BigDecimal.valueOf(100))
+                    .setScale(2, RoundingMode.HALF_UP);
+            total = total.subtract(desc);
         }
         lblTotalFactura.setText("$ " + total.setScale(2, RoundingMode.HALF_UP).toString());
     }
@@ -336,6 +373,21 @@ public class IngresoMercaderiaController implements Initializable {
                 btn.setOnAction(e -> {
                     FilaProducto fp = getTableView().getItems().get(getIndex());
                     if (fp != null) eliminarProducto(fp);
+                });
+            }
+            @Override protected void updateItem(FilaProducto item, boolean empty) {
+                super.updateItem(item, empty);
+                setGraphic(empty ? null : btn);
+                setStyle("-fx-alignment: CENTER;");
+            }
+        });
+        colEditar.setCellFactory(c -> new TableCell<>() {
+            private final Button btn = new Button("✎");
+            {
+                btn.setStyle("-fx-background-color: #f39c12; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-padding: 2 8;");
+                btn.setOnAction(e -> {
+                    FilaProducto fp = getTableView().getItems().get(getIndex());
+                    if (fp != null) cargarProductoEnFormulario(fp);
                 });
             }
             @Override protected void updateItem(FilaProducto item, boolean empty) {
@@ -554,6 +606,7 @@ public class IngresoMercaderiaController implements Initializable {
         cmbCodigo.setValue(null);
         cmbCodigo.getEditor().clear();
         cmbGanancia.setValue(40);
+        cmbDescuento.setValue(0);
     }
 
     public void limpiarFrm(){
@@ -580,9 +633,17 @@ public class IngresoMercaderiaController implements Initializable {
 
     private void iniciarCbMargen(){
         ObservableList<Integer> items = FXCollections.observableArrayList();
-        for (int i = 10; i <= 100; i += 10) items.add(i);
+        for (int i = 10; i <= 200; i += 10) items.add(i);
         ComboFilter.habilitarEnteros(cmbGanancia, items);
         cmbGanancia.setValue(40);
+    }
+
+    private void iniciarCbDescuento(){
+        ObservableList<Integer> items = FXCollections.observableArrayList();
+        for (int i = 0; i <= 100; i += 5) items.add(i);
+        ComboFilter.habilitarEnteros(cmbDescuento, items);
+        cmbDescuento.setValue(0);
+        cmbDescuento.valueProperty().addListener((obs, old, newVal) -> calcularTotalFactura());
     }
 
     private void configurarCalculoPrecio() {

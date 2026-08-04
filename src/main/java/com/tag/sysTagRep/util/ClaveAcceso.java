@@ -16,7 +16,7 @@ public class ClaveAcceso {
                                   String establecimiento, String puntoEmision, int secuencial) {
         String fecha = LocalDate.now().format(DateTimeFormatter.ofPattern("ddMMyyyy"));
         String tipoComp = String.format("%02d", Integer.parseInt(tipoComprobante));
-        String amb = ambiente.equals("PRODUCCION") ? "1" : "2";
+        String amb = ambiente.equals("PRODUCCION") ? "2" : "1"; // 1=PRUEBAS, 2=PRODUCCION
         String serie = establecimiento + puntoEmision;
         String sec = String.format("%09d", secuencial);
         String codigoNumerico = String.format("%08d", (int) (Math.random() * 99999999));

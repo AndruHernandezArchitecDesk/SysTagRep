@@ -57,15 +57,17 @@ public class SRIWebService {
             return recepcion;
         }
 
-        for (int intento = 1; intento <= 5; intento++) {
+        int[] esperas = {2000, 3000, 5000, 8000, 12000, 20000};
+        for (int intento = 0; intento < esperas.length; intento++) {
             SRIResponse autorizacion = consultarAutorizacion(claveAcceso);
             autorizacion.setRespuestaRecepcionXml(respuestaRecepcion);
             String estado = autorizacion.getEstado();
-            if ("AUTORIZADO".equals(estado) || "RECHAZADA".equals(estado) || "DEVUELTA".equals(estado)) {
+            if ("AUTORIZADO".equals(estado) || "RECHAZADA".equals(estado)
+                    || "DEVUELTA".equals(estado) || "NO AUTORIZADO".equals(estado)) {
                 return autorizacion;
             }
             try {
-                Thread.sleep(1000L * intento);
+                Thread.sleep(esperas[intento]);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
                 break;
