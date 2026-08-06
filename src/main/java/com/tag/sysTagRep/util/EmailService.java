@@ -5,9 +5,12 @@ import jakarta.mail.internet.*;
 
 import java.io.File;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class EmailService {
 
+    private static final Logger LOGGER = Logger.getLogger(EmailService.class.getName());
     private static final String REMITENTE = "tagrepuestosvick@gmail.com";
     private static final String PASSWORD = "awnfnmidbtqyyclz";
 
@@ -108,7 +111,7 @@ public class EmailService {
             return true;
         } catch (Exception e) {
             ultimoError = (e.getMessage() != null ? e.getMessage() : e.toString());
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error enviando correo", e);
             return false;
         }
     }

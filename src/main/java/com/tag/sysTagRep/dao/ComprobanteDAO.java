@@ -3,8 +3,12 @@ package com.tag.sysTagRep.dao;
 import com.tag.sysTagRep.config.DatabaseConnection;
 
 import java.sql.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ComprobanteDAO {
+
+    private static final Logger LOGGER = Logger.getLogger(ComprobanteDAO.class.getName());
 
     public int obtenerSecuencial(String tipoComprobante) {
         String insertar = "INSERT INTO secuenciales(tipo_comprobante, secuencial, punto_emision, establecimiento) " +
@@ -20,7 +24,7 @@ public class ComprobanteDAO {
                 if (rs.next()) return rs.getInt(1);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error en operacion de ComprobanteDAO", e);
         }
         return 1;
     }
@@ -38,7 +42,7 @@ public class ComprobanteDAO {
             ps.setString(5, xmlGenerado);
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error en operacion de ComprobanteDAO", e);
         }
     }
 
@@ -56,7 +60,7 @@ public class ComprobanteDAO {
             ps.setString(6, claveAcceso);
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error en operacion de ComprobanteDAO", e);
         }
     }
 
@@ -80,7 +84,7 @@ public class ComprobanteDAO {
             ps.setTimestamp(10, parsearFechaAutorizacion(fechaAutorizacion));
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error en operacion de ComprobanteDAO", e);
         }
     }
 
@@ -114,7 +118,7 @@ public class ComprobanteDAO {
                 if (rs.next()) return rs.getInt(1);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error en operacion de ComprobanteDAO", e);
         }
         return 1;
     }

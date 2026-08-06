@@ -32,7 +32,7 @@
                 </Button>
             </HBox>
 
-            <TitledPane text="Comprobantes" collapsible="false">
+            <TitledPane text="Comprobantes" collapsible="false" styleClass="section-card">
                 <TableView fx:id="tblReporte" prefHeight="250">
                     <columns>
                         <TableColumn fx:id="colTipo" text="Tipo" prefWidth="100"/>

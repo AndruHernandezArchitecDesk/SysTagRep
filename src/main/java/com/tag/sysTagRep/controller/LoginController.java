@@ -3,6 +3,7 @@ package com.tag.sysTagRep.controller;
 import com.tag.sysTagRep.dao.UsuarioDAO;
 import com.tag.sysTagRep.model.Usuario;
 import com.tag.sysTagRep.util.ScrambleText;
+import com.tag.sysTagRep.util.ThemeManager;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -16,6 +17,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import javafx.application.Platform;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -39,6 +41,15 @@ public class LoginController implements Initializable {
         txtUsuario.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.ENTER) txtPassword.requestFocus();
         });
+        if (txtUsuario.getScene() != null) {
+            ThemeManager.aplicarTemaGuardado(txtUsuario.getScene());
+        } else {
+            txtUsuario.sceneProperty().addListener((obs, old, scene) -> {
+                if (scene != null) {
+                    ThemeManager.aplicarTemaGuardado(scene);
+                }
+            });
+        }
     }
 
     @FXML
@@ -73,7 +84,7 @@ public class LoginController implements Initializable {
             stage.setTitle("Tag Repuestos Automotrices");
             stage.getIcons().add(new Image(getClass().getResourceAsStream("/img/inventario.png")));
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/css/app.css").toExternalForm());
+            ThemeManager.aplicarTemaGuardado(scene);
             stage.setScene(scene);
             stage.setMaximized(true);
         } catch (Exception e) {

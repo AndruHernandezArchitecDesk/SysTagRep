@@ -8,8 +8,12 @@ import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class FacturaRegistroDAO {
+
+    private static final Logger LOGGER = Logger.getLogger(FacturaRegistroDAO.class.getName());
 
     public List<FacturaRegistro> obtenerNumFactura() {
         List<FacturaRegistro> lista = new ArrayList<>();
@@ -24,7 +28,7 @@ public class FacturaRegistroDAO {
                 lista.add(f);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error en operacion de FacturaRegistroDAO", e);
         }
         return lista;
     }
@@ -52,7 +56,7 @@ public class FacturaRegistroDAO {
             ResultSet rs = ps.executeQuery();
             if (rs.next()) return rs.getInt("id");
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error en operacion de FacturaRegistroDAO", e);
         }
         return -1;
     }
@@ -65,7 +69,7 @@ public class FacturaRegistroDAO {
             ps.setString(2, claveAcceso);
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error en operacion de FacturaRegistroDAO", e);
         }
     }
 
@@ -91,7 +95,7 @@ public class FacturaRegistroDAO {
                 lista.add(f);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error en operacion de FacturaRegistroDAO", e);
         }
         return lista;
     }
@@ -107,7 +111,7 @@ public class FacturaRegistroDAO {
                 if (rs.next()) return rs.getInt(1);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error en operacion de FacturaRegistroDAO", e);
         }
         return 0;
     }
@@ -136,7 +140,7 @@ public class FacturaRegistroDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error en operacion de FacturaRegistroDAO", e);
         }
         return lista;
     }

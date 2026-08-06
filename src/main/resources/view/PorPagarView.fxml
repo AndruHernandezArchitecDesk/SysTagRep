@@ -21,7 +21,7 @@
         <VBox spacing="15">
 
             <!-- SECCION 1: Creditos activos a proveedores -->
-            <TitledPane text="Creditos Activos a Proveedores" collapsible="false" style="-fx-font-weight: bold;">
+            <TitledPane text="Creditos Activos a Proveedores" collapsible="false" styleClass="section-card" style="-fx-font-weight: bold;">
                 <content>
                     <VBox spacing="5">
                         <Label text="Verde: Inicio del plazo  |  Naranja: Mas de la mitad  |  Rojo: Plazo vencido" style="-fx-font-size: 11px; -fx-text-fill: #7f8c8d;"/>
@@ -39,7 +39,7 @@
             </TitledPane>
 
             <!-- SECCION 2: Detalle y abono -->
-            <TitledPane text="Detalle de Credito y Abono" collapsible="false" style="-fx-font-weight: bold;">
+            <TitledPane text="Detalle de Credito y Abono" collapsible="false" styleClass="section-card" style="-fx-font-weight: bold;">
                 <content>
                     <VBox spacing="10">
                         <HBox spacing="15" alignment="CENTER_LEFT">

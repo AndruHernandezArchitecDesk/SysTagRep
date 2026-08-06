@@ -21,7 +21,7 @@
             <ScrollPane fitToWidth="true">
                 <VBox spacing="12" style="-fx-padding: 10;">
                     <TitledPane text="Datos de la Marca" collapsible="false"
-                                style="-fx-font-weight: bold; -fx-background-color: #f8f9fa; -fx-background-radius: 8; -fx-padding: 8;">
+                                styleClass="section-card" style="-fx-font-weight: bold; -fx-padding: 8;">
                         <content>
                             <VBox spacing="8" style="-fx-padding: 5;">
                                 <HBox spacing="6" alignment="CENTER_LEFT">

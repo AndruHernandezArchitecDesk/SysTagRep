@@ -21,8 +21,7 @@
             <VBox spacing="12" style="-fx-padding: 10;">
 
                 <!-- Sección: Datos Factura -->
-                <TitledPane text="Datos Factura" collapsible="false"
-                            style="-fx-font-weight: bold; -fx-background-color: #f8f9fa; -fx-background-radius: 8; -fx-padding: 8;">
+                <TitledPane text="Datos Factura" collapsible="false" styleClass="section-card" style="-fx-font-weight: bold; -fx-padding: 8;">
                     <content>
                         <VBox spacing="8" style="-fx-padding: 5;">
                             <HBox spacing="6" alignment="CENTER_LEFT">
@@ -43,8 +42,7 @@
                 </TitledPane>
 
                 <!-- Sección: Productos -->
-                <TitledPane text="Productos" collapsible="false"
-                            style="-fx-font-weight: bold; -fx-background-color: #f8f9fa; -fx-background-radius: 8; -fx-padding: 8;">
+                <TitledPane text="Productos" collapsible="false" styleClass="section-card" style="-fx-font-weight: bold; -fx-padding: 8;">
                     <content>
                         <VBox spacing="8" style="-fx-padding: 5;">
 
@@ -158,8 +156,7 @@
                 </TitledPane>
 
                 <!-- Sección: Registro -->
-                <TitledPane text="Registro" collapsible="false"
-                            style="-fx-font-weight: bold; -fx-background-color: #f8f9fa; -fx-background-radius: 8; -fx-padding: 8;">
+                <TitledPane text="Registro" collapsible="false" styleClass="section-card" style="-fx-font-weight: bold; -fx-padding: 8;">
                     <content>
                         <VBox spacing="8" style="-fx-padding: 5;">
                             <HBox spacing="6" alignment="CENTER_LEFT">

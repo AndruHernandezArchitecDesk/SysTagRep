@@ -32,7 +32,7 @@
     </top>
 
     <center>
-        <ScrollPane fx:id="scrollGrid" fitToWidth="true" fitToHeight="true" style="-fx-background: #f0f2f5;">
+        <ScrollPane fx:id="scrollGrid" fitToWidth="true" fitToHeight="true" styleClass="panel-claro" style="-fx-padding: 0;">
             <VBox fx:id="contenedorSecciones" spacing="20" style="-fx-padding: 15;"/>
         </ScrollPane>
     </center>

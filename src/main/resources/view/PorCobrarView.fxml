@@ -21,7 +21,7 @@
         <VBox spacing="15">
 
             <!-- SECCION 1: Creditos activos -->
-            <TitledPane text="Créditos Activos" collapsible="false" style="-fx-font-weight: bold;">
+            <TitledPane text="Créditos Activos" collapsible="false" styleClass="section-card" style="-fx-font-weight: bold;">
                 <VBox spacing="5">
                     <Label text="Verde: Inicio del plazo  |  Amarillo: Más de la mitad  |  Rojo: Plazo vencido" style="-fx-font-size: 11px; -fx-text-fill: #7f8c8d;"/>
                     <TableView fx:id="tblCreditosActivos" prefHeight="200" VBox.vgrow="ALWAYS">
@@ -36,7 +36,7 @@
             </TitledPane>
 
             <!-- SECCION 2: Detalle y adelanto -->
-            <TitledPane text="Detalle de Crédito y Adelanto" collapsible="false" style="-fx-font-weight: bold;">
+            <TitledPane text="Detalle de Crédito y Adelanto" collapsible="false" styleClass="section-card" style="-fx-font-weight: bold;">
                 <VBox spacing="10">
                     <HBox spacing="15" alignment="CENTER_LEFT">
                         <Label text="Filtrar por cliente:" style="-fx-font-weight: bold;"/>

@@ -7,8 +7,12 @@ import java.io.StringWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class LogDAO {
+
+    private static final Logger LOGGER = Logger.getLogger(LogDAO.class.getName());
 
     public void guardar(String controlador, String metodo, String mensaje, Exception ex) {
         String stacktrace = "";
@@ -26,7 +30,7 @@ public class LogDAO {
             ps.setString(4, stacktrace);
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error al guardar log en base de datos", e);
         }
     }
 

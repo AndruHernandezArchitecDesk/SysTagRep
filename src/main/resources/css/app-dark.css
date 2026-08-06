@@ -1,0 +1,994 @@
+.root {
+    -fx-font-family: "Segoe UI";
+    -fx-background-color: #282a36;
+}
+
+.root {
+    -fx-accent: #bd93f9;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+.titulo {
+    -fx-font-size: 20px;
+    -fx-padding: 12;
+    -fx-text-fill: #f8f8f2;
+    -fx-background-color: #44475a;
+}
+
+.button {
+    -fx-font-weight: bold;
+    -fx-background-radius: 6;
+}
+
+.btn-guardar {
+    -fx-background-color: linear-gradient(#bd93f9, #8b5cf6);
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 10 28;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+}
+
+.btn-guardar:hover {
+    -fx-background-color: #ff79c6;
+}
+
+.text-field, .combo-box, .spinner, .date-picker {
+    -fx-background-color: #44475a;
+    -fx-border-color: #6272a4;
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-padding: 5 8;
+    -fx-font-size: 13px;
+    -fx-text-fill: #f8f8f2;
+}
+
+.text-field:focused, .combo-box:focused, .spinner:focused, .date-picker:focused {
+    -fx-border-color: #bd93f9;
+    -fx-border-width: 1.5;
+    -fx-background-insets: 0;
+}
+
+.combo-box > .text-field {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+    -fx-padding: 0;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+.table-view:focused .table-row-cell:filled:selected,
+.list-view:focused .list-cell:filled:selected {
+    -fx-background-color: #bd93f9;
+    -fx-background-insets: 0;
+    -fx-text-fill: #282a36;
+}
+
+.table-view {
+    -fx-background-color: #282a36;
+    -fx-border-color: #44475a;
+}
+
+.table-view .column-header {
+    -fx-background-color: #44475a;
+    -fx-text-fill: #f8f8f2;
+}
+
+.table-view .table-cell {
+    -fx-text-fill: #f8f8f2;
+}
+
+.table-view .table-row-cell {
+    -fx-background-color: #44475a;
+}
+
+.table-view .table-row-cell:odd {
+    -fx-background-color: #3a3c4e;
+}
+
+.nota-header {
+    -fx-padding: 20;
+    -fx-background-color: #44475a;
+    -fx-border-color: #6272a4;
+    -fx-border-width: 0 0 1 0;
+}
+
+.empresa-razon {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #f8f8f2;
+}
+
+.empresa-info {
+    -fx-font-size: 12px;
+    -fx-text-fill: #6272a4;
+}
+
+.footer-bar {
+    -fx-padding: 6 20;
+    -fx-background-color: #44475a;
+    -fx-border-color: #6272a4;
+    -fx-border-width: 1 0 0 0;
+    -fx-opacity: 0.95;
+}
+
+.btn-orden {
+    -fx-background-color: transparent;
+    -fx-border-color: #6272a4;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-text-fill: #f8f8f2;
+    -fx-font-weight: bold;
+    -fx-font-size: 11px;
+    -fx-padding: 1 5;
+    -fx-cursor: hand;
+    -fx-min-width: 24;
+}
+
+.btn-orden:hover {
+    -fx-background-color: #6272a4;
+}
+
+.menu-bar {
+    -fx-background-color: #44475a;
+}
+
+.menu-bar .label {
+    -fx-text-fill: #f8f8f2;
+}
+
+.menu-item {
+    -fx-text-fill: #f8f8f2;
+}
+
+.context-menu {
+    -fx-background-color: #44475a;
+    -fx-border-color: #6272a4;
+}
+
+.menu-item:hover {
+    -fx-background-color: #bd93f9;
+    -fx-text-fill: #282a36;
+}
+
+.tab-pane {
+    -fx-background-color: #282a36;
+}
+
+.tab-pane .tab-header-area {
+    -fx-background-color: #44475a;
+}
+
+.tab-pane .tab {
+    -fx-background-color: #44475a;
+    -fx-text-fill: #f8f8f2;
+}
+
+.tab-pane .tab:selected {
+    -fx-background-color: #bd93f9;
+    -fx-text-fill: #282a36;
+}
+
+.scroll-pane {
+    -fx-background-color: #282a36;
+}
+
+.scroll-pane .viewport {
+    -fx-background-color: #282a36;
+}
+
+.label {
+    -fx-text-fill: #f8f8f2;
+}
+
+.check-box .text {
+    -fx-text-fill: #f8f8f2;
+}
+
+.radio-button .text {
+    -fx-text-fill: #f8f8f2;
+}
+
+.toggle-button {
+    -fx-background-color: #44475a;
+    -fx-text-fill: #f8f8f2;
+}
+
+.toggle-button:selected {
+    -fx-background-color: #bd93f9;
+    -fx-text-fill: #282a36;
+}
+
+.alert {
+    -fx-background-color: #44475a;
+}
+
+.alert .header-panel {
+    -fx-background-color: #bd93f9;
+}
+
+.alert .header-panel .label {
+    -fx-text-fill: #282a36;
+}
+
+.alert .content {
+    -fx-text-fill: #f8f8f2;
+}
+
+.dialog-pane {
+    -fx-background-color: #44475a;
+}
+
+.dialog-pane .button-bar {
+    -fx-background-color: #3a3c4e;
+}
+
+.text-area {
+    -fx-background-color: #44475a;
+    -fx-text-fill: #f8f8f2;
+}
+
+.text-area .content {
+    -fx-background-color: #44475a;
+}
+
+.progress-bar {
+    -fx-background-color: #44475a;
+}
+
+.progress-bar .track {
+    -fx-background-color: #6272a4;
+}
+
+.progress-bar .bar {
+    -fx-background-color: #bd93f9;
+}
+
+/* Sobrescribir fondos blancos/grises claros en modo dark */
+.dark-mode {
+    -fx-background-color: #282a36 !important;
+}
+
+.dark-mode .nota-header,
+.dark-mode .factura-header,
+.dark-mode TitledPane {
+    -fx-background-color: #44475a !important;
+}
+
+.dark-mode .panel-claro,
+.dark-mode .panel-inventario {
+    -fx-background-color: #44475a !important;
+    -fx-border-color: #6272a4 !important;
+}
+
+.dark-mode ScrollPane.panel-claro {
+    -fx-background-color: #44475a !important;
+}
+
+.dark-mode ScrollPane.panel-claro .viewport {
+    -fx-background-color: #44475a !important;
+}
+
+.dark-mode .nota-header {
+    -fx-border-color: #6272a4 !important;
+}
+
+/* Textos oscuros sobre fondos claros en modo dark */
+.dark-mode Label[style*="text-fill: #1a252f"],
+.dark-mode Label[style*="text-fill: #2c3e50"],
+.dark-mode Label[style*="text-fill: #34495e"],
+.dark-mode Label[style*="text-fill: #000000"],
+.dark-mode Label[style*="text-fill: black"] {
+    -fx-text-fill: #f8f8f2 !important;
+}
+
+.dark-mode Label[style*="text-fill: red"] {
+    -fx-text-fill: #ff5555 !important;
+}
+
+/* Labels sin estilo de color en fondos claros */
+.dark-mode HBox > Label,
+.dark-mode VBox > Label {
+    -fx-text-fill: #f8f8f2;
+}
+
+/* Tablas en paneles claros */
+.dark-mode TableView {
+    -fx-background-color: #282a36;
+    -fx-border-color: #44475a;
+}
+
+.dark-mode TableView .column-header {
+    -fx-background-color: #44475a;
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode TableView .table-cell {
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode TableView .table-row-cell {
+    -fx-background-color: #44475a;
+}
+
+.dark-mode TableView .table-row-cell:odd {
+    -fx-background-color: #3a3c4e;
+}
+
+.dark-mode TableView:focused .table-row-cell:filled:selected {
+    -fx-background-color: #bd93f9;
+    -fx-text-fill: #282a36;
+}
+
+/* TitledPane en modo dark */
+.dark-mode TitledPane {
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode TitledPane > .title {
+    -fx-background-color: #44475a;
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode TitledPane > .content {
+    -fx-background-color: #44475a;
+}
+
+.dark-mode .section-card {
+    -fx-background-color: #44475a !important;
+    -fx-background-radius: 8;
+    -fx-border-color: #6272a4;
+    -fx-border-radius: 8;
+}
+
+.dark-mode .section-card > .title {
+    -fx-background-color: #44475a !important;
+    -fx-text-fill: #f8f8f2 !important;
+}
+
+.dark-mode .section-card > .content {
+    -fx-background-color: #44475a !important;
+}
+
+/* Separator en modo dark */
+.dark-mode Separator {
+    -fx-background-color: #6272a4;
+}
+
+/* DatePicker en modo dark */
+.dark-mode DatePicker {
+    -fx-background-color: #44475a;
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode DatePicker > .text-field {
+    -fx-background-color: #44475a;
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode DatePicker > .arrow-button {
+    -fx-background-color: #44475a;
+}
+
+.dark-mode DatePicker > .arrow-button > .arrow {
+    -fx-background-color: #f8f8f2;
+}
+
+/* ScrollBar en modo dark */
+.dark-mode ScrollBar {
+    -fx-background-color: #282a36;
+}
+
+.dark-mode ScrollBar > .thumb {
+    -fx-background-color: #6272a4;
+}
+
+.dark-mode ScrollBar > .thumb:hover {
+    -fx-background-color: #bd93f9;
+}
+
+.dark-mode ScrollBar > .track {
+    -fx-background-color: #282a36;
+}
+
+.dark-mode ScrollBar > .increment-button,
+.dark-mode ScrollBar > .decrement-button {
+    -fx-background-color: #282a36;
+}
+
+.dark-mode ScrollBar > .increment-button > .arrow,
+.dark-mode ScrollBar > .decrement-button > .arrow {
+    -fx-background-color: #6272a4;
+}
+
+/* Headers genéricos */
+.dark-mode .header {
+    -fx-background-color: #44475a !important;
+    -fx-text-fill: #f8f8f2 !important;
+}
+
+/* Labels de título oscuros en modo dark */
+.dark-mode Label[style*="text-fill: #2c3e50"],
+.dark-mode Label[style*="text-fill: #34495e"] {
+    -fx-text-fill: #f8f8f2 !important;
+}
+
+/* Labels con texto gris oscuro */
+.dark-mode Label[style*="text-fill: #444"],
+.dark-mode Label[style*="text-fill: #444444"] {
+    -fx-text-fill: #f8f8f2 !important;
+}
+
+/* TextFields con texto oscuro */
+.dark-mode TextField {
+    -fx-text-fill: #f8f8f2;
+}
+
+/* ComboBox en modo dark */
+.dark-mode ComboBox {
+    -fx-background-color: #44475a;
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode ComboBox > .text-field {
+    -fx-background-color: #44475a;
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode ComboBox > .arrow-button {
+    -fx-background-color: #44475a;
+}
+
+.dark-mode ComboBox > .arrow-button > .arrow {
+    -fx-background-color: #f8f8f2;
+}
+
+/* Spinner en modo dark */
+.dark-mode Spinner {
+    -fx-background-color: #44475a;
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode Spinner > .text-field {
+    -fx-background-color: #44475a;
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode Spinner > .increment-arrow-button,
+.dark-mode Spinner > .decrement-arrow-button {
+    -fx-background-color: #44475a;
+}
+
+.dark-mode Spinner > .increment-arrow-button > .arrow,
+.dark-mode Spinner > .decrement-arrow-button > .arrow {
+    -fx-background-color: #f8f8f2;
+}
+
+/* CheckBox en modo dark */
+.dark-mode CheckBox {
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode CheckBox > .box {
+    -fx-background-color: #44475a;
+    -fx-border-color: #6272a4;
+}
+
+.dark-mode CheckBox:selected > .box {
+    -fx-background-color: #bd93f9;
+}
+
+.dark-mode CheckBox:selected > .box > .mark {
+    -fx-background-color: #282a36;
+}
+
+/* RadioButton en modo dark */
+.dark-mode RadioButton {
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode RadioButton > .radio {
+    -fx-background-color: #44475a;
+    -fx-border-color: #6272a4;
+}
+
+.dark-mode RadioButton:selected > .radio {
+    -fx-background-color: #bd93f9;
+    -fx-border-color: #bd93f9;
+}
+
+.dark-mode RadioButton:selected > .radio > .dot {
+    -fx-background-color: #282a36;
+}
+
+/* Tooltip en modo dark */
+.dark-mode Tooltip {
+    -fx-background-color: #44475a;
+    -fx-text-fill: #f8f8f2;
+    -fx-border-color: #6272a4;
+}
+
+/* ContextMenu en modo dark */
+.dark-mode ContextMenu {
+    -fx-background-color: #44475a;
+    -fx-border-color: #6272a4;
+}
+
+.dark-mode ContextMenu > .menu-item {
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode ContextMenu > .menu-item:hover {
+    -fx-background-color: #bd93f9;
+    -fx-text-fill: #282a36;
+}
+
+/* ChoiceBox en modo dark */
+.dark-mode ChoiceBox {
+    -fx-background-color: #44475a;
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode ChoiceBox > .text-field {
+    -fx-background-color: #44475a;
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode ChoiceBox > .arrow-button {
+    -fx-background-color: #44475a;
+}
+
+.dark-mode ChoiceBox > .arrow-button > .arrow {
+    -fx-background-color: #f8f8f2;
+}
+
+/* ListView en modo dark */
+.dark-mode ListView {
+    -fx-background-color: #282a36;
+    -fx-border-color: #44475a;
+}
+
+.dark-mode ListView .list-cell {
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode ListView .list-cell:filled:selected {
+    -fx-background-color: #bd93f9;
+    -fx-text-fill: #282a36;
+}
+
+/* TreeView en modo dark */
+.dark-mode TreeView {
+    -fx-background-color: #282a36;
+    -fx-border-color: #44475a;
+}
+
+.dark-mode TreeView .tree-cell {
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode TreeView .tree-cell:filled:selected {
+    -fx-background-color: #bd93f9;
+    -fx-text-fill: #282a36;
+}
+
+/* Paginación / botones de navegación */
+.dark-mode Pagination {
+    -fx-background-color: #282a36;
+}
+
+.dark-mode Pagination > .page {
+    -fx-background-color: #44475a;
+}
+
+.dark-mode Pagination > .page > .control-button {
+    -fx-background-color: #44475a;
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode Pagination > .page > .control-button:hover {
+    -fx-background-color: #bd93f9;
+    -fx-text-fill: #282a36;
+}
+
+.dark-mode Pagination > .page > .control-button:selected {
+    -fx-background-color: #bd93f9;
+    -fx-text-fill: #282a36;
+}
+
+/* ProgressIndicator en modo dark */
+.dark-mode ProgressIndicator {
+    -fx-progress-color: #bd93f9;
+}
+
+/* TabPane en modo dark */
+.dark-mode TabPane {
+    -fx-background-color: #282a36;
+}
+
+.dark-mode TabPane > .tab-header-area {
+    -fx-background-color: #44475a;
+}
+
+.dark-mode TabPane > .tab-header-area > .headers-region > .tab {
+    -fx-background-color: #44475a;
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode TabPane > .tab-header-area > .headers-region > .tab:selected {
+    -fx-background-color: #bd93f9;
+    -fx-text-fill: #282a36;
+}
+
+.dark-mode TabPane > .tab-header-area > .headers-region > .tab > .tab-label {
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode TabPane > .tab-header-area > .headers-region > .tab:selected > .tab-label {
+    -fx-text-fill: #282a36;
+}
+
+.dark-mode TabPane > .tab-content-area {
+    -fx-background-color: #282a36;
+}
+
+.dark-mode TabPane > .tab-content-area > * {
+    -fx-background-color: #282a36;
+}
+
+/* SplitPane en modo dark */
+.dark-mode SplitPane {
+    -fx-background-color: #282a36;
+}
+
+.dark-mode SplitPane > .split-pane-divider {
+    -fx-background-color: #44475a;
+}
+
+/* Accordion en modo dark */
+.dark-mode Accordion {
+    -fx-background-color: #282a36;
+}
+
+.dark-mode Accordion > .titled-pane {
+    -fx-background-color: #44475a;
+}
+
+.dark-mode Accordion > .titled-pane > .title {
+    -fx-background-color: #44475a;
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode Accordion > .titled-pane > .content {
+    -fx-background-color: #44475a;
+}
+
+/* PasswordField en modo dark */
+.dark-mode PasswordField {
+    -fx-background-color: #44475a;
+    -fx-text-fill: #f8f8f2;
+    -fx-border-color: #6272a4;
+}
+
+.dark-mode PasswordField:focused {
+    -fx-border-color: #bd93f9;
+}
+
+/* TextArea en modo dark */
+.dark-mode TextArea {
+    -fx-background-color: #44475a;
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode TextArea > .viewport {
+    -fx-background-color: #44475a;
+}
+
+/* HTMLEditor en modo dark */
+.dark-mode HTMLEditor {
+    -fx-background-color: #282a36;
+}
+
+.dark-mode HTMLEditor > .html-editor-content {
+    -fx-background-color: #282a36;
+    -fx-text-fill: #f8f8f2;
+}
+
+/* ColorPicker en modo dark */
+.dark-mode ColorPicker {
+    -fx-background-color: #44475a;
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode ColorPicker > .arrow-button {
+    -fx-background-color: #44475a;
+}
+
+.dark-mode ColorPicker > .arrow-button > .arrow {
+    -fx-background-color: #f8f8f2;
+}
+
+/* FileChooser en modo dark */
+.dark-mode FileChooser {
+    -fx-background-color: #282a36;
+}
+
+/* MenuBar en modo dark */
+.dark-mode MenuBar {
+    -fx-background-color: #44475a;
+}
+
+.dark-mode MenuBar > .menu {
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode MenuBar > .menu > .label {
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode MenuBar > .menu:hover {
+    -fx-background-color: #bd93f9;
+}
+
+.dark-mode MenuBar > .menu:hover > .label {
+    -fx-text-fill: #282a36;
+}
+
+.dark-mode MenuBar > .menu > .menu-item {
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode MenuBar > .menu > .menu-item:hover {
+    -fx-background-color: #bd93f9;
+    -fx-text-fill: #282a36;
+}
+
+/* ToolBar en modo dark */
+.dark-mode ToolBar {
+    -fx-background-color: #44475a;
+}
+
+.dark-mode ToolBar > .toggle-button {
+    -fx-background-color: #44475a;
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode ToolBar > .toggle-button:selected {
+    -fx-background-color: #bd93f9;
+    -fx-text-fill: #282a36;
+}
+
+.dark-mode ToolBar > .button {
+    -fx-background-color: #44475a;
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode ToolBar > .button:hover {
+    -fx-background-color: #bd93f9;
+    -fx-text-fill: #282a36;
+}
+
+/* StatusBar / HBox inferiores */
+.dark-mode HBox[style*="rgba(0,0,0,0.05)"],
+.dark-mode HBox[style*="background-color: rgba"] {
+    -fx-background-color: #44475a !important;
+}
+
+.dark-mode HBox[style*="rgba(0,0,0,0.05)"] > Label,
+.dark-mode HBox[style*="background-color: rgba"] > Label {
+    -fx-text-fill: #f8f8f2 !important;
+}
+
+/* Labels de copyright y footer */
+.dark-mode Label[style*="text-fill: #4b5563"],
+.dark-mode Label[style*="text-fill: #95a5a6"],
+.dark-mode Label[style*="text-fill: #7f8c8d"] {
+    -fx-text-fill: #6272a4 !important;
+}
+
+/* Labels de totales y números importantes */
+.dark-mode Label[style*="text-fill: #1a252f"],
+.dark-mode Label[style*="text-fill: #2c3e50"] {
+    -fx-text-fill: #f8f8f2 !important;
+}
+
+/* Labels rojos */
+.dark-mode Label[style*="text-fill: red"] {
+    -fx-text-fill: #ff5555 !important;
+}
+
+.dark-mode Label[style*="text-fill: #e74c3c"] {
+    -fx-text-fill: #ff5555 !important;
+}
+
+/* Labels verdes */
+.dark-mode Label[style*="text-fill: #27ae60"],
+.dark-mode Label[style*="text-fill: #27ae60"] {
+    -fx-text-fill: #50fa7b !important;
+}
+
+/* Labels azules */
+.dark-mode Label[style*="text-fill: #2980b9"],
+.dark-mode Label[style*="text-fill: #3498db"] {
+    -fx-text-fill: #8be9fd !important;
+}
+
+/* Labels naranjas */
+.dark-mode Label[style*="text-fill: #e67e22"],
+.dark-mode Label[style*="text-fill: #d35400"] {
+    -fx-text-fill: #ffb86c !important;
+}
+
+/* Labels grises */
+.dark-mode Label[style*="text-fill: #95a5a6"],
+.dark-mode Label[style*="text-fill: #bdc3c7"] {
+    -fx-text-fill: #6272a4 !important;
+}
+
+/* GridPane en modo dark */
+.dark-mode GridPane {
+    -fx-background-color: transparent;
+}
+
+/* VBox/HBox generales en modo dark */
+.dark-mode VBox,
+.dark-mode HBox {
+    -fx-background-color: transparent;
+}
+
+/* BorderPane general en modo dark */
+.dark-mode BorderPane {
+    -fx-background-color: #282a36;
+}
+
+/* StackPane en modo dark */
+.dark-mode StackPane {
+    -fx-background-color: transparent;
+}
+
+/* AnchorPane en modo dark */
+.dark-mode AnchorPane {
+    -fx-background-color: transparent;
+}
+
+/* ScrollPane general en modo dark */
+.dark-mode ScrollPane {
+    -fx-background-color: #282a36;
+}
+
+.dark-mode ScrollPane > .viewport {
+    -fx-background-color: #282a36;
+}
+
+/* Formularios dentro de SplitPane */
+.dark-mode ScrollPane > VBox {
+    -fx-background-color: #282a36;
+}
+
+/* Tablas en todas las vistas */
+.dark-mode TableView {
+    -fx-background-color: #282a36;
+    -fx-border-color: #44475a;
+}
+
+.dark-mode TableView .column-header {
+    -fx-background-color: #44475a;
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode TableView .table-cell {
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode TableView .table-row-cell {
+    -fx-background-color: #44475a;
+}
+
+.dark-mode TableView .table-row-cell:odd {
+    -fx-background-color: #3a3c4e;
+}
+
+.dark-mode TableView:focused .table-row-cell:filled:selected {
+    -fx-background-color: #bd93f9;
+    -fx-text-fill: #282a36;
+}
+
+/* Tablas con fondo blanco inline */
+.dark-mode TableView[style*="background-color: #ffffff"],
+.dark-mode TableView[style*="background-color: white"] {
+    -fx-background-color: #282a36 !important;
+}
+
+/* PieChart en modo dark */
+.dark-mode PieChart {
+    -fx-background-color: #282a36;
+}
+
+.dark-mode PieChart > .chart-pie {
+    -fx-border-color: #44475a;
+}
+
+.dark-mode PieChart > .chart-legend {
+    -fx-background-color: #44475a;
+    -fx-text-fill: #f8f8f2;
+}
+
+/* BarChart en modo dark */
+.dark-mode BarChart {
+    -fx-background-color: #282a36;
+}
+
+.dark-mode BarChart > .chart-vertical-grid-lines {
+    -fx-stroke: #44475a;
+}
+
+.dark-mode BarChart > .chart-horizontal-grid-lines {
+    -fx-stroke: #44475a;
+}
+
+.dark-mode BarChart > .chart-plot-background {
+    -fx-background-color: #282a36;
+}
+
+.dark-mode BarChart > .chart-alternative-row-fill {
+    -fx-fill: #3a3c4e;
+}
+
+.dark-mode BarChart > .chart-vertical-zero-line {
+    -fx-stroke: #6272a4;
+}
+
+.dark-mode BarChart > .chart-horizontal-zero-line {
+    -fx-stroke: #6272a4;
+}
+
+/* Axis en modo dark */
+.dark-mode .axis {
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode .axis-label {
+    -fx-text-fill: #f8f8f2;
+}
+
+.dark-mode .axis-tick-mark {
+    -fx-stroke: #6272a4;
+}
+
+.dark-mode .axis-tick-label {
+    -fx-text-fill: #f8f8f2;
+}
+
+/* Card / Panel genérico */
+.dark-mode .card,
+.dark-mode .panel {
+    -fx-background-color: #44475a;
+    -fx-border-color: #6272a4;
+}
+
+.dark-mode .card > Label,
+.dark-mode .panel > Label {
+    -fx-text-fill: #f8f8f2;
+}
+
+/* Secciones de Factura y Nota de Venta */
+.dark-mode FacturaView,
+.dark-mode NotaVentaView {
+    -fx-background-color: #282a36;
+}
+
+/* Labels de totales y montos */
+.dark-mode Label[style*="text-fill: #1a252f"],
+.dark-mode Label[style*="text-fill: #2c3e50"],
+.dark-mode Label[style*="text-fill: #34495e"] {
+    -fx-text-fill: #f8f8f2 !important;
+}
+
+/* Labels de títulos de sección */
+.dark-mode Label[style*="font-weight: bold"][style*="text-fill: #2c3e50"],
+.dark-mode Label[style*="font-weight: bold"][style*="text-fill: #34495e"] {
+    -fx-text-fill: #f8f8f2 !important;
+}

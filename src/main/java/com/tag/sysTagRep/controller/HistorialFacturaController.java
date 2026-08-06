@@ -10,6 +10,7 @@ import com.tag.sysTagRep.util.EmailService;
 import com.tag.sysTagRep.util.SortTable;
 import com.tag.sysTagRep.util.ComboFilter;
 import com.tag.sysTagRep.util.SRIWebService;
+import com.tag.sysTagRep.util.AppConstants;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
@@ -32,8 +33,12 @@ import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class HistorialFacturaController implements Initializable {
+
+    private static final Logger LOGGER = Logger.getLogger(HistorialFacturaController.class.getName());
 
     @FXML private TextField txtBuscar;
     @FXML private TableView<FacturaRegistro> tblFacturas;
@@ -170,10 +175,10 @@ public class HistorialFacturaController implements Initializable {
                                 ? "PRUEBAS" : f.getAmbienteSri();
                         SRIWebService.SRIResponse r = new SRIWebService(ambiente).consultarAutorizacion(clave);
                         String estado = r.getEstado();
-                        if ("AUTORIZADO".equals(estado) || "RECHAZADA".equals(estado) || "DEVUELTA".equals(estado)) {
+                        if (AppConstants.ESTADO_AUTORIZADO.equals(estado) || AppConstants.ESTADO_RECHAZADA.equals(estado) || AppConstants.ESTADO_DEVUELTA.equals(estado)) {
                             ceDAO.actualizarEstado(clave, estado, r.getMensaje(), null, r.getNumeroAutorizacion(), r.getFechaAutorizacion());
                             dao.actualizarEstado(clave, estado);
-                            if ("AUTORIZADO".equals(estado)) {
+                            if (AppConstants.ESTADO_AUTORIZADO.equals(estado)) {
                                 autorizadas++;
                                 String numAut = r.getNumeroAutorizacion();
                                 String fechaAut = r.getFechaAutorizacion();
@@ -182,16 +187,16 @@ public class HistorialFacturaController implements Initializable {
                                         Cliente cliente = clienteDAO.obtenerPorId(f.getClienteId());
                                         if (cliente != null && cliente.getCorreo() != null && !cliente.getCorreo().trim().isEmpty()) {
                                             String numComp = f.getNumComprobante();
-                                            String rutaPDF = System.getProperty("user.home") + File.separator + "Desktop"
-                                                    + File.separator + "FacturaElectronica_" + numComp.replace("-", "") + ".pdf";
-                                            String rutaXML = System.getProperty("user.home") + File.separator + "Desktop"
-                                                    + File.separator + "FacturaElectronica_" + numComp.replace("-", "") + ".xml";
+                                    String rutaPDF = System.getProperty("user.home") + File.separator + AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT
+                                                    + File.separator + AppConstants.PREFIJO_PDF_FACTURA + numComp.replace("-", "") + AppConstants.EXTENSION_PDF;
+                                            String rutaXML = System.getProperty("user.home") + File.separator + AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT
+                                                    + File.separator + AppConstants.PREFIJO_PDF_FACTURA + numComp.replace("-", "") + AppConstants.EXTENSION_XML;
                                             EmailService emailService = new EmailService();
                                             boolean enviado = emailService.enviarCorreoConArchivos(
                                                     cliente.getCorreo().trim(),
                                                     cliente.getNombre(),
                                                     f.getCodigo(),
-                                                    "FACTURA",
+                                                    AppConstants.TIPO_DOCUMENTO_FACTURA,
                                                     new File(rutaPDF),
                                                     new File(rutaXML));
                                             if (enviado) {
@@ -211,7 +216,7 @@ public class HistorialFacturaController implements Initializable {
                             } else {
                                 rechazadas++;
                             }
-                        } else if ("ERROR".equals(estado)) {
+                        } else if (AppConstants.ESTADO_ERROR.equals(estado)) {
                             errores++;
                         } else {
                             pendientesN++;

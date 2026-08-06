@@ -12,8 +12,12 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class InventarioDAO {
+
+    private static final Logger LOGGER = Logger.getLogger(InventarioDAO.class.getName());
 
     public List<Inventario> listar() {
         return listarPaginado(-1, -1, null);
@@ -47,7 +51,7 @@ public class InventarioDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error en operacion de InventarioDAO", e);
         }
         return lista;
     }
@@ -66,7 +70,7 @@ public class InventarioDAO {
                 if (rs.next()) return rs.getInt(1);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error en operacion de InventarioDAO", e);
         }
         return 0;
     }
@@ -121,7 +125,7 @@ public class InventarioDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error en operacion de InventarioDAO", e);
         }
         return lista;
     }
@@ -153,7 +157,7 @@ public class InventarioDAO {
                 if (keys.next()) return keys.getInt(1);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error en operacion de InventarioDAO", e);
         }
         return 0;
     }
@@ -181,7 +185,7 @@ public class InventarioDAO {
             ps.setInt(16, inv.getId());
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error en operacion de InventarioDAO", e);
         }
     }
 
@@ -193,7 +197,7 @@ public class InventarioDAO {
             ps.setInt(2, id);
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error en operacion de InventarioDAO", e);
         }
     }
 
@@ -204,7 +208,7 @@ public class InventarioDAO {
             ps.setInt(1, id);
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error en operacion de InventarioDAO", e);
         }
     }
 
@@ -229,7 +233,7 @@ public class InventarioDAO {
             ps.setInt(3, cantidad);
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error en operacion de InventarioDAO", e);
         }
     }
 
@@ -252,7 +256,7 @@ public class InventarioDAO {
                 lista.add(v);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error en operacion de InventarioDAO", e);
         }
         return lista;
     }
@@ -277,7 +281,7 @@ public class InventarioDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error en operacion de InventarioDAO", e);
         }
         return null;
     }

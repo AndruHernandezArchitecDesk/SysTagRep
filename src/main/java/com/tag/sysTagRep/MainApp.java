@@ -2,6 +2,7 @@ package com.tag.sysTagRep;
 
 import com.tag.sysTagRep.controller.LicenseActivatorController;
 import com.tag.sysTagRep.util.LicenseManager;
+import com.tag.sysTagRep.util.ThemeManager;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -38,7 +39,9 @@ public class MainApp extends Application {
         );
 
         stage.setTitle("SysTag - Inicio de Sesión");
-        stage.setScene(new Scene(root));
+        Scene scene = new Scene(root);
+        ThemeManager.aplicarTemaGuardado(scene);
+        stage.setScene(scene);
         stage.show();
     }
 

@@ -21,7 +21,7 @@
         <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;">
         <VBox spacing="15" alignment="TOP_CENTER">
             <TitledPane text="Proforma" collapsible="false" maxWidth="650"
-                        style="-fx-font-weight: bold; -fx-background-color: #f8f9fa; -fx-background-radius: 8; -fx-padding: 8;">
+                        styleClass="section-card" style="-fx-font-weight: bold; -fx-padding: 8;">
                 <content>
                     <VBox spacing="10" style="-fx-padding: 5;">
                         <HBox spacing="10" alignment="CENTER_LEFT">
@@ -47,7 +47,7 @@
             </TitledPane>
 
             <TitledPane text="Factura Electrónica" collapsible="false" maxWidth="650"
-                        style="-fx-font-weight: bold; -fx-background-color: #f8f9fa; -fx-background-radius: 8; -fx-padding: 8;">
+                        styleClass="section-card" style="-fx-font-weight: bold; -fx-padding: 8;">
                 <content>
                     <VBox spacing="10" style="-fx-padding: 5;">
                         <HBox spacing="10" alignment="CENTER_LEFT">

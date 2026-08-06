@@ -32,7 +32,7 @@
                 </Button>
             </HBox>
 
-            <TitledPane text="Facturas" collapsible="false">
+            <TitledPane text="Facturas" collapsible="false" styleClass="section-card">
                 <TableView fx:id="tblFacturas" prefHeight="250">
                     <columns>
                         <TableColumn fx:id="colFactura" text="Nº Factura" prefWidth="140"/>

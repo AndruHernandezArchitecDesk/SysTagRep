@@ -11,7 +11,7 @@
             prefHeight="950.0" prefWidth="1100.0">
 
     <top>
-        <HBox styleClass="nota-header" alignment="CENTER_LEFT" spacing="20" style="-fx-padding: 10; -fx-background-color: #f9fafb;">
+        <HBox styleClass="factura-header" alignment="CENTER_LEFT" spacing="20" style="-fx-padding: 10;">
             <ImageView fx:id="imgLogo" fitHeight="50" preserveRatio="true"/>
             <VBox alignment="CENTER" HBox.hgrow="ALWAYS">
                 <Label text="SysTag Repuestos" fx:id="lblRazonSocial" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
@@ -32,7 +32,7 @@
             <VBox spacing="15" style="-fx-padding: 15;">
 
                 <!-- SECCIÓN CLIENTE -->
-                <TitledPane text="Información del Cliente" collapsible="false" style="-fx-font-weight: bold;">
+                <TitledPane text="Información del Cliente" collapsible="false" styleClass="section-card" style="-fx-font-weight: bold;">
                     <content>
                         <VBox spacing="10">
                             <HBox spacing="10" alignment="CENTER_LEFT">
@@ -79,7 +79,7 @@
                 </TitledPane>
 
                 <!-- SECCIÓN SELECCIONAR PRODUCTO -->
-                <VBox spacing="8" style="-fx-background-color: #f0f2f5; -fx-padding: 10; -fx-border-color: #d1d5db; -fx-border-radius: 5;">
+                <VBox spacing="8" styleClass="panel-inventario" style="-fx-padding: 10; -fx-border-color: #d1d5db; -fx-border-radius: 5;">
                     <HBox spacing="10" alignment="CENTER_LEFT">
                         <Label text="INVENTARIO DISPONIBLE" style="-fx-font-weight: bold; -fx-text-fill: #34495e;"/>
                         <TextField fx:id="txtBuscarProducto" promptText="Filtrar por nombre o código..." HBox.hgrow="ALWAYS" />
@@ -148,7 +148,7 @@
                 </HBox>
 
                 <!-- CONFIGURACIÓN SRI -->
-                <TitledPane text="Configuración SRI" collapsible="false" style="-fx-font-weight: bold;">
+                <TitledPane text="Configuración SRI" collapsible="false" styleClass="section-card" style="-fx-font-weight: bold;">
                     <content>
                         <GridPane hgap="15" vgap="10">
                             <columnConstraints>

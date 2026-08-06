@@ -10,8 +10,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class CuentaPorCobrarDAO {
+
+    private static final Logger LOGGER = Logger.getLogger(CuentaPorCobrarDAO.class.getName());
 
     public void insertar(CuentaPorCobrar cpc) {
         String sql = "INSERT INTO cuentas_por_cobrar(nota_venta_id, cliente_id, total, meses_plazo, interes, cuota_mensual, estado, fecha_registro) " +
@@ -27,7 +31,7 @@ public class CuentaPorCobrarDAO {
             ps.setString(7, "Pendiente");
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error en operacion de CuentaPorCobrarDAO", e);
         }
     }
 
@@ -64,7 +68,7 @@ public class CuentaPorCobrarDAO {
                 lista.add(fila);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error en operacion de CuentaPorCobrarDAO", e);
         }
         return lista;
     }
@@ -104,7 +108,7 @@ public class CuentaPorCobrarDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error en operacion de CuentaPorCobrarDAO", e);
         }
         return lista;
     }
@@ -117,7 +121,7 @@ public class CuentaPorCobrarDAO {
             ps.setInt(2, cpcId);
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error en operacion de CuentaPorCobrarDAO", e);
         }
     }
 
@@ -128,7 +132,7 @@ public class CuentaPorCobrarDAO {
             ps.setInt(1, cpcId);
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error en operacion de CuentaPorCobrarDAO", e);
         }
     }
 
@@ -149,7 +153,7 @@ public class CuentaPorCobrarDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error en operacion de CuentaPorCobrarDAO", e);
         }
         return detalles;
     }

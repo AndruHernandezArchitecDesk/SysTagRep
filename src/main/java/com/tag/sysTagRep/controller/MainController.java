@@ -5,6 +5,7 @@ import com.tag.sysTagRep.dao.LogDAO;
 import com.tag.sysTagRep.controller.LoginController;
 import com.tag.sysTagRep.util.AboutDialog;
 import com.tag.sysTagRep.util.ScrambleText;
+import com.tag.sysTagRep.util.ThemeManager;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -68,6 +69,9 @@ public class MainController implements Initializable {
         new ScrambleText(lblTitulo, "SYSTAG Repuestos Automotrices").repeat(true).play();
         cargarGraficos();
         mostrarUsuarioSesion();
+        if (contenedor.getScene() != null) {
+            ThemeManager.aplicarTemaGuardado(contenedor.getScene());
+        }
     }
 
     private void mostrarUsuarioSesion() {
@@ -427,13 +431,18 @@ public class MainController implements Initializable {
             stage.setTitle("SysTag - Inicio de Sesión");
             stage.getIcons().add(new Image(getClass().getResourceAsStream("/img/inventario.png")));
             Scene scene = new Scene(login);
-            scene.getStylesheets().add(getClass().getResource("/css/app.css").toExternalForm());
+            ThemeManager.aplicarTemaGuardado(scene);
             stage.setScene(scene);
             stage.setMaximized(false);
             stage.centerOnScreen();
         } catch (IOException e) {
             logDAO.guardar("MainController", "cerrarSesion", e.getMessage(), e);
         }
+    }
+
+    @FXML
+    private void cambiarTema() {
+        ThemeManager.alternarTema(contenedor.getScene());
     }
 
     private void cargarVista(String ruta) {

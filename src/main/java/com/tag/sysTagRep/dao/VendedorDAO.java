@@ -5,13 +5,16 @@ import com.tag.sysTagRep.model.Vendedor;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
-
-import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class VendedorDAO {
+
+    private static final Logger LOGGER = Logger.getLogger(VendedorDAO.class.getName());
 
     public List<Vendedor> listar() {
 
@@ -34,7 +37,7 @@ public class VendedorDAO {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error al listar vendedores", e);
         }
 
         return lista;
@@ -55,11 +58,10 @@ public class VendedorDAO {
 
             ps.executeUpdate();
 
-            System.out.println("✔ Vendedor guardado correctamente");
+            LOGGER.log(Level.INFO, "Vendedor guardado correctamente");
 
         } catch (SQLException e) {
-            System.err.println("❌ Error al guardar vendedor");
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error al guardar vendedor", e);
         }
     }
 
@@ -78,11 +80,10 @@ public class VendedorDAO {
             ps.setInt(5, vendedor.getId());
             ps.executeUpdate();
 
-            System.out.println("✔ Vendedor actualizado correctamente");
+            LOGGER.log(Level.INFO, "Vendedor actualizado correctamente");
 
         } catch (SQLException e) {
-            System.err.println("❌ Error al actualizado  vendedor");
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error al actualizar vendedor", e);
         }
     }
 
@@ -96,11 +97,10 @@ public class VendedorDAO {
             ps.setInt(1, id);
             ps.executeUpdate();
 
-            System.out.println("✔ Vendedor eliminado");
+            LOGGER.log(Level.INFO, "Vendedor eliminado");
 
         } catch (SQLException e) {
-            System.err.println("❌ Error al eliminar vendedor");
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error al eliminar vendedor", e);
         }
     }
 

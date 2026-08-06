@@ -1,27 +1,20 @@
 package com.tag.sysTagRep.controller;
 
-import com.tag.sysTagRep.dao.ClienteDAO;
 import com.tag.sysTagRep.dao.EmpresaDAO;
+import com.tag.sysTagRep.dao.ClienteDAO;
 import com.tag.sysTagRep.dao.InventarioDAO;
 import com.tag.sysTagRep.dao.LogDAO;
+import com.tag.sysTagRep.service.FacturaService;
 import com.tag.sysTagRep.util.EmailService;
-import com.tag.sysTagRep.dao.CuentaPorCobrarDAO;
 import com.tag.sysTagRep.dao.ComprobanteDAO;
-import com.tag.sysTagRep.dao.HistorialProductoDAO;
-import com.tag.sysTagRep.dao.FacturaDetalleDAO;
-import com.tag.sysTagRep.dao.FacturaRegistroDAO;
 import com.tag.sysTagRep.dao.SecuenciaDocumentoDAO;
 import com.tag.sysTagRep.model.*;
-import com.tag.sysTagRep.util.NotaVentaPDF;
-import com.tag.sysTagRep.util.ClaveAcceso;
 import com.tag.sysTagRep.util.ConfigFirma;
 import com.tag.sysTagRep.util.ConfigAmbiente;
-import com.tag.sysTagRep.util.FirmaDigital;
-import com.tag.sysTagRep.util.XmlSriBuilder;
 import com.tag.sysTagRep.util.SRIWebService;
-import com.tag.sysTagRep.util.PdfElectronico;
 import com.tag.sysTagRep.util.SortTable;
 import com.tag.sysTagRep.util.ComboFilter;
+import com.tag.sysTagRep.util.AppConstants;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -49,18 +42,21 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URL;
 import java.awt.Desktop;
-import java.nio.charset.StandardCharsets;
-import javafx.util.StringConverter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import javafx.util.StringConverter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class FacturaController implements Initializable {
+
+    private static final Logger LOGGER = Logger.getLogger(FacturaController.class.getName());
 
     @FXML private ImageView imgLogo;
     @FXML private Label lblRazonSocial, lblRuc, lblDireccion, lblCorreo, lblTelefono, lblNumFactura;
@@ -93,13 +89,10 @@ public class FacturaController implements Initializable {
     private final EmpresaDAO daoEmpresa = new EmpresaDAO();
     private final ClienteDAO daoCliente = new ClienteDAO();
     private final InventarioDAO daoInventario = new InventarioDAO();
-    private final FacturaRegistroDAO daoFacturaRegistro = new FacturaRegistroDAO();
-    private final SecuenciaDocumentoDAO secuenciaDAO = new SecuenciaDocumentoDAO();
-    private final FacturaDetalleDAO daoFacturaDetalle = new FacturaDetalleDAO();
     private final ComprobanteDAO daoComprobante = new ComprobanteDAO();
-    private final CuentaPorCobrarDAO daoCuentaPorCobrar = new CuentaPorCobrarDAO();
     private final LogDAO logDAO = new LogDAO();
-    private final HistorialProductoDAO historialProductoDAO = new HistorialProductoDAO();
+    private final SecuenciaDocumentoDAO secuenciaDAO = new SecuenciaDocumentoDAO();
+    private final FacturaService facturaService = new FacturaService();
 
     private Empresa empresaActual;
 
@@ -138,7 +131,7 @@ public class FacturaController implements Initializable {
     }
 
     private void cargarAmbiente() {
-        ComboFilter.habilitar(cmbAmbiente, FXCollections.observableArrayList("PRUEBAS", "PRODUCCION"));
+        ComboFilter.habilitar(cmbAmbiente, FXCollections.observableArrayList(AppConstants.AMBIENTE_PRUEBAS, AppConstants.AMBIENTE_PRODUCCION));
         String ambiente = ConfigAmbiente.cargar();
         if (cmbAmbiente.getValue() == null || !cmbAmbiente.getValue().equals(ambiente)) {
             cmbAmbiente.setValue(ambiente);
@@ -148,14 +141,13 @@ public class FacturaController implements Initializable {
 
     private File obtenerDirectorioEscritorio() {
         File home = new File(System.getProperty("user.home"));
-        String[] nombres = {"Desktop", "Escritorio"};
-        for (String n : nombres) {
+        for (String n : new String[]{AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT, AppConstants.DIRECTORIO_ESCRITORIO_ALT}) {
             File d = new File(home, n);
             if (d.exists() && d.isDirectory()) {
                 return d;
             }
         }
-        File d = new File(home, "Desktop");
+        File d = new File(home, AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT);
         d.mkdirs();
         return d;
     }
@@ -163,20 +155,22 @@ public class FacturaController implements Initializable {
     private void cargarFormasPago() {
         ComboFilter.habilitar(cmbFormaPago, FXCollections.observableArrayList(
             "Efectivo", "Tarjeta de Crédito", "Tarjeta de Débito",
-            "Transferencia", "Depósito", "Cheque", "TAG Crédito"
+            "Transferencia", "Depósito", "Cheque", AppConstants.FORMA_PAGO_CREDITO
         ));
         cmbFormaPago.getSelectionModel().selectFirst();
     }
 
     private void cargarCredito() {
-        ComboFilter.habilitarEnteros(cmbMesesPlazo, FXCollections.observableArrayList(5, 10, 15, 20, 25, 30));
+        ObservableList<Integer> meses = FXCollections.observableArrayList();
+        for (int m : AppConstants.MESES_PLAZO) meses.add(m);
+        ComboFilter.habilitarEnteros(cmbMesesPlazo, meses);
         cmbMesesPlazo.getSelectionModel().selectFirst();
 
-        ComboFilter.habilitar(cmbInteres, FXCollections.observableArrayList("0", "3", "6", "9", "12", "15"));
+        ComboFilter.habilitar(cmbInteres, FXCollections.observableArrayList(AppConstants.TASAS_INTERES));
         cmbInteres.getSelectionModel().selectFirst();
 
         cmbFormaPago.valueProperty().addListener((obs, old, valor) -> {
-            boolean esCredito = "TAG Crédito".equals(valor);
+            boolean esCredito = AppConstants.FORMA_PAGO_CREDITO.equals(valor);
             pnlCredito.setVisible(esCredito);
             pnlCredito.setManaged(esCredito);
         });
@@ -184,18 +178,20 @@ public class FacturaController implements Initializable {
 
     private void cargarDescuento() {
         ObservableList<String> descuentos = FXCollections.observableArrayList();
-        for (int i = 0; i <= 100; i += 5) descuentos.add(String.valueOf(i));
+        for (int i = 0; i <= 100; i += AppConstants.PASO_DESCUENTO) descuentos.add(String.valueOf(i));
         ComboFilter.habilitar(cmbDescuento, descuentos);
         cmbDescuento.setValue("0");
         cmbDescuento.valueProperty().addListener((obs, old, val) -> calcularTotales());
     }
 
-    private BigDecimal calcularDescuento(BigDecimal totalBruto) {
-        BigDecimal pct = BigDecimal.ZERO;
+    private BigDecimal obtenerDescuentoPct() {
+        BigDecimal pct = AppConstants.CERO;
         try {
             pct = new BigDecimal(cmbDescuento.getValue() != null ? cmbDescuento.getValue() : "0");
-        } catch (NumberFormatException ignored) {}
-        return totalBruto.multiply(pct).divide(new BigDecimal("100")).setScale(2, RoundingMode.HALF_UP);
+        } catch (NumberFormatException ignored) {
+            LOGGER.log(Level.WARNING, "Descuento invalido, usando 0", ignored);
+        }
+        return pct;
     }
 
     private List<BigDecimal> distribuirDescuento(BigDecimal descuentoTotal, List<BigDecimal> bases) {
@@ -235,7 +231,7 @@ public class FacturaController implements Initializable {
             BigDecimal precioSinIva = d.getPrecioUnitario().divide(new BigDecimal("1.15"), 6, RoundingMode.HALF_UP);
             BigDecimal totalDetSinIva = precioSinIva.multiply(new BigDecimal(d.getCantidad())).setScale(2, RoundingMode.HALF_UP);
             String desc = d.getDescripcion();
-            if (desc.length() > 99) desc = desc.substring(0, 99);
+            if (desc.length() > AppConstants.MAX_DESCRIPCION_XML) desc = desc.substring(0, AppConstants.MAX_DESCRIPCION_XML);
             resultado.add(new Object[]{d.getCodigo(), desc, String.valueOf(d.getCantidad()),
                     precioSinIva.setScale(2, RoundingMode.HALF_UP).toString(),
                     descLinea.get(i).toString(),
@@ -274,7 +270,7 @@ public class FacturaController implements Initializable {
             stage.showAndWait();
             cargarListaClientes();
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error al abrir CRUD de clientes", e);
         }
     }
 
@@ -367,7 +363,9 @@ public class FacturaController implements Initializable {
 
                 tblDetalle.refresh();
                 calcularTotales();
-            } catch (NumberFormatException ignored) {}
+            } catch (NumberFormatException ignored) {
+                LOGGER.log(Level.WARNING, "Cantidad invalida ingresada", ignored);
+            }
         });
     }
 
@@ -384,9 +382,9 @@ public class FacturaController implements Initializable {
 
     private void calcularTotales() {
         BigDecimal subtotal = itemsDetalle.stream().map(FacturaDetalle::getPrecioTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal iva = subtotal.multiply(new BigDecimal("0.15")).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal iva = subtotal.multiply(AppConstants.IVA_RATE).setScale(2, RoundingMode.HALF_UP);
         BigDecimal totalBruto = subtotal.add(iva);
-        BigDecimal descuento = calcularDescuento(totalBruto);
+        BigDecimal descuento = obtenerDescuentoPct().divide(AppConstants.CIEN).multiply(totalBruto).setScale(2, RoundingMode.HALF_UP);
         BigDecimal total = totalBruto.subtract(descuento).setScale(2, RoundingMode.HALF_UP);
 
         lblSubtotal.setText(subtotal.setScale(2, RoundingMode.HALF_UP).toString());
@@ -419,283 +417,137 @@ public class FacturaController implements Initializable {
 
     @FXML
     private void guardar() {
-    try {
+        try {
+            validarCamposObligatorios();
+
+            String codigo = lblNumFactura.getText();
+            if (secuenciaDAO.existeCodigoFactura(codigo)) {
+                new Alert(Alert.AlertType.ERROR, "El número " + codigo + " ya existe en la base de datos, no se puede repetir.").showAndWait();
+                obtenerNumFactura();
+                return;
+            }
+
+            String ambienteSri = cmbAmbiente.getValue() != null ? cmbAmbiente.getValue() : AppConstants.AMBIENTE_PRUEBAS;
+            File directorioEscritorio = obtenerDirectorioEscritorio();
+
+            FacturaService.ResultadoFactura resultado = facturaService.guardarFactura(
+                    cmbCliente.getValue(), empresaActual, codigo, itemsDetalle,
+                    cmbFormaPago.getValue(), cmbMesesPlazo.getValue(), cmbInteres.getValue(),
+                    ambienteSri, rutaP12Config, claveP12Config, directorioEscritorio,
+                    obtenerDescuentoPct()
+            );
+
+            String claveFinal = resultado.claveAcceso;
+            String xmlFinal = resultado.xmlFirmado;
+            String numCompFinal = resultado.numComprobante;
+            String ambienteFinal = resultado.ambienteSri;
+            boolean firmaOkFinal = resultado.firmaOk;
+
+            Task<SRIWebService.SRIResponse> tareaSRI = new Task<>() {
+                @Override
+                protected SRIWebService.SRIResponse call() {
+                    return facturaService.enviarYSolicitarAutorizacion(ambienteFinal, xmlFinal, claveFinal);
+                }
+            };
+
+            Alert progreso = new Alert(Alert.AlertType.INFORMATION);
+            progreso.setTitle("Factura Electrónica");
+            progreso.setHeaderText("Consultando al SRI...");
+            progreso.setContentText("Enviando la factura " + numCompFinal + " al SRI.\n"
+                    + "La ventana permanecerá activa; puede tardar unos segundos.");
+            progreso.getButtonTypes().setAll(new ButtonType("Minimizar", ButtonBar.ButtonData.CANCEL_CLOSE));
+
+            tareaSRI.setOnSucceeded(e -> {
+                progreso.close();
+                finalizarGuardado(tareaSRI.getValue(), resultado);
+            });
+            tareaSRI.setOnFailed(e -> {
+                progreso.close();
+                Throwable exSRI = tareaSRI.getException();
+                logDAO.guardar("FacturaController", "validarSRI", String.valueOf(exSRI));
+                daoComprobante.actualizarEstado(claveFinal, AppConstants.ESTADO_PENDIENTE, "Error de conexión", xmlFinal, null, null);
+                daoComprobante.guardarEnvio(claveFinal, numCompFinal, ambienteFinal, xmlFinal,
+                        null, null, AppConstants.ESTADO_PENDIENTE, "Error de conexión", null, null);
+                new Alert(Alert.AlertType.ERROR, "Error al consultar el SRI: "
+                        + (exSRI != null ? exSRI.getMessage() : "desconocido")).showAndWait();
+            });
+
+            new Thread(tareaSRI, "Hilo-SRI").start();
+            progreso.show();
+        } catch (Exception e) {
+            logDAO.guardar("FacturaController", "guardar", e.getMessage(), e);
+            String mensaje = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
+            new Alert(Alert.AlertType.ERROR, "Error al guardar: " + mensaje).showAndWait();
+        }
+    }
+
+    private void validarCamposObligatorios() {
         if (cmbCliente.getValue() == null) {
-            new Alert(Alert.AlertType.WARNING, "Debe seleccionar un cliente.").showAndWait();
-            return;
+            throw new IllegalArgumentException("Debe seleccionar un cliente.");
         }
         if (itemsDetalle.isEmpty()) {
-            new Alert(Alert.AlertType.WARNING, "Debe agregar al menos un producto.").showAndWait();
-            return;
+            throw new IllegalArgumentException("Debe agregar al menos un producto.");
         }
         if (empresaActual == null) {
-            new Alert(Alert.AlertType.WARNING, "No se encontraron datos de la empresa.").showAndWait();
-            return;
+            throw new IllegalArgumentException("No se encontraron datos de la empresa.");
         }
-
-        int clienteId = cmbCliente.getValue().getId();
-        int empresaId = empresaActual.getId();
-        String codigo = lblNumFactura.getText();
-        LocalDateTime ahora = LocalDateTime.now();
-
-        if (secuenciaDAO.existeCodigoFactura(codigo)) {
-            new Alert(Alert.AlertType.ERROR, "El número " + codigo + " ya existe en la base de datos, no se puede repetir.").showAndWait();
-            obtenerNumFactura();
-            return;
-        }
-
-        BigDecimal sub = itemsDetalle.stream().map(FacturaDetalle::getPrecioTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal ivaCalc = sub.multiply(new BigDecimal("0.15")).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal totalBrutoCalc = sub.add(ivaCalc);
-        BigDecimal descCalc = calcularDescuento(totalBrutoCalc);
-        BigDecimal totCalc = totalBrutoCalc.subtract(descCalc).setScale(2, RoundingMode.HALF_UP);
-
-        String ambienteSri = cmbAmbiente.getValue() != null ? cmbAmbiente.getValue() : "PRUEBAS";
-        String codEstab = "001";
-        String codPtoEmi = "001";
-        int secuencialFE = daoComprobante.obtenerSecuencial("01");
-        String claveAcceso = ClaveAcceso.generar("01", empresaActual.getRuc(), ambienteSri, codEstab, codPtoEmi, secuencialFE);
-        String fechaEmisionFE = ahora.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-        String numComprobante = codEstab + "-" + codPtoEmi + "-" + String.format("%07d", secuencialFE);
-
-        FacturaRegistro fr = new FacturaRegistro(empresaId, clienteId, ahora, codigo, cmbFormaPago.getValue(),
-                sub, ivaCalc, descCalc, totCalc, claveAcceso, numComprobante, ambienteSri);
-        fr.setEstadoSri("PENDIENTE");
-        int facturaId = daoFacturaRegistro.insertar(fr);
-
-        if (facturaId == -1) {
-            new Alert(Alert.AlertType.ERROR, "Error al registrar la factura.").showAndWait();
-            return;
-        }
-
-        secuenciaDAO.marcarUsado("FACTURA");
-
-        List<FacturaDetalle> detallesDb = new ArrayList<>();
-        for (FacturaDetalle d : itemsDetalle) {
-            FacturaDetalle fd = new FacturaDetalle(d.getInventarioId(), d.getCodigo(), d.getDescripcion(), d.getCantidad(), d.getPrecioUnitario());
-            fd.setFacturaRegistroId(facturaId);
-            detallesDb.add(fd);
-        }
-        daoFacturaDetalle.insertarDetalle(facturaId, detallesDb);
-
-        for (FacturaDetalle d : itemsDetalle) {
-            daoInventario.descontarStock(d.getInventarioId(), d.getCantidad());
-        }
-
-        String clienteNombre = cmbCliente.getValue().getNombre();
-        List<HistorialProducto> historial = new ArrayList<>();
-        for (FacturaDetalle d : itemsDetalle) {
-            String provNombre = daoInventario.obtenerProveedorNombre(d.getInventarioId());
-            historial.add(new HistorialProducto(d.getInventarioId(), d.getCodigo(), d.getDescripcion(),
-                    d.getCantidad(), d.getPrecioUnitario(), "FACTURA", codigo,
-                    clienteNombre, provNombre, ahora));
-        }
-        historialProductoDAO.insertar(historial);
-
-        listaInventario.setAll(daoInventario.listar());
-
-        if ("TAG Crédito".equals(cmbFormaPago.getValue())) {
-            int dias = cmbMesesPlazo.getValue();
-            BigDecimal tasaInteres = new BigDecimal(cmbInteres.getValue()).divide(new BigDecimal("100"));
-            BigDecimal totalConInteres = totCalc.multiply(BigDecimal.ONE.add(tasaInteres)).setScale(2, RoundingMode.HALF_UP);
-            BigDecimal cuotaMensual = totalConInteres.divide(new BigDecimal(dias), 2, RoundingMode.HALF_UP);
-
-            CuentaPorCobrar cpc = new CuentaPorCobrar(facturaId, clienteId, totCalc, dias,
-                    new BigDecimal(cmbInteres.getValue()), cuotaMensual);
-            daoCuentaPorCobrar.insertar(cpc);
-        }
-
-        String tipoIdComp = cmbCliente.getValue().getIdentificacion().length() == 13 ? "05" : "04";
-
-        List<Object[]> detallesXml = armarDetalles(descCalc);
-
-        String xmlGenerado = XmlSriBuilder.construirFactura(
-                ambienteSri, claveAcceso, empresaActual.getRuc(), empresaActual.getRazonSocial(),
-                codEstab, codPtoEmi, secuencialFE,
-                empresaActual.getDireccionCallePrincipal() + " y " + empresaActual.getDireccionCalleSecundaria(),
-                "", "NO",
-                tipoIdComp, cmbCliente.getValue().getNombre(), cmbCliente.getValue().getIdentificacion(),
-                txtDireccion.getText(),
-                sub.setScale(2, RoundingMode.HALF_UP).toString(), descCalc.setScale(2, RoundingMode.HALF_UP).toString(),
-                ivaCalc.setScale(2, RoundingMode.HALF_UP).toString(), totCalc.setScale(2, RoundingMode.HALF_UP).toString(),
-                "0.00", cmbFormaPago.getValue(), fechaEmisionFE, detallesXml);
-
-        String xmlFirmado = xmlGenerado;
-        boolean firmaOk = false;
-        String rutaP12 = rutaP12Config;
-        String claveP12 = claveP12Config;
-        if (rutaP12.isEmpty() || claveP12.isEmpty()) {
-            new Alert(Alert.AlertType.WARNING, "No se configuró la firma electrónica (.p12 y contraseña). "
-                    + "La factura se guardará sin enviar al SRI (PENDIENTE).").showAndWait();
-        } else {
-            try {
-                FirmaDigital firma = new FirmaDigital();
-                if (!firma.cargarCertificado(rutaP12, claveP12)) {
-                    new Alert(Alert.AlertType.ERROR, "No se pudo cargar el certificado. Verifique la ruta y la contraseña.").showAndWait();
-                } else {
-                    xmlFirmado = firma.firmarXml(xmlGenerado);
-                    firmaOk = true;
-                }
-            } catch (Exception e) {
-                logDAO.guardar("FacturaController", "firmarXml", e.getMessage(), e);
-                new Alert(Alert.AlertType.ERROR, "Error al firmar el XML: " + e.getMessage()).showAndWait();
-            }
-        }
-
-        daoComprobante.insertar(claveAcceso, null, numComprobante, ambienteSri, xmlFirmado);
-
-        final String claveFinal = claveAcceso;
-        final String xmlFinal = xmlFirmado;
-        final String numCompFinal = numComprobante;
-        final String ambienteFinal = ambienteSri;
-        final boolean firmaOkFinal = firmaOk;
-        final BigDecimal subFinal = sub;
-        final BigDecimal descFinal = descCalc;
-        final BigDecimal ivaFinal = ivaCalc;
-        final BigDecimal totFinal = totCalc;
-
-        Task<SRIWebService.SRIResponse> tareaSRI = new Task<>() {
-            @Override
-            protected SRIWebService.SRIResponse call() {
-                try {
-                    SRIWebService sriWs = new SRIWebService(ambienteFinal);
-                    return sriWs.validarComprobante(xmlFinal, claveFinal);
-                } catch (Exception e) {
-                    logDAO.guardar("FacturaController", "validarSRI", e.getMessage(), e);
-                    SRIWebService.SRIResponse r = new SRIWebService.SRIResponse();
-                    r.setEstado("ERROR");
-                    r.setMensaje("Error de conexión: " + e.getMessage());
-                    return r;
-                }
-            }
-        };
-
-        Alert progreso = new Alert(Alert.AlertType.INFORMATION);
-        progreso.setTitle("Factura Electrónica");
-        progreso.setHeaderText("Consultando al SRI...");
-        progreso.setContentText("Enviando la factura " + numCompFinal + " al SRI.\n"
-                + "La ventana permanecerá activa; puede tardar unos segundos.");
-        progreso.getButtonTypes().setAll(new ButtonType("Minimizar", ButtonBar.ButtonData.CANCEL_CLOSE));
-
-        tareaSRI.setOnSucceeded(e -> {
-            progreso.close();
-            finalizarGuardar(tareaSRI.getValue(), claveFinal, numCompFinal, xmlFinal, firmaOkFinal,
-                    subFinal, descFinal, ivaFinal, totFinal, ambienteFinal,
-                    codEstab, codPtoEmi, secuencialFE, fechaEmisionFE, tipoIdComp, codigo);
-        });
-        tareaSRI.setOnFailed(e -> {
-            progreso.close();
-            Throwable exSRI = tareaSRI.getException();
-            logDAO.guardar("FacturaController", "validarSRI", String.valueOf(exSRI));
-            daoComprobante.actualizarEstado(claveFinal, "PENDIENTE", "Error de conexión", xmlFinal, null, null);
-            daoComprobante.guardarEnvio(claveFinal, numCompFinal, ambienteFinal, xmlFinal,
-                    null, null, "PENDIENTE", "Error de conexión", null, null);
-            new Alert(Alert.AlertType.ERROR, "Error al consultar el SRI: "
-                    + (exSRI != null ? exSRI.getMessage() : "desconocido")).showAndWait();
-        });
-
-        new Thread(tareaSRI, "Hilo-SRI").start();
-        progreso.show();
-    } catch (Exception e) {
-        logDAO.guardar("FacturaController", "guardar", e.getMessage(), e);
-        new Alert(Alert.AlertType.ERROR, "Error al guardar: " + e.getMessage()).showAndWait();
-    }
     }
 
-    private void finalizarGuardar(SRIWebService.SRIResponse sriResp, String claveAcceso, String numComprobante,
-                                  String xmlFirmado, boolean firmaOk,
-                                  BigDecimal sub, BigDecimal descCalc, BigDecimal ivaCalc, BigDecimal totCalc,
-                                  String ambienteSri, String codEstab, String codPtoEmi, int secuencialFE,
-                                  String fechaEmisionFE, String tipoIdComp, String codigo) {
+    private void finalizarGuardado(SRIWebService.SRIResponse sriResp, FacturaService.ResultadoFactura resultado) {
         String estadoSri = sriResp.getEstado();
         String numeroAutorizacion = sriResp.getNumeroAutorizacion();
         String fechaAutorizacion = sriResp.getFechaAutorizacion();
 
-        if ("AUTORIZADO".equals(estadoSri)) {
-            daoComprobante.actualizarEstado(claveAcceso, "AUTORIZADO", sriResp.getMensaje(), xmlFirmado, numeroAutorizacion, fechaAutorizacion);
-            daoFacturaRegistro.actualizarEstado(claveAcceso, "AUTORIZADO");
-        } else if ("RECHAZADA".equals(estadoSri) || "DEVUELTA".equals(estadoSri)) {
-            daoComprobante.actualizarEstado(claveAcceso, estadoSri, sriResp.getMensaje(), xmlFirmado, numeroAutorizacion, null);
-            daoFacturaRegistro.actualizarEstado(claveAcceso, estadoSri);
-            new Alert(Alert.AlertType.ERROR, "El SRI " + (estadoSri.equals("RECHAZADA") ? "rechazó" : "devolvió")
+        if (AppConstants.ESTADO_RECHAZADA.equals(estadoSri) || AppConstants.ESTADO_DEVUELTA.equals(estadoSri)) {
+            new Alert(Alert.AlertType.ERROR, "El SRI " + (AppConstants.ESTADO_RECHAZADA.equals(estadoSri) ? "rechazó" : "devolvió")
                     + " el comprobante:\n" + sriResp.getMensaje()).showAndWait();
-        } else if (!firmaOk) {
-            daoComprobante.actualizarEstado(claveAcceso, "PENDIENTE", "Sin envío: firma no configurada", xmlFirmado, null, null);
+        }
+
+        if (AppConstants.ESTADO_AUTORIZADO.equals(estadoSri) || AppConstants.ESTADO_RECHAZADA.equals(estadoSri) || AppConstants.ESTADO_DEVUELTA.equals(estadoSri)) {
+            facturaService.finalizarEnvioSRI(sriResp, resultado, obtenerDirectorioEscritorio());
+        } else if (!resultado.firmaOk) {
+            daoComprobante.actualizarEstado(resultado.claveAcceso, AppConstants.ESTADO_PENDIENTE, "Sin envío: firma no configurada", resultado.xmlFirmado, null, null);
         } else {
-            daoComprobante.actualizarEstado(claveAcceso, estadoSri, sriResp.getMensaje(), xmlFirmado, numeroAutorizacion, fechaAutorizacion);
+            facturaService.finalizarEnvioSRI(sriResp, resultado, obtenerDirectorioEscritorio());
         }
-
-        daoComprobante.guardarEnvio(claveAcceso, numComprobante, ambienteSri, xmlFirmado,
-                sriResp.getRespuestaRecepcionXml(), sriResp.getRespuestaAutorizacionXml(),
-                estadoSri, sriResp.getMensaje(), numeroAutorizacion, fechaAutorizacion);
-
-        List<Object[]> detallesPDF = armarDetalles(descCalc);
-
-        File dirPDF = obtenerDirectorioEscritorio();
-        String rutaPDF = dirPDF.getAbsolutePath() + File.separator
-                + "FacturaElectronica_" + numComprobante.replace("-", "") + ".pdf";
-        final String rutaXML = dirPDF.getAbsolutePath() + File.separator
-                + "FacturaElectronica_" + numComprobante.replace("-", "") + ".xml";
-        try {
-            Files.write(Paths.get(rutaXML), xmlFirmado.getBytes(StandardCharsets.UTF_8));
-        } catch (IOException ex) {
-            logDAO.guardar("FacturaController", "guardarXML", ex.getMessage(), ex);
-        }
-
-        PdfElectronico.generar(rutaPDF, claveAcceso, numeroAutorizacion, fechaAutorizacion, ambienteSri,
-                empresaActual.getRuc(), empresaActual.getRazonSocial(),
-                empresaActual.getDireccionCallePrincipal() + " y " + empresaActual.getDireccionCalleSecundaria(),
-                empresaActual.getTelefono(), empresaActual.getCorreo(),
-                "", "NO", empresaActual.getSucursal(),
-                empresaActual.getAgenteRetencion(), empresaActual.getResolucion(),
-                codEstab, codPtoEmi, secuencialFE,
-                fechaEmisionFE, tipoIdComp,
-                cmbCliente.getValue().getNombre(), cmbCliente.getValue().getIdentificacion(),
-                txtDireccion.getText(), txtCorreo.getText(), txtTelefono.getText(),
-                cmbFormaPago.getValue(),
-                detallesPDF, sub, descCalc, ivaCalc, totCalc);
 
         Alert alertExito = new Alert(Alert.AlertType.INFORMATION);
         alertExito.setTitle("Factura Electrónica registrada");
         alertExito.setHeaderText(null);
         String txtAutorizacion = (numeroAutorizacion != null && !numeroAutorizacion.isEmpty())
                 ? "\nNúmero de autorización: " + numeroAutorizacion : "";
-        alertExito.setContentText("Factura " + numComprobante + " registrada exitosamente.\nClave de acceso: " + claveAcceso
-                + txtAutorizacion + "\nPDF guardado en: " + rutaPDF);
+        alertExito.setContentText("Factura " + resultado.numComprobante + " registrada exitosamente.\nClave de acceso: " + resultado.claveAcceso
+                + txtAutorizacion + "\nPDF guardado en: " + resultado.rutaPDF);
         alertExito.showAndWait();
 
         try {
             if (Desktop.isDesktopSupported()) {
-                final File pdfFinal = new File(rutaPDF);
+                final File pdfFinal = new File(resultado.rutaPDF);
                 new Thread(() -> {
                     try {
                         Desktop.getDesktop().open(pdfFinal);
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                        LOGGER.log(Level.WARNING, "No se pudo abrir el PDF", ignored);
+                    }
                 }, "Abrir-PDF").start();
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+            LOGGER.log(Level.WARNING, "Desktop no soportado para abrir PDF", ignored);
+        }
 
         String correoCliente = txtCorreo.getText();
         if (correoCliente != null && !correoCliente.trim().isEmpty()) {
             final String destCorreo = correoCliente.trim();
-            if ("AUTORIZADO".equals(estadoSri) && numeroAutorizacion != null && !numeroAutorizacion.isEmpty()
+            if (AppConstants.ESTADO_AUTORIZADO.equals(estadoSri) && numeroAutorizacion != null && !numeroAutorizacion.isEmpty()
                     && fechaAutorizacion != null && !fechaAutorizacion.isEmpty()) {
                 final String nombreClienteCorreo = cmbCliente.getValue().getNombre();
-                final String codigoCorreo = codigo;
+                final String codigoCorreo = resultado.numComprobante;
                 logDAO.guardar("FacturaController", "enviarCorreo", "Iniciando envío a " + destCorreo);
                 Task<String> tareaCorreo = new Task<>() {
                     @Override
                     protected String call() {
-                        EmailService emailService = new EmailService();
-                        boolean enviado = emailService.enviarCorreoConArchivos(destCorreo,
-                                nombreClienteCorreo, codigoCorreo, "FACTURA", new File(rutaPDF), new File(rutaXML));
-                        if (!enviado) {
-                            String error = emailService.getUltimoError();
-                            logDAO.guardar("FacturaController", "enviarCorreo",
-                                    "Fallo SMTP a " + destCorreo + ": " + error);
-                            return error;
-                        }
-                        return null;
+                        return facturaService.enviarCorreoAutorizacion(destCorreo, nombreClienteCorreo, codigoCorreo, resultado.rutaPDF, resultado.rutaXML)
+                                ? null : "Error enviando correo";
                     }
                 };
                 tareaCorreo.setOnSucceeded(ev -> {

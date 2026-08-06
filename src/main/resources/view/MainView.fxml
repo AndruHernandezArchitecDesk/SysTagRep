@@ -29,8 +29,8 @@
                     <MenuItem text="Gestion de Stock" onAction="#irGestionStock"/>
                 </Menu>
                 <Menu text="Crédito">
-                    <MenuItem text="Por Cobrar" onAction="#irPorCobrar"/>
-                    <MenuItem text="Por Pagar" onAction="#irPorPagar"/>
+                    <MenuItem text="Cuentas por Cobrar" onAction="#irPorCobrar"/>
+                    <MenuItem text="Cuentas por Pagar" onAction="#irPorPagar"/>
                 </Menu>
                 <Menu text="Historial">
                     <MenuItem text="de Productos" onAction="#irHistorialProductos"/>
@@ -64,6 +64,7 @@
                 <Menu text="Cuenta">
                     <MenuItem fx:id="lblUsuarioSesion" text="Bienvenido"/>
                     <MenuItem text="Cerrar Sesión" onAction="#cerrarSesion"/>
+                    <MenuItem text="Modo Dark" onAction="#cambiarTema"/>
                 </Menu>
             </MenuBar>
         </HBox>
@@ -93,7 +94,7 @@
                 <!-- FILA 1: GRÁFICOS DE BARRAS LADO A LADO -->
                 <HBox spacing="15" VBox.vgrow="ALWAYS">
                     <!-- VENTAS -->
-                    <VBox spacing="5" HBox.hgrow="ALWAYS" style="-fx-border-color: #d1d5db; -fx-border-radius: 8; -fx-background-color: #ffffff; -fx-padding: 10; -fx-background-radius: 8;">
+                    <VBox spacing="5" HBox.hgrow="ALWAYS" styleClass="panel-claro" style="-fx-border-color: #d1d5db; -fx-border-radius: 8; -fx-padding: 10; -fx-background-radius: 8;">
                         <Label text="VENTAS POR DÍA (Últimos 30 días)" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
                         <BarChart fx:id="chartVentas" animated="true" prefHeight="260" VBox.vgrow="ALWAYS">
                             <xAxis>
@@ -106,7 +107,7 @@
                     </VBox>
 
                     <!-- COMPRAS -->
-                    <VBox spacing="5" HBox.hgrow="ALWAYS" style="-fx-border-color: #d1d5db; -fx-border-radius: 8; -fx-background-color: #ffffff; -fx-padding: 10; -fx-background-radius: 8;">
+                    <VBox spacing="5" HBox.hgrow="ALWAYS" styleClass="panel-claro" style="-fx-border-color: #d1d5db; -fx-border-radius: 8; -fx-padding: 10; -fx-background-radius: 8;">
                         <Label text="COMPRAS POR DÍA (Últimos 30 días)" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
                         <BarChart fx:id="chartCompras" animated="true" prefHeight="260" VBox.vgrow="ALWAYS">
                             <xAxis>
@@ -122,12 +123,12 @@
                 <!-- FILA 2: GRÁFICOS DE PASTEL LADO A LADO -->
                 <HBox spacing="15" VBox.vgrow="ALWAYS">
                     <!-- INVENTARIO POR MARCAS -->
-                    <VBox spacing="5" HBox.hgrow="ALWAYS" style="-fx-border-color: #d1d5db; -fx-border-radius: 8; -fx-background-color: #ffffff; -fx-padding: 10; -fx-background-radius: 8;">
+                    <VBox spacing="5" HBox.hgrow="ALWAYS" styleClass="panel-claro" style="-fx-border-color: #d1d5db; -fx-border-radius: 8; -fx-padding: 10; -fx-background-radius: 8;">
                         <PieChart fx:id="chartMarcas" animated="true" prefHeight="280" VBox.vgrow="ALWAYS"/>
                     </VBox>
 
                     <!-- INVENTARIO POR GRUPOS -->
-                    <VBox spacing="5" HBox.hgrow="ALWAYS" style="-fx-border-color: #d1d5db; -fx-border-radius: 8; -fx-background-color: #ffffff; -fx-padding: 10; -fx-background-radius: 8;">
+                    <VBox spacing="5" HBox.hgrow="ALWAYS" styleClass="panel-claro" style="-fx-border-color: #d1d5db; -fx-border-radius: 8; -fx-padding: 10; -fx-background-radius: 8;">
                         <PieChart fx:id="chartGrupos" animated="true" prefHeight="280" VBox.vgrow="ALWAYS"/>
                     </VBox>
                 </HBox>

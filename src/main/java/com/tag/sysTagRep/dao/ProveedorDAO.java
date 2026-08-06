@@ -10,8 +10,12 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ProveedorDAO {
+
+    private static final Logger LOGGER = Logger.getLogger(ProveedorDAO.class.getName());
 
     public List<Proveedor> listar() {
 
@@ -38,7 +42,7 @@ public class ProveedorDAO {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error al listar proveedores", e);
         }
 
         return lista;
@@ -62,11 +66,10 @@ public class ProveedorDAO {
 
             ps.executeUpdate();
 
-            System.out.println("✔ Proveedor guardado correctamente");
+            LOGGER.log(Level.INFO, "Proveedor guardado correctamente");
 
         } catch (SQLException e) {
-            System.err.println("❌ Error al guardar proveedor");
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error al guardar proveedor", e);
         }
     }
 
@@ -88,11 +91,10 @@ public class ProveedorDAO {
             ps.setInt(8, proveedor.getId());
             ps.executeUpdate();
 
-            System.out.println("✔ Proveedor actualizado correctamente");
+            LOGGER.log(Level.INFO, "Proveedor actualizado correctamente");
 
         } catch (SQLException e) {
-            System.err.println("❌ Error al actualizado  proveedor");
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error al actualizar proveedor", e);
         }
     }
 
@@ -106,11 +108,10 @@ public class ProveedorDAO {
             ps.setInt(1, id);
             ps.executeUpdate();
 
-            System.out.println("✔ Proveedor eliminado");
+            LOGGER.log(Level.INFO, "Proveedor eliminado");
 
         } catch (SQLException e) {
-            System.err.println("❌ Error al eliminar proveedor");
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error al eliminar proveedor", e);
         }
     }
 }

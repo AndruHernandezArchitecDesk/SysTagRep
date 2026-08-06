@@ -10,8 +10,12 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ClienteDAO {
+
+    private static final Logger LOGGER = Logger.getLogger(ClienteDAO.class.getName());
 
     public List<Cliente> obtenerListaClientes() {
         List<Cliente> lista = new ArrayList<>();
@@ -34,7 +38,7 @@ public class ClienteDAO {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error al listar clientes", e);
         }
 
         return lista;
@@ -64,7 +68,7 @@ public class ClienteDAO {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error al listar clientes", e);
         }
 
         return lista;
@@ -88,11 +92,10 @@ public class ClienteDAO {
 
             ps.executeUpdate();
 
-            System.out.println("✔ Cliente guardado correctamente");
+            LOGGER.log(Level.INFO, "Cliente guardado correctamente");
 
         } catch (SQLException e) {
-            System.err.println("❌ Error al guardar cliente");
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error al guardar cliente", e);
         }
     }
 
@@ -114,11 +117,10 @@ public class ClienteDAO {
             ps.setInt(8, cliente.getId());
             ps.executeUpdate();
 
-            System.out.println("✔ Cliente actualizado correctamente");
+            LOGGER.log(Level.INFO, "Cliente actualizado correctamente");
 
         } catch (SQLException e) {
-            System.err.println("❌ Error al actualizar cliente");
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error al actualizar cliente", e);
         }
     }
 
@@ -141,7 +143,7 @@ public class ClienteDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error al listar clientes", e);
         }
         return null;
     }
@@ -156,11 +158,10 @@ public class ClienteDAO {
             ps.setInt(1, id);
             ps.executeUpdate();
 
-            System.out.println("✔ Cliente eliminado");
+            LOGGER.log(Level.INFO, "Cliente eliminado");
 
         } catch (SQLException e) {
-            System.err.println("❌ Error al eliminar cliente");
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error al eliminar cliente", e);
         }
     }
 }
