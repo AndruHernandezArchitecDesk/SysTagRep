@@ -1,9 +1,12 @@
 package com.tag.sysTagRep.controller;
 
+import com.tag.sysTagRep.dao.ClienteDAO;
 import com.tag.sysTagRep.dao.ComprobanteDAO;
 import com.tag.sysTagRep.dao.FacturaRegistroDAO;
 import com.tag.sysTagRep.dao.LogDAO;
+import com.tag.sysTagRep.model.Cliente;
 import com.tag.sysTagRep.model.FacturaRegistro;
+import com.tag.sysTagRep.util.EmailService;
 import com.tag.sysTagRep.util.SortTable;
 import com.tag.sysTagRep.util.ComboFilter;
 import com.tag.sysTagRep.util.SRIWebService;
@@ -23,6 +26,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
 
+import java.io.File;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.time.LocalDateTime;
@@ -56,6 +60,7 @@ public class HistorialFacturaController implements Initializable {
     private int totalCount = 0;
     private final FacturaRegistroDAO dao = new FacturaRegistroDAO();
     private final LogDAO logDAO = new LogDAO();
+    private final ClienteDAO clienteDAO = new ClienteDAO();
     private final ObservableList<FacturaRegistro> listaFacturas = FXCollections.observableArrayList();
 
     @Override
@@ -155,6 +160,7 @@ public class HistorialFacturaController implements Initializable {
             @Override
             protected String call() {
                 int autorizadas = 0, rechazadas = 0, pendientesN = 0, errores = 0;
+                StringBuilder emailsEnviados = new StringBuilder();
                 ComprobanteDAO ceDAO = new ComprobanteDAO();
                 for (FacturaRegistro f : pendientes) {
                     String clave = f.getClaveAcceso();
@@ -167,7 +173,44 @@ public class HistorialFacturaController implements Initializable {
                         if ("AUTORIZADO".equals(estado) || "RECHAZADA".equals(estado) || "DEVUELTA".equals(estado)) {
                             ceDAO.actualizarEstado(clave, estado, r.getMensaje(), null, r.getNumeroAutorizacion(), r.getFechaAutorizacion());
                             dao.actualizarEstado(clave, estado);
-                            if ("AUTORIZADO".equals(estado)) autorizadas++; else rechazadas++;
+                            if ("AUTORIZADO".equals(estado)) {
+                                autorizadas++;
+                                String numAut = r.getNumeroAutorizacion();
+                                String fechaAut = r.getFechaAutorizacion();
+                                if (numAut != null && !numAut.isEmpty() && fechaAut != null && !fechaAut.isEmpty()) {
+                                    try {
+                                        Cliente cliente = clienteDAO.obtenerPorId(f.getClienteId());
+                                        if (cliente != null && cliente.getCorreo() != null && !cliente.getCorreo().trim().isEmpty()) {
+                                            String numComp = f.getNumComprobante();
+                                            String rutaPDF = System.getProperty("user.home") + File.separator + "Desktop"
+                                                    + File.separator + "FacturaElectronica_" + numComp.replace("-", "") + ".pdf";
+                                            String rutaXML = System.getProperty("user.home") + File.separator + "Desktop"
+                                                    + File.separator + "FacturaElectronica_" + numComp.replace("-", "") + ".xml";
+                                            EmailService emailService = new EmailService();
+                                            boolean enviado = emailService.enviarCorreoConArchivos(
+                                                    cliente.getCorreo().trim(),
+                                                    cliente.getNombre(),
+                                                    f.getCodigo(),
+                                                    "FACTURA",
+                                                    new File(rutaPDF),
+                                                    new File(rutaXML));
+                                            if (enviado) {
+                                                emailsEnviados.append("✓ ").append(cliente.getCorreo()).append("\n");
+                                                logDAO.guardar("HistorialFacturaController", "consultarSri",
+                                                        "Correo enviado a " + cliente.getCorreo() + " para factura " + clave);
+                                            } else {
+                                                logDAO.guardar("HistorialFacturaController", "consultarSri",
+                                                        "Fallo envío correo a " + cliente.getCorreo() + ": " + emailService.getUltimoError());
+                                            }
+                                        }
+                                    } catch (Exception exEmail) {
+                                        logDAO.guardar("HistorialFacturaController", "consultarSri",
+                                                "Error enviando correo para " + clave + ": " + exEmail.getMessage(), exEmail);
+                                    }
+                                }
+                            } else {
+                                rechazadas++;
+                            }
                         } else if ("ERROR".equals(estado)) {
                             errores++;
                         } else {
@@ -178,8 +221,12 @@ public class HistorialFacturaController implements Initializable {
                         logDAO.guardar("HistorialFacturaController", "consultarSri", "Error consultando " + clave + ": " + e.getMessage(), e);
                     }
                 }
-                return "Autorizadas: " + autorizadas + "\nRechazadas/Devueltas: " + rechazadas
+                String resumen = "Autorizadas: " + autorizadas + "\nRechazadas/Devueltas: " + rechazadas
                         + "\nSiguen pendientes: " + pendientesN + "\nCon error: " + errores;
+                if (emailsEnviados.length() > 0) {
+                    resumen += "\n\nCorreos enviados:\n" + emailsEnviados.toString();
+                }
+                return resumen;
             }
         };
         tarea.setOnSucceeded(e -> {

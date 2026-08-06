@@ -71,7 +71,8 @@ public class FacturaRegistroDAO {
 
     public List<FacturaRegistro> listarPendientesSri() {
         List<FacturaRegistro> lista = new ArrayList<>();
-        String sql = "SELECT fr.clave_acceso, fr.ambiente_sri, ce.estado_sri, ce.numero_comprobante " +
+        String sql = "SELECT fr.clave_acceso, fr.ambiente_sri, ce.estado_sri, ce.numero_comprobante, " +
+                     "fr.codigo, fr.cliente_id " +
                      "FROM comprobantes_electronicos ce " +
                      "JOIN factura_registro fr ON fr.clave_acceso = ce.clave_acceso " +
                      "WHERE ce.estado_sri IN ('PENDIENTE', 'ERROR') AND fr.clave_acceso IS NOT NULL " +
@@ -85,6 +86,8 @@ public class FacturaRegistroDAO {
                 f.setAmbienteSri(rs.getString("ambiente_sri"));
                 f.setEstadoSri(rs.getString("estado_sri"));
                 f.setNumComprobante(rs.getString("numero_comprobante"));
+                f.setCodigo(rs.getString("codigo"));
+                f.setClienteId(rs.getInt("cliente_id"));
                 lista.add(f);
             }
         } catch (SQLException e) {

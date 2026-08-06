@@ -678,41 +678,47 @@ public class FacturaController implements Initializable {
         String correoCliente = txtCorreo.getText();
         if (correoCliente != null && !correoCliente.trim().isEmpty()) {
             final String destCorreo = correoCliente.trim();
-            final String nombreClienteCorreo = cmbCliente.getValue().getNombre();
-            final String codigoCorreo = codigo;
-            logDAO.guardar("FacturaController", "enviarCorreo", "Iniciando envío a " + destCorreo);
-            Task<String> tareaCorreo = new Task<>() {
-                @Override
-                protected String call() {
-                    EmailService emailService = new EmailService();
-                    boolean enviado = emailService.enviarCorreoConArchivos(destCorreo,
-                            nombreClienteCorreo, codigoCorreo, "FACTURA", new File(rutaPDF), new File(rutaXML));
-                    if (!enviado) {
-                        String error = emailService.getUltimoError();
-                        logDAO.guardar("FacturaController", "enviarCorreo",
-                                "Fallo SMTP a " + destCorreo + ": " + error);
-                        return error;
+            if ("AUTORIZADO".equals(estadoSri) && numeroAutorizacion != null && !numeroAutorizacion.isEmpty()
+                    && fechaAutorizacion != null && !fechaAutorizacion.isEmpty()) {
+                final String nombreClienteCorreo = cmbCliente.getValue().getNombre();
+                final String codigoCorreo = codigo;
+                logDAO.guardar("FacturaController", "enviarCorreo", "Iniciando envío a " + destCorreo);
+                Task<String> tareaCorreo = new Task<>() {
+                    @Override
+                    protected String call() {
+                        EmailService emailService = new EmailService();
+                        boolean enviado = emailService.enviarCorreoConArchivos(destCorreo,
+                                nombreClienteCorreo, codigoCorreo, "FACTURA", new File(rutaPDF), new File(rutaXML));
+                        if (!enviado) {
+                            String error = emailService.getUltimoError();
+                            logDAO.guardar("FacturaController", "enviarCorreo",
+                                    "Fallo SMTP a " + destCorreo + ": " + error);
+                            return error;
+                        }
+                        return null;
                     }
-                    return null;
-                }
-            };
-            tareaCorreo.setOnSucceeded(ev -> {
-                String errorCorreo = tareaCorreo.getValue();
-                if (errorCorreo == null) {
-                    logDAO.guardar("FacturaController", "enviarCorreo", "Enviado exitosamente a " + destCorreo);
-                    new Alert(Alert.AlertType.INFORMATION, "Correo enviado exitosamente a " + destCorreo).showAndWait();
-                } else {
-                    new Alert(Alert.AlertType.WARNING, "No se pudo enviar el correo a " + destCorreo
-                            + ".\nDetalle: " + errorCorreo).showAndWait();
-                }
-            });
-            tareaCorreo.setOnFailed(ev -> {
-                Throwable exCorreo = tareaCorreo.getException();
-                logDAO.guardar("FacturaController", "enviarCorreo", String.valueOf(exCorreo));
-                new Alert(Alert.AlertType.WARNING, "Error al enviar correo: "
-                        + (exCorreo != null ? exCorreo.getMessage() : "desconocido")).showAndWait();
-            });
-            new Thread(tareaCorreo, "Hilo-Correo").start();
+                };
+                tareaCorreo.setOnSucceeded(ev -> {
+                    String errorCorreo = tareaCorreo.getValue();
+                    if (errorCorreo == null) {
+                        logDAO.guardar("FacturaController", "enviarCorreo", "Enviado exitosamente a " + destCorreo);
+                        new Alert(Alert.AlertType.INFORMATION, "Correo enviado exitosamente a " + destCorreo).showAndWait();
+                    } else {
+                        new Alert(Alert.AlertType.WARNING, "No se pudo enviar el correo a " + destCorreo
+                                + ".\nDetalle: " + errorCorreo).showAndWait();
+                    }
+                });
+                tareaCorreo.setOnFailed(ev -> {
+                    Throwable exCorreo = tareaCorreo.getException();
+                    logDAO.guardar("FacturaController", "enviarCorreo", String.valueOf(exCorreo));
+                    new Alert(Alert.AlertType.WARNING, "Error al enviar correo: "
+                            + (exCorreo != null ? exCorreo.getMessage() : "desconocido")).showAndWait();
+                });
+                new Thread(tareaCorreo, "Hilo-Correo").start();
+            } else {
+                new Alert(Alert.AlertType.INFORMATION, "La factura está pendiente de autorización. "
+                        + "El correo se enviará cuando se autorice.").showAndWait();
+            }
         }
 
         itemsDetalle.clear();

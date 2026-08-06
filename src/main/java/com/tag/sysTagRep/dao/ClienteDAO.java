@@ -122,6 +122,30 @@ public class ClienteDAO {
         }
     }
 
+    public Cliente obtenerPorId(int id) {
+        String sql = "SELECT id,nombre,identificacion,direccion,correo,telefono,celular FROM cliente WHERE id = ?";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Cliente c = new Cliente();
+                    c.setId(rs.getInt("id"));
+                    c.setNombre(rs.getString("nombre"));
+                    c.setIdentificacion(rs.getString("identificacion"));
+                    c.setDireccion(rs.getString("direccion"));
+                    c.setCorreo(rs.getString("correo"));
+                    c.setTelefono(rs.getString("telefono"));
+                    c.setCelular(rs.getString("celular"));
+                    return c;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public void eliminar(int id) {
 
         String SQL = "DELETE FROM cliente WHERE id=?";
