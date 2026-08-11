@@ -93,6 +93,22 @@ public class CuentaPorPagarDAO {
         }
     }
 
+    public void eliminarPorInventarios(List<Integer> inventarioIds) {
+        if (inventarioIds == null || inventarioIds.isEmpty()) return;
+        String sql = "DELETE FROM cuentas_por_pagar WHERE inventario_id IN (" +
+                     inventarioIds.stream().map(i -> "?").collect(java.util.stream.Collectors.joining(",")) + ")";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            int i = 1;
+            for (Integer id : inventarioIds) {
+                ps.setInt(i++, id);
+            }
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     public List<String[]> obtenerDetallesInventario(int inventarioId) {
         List<String[]> detalles = new ArrayList<>();
         String sql = "SELECT descripcion, cantidad, costo_sin_iva, precio_venta FROM inventario WHERE id = ?";

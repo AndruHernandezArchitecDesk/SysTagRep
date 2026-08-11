@@ -6,13 +6,15 @@
 
 <BorderPane xmlns="http://javafx.com/javafx/21"
             xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.tag.sysTagRep.controller.CompraReporteController"
+            fx:controller="com.tag.sysTagRep.controller.FacturasIngresadasController"
             prefHeight="650.0" prefWidth="900.0"
             style="-fx-padding: 10;">
 
     <top>
         <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 5 0 10 0;">
-            <Label text="Comprobantes de Compra" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+            <Label text="Facturas Ingresadas" styleClass="titulo">
+                <graphic><FontIcon iconLiteral="fas-file-alt" styleClass="titulo-icono"/></graphic>
+            </Label>
         </HBox>
     </top>
 
@@ -24,6 +26,18 @@
                 <Label text="Hasta:"/>
                 <DatePicker fx:id="dpHasta" maxWidth="150"/>
                 <Region HBox.hgrow="ALWAYS"/>
+                <Button onAction="#editarFactura" style="-fx-background-color: #f39c12; -fx-text-fill: white;">
+                    <graphic>
+                        <FontIcon iconLiteral="fas-edit" iconSize="14"/>
+                    </graphic>
+                    Editar
+                </Button>
+                <Button onAction="#eliminarFactura" style="-fx-background-color: #e74c3c; -fx-text-fill: white;">
+                    <graphic>
+                        <FontIcon iconLiteral="fas-trash-alt" iconSize="14"/>
+                    </graphic>
+                    Eliminar
+                </Button>
                 <Button onAction="#exportarExcel" style="-fx-background-color: #27ae60; -fx-text-fill: white;">
                     <graphic>
                         <FontIcon iconLiteral="fas-file-excel" iconSize="14"/>

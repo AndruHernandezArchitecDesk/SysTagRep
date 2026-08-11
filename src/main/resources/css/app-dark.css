@@ -10,10 +10,18 @@
 }
 
 .titulo {
-    -fx-font-size: 20px;
-    -fx-padding: 12;
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
     -fx-text-fill: #f8f8f2;
-    -fx-background-color: #44475a;
+    -fx-padding: 2 0 2 12;
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent transparent #bd93f9;
+    -fx-border-width: 0 0 0 4;
+}
+
+.titulo-icono {
+    -fx-icon-color: #bd93f9;
+    -fx-icon-size: 20px;
 }
 
 .button {

@@ -65,16 +65,16 @@ public class UsuarioController implements Initializable {
     static {
         VISTAS.put("comprobantes_nota_venta", "Comprobantes > Proforma");
         VISTAS.put("comprobantes_factura", "Comprobantes > Factura Electrónica");
-        VISTAS.put("perchero_ubicacion", "Perchero > Ubicación");
-        VISTAS.put("perchero_inventario", "Perchero > Inventario");
-        VISTAS.put("perchero_gestion_stock", "Perchero > Gestión de Stock");
+        VISTAS.put("perchero_ubicacion", "Inventario > Ubicación Percha");
+        VISTAS.put("perchero_inventario", "Inventario > Gestión de Inventario");
+        VISTAS.put("perchero_gestion_stock", "Inventario > Gestión de Stock");
         VISTAS.put("credito_por_cobrar", "Crédito > Por Cobrar");
         VISTAS.put("credito_por_pagar", "Crédito > Por Pagar");
         VISTAS.put("historial_productos", "Historial > Productos");
         VISTAS.put("historial_ventas", "Historial > Ventas");
         VISTAS.put("historial_compras", "Historial > Compras");
-        VISTAS.put("reportes_comprobantes_venta", "Reportes > Comprobantes de Venta");
-        VISTAS.put("reportes_comprobantes_compra", "Reportes > Comprobantes de Compra");
+        VISTAS.put("reportes_comprobantes_venta", "Emisión > Comprobantes de Venta");
+        VISTAS.put("reportes_comprobantes_compra", "Ingreso > Facturas Ingresadas");
         VISTAS.put("admin_vendedores", "Administración > Vendedores");
         VISTAS.put("admin_usuarios", "Administración > Usuarios");
         VISTAS.put("admin_proveedores", "Administración > Proveedores");

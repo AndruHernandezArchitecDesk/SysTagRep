@@ -47,11 +47,11 @@ public class FacturaProveedorDAO {
 
     public List<FacturaProveedor> listarFacturas(LocalDate desde, LocalDate hasta) {
         List<FacturaProveedor> lista = new ArrayList<>();
-        String sql = "SELECT fp.numero_factura, COALESCE(p.nombre, '') AS proveedor, MIN(fp.fecha) AS fecha, SUM(fp.total_linea) AS total " +
+        String sql = "SELECT fp.numero_factura, fp.proveedor_id, COALESCE(p.nombre, '') AS proveedor, MIN(fp.fecha) AS fecha, SUM(fp.total_linea) AS total " +
                      "FROM factura_proveedor fp " +
                      "LEFT JOIN proveedor p ON p.id = fp.proveedor_id " +
                      "WHERE CAST(fp.fecha AS DATE) BETWEEN ? AND ? " +
-                     "GROUP BY fp.numero_factura, p.nombre " +
+                     "GROUP BY fp.numero_factura, fp.proveedor_id, p.nombre " +
                      "ORDER BY MIN(fp.fecha) DESC, fp.numero_factura DESC";
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -61,6 +61,7 @@ public class FacturaProveedorDAO {
                 while (rs.next()) {
                     FacturaProveedor f = new FacturaProveedor();
                     f.setNumeroFactura(rs.getString("numero_factura"));
+                    f.setProveedorId(rs.getInt("proveedor_id"));
                     f.setProveedor(rs.getString("proveedor"));
                     f.setFecha(rs.getObject("fecha", LocalDateTime.class));
                     f.setTotalLinea(rs.getBigDecimal("total"));
@@ -71,6 +72,33 @@ public class FacturaProveedorDAO {
             e.printStackTrace();
         }
         return lista;
+    }
+
+    public boolean existeNumeroFactura(String numeroFactura, int proveedorId) {
+        String sql = "SELECT COUNT(*) FROM factura_proveedor WHERE numero_factura = ? AND proveedor_id = ?";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, numeroFactura);
+            ps.setInt(2, proveedorId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public void eliminarPorFactura(String numeroFactura, int proveedorId) {
+        String sql = "DELETE FROM factura_proveedor WHERE numero_factura = ? AND proveedor_id = ?";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, numeroFactura);
+            ps.setInt(2, proveedorId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public List<CompraResumen> listarComprasPorFecha(LocalDate fecha) {

@@ -12,7 +12,9 @@
 
     <top>
         <VBox spacing="10">
-            <Label text="Gestión de Percheros y Ubicaciones" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+            <Label text="Ubicación Percha" styleClass="titulo">
+                <graphic><FontIcon iconLiteral="fas-sitemap" styleClass="titulo-icono"/></graphic>
+            </Label>
             <Separator/>
             <HBox spacing="15" alignment="CENTER_LEFT" style="-fx-padding: 5 0;">
                 <Label text="Perchero:" style="-fx-font-weight: bold;"/>

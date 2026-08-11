@@ -453,8 +453,8 @@ public class MainController implements Initializable {
     }
 
     @FXML
-    private void irHistorialFacturas() {
-        cargarVista("/view/HistorialFacturaView.fxml");
+    private void irSeguimientoSri() {
+        cargarVista("/view/SeguimientoSriView.fxml");
     }
 
     @FXML
@@ -463,8 +463,8 @@ public class MainController implements Initializable {
     }
 
     @FXML
-    private void irCompraReporte() {
-        cargarVista("/view/CompraReporteView.fxml");
+    private void irFacturasIngresadas() {
+        cargarVista("/view/FacturasIngresadasView.fxml");
     }
 
     @FXML

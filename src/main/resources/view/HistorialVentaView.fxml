@@ -13,7 +13,9 @@
 
     <top>
         <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 5 0 10 0;">
-            <Label text="Historial de Ventas" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+            <Label text="Historial de Ventas" styleClass="titulo">
+                <graphic><FontIcon iconLiteral="fas-chart-line" styleClass="titulo-icono"/></graphic>
+            </Label>
         </HBox>
     </top>
 

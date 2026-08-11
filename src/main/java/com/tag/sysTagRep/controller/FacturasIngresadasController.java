@@ -1,16 +1,27 @@
 package com.tag.sysTagRep.controller;
 
+import com.tag.sysTagRep.dao.CuentaPorPagarDAO;
+import com.tag.sysTagRep.dao.FacturaDetalleDAO;
 import com.tag.sysTagRep.dao.FacturaProveedorDAO;
+import com.tag.sysTagRep.dao.HistorialProductoDAO;
+import com.tag.sysTagRep.dao.InventarioDAO;
+import com.tag.sysTagRep.dao.UbicacionDetalleDAO;
 import com.tag.sysTagRep.model.FacturaProveedor;
+import com.tag.sysTagRep.model.Inventario;
 import com.tag.sysTagRep.util.SortTable;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.FileChooser;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
@@ -22,10 +33,11 @@ import java.net.URL;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
-public class CompraReporteController implements Initializable {
+public class FacturasIngresadasController implements Initializable {
 
     @FXML private DatePicker dpDesde;
     @FXML private DatePicker dpHasta;
@@ -45,6 +57,11 @@ public class CompraReporteController implements Initializable {
     @FXML private Label lblTotal;
 
     private final FacturaProveedorDAO dao = new FacturaProveedorDAO();
+    private final InventarioDAO inventarioDAO = new InventarioDAO();
+    private final CuentaPorPagarDAO cuentaPorPagarDAO = new CuentaPorPagarDAO();
+    private final FacturaDetalleDAO facturaDetalleDAO = new FacturaDetalleDAO();
+    private final HistorialProductoDAO historialProductoDAO = new HistorialProductoDAO();
+    private final UbicacionDetalleDAO ubicacionDAO = new UbicacionDetalleDAO();
     private ObservableList<FacturaProveedor> facturas = FXCollections.observableArrayList();
     private final ObservableList<FacturaProveedor> detalle = FXCollections.observableArrayList();
 
@@ -173,7 +190,7 @@ public class CompraReporteController implements Initializable {
         LocalDate hasta = dpHasta.getValue();
         FileChooser fc = new FileChooser();
         fc.setTitle("Guardar reporte");
-        fc.setInitialFileName("Comprobantes_Compra_" + desde + "_" + hasta + ".xlsx");
+        fc.setInitialFileName("Facturas_Ingresadas_" + desde + "_" + hasta + ".xlsx");
         fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("Excel (*.xlsx)", "*.xlsx"));
         File archivo = fc.showSaveDialog(tblFacturas.getScene().getWindow());
         if (archivo == null) return;
@@ -235,5 +252,68 @@ public class CompraReporteController implements Initializable {
         } catch (Exception e) {
             new Alert(Alert.AlertType.ERROR, "Error al exportar: " + e.getMessage()).show();
         }
+    }
+
+    @FXML
+    private void editarFactura() {
+        FacturaProveedor sel = tblFacturas.getSelectionModel().getSelectedItem();
+        if (sel == null || sel.getNumeroFactura() == null || sel.getNumeroFactura().isEmpty()) {
+            new Alert(Alert.AlertType.WARNING, "Seleccione una factura para editar.").showAndWait();
+            return;
+        }
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/IngresoMercaderiaView.fxml"));
+            Parent vista = loader.load();
+            IngresoMercaderiaController controller = loader.getController();
+            controller.setCerrarAlGuardar(true);
+            controller.cargarFacturaParaEdicion(sel.getNumeroFactura(), sel.getProveedorId());
+            Stage modal = new Stage();
+            modal.initModality(Modality.APPLICATION_MODAL);
+            modal.setTitle("Editar Factura Ingresada");
+            modal.setScene(new Scene(vista, 820, 720));
+            modal.showAndWait();
+            cargar();
+        } catch (Exception e) {
+            new Alert(Alert.AlertType.ERROR, "Error al abrir edición: " + e.getMessage()).showAndWait();
+        }
+    }
+
+    @FXML
+    private void eliminarFactura() {
+        FacturaProveedor sel = tblFacturas.getSelectionModel().getSelectedItem();
+        if (sel == null || sel.getNumeroFactura() == null || sel.getNumeroFactura().isEmpty()) {
+            new Alert(Alert.AlertType.WARNING, "Seleccione una factura para eliminar.").showAndWait();
+            return;
+        }
+        String numero = sel.getNumeroFactura();
+        int proveedorId = sel.getProveedorId();
+
+        List<Inventario> inventarios = inventarioDAO.listarPorNumeroFactura(numero, proveedorId);
+        List<Integer> ids = new ArrayList<>();
+        for (Inventario inv : inventarios) ids.add(inv.getId());
+
+        if (!ids.isEmpty() && (facturaDetalleDAO.existeVentaPorInventarioIds(ids)
+                || historialProductoDAO.existeVentaPorInventarioIds(ids))) {
+            new Alert(Alert.AlertType.WARNING,
+                    "No se puede eliminar la factura: uno de sus productos ya fue vendido.").showAndWait();
+            return;
+        }
+
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
+                "¿Eliminar la factura " + numero + "?\nSe borrará el comprobante, los productos del inventario "
+                        + (ids.isEmpty() ? "" : "y el crédito pendiente ") + "asociados.",
+                ButtonType.YES, ButtonType.NO);
+        if (alert.showAndWait().orElse(ButtonType.NO) != ButtonType.YES) return;
+
+        try {
+            inventarioDAO.eliminarFacturaConDependencias(numero, proveedorId);
+        } catch (Exception e) {
+            new Alert(Alert.AlertType.ERROR,
+                    "Error al eliminar la factura: " + e.getMessage() + "\nNo se modificó ningún dato.").showAndWait();
+            return;
+        }
+
+        new Alert(Alert.AlertType.INFORMATION, "Factura eliminada correctamente.").showAndWait();
+        cargar();
     }
 }

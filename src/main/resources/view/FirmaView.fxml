@@ -12,7 +12,9 @@
 
     <top>
         <HBox spacing="10" alignment="CENTER_LEFT" styleClass="header" style="-fx-padding: 5 0 10 0;">
-            <Label text="Firma Electrónica (SRI)" styleClass="titulo"/>
+            <Label text="Firma Electrónica (SRI)" styleClass="titulo">
+                <graphic><FontIcon iconLiteral="fas-file-signature" styleClass="titulo-icono"/></graphic>
+            </Label>
         </HBox>
     </top>
 

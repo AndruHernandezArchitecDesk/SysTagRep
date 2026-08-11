@@ -212,6 +212,7 @@ public class UbicacionPercheroController implements Initializable {
             bloque.setStyle("-fx-background-color: #27ae60; -fx-background-radius: 8; -fx-border-radius: 8; -fx-border-color: #1e8449; -fx-border-width: 1; -fx-cursor: hand;");
             bloque.setOnMouseClicked(event -> {
                 if (event.getButton() == MouseButton.PRIMARY) {
+                    seleccionarBloque(bloque, u);
                     mostrarDialogoAsignarProducto(bloque, u);
                 }
             });
@@ -247,6 +248,7 @@ public class UbicacionPercheroController implements Initializable {
             }
             bloque.setOnMouseClicked(event -> {
                 if (event.getButton() == MouseButton.PRIMARY) {
+                    seleccionarBloque(bloque, u);
                     mostrarDialogoDetalleOcupado(u);
                 }
             });
@@ -524,7 +526,7 @@ public class UbicacionPercheroController implements Initializable {
                 percheroDAO.guardar(p);
                 Perchero creado = buscarPerchero(p.getNombrePerchero(), p.getSeccion());
                 if (creado != null) {
-                    String prefijo = creado.getNombrePerchero() + creado.getSeccion();
+                    String prefijo = creado.getNombrePerchero() + "-" + creado.getSeccion();
                     ubicacionDAO.generarUbicaciones(creado.getId(), prefijo, creado.getCantidadLugares());
                 }
                 cargarNombresPerchero();
@@ -589,7 +591,7 @@ public class UbicacionPercheroController implements Initializable {
                 percheroDAO.guardar(p);
                 Perchero creado = buscarPerchero(p.getNombrePerchero(), p.getSeccion());
                 if (creado != null) {
-                    String prefijo = creado.getNombrePerchero() + creado.getSeccion();
+                    String prefijo = creado.getNombrePerchero() + "-" + creado.getSeccion();
                     ubicacionDAO.generarUbicaciones(creado.getId(), prefijo, creado.getCantidadLugares());
                 }
                 cargarSecciones(nombrePerchero);

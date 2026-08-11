@@ -12,8 +12,9 @@
 
     <top>
         <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 5 0 10 0;">
-            <StackPane><FontIcon iconLiteral="fas-sort-numeric-up" iconSize="20" iconColor="#2c3e50"/></StackPane>
-            <Label text="Numeración de Documentos" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+            <Label text="Numeración de Documentos" styleClass="titulo">
+                <graphic><FontIcon iconLiteral="fas-sort-numeric-up" styleClass="titulo-icono"/></graphic>
+            </Label>
         </HBox>
     </top>
 
@@ -41,7 +42,7 @@
                                 <graphic><FontIcon iconLiteral="fas-check" iconSize="14"/></graphic>
                             </Button>
                         </HBox>
-                        <Label text="La próxima proforma se generará como 001-001-000000500. Solo se permite aumentar el secuencial." style="-fx-font-size: 11px; -fx-text-fill: #7f8c8d;"/>
+                        <Label text="La próxima proforma se generará como 001-001-000000500. Se puede iniciar en cualquier número; de ahí en adelante se incrementa de 1 en 1." style="-fx-font-size: 11px; -fx-text-fill: #7f8c8d;"/>
                     </VBox>
                 </content>
             </TitledPane>
@@ -67,7 +68,7 @@
                                 <graphic><FontIcon iconLiteral="fas-check" iconSize="14"/></graphic>
                             </Button>
                         </HBox>
-                        <Label text="La próxima factura se generará como 001-001-000001000. Solo se permite aumentar el secuencial." style="-fx-font-size: 11px; -fx-text-fill: #7f8c8d;"/>
+                        <Label text="La próxima factura se generará como 001-001-000001000. Se puede iniciar en cualquier número; de ahí en adelante se incrementa de 1 en 1." style="-fx-font-size: 11px; -fx-text-fill: #7f8c8d;"/>
                     </VBox>
                 </content>
             </TitledPane>

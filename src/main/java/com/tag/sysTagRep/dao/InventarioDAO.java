@@ -24,6 +24,10 @@ public class InventarioDAO {
     }
 
     public List<Inventario> listarPaginado(int page, int pageSize, String filtro) {
+        return listarPaginado(page, pageSize, filtro, null);
+    }
+
+    public List<Inventario> listarPaginado(int page, int pageSize, String filtro, String numeroFactura) {
         List<Inventario> lista = new ArrayList<>();
         String base = "SELECT i.*, p.nombre as nombre_proveedor, g.nombre as nombre_grupo, m.nombre as nombre_marca, COALESCE(ub.codigo_ubicacion, u.nombre) as nombre_ubicacion " +
                       "FROM inventario i " +
@@ -32,7 +36,7 @@ public class InventarioDAO {
                       "LEFT JOIN marca m ON m.id = i.marca_id " +
                       "LEFT JOIN ubicacion_percha u ON u.id = i.ubicacion_percha_id " +
                       "LEFT JOIN ubicacion ub ON ub.id_producto = i.id";
-        String where = buildWhereClause(filtro);
+        String where = buildWhereClause(filtro, numeroFactura);
         if (where.isEmpty()) {
             where = " WHERE i.estado = true";
         } else {
@@ -43,7 +47,7 @@ public class InventarioDAO {
 
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
-            int idx = setFilterParameters(ps, filtro, 1);
+            int idx = setFilterParameters(ps, filtro, numeroFactura, 1);
             if (paginar) {
                 ps.setInt(idx++, pageSize);
                 ps.setInt(idx, (page - 1) * pageSize);
@@ -62,10 +66,14 @@ public class InventarioDAO {
     }
 
     public int contar(String filtro) {
+        return contar(filtro, null);
+    }
+
+    public int contar(String filtro, String numeroFactura) {
         String base = "SELECT COUNT(*) FROM inventario i " +
                       "LEFT JOIN grupo g ON g.id = i.grupo_id " +
                       "LEFT JOIN marca m ON m.id = i.marca_id";
-        String where = buildWhereClause(filtro);
+        String where = buildWhereClause(filtro, numeroFactura);
         if (where.isEmpty()) {
             where = " WHERE i.estado = true";
         } else {
@@ -75,7 +83,7 @@ public class InventarioDAO {
 
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
-            setFilterParameters(ps, filtro, 1);
+            setFilterParameters(ps, filtro, numeroFactura, 1);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return rs.getInt(1);
             }
@@ -85,30 +93,38 @@ public class InventarioDAO {
         return 0;
     }
 
-    private String buildWhereClause(String filtro) {
-        if (filtro == null || filtro.trim().isEmpty()) return "";
-        String[] partes = filtro.toLowerCase().split("%");
+    private String buildWhereClause(String filtro, String numeroFactura) {
         List<String> conds = new ArrayList<>();
-        for (String p : partes) {
-            if (!p.isBlank()) {
-                conds.add("(LOWER(i.descripcion) LIKE ? OR LOWER(g.nombre) LIKE ? OR LOWER(m.nombre) LIKE ? OR LOWER(i.codigo) LIKE ?)");
+        if (filtro != null && !filtro.trim().isEmpty()) {
+            String[] partes = filtro.toLowerCase().split("%");
+            for (String p : partes) {
+                if (!p.isBlank()) {
+                    conds.add("(LOWER(i.descripcion) LIKE ? OR LOWER(g.nombre) LIKE ? OR LOWER(m.nombre) LIKE ? OR LOWER(i.codigo) LIKE ?)");
+                }
             }
+        }
+        if (numeroFactura != null && !numeroFactura.trim().isEmpty()) {
+            conds.add("LOWER(i.numero_factura) LIKE ?");
         }
         return conds.isEmpty() ? "" : " WHERE " + String.join(" AND ", conds);
     }
 
-    private int setFilterParameters(PreparedStatement ps, String filtro, int startIdx) throws SQLException {
-        if (filtro == null || filtro.trim().isEmpty()) return startIdx;
-        String[] partes = filtro.toLowerCase().split("%");
+    private int setFilterParameters(PreparedStatement ps, String filtro, String numeroFactura, int startIdx) throws SQLException {
         int idx = startIdx;
-        for (String p : partes) {
-            if (!p.isBlank()) {
-                String like = "%" + p + "%";
-                ps.setString(idx++, like);
-                ps.setString(idx++, like);
-                ps.setString(idx++, like);
-                ps.setString(idx++, like);
+        if (filtro != null && !filtro.trim().isEmpty()) {
+            String[] partes = filtro.toLowerCase().split("%");
+            for (String p : partes) {
+                if (!p.isBlank()) {
+                    String like = "%" + p + "%";
+                    ps.setString(idx++, like);
+                    ps.setString(idx++, like);
+                    ps.setString(idx++, like);
+                    ps.setString(idx++, like);
+                }
             }
+        }
+        if (numeroFactura != null && !numeroFactura.trim().isEmpty()) {
+            ps.setString(idx++, "%" + numeroFactura.toLowerCase() + "%");
         }
         return idx;
     }
@@ -219,6 +235,97 @@ public class InventarioDAO {
             ps.executeUpdate();
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Error en operacion de InventarioDAO", e);
+        }
+    }
+
+    public List<Inventario> listarPorNumeroFactura(String numeroFactura, int proveedorId) {
+        List<Inventario> lista = new ArrayList<>();
+        String sql = "SELECT * FROM inventario WHERE numero_factura = ? AND proveedor_id = ?";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, numeroFactura);
+            ps.setInt(2, proveedorId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Inventario v = new Inventario();
+                    mapearInventario(rs, v);
+                    lista.add(v);
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Error en operacion de InventarioDAO", e);
+        }
+        return lista;
+    }
+
+    public void eliminarPorFactura(String numeroFactura, int proveedorId) throws SQLException {
+        String sql = "DELETE FROM inventario WHERE numero_factura = ? AND proveedor_id = ?";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, numeroFactura);
+            ps.setInt(2, proveedorId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Error en operacion de InventarioDAO", e);
+            throw e;
+        }
+    }
+
+    /**
+     * Elimina de forma atómica una factura y sus dependencias en este orden:
+     * 1) libera las ubicaciones del perchero que apuntan a los productos de la factura,
+     * 2) borra las cuentas por pagar asociadas,
+     * 3) borra los productos del inventario por N° de factura (único),
+     * 4) borra las líneas de la factura.
+     * Si algo falla, se hace rollback y no queda estado a medias.
+     */
+    public void eliminarFacturaConDependencias(String numeroFactura, int proveedorId) {
+        Connection con = null;
+        try {
+            con = DatabaseConnection.getConnection();
+            con.setAutoCommit(false);
+
+            String sqlUbicacion = "UPDATE ubicacion SET estado='DISPONIBLE', id_producto=NULL, cantidad=NULL "
+                    + "WHERE id_producto IN (SELECT id FROM inventario WHERE numero_factura = ? AND proveedor_id = ?)";
+            try (PreparedStatement ps = con.prepareStatement(sqlUbicacion)) {
+                ps.setString(1, numeroFactura);
+                ps.setInt(2, proveedorId);
+                ps.executeUpdate();
+            }
+
+            String sqlCuentas = "DELETE FROM cuentas_por_pagar "
+                    + "WHERE inventario_id IN (SELECT id FROM inventario WHERE numero_factura = ? AND proveedor_id = ?)";
+            try (PreparedStatement ps = con.prepareStatement(sqlCuentas)) {
+                ps.setString(1, numeroFactura);
+                ps.setInt(2, proveedorId);
+                ps.executeUpdate();
+            }
+
+            String sqlInventario = "DELETE FROM inventario WHERE numero_factura = ? AND proveedor_id = ?";
+            try (PreparedStatement ps = con.prepareStatement(sqlInventario)) {
+                ps.setString(1, numeroFactura);
+                ps.setInt(2, proveedorId);
+                ps.executeUpdate();
+            }
+
+            String sqlFactura = "DELETE FROM factura_proveedor WHERE numero_factura = ? AND proveedor_id = ?";
+            try (PreparedStatement ps = con.prepareStatement(sqlFactura)) {
+                ps.setString(1, numeroFactura);
+                ps.setInt(2, proveedorId);
+                ps.executeUpdate();
+            }
+
+            con.commit();
+        } catch (SQLException e) {
+            if (con != null) {
+                try { con.rollback(); } catch (SQLException ex) { LOGGER.log(Level.SEVERE, "Error en rollback", ex); }
+            }
+            LOGGER.log(Level.SEVERE, "Error al eliminar factura con dependencias", e);
+            throw new RuntimeException("Error al eliminar la factura: " + e.getMessage(), e);
+        } finally {
+            if (con != null) {
+                try { con.setAutoCommit(true); con.close(); } catch (SQLException e) { /* ignora */ }
+            }
         }
     }
 

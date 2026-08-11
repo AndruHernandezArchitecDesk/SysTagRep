@@ -36,9 +36,9 @@ import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class HistorialFacturaController implements Initializable {
+public class SeguimientoSriController implements Initializable {
 
-    private static final Logger LOGGER = Logger.getLogger(HistorialFacturaController.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(SeguimientoSriController.class.getName());
 
     @FXML private TextField txtBuscar;
     @FXML private TableView<FacturaRegistro> tblFacturas;
@@ -201,15 +201,15 @@ public class HistorialFacturaController implements Initializable {
                                                     new File(rutaXML));
                                             if (enviado) {
                                                 emailsEnviados.append("✓ ").append(cliente.getCorreo()).append("\n");
-                                                logDAO.guardar("HistorialFacturaController", "consultarSri",
+                                                logDAO.guardar("SeguimientoSriController", "consultarSri",
                                                         "Correo enviado a " + cliente.getCorreo() + " para factura " + clave);
                                             } else {
-                                                logDAO.guardar("HistorialFacturaController", "consultarSri",
+                                                logDAO.guardar("SeguimientoSriController", "consultarSri",
                                                         "Fallo envío correo a " + cliente.getCorreo() + ": " + emailService.getUltimoError());
                                             }
                                         }
                                     } catch (Exception exEmail) {
-                                        logDAO.guardar("HistorialFacturaController", "consultarSri",
+                                        logDAO.guardar("SeguimientoSriController", "consultarSri",
                                                 "Error enviando correo para " + clave + ": " + exEmail.getMessage(), exEmail);
                                     }
                                 }
@@ -223,7 +223,7 @@ public class HistorialFacturaController implements Initializable {
                         }
                     } catch (Exception e) {
                         errores++;
-                        logDAO.guardar("HistorialFacturaController", "consultarSri", "Error consultando " + clave + ": " + e.getMessage(), e);
+                        logDAO.guardar("SeguimientoSriController", "consultarSri", "Error consultando " + clave + ": " + e.getMessage(), e);
                     }
                 }
                 String resumen = "Autorizadas: " + autorizadas + "\nRechazadas/Devueltas: " + rechazadas
@@ -242,7 +242,7 @@ public class HistorialFacturaController implements Initializable {
         tarea.setOnFailed(e -> {
             btnConsultarSri.setDisable(false);
             Throwable ex = tarea.getException();
-            logDAO.guardar("HistorialFacturaController", "consultarSri", String.valueOf(ex));
+            logDAO.guardar("SeguimientoSriController", "consultarSri", String.valueOf(ex));
             new Alert(Alert.AlertType.ERROR, "Error al consultar el SRI: "
                     + (ex != null ? ex.getMessage() : "desconocido")).showAndWait();
         });

@@ -47,7 +47,7 @@ public final class AppConstants {
     public static final String DIRECTORIO_ESCRITORIO_ALT = "Escritorio";
 
     public static final String PATRON_FECHA_EMISION = "dd/MM/yyyy";
-    public static final String PATRON_NUMERO_COMPROBANTE = "%07d";
+    public static final String PATRON_NUMERO_COMPROBANTE = "%09d";
 
     public static final String EXTENSION_PDF = ".pdf";
     public static final String EXTENSION_XML = ".xml";

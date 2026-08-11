@@ -68,4 +68,23 @@ public class HistorialProductoDAO {
         }
         return lista;
     }
+
+    public boolean existeVentaPorInventarioIds(List<Integer> inventarioIds) {
+        if (inventarioIds == null || inventarioIds.isEmpty()) return false;
+        String sql = "SELECT COUNT(*) FROM historial_producto WHERE producto_id IN (" +
+                     inventarioIds.stream().map(i -> "?").collect(java.util.stream.Collectors.joining(",")) + ")";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            int i = 1;
+            for (Integer id : inventarioIds) {
+                ps.setInt(i++, id);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
 }

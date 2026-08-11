@@ -12,7 +12,9 @@
 
     <top>
         <VBox spacing="10">
-            <Label text="CUENTAS POR COBRAR" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+            <Label text="Cuentas por Cobrar" styleClass="titulo">
+                <graphic><FontIcon iconLiteral="fas-money-bill-wave" styleClass="titulo-icono"/></graphic>
+            </Label>
             <Separator/>
         </VBox>
     </top>

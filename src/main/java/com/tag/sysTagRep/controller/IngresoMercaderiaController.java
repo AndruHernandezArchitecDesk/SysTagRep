@@ -2,11 +2,14 @@ package com.tag.sysTagRep.controller;
 
 import com.tag.sysTagRep.dao.CuentaPorPagarDAO;
 import com.tag.sysTagRep.dao.CodigoDAO;
+import com.tag.sysTagRep.dao.FacturaDetalleDAO;
 import com.tag.sysTagRep.dao.FacturaProveedorDAO;
 import com.tag.sysTagRep.dao.GrupoDAO;
+import com.tag.sysTagRep.dao.HistorialProductoDAO;
 import com.tag.sysTagRep.dao.InventarioDAO;
 import com.tag.sysTagRep.dao.MarcaDAO;
 import com.tag.sysTagRep.dao.ProveedorDAO;
+import com.tag.sysTagRep.dao.UbicacionDetalleDAO;
 import com.tag.sysTagRep.model.Codigo;
 import com.tag.sysTagRep.model.CuentaPorPagar;
 import com.tag.sysTagRep.model.FacturaProveedor;
@@ -43,6 +46,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.ResourceBundle;
 
 /**
@@ -90,6 +94,9 @@ public class IngresoMercaderiaController implements Initializable {
 
     private boolean cerrarAlGuardar = false;
     private boolean modoEdicion = false;
+    private boolean modoEdicionFactura = false;
+    private String facturaEditadaNumero;
+    private int facturaEditadaProveedorId;
     private boolean servicioLogistico = false;
     private final InventarioDAO dao = new InventarioDAO();
     private final ProveedorDAO proveedorDAO = new ProveedorDAO();
@@ -98,6 +105,9 @@ public class IngresoMercaderiaController implements Initializable {
     private final CuentaPorPagarDAO cuentaPorPagarDAO = new CuentaPorPagarDAO();
     private final FacturaProveedorDAO facturaProveedorDAO = new FacturaProveedorDAO();
     private final CodigoDAO codigoDAO = new CodigoDAO();
+    private final FacturaDetalleDAO facturaDetalleDAO = new FacturaDetalleDAO();
+    private final HistorialProductoDAO historialProductoDAO = new HistorialProductoDAO();
+    private final UbicacionDetalleDAO ubicacionDAO = new UbicacionDetalleDAO();
     private final LogDAO logDAO = new LogDAO();
 
     private ObservableList<Proveedor> listaProveedores = FXCollections.observableArrayList();
@@ -284,7 +294,7 @@ public class IngresoMercaderiaController implements Initializable {
             );
             fp.setIva(iva.doubleValue());
             fp.setTotalLinea(totalLinea.doubleValue());
-            fp.setEstado(!servicioLogistico);
+            fp.setEstado(true);
             listaProductos.add(fp);
 
             calcularTotalFactura();
@@ -445,6 +455,13 @@ public class IngresoMercaderiaController implements Initializable {
             }
             Proveedor p = proveedorSeleccionado();
             String numFactura = txtNumeroFactura.getText() != null ? txtNumeroFactura.getText().trim() : "";
+
+            if (!modoEdicionFactura && facturaProveedorDAO.existeNumeroFactura(numFactura, p != null ? p.getId() : 0)) {
+                new Alert(Alert.AlertType.WARNING, "Ya existe una factura registrada con el N° " + numFactura
+                        + (p != null ? " del proveedor " + p.getNombre() : "") + ".").showAndWait();
+                return;
+            }
+
             LocalDateTime fecha = dpFechaIngreso.getValue() != null
                     ? dpFechaIngreso.getValue().atStartOfDay() : LocalDateTime.now();
             String formaPago = cmbFormaPago.getValue();
@@ -453,6 +470,10 @@ public class IngresoMercaderiaController implements Initializable {
             if ("TAG Crédito".equals(formaPago)) {
                 meses = cmbMesesPlazo.getValue() != null ? cmbMesesPlazo.getValue() : 0;
                 interes = cmbInteres.getValue() != null ? new BigDecimal(cmbInteres.getValue()) : BigDecimal.ZERO;
+            }
+
+            if (modoEdicionFactura) {
+                reemplazarFactura(facturaEditadaNumero, facturaEditadaProveedorId);
             }
 
             List<FacturaProveedor> lineasFactura = new ArrayList<>();
@@ -480,16 +501,51 @@ public class IngresoMercaderiaController implements Initializable {
             }
             facturaProveedorDAO.insertar(lineasFactura);
 
-            new Alert(Alert.AlertType.INFORMATION, "Guardado correctamente.").showAndWait();
-            if (cerrarAlGuardar) {
-                cerrarVentana();
-            } else {
+            if (!modoEdicion && !modoEdicionFactura && !cerrarAlGuardar) {
+                int porUbicar = listaProductos.size();
+                Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                alert.setTitle("Ingreso guardado");
+                alert.setHeaderText("Guardado correctamente.");
+                alert.setContentText("Tienes " + porUbicar + " producto(s) por colocar en el perchero. ¿Deseas ubicarlos ahora?");
+                ButtonType btnPerchero = new ButtonType("Colocar en Perchero");
+                ButtonType btnAhoraNo = new ButtonType("Ahora no", ButtonBar.ButtonData.CANCEL_CLOSE);
+                alert.getButtonTypes().setAll(btnPerchero, btnAhoraNo);
+                Optional<ButtonType> resultado = alert.showAndWait();
+                if (resultado.isPresent() && resultado.get() == btnPerchero) {
+                    abrirModal("/view/UbicacionPercheroView.fxml", "Ubicación Percha", 1000, 650);
+                }
                 limpiarFrm();
+            } else {
+                new Alert(Alert.AlertType.INFORMATION, "Guardado correctamente.").showAndWait();
+                if (cerrarAlGuardar) {
+                    cerrarVentana();
+                } else {
+                    limpiarFrm();
+                }
             }
         } catch (Exception e) {
             logDAO.guardar("IngresoMercaderiaController", "guardar", e.getMessage(), e);
             new Alert(Alert.AlertType.ERROR, "Error al guardar: " + e.getMessage()).showAndWait();
         }
+    }
+
+    /**
+     * Reemplaza una factura de proveedor existente por la versión editada:
+     * borra cuentas por pagar, inventario y líneas de factura asociadas, para que
+     * el flujo de guardado posterior las vuelva a crear con los datos nuevos.
+     */
+    private void reemplazarFactura(String numeroFactura, int proveedorId) throws Exception {
+        if (numeroFactura == null || numeroFactura.isEmpty()) return;
+        List<Inventario> inventarios = dao.listarPorNumeroFactura(numeroFactura, proveedorId);
+        List<Integer> ids = new ArrayList<>();
+        for (Inventario inv : inventarios) ids.add(inv.getId());
+
+        if (!ids.isEmpty() && (facturaDetalleDAO.existeVentaPorInventarioIds(ids)
+                || historialProductoDAO.existeVentaPorInventarioIds(ids))) {
+            throw new IllegalStateException("No se puede modificar la factura: uno de sus productos ya fue vendido.");
+        }
+
+        dao.eliminarFacturaConDependencias(numeroFactura, proveedorId);
     }
 
     private void guardarUnico() {
@@ -510,6 +566,12 @@ public class IngresoMercaderiaController implements Initializable {
         if (cerrarAlGuardar) cerrarVentana();
     }
 
+    private boolean esServicioLogistico(FilaProducto fp) {
+        if (fp == null) return false;
+        return "SERVICIO LOGISTICO".equalsIgnoreCase(fp.getDescripcion())
+                || "000".equals(fp.getCodigoManual());
+    }
+
     private Inventario construirInventario(FilaProducto fp, Proveedor p, String numFactura,
                                            LocalDateTime fecha, String formaPago, int meses, BigDecimal interes) {
         Inventario i = new Inventario();
@@ -522,7 +584,7 @@ public class IngresoMercaderiaController implements Initializable {
             i.setPrecioVenta(BigDecimal.valueOf(fp.getPrecioVenta()));
             i.setTagCodigo(fp.getCodigo());
             i.setCodigo(fp.getCodigoManual());
-            i.setEstado(fp.getEstado());
+            i.setEstado(!esServicioLogistico(fp));
         } else {
             i.setDescripcion(txtDescripcion.getText());
             Grupo g = cmbGrupo.getValue();
@@ -557,6 +619,81 @@ public class IngresoMercaderiaController implements Initializable {
 
         CuentaPorPagar cpp = new CuentaPorPagar(inventarioId, proveedorId, totalConInteres, mesesPlazo, interesPct, cuotaMensual);
         cuentaPorPagarDAO.insertar(cpp);
+    }
+
+    /**
+     * Precarga el formulario con una factura de proveedor completa (modo edición de
+     * factura multi-línea). Se reutiliza para editar desde "Facturas Ingresadas".
+     */
+    public void cargarFacturaParaEdicion(String numeroFactura, int proveedorId) {
+        modoEdicion = false;
+        modoEdicionFactura = true;
+        facturaEditadaNumero = numeroFactura;
+        facturaEditadaProveedorId = proveedorId;
+
+        List<FacturaProveedor> lineas = facturaProveedorDAO.listarPorFactura(numeroFactura);
+        if (lineas.isEmpty()) {
+            new Alert(Alert.AlertType.WARNING, "No se encontraron líneas para la factura seleccionada.").showAndWait();
+            return;
+        }
+
+        List<Inventario> inventarios = dao.listarPorNumeroFactura(numeroFactura, proveedorId);
+
+        txtNumeroFactura.setText(numeroFactura);
+        if (lineas.get(0).getFecha() != null) {
+            dpFechaIngreso.setValue(lineas.get(0).getFecha().toLocalDate());
+        }
+
+        for (Proveedor p : listaProveedores) {
+            if (p.getId() == proveedorId) { cmbProveedor.setValue(p); break; }
+        }
+
+        String formaPago = "Efectivo";
+        int meses = 0;
+        BigDecimal interes = BigDecimal.ZERO;
+        if (!inventarios.isEmpty() && inventarios.get(0).getFormaPago() != null) {
+            formaPago = inventarios.get(0).getFormaPago();
+            meses = inventarios.get(0).getMesesPlazo();
+            interes = inventarios.get(0).getInteres() != null ? inventarios.get(0).getInteres() : BigDecimal.ZERO;
+        }
+        cmbFormaPago.setValue(formaPago);
+        if ("TAG Crédito".equals(formaPago)) {
+            cmbMesesPlazo.setValue(meses > 0 ? meses : 1);
+            cmbInteres.setValue(interes.toString());
+            pnlCredito.setVisible(true);
+            pnlCredito.setManaged(true);
+        } else {
+            cmbMesesPlazo.getSelectionModel().selectFirst();
+            cmbInteres.getSelectionModel().selectFirst();
+            pnlCredito.setVisible(false);
+            pnlCredito.setManaged(false);
+        }
+
+        for (FacturaProveedor l : lineas) {
+            BigDecimal costo = l.getCostoSinIVA() != null ? l.getCostoSinIVA() : BigDecimal.ZERO;
+            BigDecimal iva = l.getIva() != null ? l.getIva() : BigDecimal.ZERO;
+            FilaProducto fp = new FilaProducto(
+                    l.getCodigo() != null ? l.getCodigo() : "",
+                    l.getCodigoManual() != null ? l.getCodigoManual() : "",
+                    l.getDescripcion() != null ? l.getDescripcion() : "",
+                    l.getGrupoId(), l.getMarcaId(),
+                    costo, l.getCantidad(),
+                    costo.add(iva), 40
+            );
+            fp.setIva(iva.doubleValue());
+            fp.setTotalLinea(l.getTotalLinea() != null ? l.getTotalLinea().doubleValue() : 0);
+            fp.setEstado(!esServicioLogistico(fp));
+            listaProductos.add(fp);
+        }
+
+        tblProductos.setVisible(true);
+        tblProductos.setManaged(true);
+        btnAgregar.setVisible(true);
+        btnAgregar.setManaged(true);
+        hbTotalFactura.setVisible(true);
+        hbTotalFactura.setManaged(true);
+
+        calcularTotalFactura();
     }
 
     /**
@@ -647,6 +784,7 @@ public class IngresoMercaderiaController implements Initializable {
 
     public void limpiarFrm(){
         modoEdicion = false;
+        modoEdicionFactura = false;
         txtId.clear();
         limpiarProducto();
         txtNumeroFactura.setText("001-001-00000123");

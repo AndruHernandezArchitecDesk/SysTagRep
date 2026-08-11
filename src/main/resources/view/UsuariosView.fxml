@@ -12,7 +12,9 @@
 
     <top>
         <HBox spacing="10" alignment="CENTER_LEFT" styleClass="header" style="-fx-padding: 5 0 10 0;">
-            <Label text="Gestión de Usuarios" styleClass="titulo"/>
+            <Label text="Gestión de Usuarios" styleClass="titulo">
+                <graphic><FontIcon iconLiteral="fas-user-cog" styleClass="titulo-icono"/></graphic>
+            </Label>
             <Button fx:id="btnToggleForm" onAction="#toggleFormulario" styleClass="btn-icono">
                 <graphic><FontIcon iconLiteral="fas-chevron-left" iconSize="16"/></graphic>
             </Button>

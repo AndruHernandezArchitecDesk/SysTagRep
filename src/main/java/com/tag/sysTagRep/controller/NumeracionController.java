@@ -69,7 +69,6 @@ public class NumeracionController implements Initializable {
                 new Alert(Alert.AlertType.WARNING, "El secuencial debe ser mayor o igual a 1.").showAndWait();
                 return;
             }
-            SecuenciaDocumento sec = secuenciaDAO.obtener(tipo);
             String codigo = estab + "-" + pto + "-" + String.format("%09d", numero);
             boolean existe = esFactura
                     ? secuenciaDAO.existeCodigoFactura(codigo)
@@ -78,10 +77,8 @@ public class NumeracionController implements Initializable {
                 new Alert(Alert.AlertType.ERROR, "El número " + codigo + " ya existe en la base de datos, no se puede repetir.").showAndWait();
                 return;
             }
-            secuenciaDAO.actualizarConfiguracion(tipo, estab, pto);
-            if (!secuenciaDAO.iniciarEn(tipo, numero)) {
-                new Alert(Alert.AlertType.ERROR, "No se puede iniciar en un número menor o igual al actual (" + sec.getProximoCodigo() + ").").showAndWait();
-                cargarSecuencias();
+            if (!secuenciaDAO.establecer(tipo, estab, pto, numero)) {
+                new Alert(Alert.AlertType.ERROR, "No se pudo actualizar la numeración.").showAndWait();
                 return;
             }
             new Alert(Alert.AlertType.INFORMATION, "Numeración actualizada: la próxima " + (esFactura ? "factura" : "proforma") + " será " + codigo + ".").showAndWait();

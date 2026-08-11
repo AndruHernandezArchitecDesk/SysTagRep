@@ -55,6 +55,7 @@ public class InventarioController implements Initializable {
     @FXML private TableColumn<Inventario, Void> colAcciones;
 
     @FXML private TextField txtBuscar;
+    @FXML private TextField txtBuscarFactura;
     @FXML private Label lblPaginaInfo;
     @FXML private Button btnAnterior;
     @FXML private Button btnSiguiente;
@@ -76,15 +77,17 @@ public class InventarioController implements Initializable {
         iniciarPageSize();
         cargarDatos();
         txtBuscar.textProperty().addListener((obs, old, val) -> { currentPage = 1; cargarDatos(); });
+        txtBuscarFactura.textProperty().addListener((obs, old, val) -> { currentPage = 1; cargarDatos(); });
     }
 
     private void cargarDatos() {
         String filtro = txtBuscar.getText();
-        totalCount = dao.contar(filtro);
+        String numeroFactura = txtBuscarFactura.getText();
+        totalCount = dao.contar(filtro, numeroFactura);
         totalPages = Math.max(1, (int) Math.ceil((double) totalCount / pageSize));
         if (currentPage > totalPages) currentPage = totalPages;
         if (currentPage < 1) currentPage = 1;
-        listaInventario.setAll(dao.listarPaginado(currentPage, pageSize, filtro));
+        listaInventario.setAll(dao.listarPaginado(currentPage, pageSize, filtro, numeroFactura));
         tblInventario.setItems(listaInventario);
         actualizarPaginaInfo();
     }

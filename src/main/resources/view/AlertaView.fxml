@@ -13,7 +13,9 @@
     <top>
         <VBox spacing="8">
             <HBox alignment="CENTER_LEFT" spacing="10" styleClass="header" style="-fx-padding: 5 0 10 0;">
-                <Label text="Alertas" styleClass="titulo"/>
+                <Label text="Alertas" styleClass="titulo">
+                    <graphic><FontIcon iconLiteral="fas-bell" styleClass="titulo-icono"/></graphic>
+                </Label>
                 <Region HBox.hgrow="ALWAYS"/>
                 <ComboBox fx:id="cmbFiltro" prefWidth="160"/>
                 <Button text="Actualizar" onAction="#actualizar">

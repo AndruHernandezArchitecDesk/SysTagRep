@@ -73,7 +73,7 @@ public class FacturaService {
 
         String codEstab = AppConstants.ESTABLECIMIENTO_DEFAULT;
         String codPtoEmi = AppConstants.PUNTO_EMISION_DEFAULT;
-        int secuencialFE = comprobanteDAO.obtenerSecuencial(AppConstants.TIPO_COMPROBANTE_FACTURA);
+        int secuencialFE = secuenciaDAO.marcarUsado("FACTURA");
         String claveAcceso = ClaveAcceso.generar(
                 AppConstants.TIPO_COMPROBANTE_FACTURA,
                 empresa.getRuc(), ambienteSri, codEstab, codPtoEmi, secuencialFE
@@ -92,8 +92,6 @@ public class FacturaService {
         if (facturaId == -1) {
             throw new IllegalStateException("Error al registrar la factura.");
         }
-
-        secuenciaDAO.marcarUsado("FACTURA");
 
         List<FacturaDetalle> detallesDb = new ArrayList<>();
         for (FacturaDetalle d : itemsDetalle) {

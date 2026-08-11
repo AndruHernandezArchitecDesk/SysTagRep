@@ -12,10 +12,13 @@
 
     <top>
         <HBox spacing="10" alignment="CENTER_LEFT" styleClass="header" style="-fx-padding: 5 0 10 0;">
-            <Label text="Inventario" styleClass="titulo"/>
+            <Label text="Gestión de Inventario" styleClass="titulo">
+                <graphic><FontIcon iconLiteral="fas-boxes" styleClass="titulo-icono"/></graphic>
+            </Label>
             <Region HBox.hgrow="ALWAYS"/>
             <TextField fx:id="txtBuscar" promptText="Buscar:" prefWidth="250"/>
             <FontIcon iconLiteral="fas-search" iconSize="14"/>
+            <TextField fx:id="txtBuscarFactura" promptText="Por Factura:" prefWidth="140"/>
             <Button fx:id="btnNuevo" text="Nuevo Ingreso" styleClass="btn-guardar" onAction="#nuevoRegistro">
                 <graphic><FontIcon iconLiteral="fas-plus" iconSize="16"/></graphic>
             </Button>

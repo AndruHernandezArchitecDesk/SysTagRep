@@ -11,10 +11,18 @@
 }
 
 .titulo {
-    -fx-font-size: 20px;
-    -fx-padding: 12;
-    -fx-text-fill: white;
-    -fx-background-color: #2c3e50;
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1a252f;
+    -fx-padding: 2 0 2 12;
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent transparent #34495e;
+    -fx-border-width: 0 0 0 4;
+}
+
+.titulo-icono {
+    -fx-icon-color: #34495e;
+    -fx-icon-size: 20px;
 }
 
 .button {

@@ -25,7 +25,7 @@ public class UbicacionDetalleDAO {
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             for (int i = 1; i <= cantidad; i++) {
-                ps.setString(1, prefijo + i);
+                ps.setString(1, prefijo + "-" + i);
                 ps.setInt(2, idPerchero);
                 ps.addBatch();
             }
@@ -53,6 +53,15 @@ public class UbicacionDetalleDAO {
         } catch (SQLException e) { e.printStackTrace(); }
     }
 
+    public void liberarPorProducto(int idProducto) {
+        String sql = "UPDATE ubicacion SET estado='DISPONIBLE', id_producto=NULL, cantidad=NULL WHERE id_producto=?";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, idProducto);
+            ps.executeUpdate();
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
+
     public void eliminarLugar(int id) {
         String sql = "DELETE FROM ubicacion WHERE id=?";
         try (Connection con = DatabaseConnection.getConnection();
@@ -73,7 +82,7 @@ public class UbicacionDetalleDAO {
                 + "LEFT JOIN grupo g ON g.id = i.grupo_id "
                 + "LEFT JOIN marca m ON m.id = i.marca_id "
                 + "WHERE u.estado = 'OCUPADO' AND u.id_producto IS NOT NULL "
-                + "ORDER BY substring(u.codigo_ubicacion, '^[A-Z]+'), substring(u.codigo_ubicacion, '[0-9]+$')::int";
+                + "ORDER BY split_part(u.codigo_ubicacion, '-', 1), split_part(u.codigo_ubicacion, '-', 2)::int, split_part(u.codigo_ubicacion, '-', 3)::int";
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             try (ResultSet rs = ps.executeQuery()) {
@@ -118,7 +127,7 @@ public class UbicacionDetalleDAO {
                 + "LEFT JOIN inventario i ON i.id = u.id_producto "
                 + "LEFT JOIN grupo g ON g.id = i.grupo_id "
                 + "LEFT JOIN marca m ON m.id = i.marca_id "
-                + "WHERE u.id_perchero = ? ORDER BY substring(u.codigo_ubicacion, '^[A-Z]+'), substring(u.codigo_ubicacion, '[0-9]+$')::int";
+                + "WHERE u.id_perchero = ? ORDER BY split_part(u.codigo_ubicacion, '-', 1), split_part(u.codigo_ubicacion, '-', 2)::int, split_part(u.codigo_ubicacion, '-', 3)::int";
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, idPerchero);

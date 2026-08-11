@@ -12,7 +12,9 @@
 
     <top>
         <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 5 0 10 0;">
-            <Label text="Gestión de Marcas" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+            <Label text="Gestión de Marcas" styleClass="titulo">
+                <graphic><FontIcon iconLiteral="fas-trademark" styleClass="titulo-icono"/></graphic>
+            </Label>
         </HBox>
     </top>
 

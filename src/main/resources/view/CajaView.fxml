@@ -15,7 +15,9 @@
     <top>
         <VBox spacing="8">
             <HBox alignment="CENTER_LEFT" spacing="10" styleClass="header" style="-fx-padding: 5 0 10 0;">
-                <Label text="Caja" styleClass="titulo"/>
+                <Label text="Caja" styleClass="titulo">
+                    <graphic><FontIcon iconLiteral="fas-cash-register" styleClass="titulo-icono"/></graphic>
+                </Label>
                 <Region HBox.hgrow="ALWAYS"/>
                 <Label fx:id="lblEstado" text="" style="-fx-font-size: 13px; -fx-font-weight: bold;"/>
             </HBox>
