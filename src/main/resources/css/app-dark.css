@@ -992,3 +992,53 @@
 .dark-mode Label[style*="font-weight: bold"][style*="text-fill: #34495e"] {
     -fx-text-fill: #f8f8f2 !important;
 }
+
+/* UbicacionView fondo */
+.dark-mode UbicacionView,
+.dark-mode UbicacionView > BorderPane,
+.dark-mode UbicacionView ScrollPane,
+.dark-mode UbicacionView ScrollPane > .viewport,
+.dark-mode UbicacionView TitledPane,
+.dark-mode UbicacionView TitledPane > .title,
+.dark-mode UbicacionView TitledPane > .content {
+    -fx-background-color: #282a36 !important;
+}
+
+.dark-mode UbicacionView .section-card {
+    -fx-background-color: #44475a !important;
+    -fx-border-color: #6272a4 !important;
+}
+
+.dark-mode UbicacionView Label {
+    -fx-text-fill: #f8f8f2 !important;
+}
+
+.dark-mode UbicacionView TableView {
+    -fx-background-color: #282a36 !important;
+    -fx-border-color: #44475a !important;
+}
+
+.dark-mode UbicacionView TableView .column-header {
+    -fx-background-color: #44475a !important;
+    -fx-text-fill: #f8f8f2 !important;
+}
+
+.dark-mode UbicacionView TableView .table-cell {
+    -fx-text-fill: #f8f8f2 !important;
+}
+
+.dark-mode UbicacionView TableView .table-row-cell {
+    -fx-background-color: #44475a !important;
+}
+
+.dark-mode UbicacionView TableView .table-row-cell:odd {
+    -fx-background-color: #3a3c4e !important;
+}
+
+.dark-mode UbicacionView SplitPane {
+    -fx-background-color: #282a36 !important;
+}
+
+.dark-mode UbicacionView SplitPane > .split-pane-divider {
+    -fx-background-color: #6272a4 !important;
+}

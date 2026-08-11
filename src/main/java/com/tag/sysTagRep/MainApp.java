@@ -3,9 +3,11 @@ package com.tag.sysTagRep;
 import com.tag.sysTagRep.controller.LicenseActivatorController;
 import com.tag.sysTagRep.util.LicenseManager;
 import com.tag.sysTagRep.util.ThemeManager;
+import com.tag.sysTagRep.util.UpperCaseTextFormatter;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Modality;
@@ -19,6 +21,7 @@ public class MainApp extends Application {
                     getClass().getResource("/view/LicenseActivatorView.fxml"));
             Parent root = loader.load();
             LicenseActivatorController ctrl = loader.getController();
+            aplicarMayusculas(root);
 
             Stage licenseStage = new Stage();
             licenseStage.setTitle("SysTag - Activación");
@@ -37,12 +40,21 @@ public class MainApp extends Application {
         Parent root = FXMLLoader.load(
                 getClass().getResource("/view/LoginView.fxml")
         );
+        aplicarMayusculas(root);
 
         stage.setTitle("SysTag - Inicio de Sesión");
         Scene scene = new Scene(root);
         ThemeManager.aplicarTemaGuardado(scene);
         stage.setScene(scene);
         stage.show();
+    }
+
+    private void aplicarMayusculas(Node nodo) {
+        if (nodo instanceof javafx.scene.Parent parent) {
+            for (Node n : parent.lookupAll(".text-field")) {
+                UpperCaseTextFormatter.apply((javafx.scene.control.TextField) n);
+            }
+        }
     }
 
     public static void main(String[] args) {

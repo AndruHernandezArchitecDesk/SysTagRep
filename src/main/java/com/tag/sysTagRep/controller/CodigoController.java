@@ -54,6 +54,11 @@ public class CodigoController implements Initializable {
         cargarDatos();
         cargarAcciones();
         filtroBusqueda();
+        txtNombre.textProperty().addListener((obs, oldText, newText) -> {
+            if (newText != null && !newText.equals(newText.toUpperCase())) {
+                txtNombre.setText(newText.toUpperCase());
+            }
+        });
     }
 
     private void cargarDatos() {

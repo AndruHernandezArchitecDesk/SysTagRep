@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.tag.sysTagRep.controller.AlertaController"
+            prefHeight="600.0" prefWidth="900.0"
+            style="-fx-padding: 10;">
+
+    <top>
+        <VBox spacing="8">
+            <HBox alignment="CENTER_LEFT" spacing="10" styleClass="header" style="-fx-padding: 5 0 10 0;">
+                <Label text="Alertas" styleClass="titulo"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <ComboBox fx:id="cmbFiltro" prefWidth="160"/>
+                <Button text="Actualizar" onAction="#actualizar">
+                    <graphic><FontIcon iconLiteral="fas-sync-alt" iconSize="14"/></graphic>
+                </Button>
+                <Button text="Marcar todas como leídas" onAction="#marcarTodasLeidas" styleClass="btn-guardar"/>
+                <Button text="Eliminar leídas" onAction="#eliminarLeidas"/>
+            </HBox>
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label fx:id="lblResumen" text="" style="-fx-font-size: 12px; -fx-text-fill: #4b5563;"/>
+            </HBox>
+        </VBox>
+    </top>
+
+    <center>
+        <TableView fx:id="tblAlertas" VBox.vgrow="ALWAYS">
+            <columns>
+                <TableColumn fx:id="colTipo" text="Tipo" prefWidth="140"/>
+                <TableColumn fx:id="colMensaje" text="Mensaje" prefWidth="450"/>
+                <TableColumn fx:id="colReferencia" text="Referencia" prefWidth="120"/>
+                <TableColumn fx:id="colFecha" text="Fecha" prefWidth="130"/>
+                <TableColumn fx:id="colEstado" text="Estado" prefWidth="80"/>
+                <TableColumn fx:id="colAcciones" text="Acciones" prefWidth="130"/>
+            </columns>
+        </TableView>
+    </center>
+
+</BorderPane>

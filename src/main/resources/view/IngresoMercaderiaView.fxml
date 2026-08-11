@@ -117,10 +117,6 @@
                                         <Label text="Precio Venta Unit." style="-fx-font-size: 11px;"/>
                                         <TextField fx:id="txtPrecioVenta" maxWidth="Infinity"/>
                                     </VBox>
-                                    <VBox spacing="4" HBox.hgrow="ALWAYS">
-                                        <Label text="Descuento %" style="-fx-font-size: 11px;"/>
-                                        <ComboBox fx:id="cmbDescuento" maxWidth="Infinity"/>
-                                    </VBox>
                                 </HBox>
                             </VBox>
 
@@ -128,26 +124,31 @@
                                 <Button fx:id="btnAgregar" text=" AGREGAR PRODUCTO" styleClass="btn-guardar" onAction="#agregarProducto">
                                     <graphic><FontIcon iconLiteral="fas-plus" iconSize="14"/></graphic>
                                 </Button>
+                                <Button fx:id="btnServicio" text="Servicio Logístico" onAction="#servicioLogistico"
+                                        style="-fx-font-size: 11px; -fx-padding: 3 8; -fx-cursor: hand; -fx-background-color: #3498db; -fx-text-fill: white; -fx-font-weight: bold;">
+                                    <graphic><FontIcon iconLiteral="fas-truck" iconSize="12"/></graphic>
+                                </Button>
                             </HBox>
 
                             <!-- Tabla de productos -->
                             <TableView fx:id="tblProductos" VBox.vgrow="ALWAYS" prefHeight="180">
                                 <columns>
-                                    <TableColumn fx:id="colCodigo" text="Código" prefWidth="110"/>
-                                    <TableColumn fx:id="colDescripcion" text="Descripción" prefWidth="180"/>
-                                    <TableColumn fx:id="colCantidad" text="Cant." prefWidth="55"/>
-                                    <TableColumn fx:id="colCosto" text="Costo s/IVA" prefWidth="90"/>
-                                    <TableColumn fx:id="colIva" text="IVA" prefWidth="70"/>
-                                    <TableColumn fx:id="colTotalLinea" text="Total" prefWidth="90"/>
-                                    <TableColumn fx:id="colPrecioVenta" text="P. Venta" prefWidth="90"/>
-                                    <TableColumn fx:id="colMargen" text="Margen %" prefWidth="80"/>
-                                    <TableColumn fx:id="colEditar" text="" prefWidth="50"/>
-                                    <TableColumn fx:id="colEliminar" text="" prefWidth="50"/>
+                                    <TableColumn fx:id="colCodigo" text="Código" prefWidth="40"/>
+                                    <TableColumn fx:id="colDescripcion" text="Descripción" prefWidth="50"/>
+                                    <TableColumn fx:id="colCantidad" text="Cant." prefWidth="40"/>
+                                    <TableColumn fx:id="colCosto" text="Costo s/IVA" prefWidth="40"/>
+                                    <TableColumn fx:id="colIva" text="IVA" prefWidth="40"/>
+                                    <TableColumn fx:id="colTotalLinea" text="Total" prefWidth="40"/>
+                                    <TableColumn fx:id="colEditar" text="" prefWidth="45"/>
+                                    <TableColumn fx:id="colEliminar" text="" prefWidth="45"/>
                                 </columns>
                             </TableView>
 
                             <!-- Total Factura -->
                             <HBox fx:id="hbTotalFactura" spacing="6" alignment="CENTER_RIGHT">
+                                <Label text="Descuento $" style="-fx-font-weight: bold; -fx-font-size: 13px;"/>
+                                <TextField fx:id="txtDescuento" prefWidth="90" text="0.00"
+                                           style="-fx-alignment: CENTER_RIGHT; -fx-font-size: 14px;"/>
                                 <Label text="TOTAL FACTURA:" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
                                 <Label fx:id="lblTotalFactura" text="\$ 0.00" style="-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #27ae60;"/>
                             </HBox>

@@ -9,7 +9,8 @@
 <?import javafx.scene.chart.NumberAxis?>
 <?import javafx.scene.chart.PieChart?>
 <?import org.kordamp.ikonli.javafx.FontIcon?>
-<BorderPane xmlns:fx="http://javafx.com/fxml"
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.tag.sysTagRep.controller.MainController"
             prefHeight="400.0" prefWidth="600.0"
             styleClass="root-pane">
@@ -32,11 +33,17 @@
                     <MenuItem text="Cuentas por Cobrar" onAction="#irPorCobrar"/>
                     <MenuItem text="Cuentas por Pagar" onAction="#irPorPagar"/>
                 </Menu>
+                <Menu text="Caja">
+                    <MenuItem text="Ver Caja" onAction="#irCaja"/>
+                </Menu>
                 <Menu text="Historial">
                     <MenuItem text="de Productos" onAction="#irHistorialProductos"/>
                     <MenuItem text="de Ventas" onAction="#irHistorialVentas"/>
                     <MenuItem text="de Compras" onAction="#irHistorialCompras"/>
                     <MenuItem text="de Facturas" onAction="#irHistorialFacturas"/>
+                </Menu>
+                <Menu text="Alertas">
+                    <MenuItem fx:id="menuAlertas" text="Ver Alertas" onAction="#irAlertas"/>
                 </Menu>
                 <Menu text="Reportes">
                     <MenuItem text="Comprobantes de venta" onAction="#irComprobanteVentaReporte"/>
@@ -63,8 +70,9 @@
             <MenuBar>
                 <Menu text="Cuenta">
                     <MenuItem fx:id="lblUsuarioSesion" text="Bienvenido"/>
+                    <MenuItem text="Home" onAction="#irHome"/>
                     <MenuItem text="Cerrar Sesión" onAction="#cerrarSesion"/>
-                    <MenuItem text="Modo Dark" onAction="#cambiarTema"/>
+                    <MenuItem fx:id="menuModoTema" text="Modo Dark" onAction="#cambiarTema"/>
                 </Menu>
             </MenuBar>
         </HBox>
@@ -132,6 +140,24 @@
                         <PieChart fx:id="chartGrupos" animated="true" prefHeight="280" VBox.vgrow="ALWAYS"/>
                     </VBox>
                 </HBox>
+
+                <Separator/>
+
+                <!-- FILA 3: NOTIFICACIONES -->
+                <VBox spacing="8">
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Label text="Notificaciones" style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Button text="Ver todas las alertas" onAction="#irAlertas" styleClass="btn-guardar"/>
+                    </HBox>
+                    <TableView fx:id="tblAlertasHome" VBox.vgrow="ALWAYS" prefHeight="160">
+                        <columns>
+                            <TableColumn fx:id="colHomeTipo" text="Tipo" prefWidth="140"/>
+                            <TableColumn fx:id="colHomeMensaje" text="Mensaje" prefWidth="500"/>
+                            <TableColumn fx:id="colHomeEstado" text="Estado" prefWidth="90"/>
+                        </columns>
+                    </TableView>
+                </VBox>
 
             </VBox>
         </ScrollPane>

@@ -54,6 +54,11 @@ public class GrupoController implements Initializable {
         cargarDatos();
         cargarAcciones();
         filtroBusqueda();
+        txtNombre.textProperty().addListener((obs, oldText, newText) -> {
+            if (newText != null && !newText.equals(newText.toUpperCase())) {
+                txtNombre.setText(newText.toUpperCase());
+            }
+        });
     }
 
     private void cargarDatos() {
@@ -65,6 +70,10 @@ public class GrupoController implements Initializable {
         try {
             if (txtNombre.getText().trim().isEmpty()) {
                 new Alert(Alert.AlertType.WARNING, "Ingrese un nombre.").showAndWait();
+                return;
+            }
+            if (dao.existe(txtNombre.getText().trim()) && (txtId.getText() == null || txtId.getText().isEmpty())) {
+                new Alert(Alert.AlertType.WARNING, "Ese grupo ya existe.").showAndWait();
                 return;
             }
             Grupo g = new Grupo();

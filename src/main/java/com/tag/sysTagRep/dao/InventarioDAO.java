@@ -33,6 +33,11 @@ public class InventarioDAO {
                       "LEFT JOIN ubicacion_percha u ON u.id = i.ubicacion_percha_id " +
                       "LEFT JOIN ubicacion ub ON ub.id_producto = i.id";
         String where = buildWhereClause(filtro);
+        if (where.isEmpty()) {
+            where = " WHERE i.estado = true";
+        } else {
+            where = " WHERE i.estado = true AND " + where.substring("WHERE ".length());
+        }
         boolean paginar = page > 0 && pageSize > 0;
         String sql = base + " " + where + " ORDER BY i.fecha_ingreso DESC, i.id DESC" + (paginar ? " LIMIT ? OFFSET ?" : "");
 
@@ -61,6 +66,11 @@ public class InventarioDAO {
                       "LEFT JOIN grupo g ON g.id = i.grupo_id " +
                       "LEFT JOIN marca m ON m.id = i.marca_id";
         String where = buildWhereClause(filtro);
+        if (where.isEmpty()) {
+            where = " WHERE i.estado = true";
+        } else {
+            where = " WHERE i.estado = true AND " + where.substring("WHERE ".length());
+        }
         String sql = base + " " + where;
 
         try (Connection con = DatabaseConnection.getConnection();
@@ -143,7 +153,7 @@ public class InventarioDAO {
             if (inv.getUbicacionPerchaId() > 0) ps.setInt(6, inv.getUbicacionPerchaId()); else ps.setNull(6, java.sql.Types.INTEGER);
             ps.setBigDecimal(7, inv.getPrecioVenta());
             ps.setObject(8, LocalDateTime.now());
-            ps.setObject(9, true);
+            ps.setObject(9, inv.getEstado() != null ? inv.getEstado() : true);
             ps.setString(10, inv.getTagCodigo());
             ps.setString(11, inv.getCodigo());
             if (inv.getProveedorId() > 0) ps.setInt(12, inv.getProveedorId());

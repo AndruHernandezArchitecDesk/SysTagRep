@@ -8,6 +8,7 @@ import com.tag.sysTagRep.model.Inventario;
 import com.tag.sysTagRep.model.Perchero;
 import com.tag.sysTagRep.model.UbicacionDetalle;
 import com.tag.sysTagRep.util.ComboFilter;
+import com.tag.sysTagRep.util.UpperCaseTextFormatter;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -316,6 +317,7 @@ public class UbicacionPercheroController implements Initializable {
         dialog.getDialogPane().getButtonTypes().addAll(btnAsignar, ButtonType.CANCEL);
 
         TextField txtBuscar = new TextField();
+        UpperCaseTextFormatter.apply(txtBuscar);
         txtBuscar.setPromptText("Buscar por código, descripción, grupo o marca...");
 
         TableView<Inventario> tblProductos = new TableView<>();
@@ -485,8 +487,10 @@ public class UbicacionPercheroController implements Initializable {
         grid.setPadding(new Insets(20));
 
         TextField txtNombre = new TextField();
+        UpperCaseTextFormatter.apply(txtNombre);
         txtNombre.setPromptText("Ej: A, B, C, ...");
         TextField txtSeccion = new TextField();
+        UpperCaseTextFormatter.apply(txtSeccion);
         txtSeccion.setPromptText("Ej: A, B, 1, 2, ...");
         Spinner<Integer> spnLugares = new Spinner<>(1, 100, 15);
 
@@ -553,6 +557,7 @@ public class UbicacionPercheroController implements Initializable {
         Label lblNombre = new Label(nombrePerchero);
         lblNombre.setFont(Font.font("Arial", FontWeight.BOLD, 14));
         TextField txtSeccion = new TextField();
+        UpperCaseTextFormatter.apply(txtSeccion);
         txtSeccion.setPromptText("Ej: B, C, 2, 3, ...");
         Spinner<Integer> spnLugares = new Spinner<>(1, 100, 15);
 

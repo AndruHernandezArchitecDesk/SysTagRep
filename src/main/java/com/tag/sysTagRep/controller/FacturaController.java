@@ -178,7 +178,7 @@ public class FacturaController implements Initializable {
 
     private void cargarDescuento() {
         ObservableList<String> descuentos = FXCollections.observableArrayList();
-        for (int i = 0; i <= 100; i += AppConstants.PASO_DESCUENTO) descuentos.add(String.valueOf(i));
+        for (int i = 0; i <= 100; i += 5) descuentos.add(String.valueOf(i));
         ComboFilter.habilitar(cmbDescuento, descuentos);
         cmbDescuento.setValue("0");
         cmbDescuento.valueProperty().addListener((obs, old, val) -> calcularTotales());
@@ -384,12 +384,12 @@ public class FacturaController implements Initializable {
         BigDecimal subtotal = itemsDetalle.stream().map(FacturaDetalle::getPrecioTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal iva = subtotal.multiply(AppConstants.IVA_RATE).setScale(2, RoundingMode.HALF_UP);
         BigDecimal totalBruto = subtotal.add(iva);
-        BigDecimal descuento = obtenerDescuentoPct().divide(AppConstants.CIEN).multiply(totalBruto).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal descuento = totalBruto.multiply(obtenerDescuentoPct()).divide(AppConstants.CIEN).setScale(2, RoundingMode.HALF_UP);
         BigDecimal total = totalBruto.subtract(descuento).setScale(2, RoundingMode.HALF_UP);
 
         lblSubtotal.setText(subtotal.setScale(2, RoundingMode.HALF_UP).toString());
         lblIva.setText(iva.toString());
-        lblDescuento.setText("-" + descuento.toString());
+        lblDescuento.setText(descuento.toString());
         lblTotal.setText(total.toString());
     }
 

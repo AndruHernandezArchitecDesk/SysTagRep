@@ -22,7 +22,7 @@
             <VBox alignment="CENTER_RIGHT" spacing="4">
                 <Label fx:id="lblRuc" text="RUC: 0000000000001" style="-fx-font-size: 12px; -fx-font-weight: bold;"/>
                 <Label text="FACTURA ELECTRÓNICA" style="-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #1a252f;"/>
-                <Label text="N° 000000" fx:id="lblNumFactura" style="-fx-text-fill: red; -fx-font-weight: bold;"/>
+                <Label text="N° 001-001-000001" fx:id="lblNumFactura" style="-fx-text-fill: red; -fx-font-weight: bold;"/>
             </VBox>
         </HBox>
     </top>
@@ -131,9 +131,9 @@
                         </HBox>
                         <HBox alignment="CENTER_RIGHT" spacing="10">
                             <Label text="Descuento:" style="-fx-font-weight: bold;"/>
-                            <ComboBox fx:id="cmbDescuento" prefWidth="70" maxWidth="70"/>
-                            <Label text="%%" style="-fx-font-weight: bold;"/>
-                            <Label fx:id="lblDescuento" text="-0.00" prefWidth="100" alignment="CENTER_RIGHT"/>
+                            <ComboBox fx:id="cmbDescuento" prefWidth="110"/>
+                            <Label text="-" prefWidth="10"/>
+                            <Label fx:id="lblDescuento" text="0.00" prefWidth="100" alignment="CENTER_RIGHT"/>
                         </HBox>
                         <HBox alignment="CENTER_RIGHT" spacing="10">
                             <Label text="IVA (15%):" style="-fx-font-weight: bold;"/>

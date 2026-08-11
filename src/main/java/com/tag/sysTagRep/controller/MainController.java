@@ -2,10 +2,13 @@ package com.tag.sysTagRep.controller;
 
 import com.tag.sysTagRep.dao.DashboardDAO;
 import com.tag.sysTagRep.dao.LogDAO;
+import com.tag.sysTagRep.model.Alerta;
 import com.tag.sysTagRep.controller.LoginController;
+import com.tag.sysTagRep.service.AlertaService;
 import com.tag.sysTagRep.util.AboutDialog;
 import com.tag.sysTagRep.util.ScrambleText;
 import com.tag.sysTagRep.util.ThemeManager;
+import com.tag.sysTagRep.util.UpperCaseTextFormatter;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -24,6 +27,8 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
@@ -35,6 +40,7 @@ import java.net.URL;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 
@@ -59,16 +65,29 @@ public class MainController implements Initializable {
     private MenuItem lblUsuarioSesion;
 
     @FXML
+    private MenuItem menuModoTema;
+
+    @FXML
+    private TableView<Alerta> tblAlertasHome;
+
+    @FXML
     private Label lblTitulo;
+
+    @FXML
+    private MenuItem menuAlertas;
 
     private final DashboardDAO dashboardDAO = new DashboardDAO();
     private final LogDAO logDAO = new LogDAO();
+    private final AlertaService alertaService = new AlertaService();
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         new ScrambleText(lblTitulo, "SYSTAG Repuestos Automotrices").repeat(true).play();
         cargarGraficos();
         mostrarUsuarioSesion();
+        actualizarBadgeAlertas();
+        actualizarTextoModoTema();
+        cargarAlertasHome();
         if (contenedor.getScene() != null) {
             ThemeManager.aplicarTemaGuardado(contenedor.getScene());
         }
@@ -83,6 +102,23 @@ public class MainController implements Initializable {
         lblUsuarioSesion.setText("Bienvenido " + nombreCompleto);
     }
 
+    private void actualizarBadgeAlertas() {
+        if (menuAlertas == null) return;
+        int noLeidas = alertaService.obtenerCantidadNoLeidas();
+        if (noLeidas > 0) {
+            menuAlertas.setText("Ver Alertas (" + noLeidas + ")");
+        } else {
+            menuAlertas.setText("Ver Alertas");
+        }
+    }
+
+    private void cargarAlertasHome() {
+        if (tblAlertasHome == null) return;
+        List<Alerta> alertas = alertaService.obtenerTodas();
+        ObservableList<Alerta> items = javafx.collections.FXCollections.observableArrayList(alertas);
+        tblAlertasHome.setItems(items);
+    }
+
     private void cargarGraficos() {
         cargarGraficoVentas();
         cargarGraficoCompras();
@@ -90,16 +126,24 @@ public class MainController implements Initializable {
         cargarGraficoGrupos();
     }
 
-    private final String[] COLORES_VENTAS_NV = {
-        "#3498db", "#2980b9", "#1f6dad", "#174f83", "#0f3859"
-    };
-    private final String[] COLORES_VENTAS_FACT = {
-        "#e67e22", "#d35400", "#ba4a00", "#a04000", "#873600"
-    };
-    private final String[] COLORES_COMPRAS = {
-        "#2ecc71", "#27ae60", "#1e8449", "#145a32", "#0b3d1f",
-        "#1abc9c", "#16a085", "#0e6655", "#084a38", "#053122"
-    };
+    private String[] coloresVentasNV() {
+        return ThemeManager.esDarkMode()
+                ? new String[]{"#8be9fd", "#74d4f7", "#5cbde0", "#42a5c9", "#298fb2"}
+                : new String[]{"#3498db", "#2980b9", "#1f6dad", "#174f83", "#0f3859"};
+    }
+
+    private String[] coloresVentasFact() {
+        return ThemeManager.esDarkMode()
+                ? new String[]{"#ffb86c", "#f0a050", "#e08840", "#d07030", "#b85820"}
+                : new String[]{"#e67e22", "#d35400", "#ba4a00", "#a04000", "#873600"};
+    }
+
+    private String[] coloresCompras() {
+        return ThemeManager.esDarkMode()
+                ? new String[]{"#50fa7b", "#40d86b", "#30b65b", "#20944b", "#10703b", "#40e0c0", "#30c8b0", "#20b0a0", "#109890", "#008080"}
+                : new String[]{"#2ecc71", "#27ae60", "#1e8449", "#145a32", "#0b3d1f",
+                "#1abc9c", "#16a085", "#0e6655", "#084a38", "#053122"};
+    }
 
     private void cargarGraficoVentas() {
         try {
@@ -128,12 +172,14 @@ public class MainController implements Initializable {
             chartVentas.getData().clear();
             chartVentas.getData().addAll(serieNV, serieFact);
 
+            String[] coloresNV = coloresVentasNV();
+            String[] coloresFact = coloresVentasFact();
             Platform.runLater(() -> {
                 if (serieNV.getNode() != null) {
-                    serieNV.getNode().setStyle("-fx-bar-fill: #3498db;");
+                    serieNV.getNode().setStyle("-fx-bar-fill: " + coloresNV[0] + ";");
                 }
                 if (serieFact.getNode() != null) {
-                    serieFact.getNode().setStyle("-fx-bar-fill: #e67e22;");
+                    serieFact.getNode().setStyle("-fx-bar-fill: " + coloresFact[0] + ";");
                 }
                 colorearEjeX(chartVentas, ventasNV, ventasFact);
             });
@@ -160,9 +206,10 @@ public class MainController implements Initializable {
             chartCompras.getData().clear();
             chartCompras.getData().add(serieCompras);
 
+            String[] coloresComp = coloresCompras();
             Platform.runLater(() -> {
                 if (serieCompras.getNode() != null) {
-                    serieCompras.getNode().setStyle("-fx-bar-fill: #2ecc71;");
+                    serieCompras.getNode().setStyle("-fx-bar-fill: " + coloresComp[0] + ";");
                 }
                 colorearEjeXSimple(chartCompras);
             });
@@ -246,7 +293,11 @@ public class MainController implements Initializable {
                     if (labelText.equals(labelEsperado)) {
                         double valNV = datosNV.getOrDefault(dia, 0.0);
                         double valFact = datosFact.getOrDefault(dia, 0.0);
-                        txt.setFill(valFact >= valNV ? Color.web("#d35400") : Color.web("#2980b9"));
+                        if (ThemeManager.esDarkMode()) {
+                            txt.setFill(valFact >= valNV ? Color.web("#ffb86c") : Color.web("#8be9fd"));
+                        } else {
+                            txt.setFill(valFact >= valNV ? Color.web("#d35400") : Color.web("#2980b9"));
+                        }
                         break;
                     }
                 }
@@ -261,7 +312,7 @@ public class MainController implements Initializable {
             buscarTextNodes(xAxis, textNodes);
             for (Text txt : textNodes) {
                 if (txt.getText() != null && !txt.getText().isEmpty()) {
-                    txt.setFill(Color.web("#27ae60"));
+                    txt.setFill(ThemeManager.esDarkMode() ? Color.web("#50fa7b") : Color.web("#27ae60"));
                 }
             }
         } catch (Exception ignored) {}
@@ -297,6 +348,18 @@ public class MainController implements Initializable {
     @FXML
     private void irVendedores() {
         cargarVista("/view/VendedorView.fxml");
+    }
+
+    @FXML
+    private void irAlertas() {
+        cargarVista("/view/AlertaView.fxml");
+        actualizarBadgeAlertas();
+        cargarAlertasHome();
+    }
+
+    @FXML
+    private void irCaja() {
+        cargarVista("/view/CajaView.fxml");
     }
 
     @FXML
@@ -443,14 +506,74 @@ public class MainController implements Initializable {
     @FXML
     private void cambiarTema() {
         ThemeManager.alternarTema(contenedor.getScene());
+        actualizarTextoModoTema();
+        cargarGraficos();
+    }
+
+    @FXML
+    private void irHome() {
+        try {
+            Parent home = FXMLLoader.load(getClass().getResource("/view/MainView.fxml"));
+            Stage stage = (Stage) contenedor.getScene().getWindow();
+            stage.setScene(new Scene(home));
+            ThemeManager.aplicarTemaGuardado(stage.getScene());
+        } catch (IOException e) {
+            logDAO.guardar("MainController", "irHome", e.getMessage(), e);
+        }
+    }
+
+    private void actualizarTextoModoTema() {
+        if (menuModoTema == null) return;
+        menuModoTema.setText(ThemeManager.esDarkMode() ? "Modo Light" : "Modo Dark");
     }
 
     private void cargarVista(String ruta) {
         try {
             Parent vista = FXMLLoader.load(getClass().getResource(ruta));
+            if (!ruta.contains("ClienteView.fxml")) {
+                aplicarMayusculas(vista);
+            }
             contenedor.getChildren().setAll(vista);
-        } catch (IOException e) {
-            logDAO.guardar("MainController", "cargarVista", e.getMessage(), e);
+        } catch (Exception e) {
+            java.io.StringWriter sw = new java.io.StringWriter();
+            e.printStackTrace(new java.io.PrintWriter(sw));
+            String detalle = sw.toString();
+            String rutaFinal = ruta;
+            logDAO.guardar("MainController", "cargarVista", detalle, e);
+            String rutaArchivo;
+            try {
+                String base = System.getProperty("user.dir");
+                if (base == null || base.isBlank()) {
+                    base = System.getProperty("user.home");
+                }
+                java.nio.file.Path dir = java.nio.file.Paths.get(base, "systagrep-errors");
+                java.nio.file.Files.createDirectories(dir);
+                String timestamp = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
+                rutaArchivo = dir.resolve("error-" + timestamp + ".txt").toString();
+                java.nio.file.Files.writeString(java.nio.file.Paths.get(rutaArchivo), detalle);
+            } catch (Exception ex) {
+                rutaArchivo = null;
+            }
+            String finalRutaArchivo = rutaArchivo;
+            javafx.application.Platform.runLater(() -> {
+                String mensaje = "No se pudo abrir: " + rutaFinal;
+                if (finalRutaArchivo != null) {
+                    mensaje += "\n\nDetalle guardado en:\n" + finalRutaArchivo;
+                }
+                 javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
+                 alert.setTitle("Error al cargar vista");
+                 alert.setHeaderText(mensaje);
+                 alert.setContentText("Revisa el archivo de detalle para copiar el error completo.");
+                 alert.showAndWait();
+             });
+         }
+     }
+
+     private void aplicarMayusculas(Node nodo) {
+        if (nodo instanceof Parent parent) {
+            for (Node n : parent.lookupAll(".text-field")) {
+                UpperCaseTextFormatter.apply((javafx.scene.control.TextField) n);
+            }
         }
     }
 }

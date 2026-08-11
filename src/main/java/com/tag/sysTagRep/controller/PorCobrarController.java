@@ -2,6 +2,7 @@ package com.tag.sysTagRep.controller;
 
 import com.tag.sysTagRep.dao.CuentaPorCobrarDAO;
 import com.tag.sysTagRep.util.SortTable;
+import com.tag.sysTagRep.util.UpperCaseTextFormatter;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -168,6 +169,7 @@ public class PorCobrarController implements Initializable {
             private final TextField txtAdelanto = new TextField();
             private final Button btnGuardar = new Button();
             {
+                UpperCaseTextFormatter.apply(txtAdelanto);
                 txtAdelanto.setPromptText("$");
                 txtAdelanto.setPrefWidth(80);
                 FontIcon icon = new FontIcon("fas-save");

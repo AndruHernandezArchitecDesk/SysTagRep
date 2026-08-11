@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.cell.PropertyValueFactory?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+<?import javafx.geometry.Insets?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.tag.sysTagRep.controller.CajaController"
+            prefHeight="600.0" prefWidth="900.0"
+            style="-fx-padding: 10;">
+
+    <top>
+        <VBox spacing="8">
+            <HBox alignment="CENTER_LEFT" spacing="10" styleClass="header" style="-fx-padding: 5 0 10 0;">
+                <Label text="Caja" styleClass="titulo"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="lblEstado" text="" style="-fx-font-size: 13px; -fx-font-weight: bold;"/>
+            </HBox>
+            <Separator/>
+        </VBox>
+    </top>
+
+    <center>
+        <VBox spacing="10">
+            <!-- PANEL APERTURA -->
+            <VBox fx:id="pnlApertura" spacing="10" style="-fx-background-color: #f9fafb; -fx-border-color: #d1d5db; -fx-border-radius: 8; -fx-padding: 15; -fx-background-radius: 8;">
+                <Label text="Apertura de Caja" style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="Monto inicial ($):"/>
+                    <TextField fx:id="txtMontoInicial" promptText="0.00" prefWidth="150"/>
+                    <Label text="Observaciones:"/>
+                    <TextField fx:id="txtObsApertura" promptText="Opcional" HBox.hgrow="ALWAYS" prefWidth="300"/>
+                    <Button text="Abrir Caja" onAction="#abrirCaja" styleClass="btn-guardar">
+                        <graphic><FontIcon iconLiteral="fas-cash-register" iconSize="14"/></graphic>
+                    </Button>
+                </HBox>
+            </VBox>
+
+            <!-- PANEL CAJA ABIERTA -->
+            <VBox fx:id="pnlCajaAbierta" spacing="10" visible="false" managed="false">
+                <!-- Resumen -->
+                <HBox spacing="10">
+                    <VBox spacing="5" HBox.hgrow="ALWAYS" styleClass="panel-claro" style="-fx-border-color: #d1d5db; -fx-border-radius: 8; -fx-padding: 10; -fx-background-radius: 8;">
+                        <Label text="Monto Inicial" style="-fx-font-size: 11px; -fx-text-fill: #6b7280;"/>
+                        <Label fx:id="lblMontoInicial" text="0.00" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+                    </VBox>
+                    <VBox spacing="5" HBox.hgrow="ALWAYS" styleClass="panel-claro" style="-fx-border-color: #d1d5db; -fx-border-radius: 8; -fx-padding: 10; -fx-background-radius: 8;">
+                        <Label text="Ingresos" style="-fx-font-size: 11px; -fx-text-fill: #6b7280;"/>
+                        <Label fx:id="lblIngresos" text="0.00" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #27ae60;"/>
+                    </VBox>
+                    <VBox spacing="5" HBox.hgrow="ALWAYS" styleClass="panel-claro" style="-fx-border-color: #d1d5db; -fx-border-radius: 8; -fx-padding: 10; -fx-background-radius: 8;">
+                        <Label text="Egresos" style="-fx-font-size: 11px; -fx-text-fill: #6b7280;"/>
+                        <Label fx:id="lblEgresos" text="0.00" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #e74c3c;"/>
+                    </VBox>
+                    <VBox spacing="5" HBox.hgrow="ALWAYS" styleClass="panel-claro" style="-fx-border-color: #d1d5db; -fx-border-radius: 8; -fx-padding: 10; -fx-background-radius: 8;">
+                        <Label text="Neto" style="-fx-font-size: 11px; -fx-text-fill: #6b7280;"/>
+                        <Label fx:id="lblNeto" text="0.00" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #34495e;"/>
+                    </VBox>
+                    <VBox spacing="5" HBox.hgrow="ALWAYS" styleClass="panel-claro" style="-fx-border-color: #d1d5db; -fx-border-radius: 8; -fx-padding: 10; -fx-background-radius: 8;">
+                        <Label text="Esperado en Caja" style="-fx-font-size: 11px; -fx-text-fill: #6b7280;"/>
+                        <Label fx:id="lblEsperado" text="0.00" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2980b9;"/>
+                    </VBox>
+                </HBox>
+
+                <!-- Movimientos -->
+                <VBox spacing="5" style="-fx-border-color: #d1d5db; -fx-border-radius: 8; -fx-padding: 10; -fx-background-radius: 8;">
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Label text="Movimientos" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <ComboBox fx:id="cmbTipoMov" prefWidth="130"/>
+                        <TextField fx:id="txtMontoMov" promptText="Monto" prefWidth="100"/>
+                        <TextField fx:id="txtDescMov" promptText="Descripción" HBox.hgrow="ALWAYS" prefWidth="250"/>
+                        <Button text="Registrar" onAction="#registrarMovimiento" styleClass="btn-guardar"/>
+                        <Button text="Cerrar Caja" onAction="#abrirCierreCaja" style="-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 16; -fx-background-radius: 8; -fx-cursor: hand;">
+                            <graphic><FontIcon iconLiteral="fas-lock" iconSize="14"/></graphic>
+                        </Button>
+                    </HBox>
+                    <TableView fx:id="tblMovimientos" VBox.vgrow="ALWAYS" prefHeight="200">
+                        <columns>
+                            <TableColumn fx:id="colFecha" text="Fecha" prefWidth="140"/>
+                            <TableColumn fx:id="colTipo" text="Tipo" prefWidth="100"/>
+                            <TableColumn fx:id="colDescripcion" text="Descripción" prefWidth="350"/>
+                            <TableColumn fx:id="colMonto" text="Monto" prefWidth="100"/>
+                            <TableColumn fx:id="colUsuario" text="Usuario" prefWidth="120"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+            </VBox>
+
+            <!-- HISTORIAL -->
+            <VBox spacing="5" style="-fx-border-color: #d1d5db; -fx-border-radius: 8; -fx-padding: 10; -fx-background-radius: 8;">
+                <HBox alignment="CENTER_LEFT" spacing="10">
+                    <Label text="Historial de Sesiones" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <DatePicker fx:id="dpDesde"/>
+                    <DatePicker fx:id="dpHasta"/>
+                    <Button text="Filtrar" onAction="#cargarHistorial" styleClass="btn-guardar"/>
+                </HBox>
+                <TableView fx:id="tblHistorial" VBox.vgrow="ALWAYS" prefHeight="180">
+                    <columns>
+                        <TableColumn fx:id="colHistId" text="ID" prefWidth="50"/>
+                        <TableColumn fx:id="colHistApertura" text="Apertura" prefWidth="150"/>
+                        <TableColumn fx:id="colHistCierre" text="Cierre" prefWidth="150"/>
+                        <TableColumn fx:id="colHistInicial" text="Inicial" prefWidth="100"/>
+                        <TableColumn fx:id="colHistFisico" text="Físico" prefWidth="100"/>
+                        <TableColumn fx:id="colHistDiferencia" text="Diferencia" prefWidth="100"/>
+                        <TableColumn fx:id="colHistEstado" text="Estado" prefWidth="80"/>
+                        <TableColumn fx:id="colHistUsuario" text="Usuario" prefWidth="150"/>
+                    </columns>
+                </TableView>
+            </VBox>
+        </VBox>
+    </center>
+</BorderPane>

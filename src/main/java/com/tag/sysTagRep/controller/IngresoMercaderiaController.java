@@ -64,7 +64,7 @@ public class IngresoMercaderiaController implements Initializable {
     @FXML private TextField txtPrecioVenta;
     @FXML private DatePicker dpFechaIngreso;
     @FXML private ComboBox<Integer> cmbGanancia;
-    @FXML private ComboBox<Integer> cmbDescuento;
+    @FXML private TextField txtDescuento;
     @FXML private TextField txtCodigo;
     @FXML private ComboBox<Codigo> cmbCodigo;
     @FXML private ComboBox<Proveedor> cmbProveedor;
@@ -83,8 +83,6 @@ public class IngresoMercaderiaController implements Initializable {
     @FXML private TableColumn<FilaProducto, Number> colCosto;
     @FXML private TableColumn<FilaProducto, Number> colIva;
     @FXML private TableColumn<FilaProducto, Number> colTotalLinea;
-    @FXML private TableColumn<FilaProducto, Number> colPrecioVenta;
-    @FXML private TableColumn<FilaProducto, Number> colMargen;
     @FXML private TableColumn<FilaProducto, FilaProducto> colEliminar;
     @FXML private TableColumn<FilaProducto, FilaProducto> colEditar;
     @FXML private Label lblTotalFactura;
@@ -92,7 +90,7 @@ public class IngresoMercaderiaController implements Initializable {
 
     private boolean cerrarAlGuardar = false;
     private boolean modoEdicion = false;
-
+    private boolean servicioLogistico = false;
     private final InventarioDAO dao = new InventarioDAO();
     private final ProveedorDAO proveedorDAO = new ProveedorDAO();
     private final GrupoDAO grupoDAO = new GrupoDAO();
@@ -116,7 +114,7 @@ public class IngresoMercaderiaController implements Initializable {
         iniciarCbCodigos();
         iniciarSpCantidad();
         iniciarCbMargen();
-        iniciarCbDescuento();
+        configurarDescuento();
         iniciarCbFormaPago();
         configurarCalculoPrecio();
         validarSoloNumeros();
@@ -188,19 +186,15 @@ public class IngresoMercaderiaController implements Initializable {
         }
     }
 
-    private String generarCodigo(String desc, Grupo grupo, Marca marca, BigDecimal costoSinIVA) {
-        String d = (desc != null && desc.length() >= 3)
-                ? desc.substring(0, 3).toUpperCase()
-                : (desc != null ? desc.toUpperCase() : "XXX");
-        String g = (grupo != null && grupo.getNombre() != null && grupo.getNombre().length() >= 3)
-                ? grupo.getNombre().substring(0, 3).toUpperCase() : (grupo != null ? grupo.getNombre().toUpperCase() : "SIN");
-        String m = (marca != null && marca.getNombre() != null && marca.getNombre().length() >= 3)
-                ? marca.getNombre().substring(0, 3).toUpperCase() : (marca != null ? marca.getNombre().toUpperCase() : "SIN");
-        BigDecimal costoConIVA = costoSinIVA != null
-                ? costoSinIVA.multiply(BigDecimal.valueOf(1.15)).setScale(0, RoundingMode.HALF_UP)
-                : BigDecimal.ZERO;
-        String costoCifrado = com.tag.sysTagRep.util.EtiquetaUtil.cifrarPrecio(costoConIVA.toPlainString());
-        return d + g + m + costoCifrado;
+    private String generarCodigo() {
+        String pv = txtPrecioVenta.getText().replace(",", ".");
+        if (pv.isEmpty()) return "";
+        try {
+            BigDecimal precio = new BigDecimal(pv);
+            return com.tag.sysTagRep.util.EtiquetaUtil.cifrarPrecio(precio.setScale(2, RoundingMode.HALF_UP).toString());
+        } catch (NumberFormatException e) {
+            return "";
+        }
     }
 
     private Proveedor proveedorSeleccionado() {
@@ -212,6 +206,38 @@ public class IngresoMercaderiaController implements Initializable {
                     .findFirst().orElse(null);
         }
         return p;
+    }
+
+    @FXML
+    private void servicioLogistico() {
+        servicioLogistico = true;
+        txtDescripcion.setText("SERVICIO LOGISTICO");
+
+        Grupo transporte = listaGrupos.stream()
+                .filter(g -> "TRANSPORTE".equalsIgnoreCase(g.getNombre()))
+                .findFirst().orElse(null);
+        if (transporte == null) {
+            Grupo nuevo = new Grupo();
+            nuevo.setNombre("TRANSPORTE");
+            nuevo.setEstado(true);
+            grupoDAO.guardar(nuevo);
+            listaGrupos.setAll(grupoDAO.listar());
+            transporte = listaGrupos.stream()
+                    .filter(g -> "TRANSPORTE".equalsIgnoreCase(g.getNombre()))
+                    .findFirst().orElse(null);
+        }
+        cmbGrupo.setValue(transporte);
+
+        registrarCodigoNuevo("000");
+        Codigo codigo000 = listaCodigos.stream()
+                .filter(c -> "000".equalsIgnoreCase(c.getNombre()))
+                .findFirst().orElse(null);
+        cmbCodigo.setValue(codigo000);
+        cmbCodigo.getEditor().setText("000");
+
+        cmbGanancia.setValue(0);
+        txtCostoSinIVA.setText("2");
+        txtPrecioVenta.setText("0.00");
     }
 
     @FXML
@@ -236,8 +262,8 @@ public class IngresoMercaderiaController implements Initializable {
                 new Alert(Alert.AlertType.WARNING, "La cantidad debe ser mayor a cero.").showAndWait();
                 return;
             }
-            BigDecimal iva = costo.multiply(new BigDecimal("0.15")).setScale(2, RoundingMode.HALF_UP);
-            BigDecimal totalLinea = costo.add(iva).multiply(BigDecimal.valueOf(cant)).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal iva = costo.multiply(new BigDecimal("0.15")).setScale(3, RoundingMode.HALF_UP);
+            BigDecimal totalLinea = costo.add(iva).multiply(BigDecimal.valueOf(cant)).setScale(3, RoundingMode.HALF_UP);
             BigDecimal precioVenta = txtPrecioVenta.getText().isEmpty()
                     ? costo.add(iva)
                     : new BigDecimal(txtPrecioVenta.getText().replace(",", "."));
@@ -258,6 +284,7 @@ public class IngresoMercaderiaController implements Initializable {
             );
             fp.setIva(iva.doubleValue());
             fp.setTotalLinea(totalLinea.doubleValue());
+            fp.setEstado(!servicioLogistico);
             listaProductos.add(fp);
 
             calcularTotalFactura();
@@ -280,9 +307,9 @@ public class IngresoMercaderiaController implements Initializable {
         for (Marca m : listaMarcas) {
             if (m.getId() == fp.getMarcaId()) { cmbMarca.setValue(m); break; }
         }
-        txtCostoSinIVA.setText(BigDecimal.valueOf(fp.getCostoSinIVA()).setScale(2, RoundingMode.HALF_UP).toPlainString());
+        txtCostoSinIVA.setText(redondearMostrar(BigDecimal.valueOf(fp.getCostoSinIVA())).toPlainString());
         spCantidad.getValueFactory().setValue(fp.getCantidad());
-        txtPrecioVenta.setText(BigDecimal.valueOf(fp.getPrecioVenta()).setScale(2, RoundingMode.HALF_UP).toPlainString());
+        txtPrecioVenta.setText(redondearMostrar(BigDecimal.valueOf(fp.getPrecioVenta())).toPlainString());
         txtCodigo.setText(fp.getCodigo());
         if (fp.getCodigoManual() != null && !fp.getCodigoManual().isEmpty()) {
             for (Codigo c : listaCodigos) {
@@ -300,22 +327,43 @@ public class IngresoMercaderiaController implements Initializable {
         eliminarProducto(fp);
     }
 
+    private BigDecimal redondearMostrar(BigDecimal v) {
+        BigDecimal r = v.setScale(2, RoundingMode.HALF_UP);
+        BigDecimal intOriginal = v.setScale(0, RoundingMode.DOWN);
+        if (r.setScale(0, RoundingMode.DOWN).compareTo(intOriginal) != 0) {
+            r = v.setScale(2, RoundingMode.DOWN);
+        }
+        return r;
+    }
+
     private void calcularTotalFactura() {
         BigDecimal total = BigDecimal.ZERO;
         for (FilaProducto fp : listaProductos) {
             total = total.add(BigDecimal.valueOf(fp.getTotalLinea()));
         }
-        int pct = cmbDescuento.getValue() != null ? cmbDescuento.getValue() : 0;
-        if (pct > 0) {
-            BigDecimal desc = total.multiply(BigDecimal.valueOf(pct)).divide(BigDecimal.valueOf(100))
-                    .setScale(2, RoundingMode.HALF_UP);
-            total = total.subtract(desc);
-        }
-        lblTotalFactura.setText("$ " + total.setScale(2, RoundingMode.HALF_UP).toString());
+        BigDecimal desc = BigDecimal.ZERO;
+        try {
+            String t = txtDescuento.getText().replace(",", ".");
+            if (!t.isEmpty()) desc = new BigDecimal(t);
+        } catch (NumberFormatException ignored) {}
+        total = total.subtract(desc);
+        lblTotalFactura.setText("$ " + redondearMostrar(total).toPlainString());
     }
 
     private void configurarTablaProductos() {
         tblProductos.setItems(listaProductos);
+        tblProductos.setColumnResizePolicy(rf -> {
+            double total = rf.getTable().getWidth();
+            if (total <= 0) return false;
+            double datos = total - colEditar.getWidth() - colEliminar.getWidth();
+            colDescripcion.setPrefWidth(datos * 0.50);
+            colCodigo.setPrefWidth(datos * 0.10);
+            colCantidad.setPrefWidth(datos * 0.10);
+            colCosto.setPrefWidth(datos * 0.10);
+            colIva.setPrefWidth(datos * 0.10);
+            colTotalLinea.setPrefWidth(datos * 0.10);
+            return true;
+        });
 
         colCodigo.setCellValueFactory(new PropertyValueFactory<>("codigo"));
         colDescripcion.setCellValueFactory(new PropertyValueFactory<>("descripcion"));
@@ -323,35 +371,26 @@ public class IngresoMercaderiaController implements Initializable {
         colCosto.setCellValueFactory(new PropertyValueFactory<>("costoSinIVA"));
         colIva.setCellValueFactory(new PropertyValueFactory<>("iva"));
         colTotalLinea.setCellValueFactory(new PropertyValueFactory<>("totalLinea"));
-        colPrecioVenta.setCellValueFactory(new PropertyValueFactory<>("precioVenta"));
-        colMargen.setCellValueFactory(new PropertyValueFactory<>("margen"));
 
         colCosto.setCellFactory(c -> new TableCell<>() {
             @Override protected void updateItem(Number n, boolean empty) {
                 super.updateItem(n, empty);
-                setText(empty || n == null ? "" : "$ " + String.format("%.2f", n.doubleValue()));
+                setText(empty || n == null ? "" : "$ " + redondearMostrar(BigDecimal.valueOf(n.doubleValue())).toPlainString());
                 setStyle("-fx-alignment: CENTER_RIGHT;");
             }
         });
         colIva.setCellFactory(c -> new TableCell<>() {
             @Override protected void updateItem(Number n, boolean empty) {
                 super.updateItem(n, empty);
-                setText(empty || n == null ? "" : "$ " + String.format("%.2f", n.doubleValue()));
+                setText(empty || n == null ? "" : "$ " + redondearMostrar(BigDecimal.valueOf(n.doubleValue())).toPlainString());
                 setStyle("-fx-alignment: CENTER_RIGHT;");
             }
         });
         colTotalLinea.setCellFactory(c -> new TableCell<>() {
             @Override protected void updateItem(Number n, boolean empty) {
                 super.updateItem(n, empty);
-                setText(empty || n == null ? "" : "$ " + String.format("%.2f", n.doubleValue()));
+                setText(empty || n == null ? "" : "$ " + redondearMostrar(BigDecimal.valueOf(n.doubleValue())).toPlainString());
                 setStyle("-fx-alignment: CENTER_RIGHT; -fx-font-weight: bold;");
-            }
-        });
-        colPrecioVenta.setCellFactory(c -> new TableCell<>() {
-            @Override protected void updateItem(Number n, boolean empty) {
-                super.updateItem(n, empty);
-                setText(empty || n == null ? "" : "$ " + String.format("%.2f", n.doubleValue()));
-                setStyle("-fx-alignment: CENTER_RIGHT;");
             }
         });
         colCantidad.setCellFactory(c -> new TableCell<>() {
@@ -361,14 +400,6 @@ public class IngresoMercaderiaController implements Initializable {
                 setStyle("-fx-alignment: CENTER;");
             }
         });
-        colMargen.setCellFactory(c -> new TableCell<>() {
-            @Override protected void updateItem(Number n, boolean empty) {
-                super.updateItem(n, empty);
-                setText(empty || n == null ? "" : n.intValue() + " %");
-                setStyle("-fx-alignment: CENTER;");
-            }
-        });
-
         colEliminar.setCellFactory(c -> new TableCell<>() {
             private final Button btn = new Button("✕");
             {
@@ -491,6 +522,7 @@ public class IngresoMercaderiaController implements Initializable {
             i.setPrecioVenta(BigDecimal.valueOf(fp.getPrecioVenta()));
             i.setTagCodigo(fp.getCodigo());
             i.setCodigo(fp.getCodigoManual());
+            i.setEstado(fp.getEstado());
         } else {
             i.setDescripcion(txtDescripcion.getText());
             Grupo g = cmbGrupo.getValue();
@@ -597,6 +629,7 @@ public class IngresoMercaderiaController implements Initializable {
     }
 
     private void limpiarProducto() {
+        servicioLogistico = false;
         txtDescripcion.clear();
         cmbGrupo.setValue(null);
         cmbMarca.setValue(null);
@@ -609,14 +642,14 @@ public class IngresoMercaderiaController implements Initializable {
         cmbCodigo.setValue(null);
         cmbCodigo.getEditor().clear();
         cmbGanancia.setValue(40);
-        cmbDescuento.setValue(0);
+        txtDescuento.setText("0.00");
     }
 
     public void limpiarFrm(){
         modoEdicion = false;
         txtId.clear();
         limpiarProducto();
-        txtNumeroFactura.clear();
+        txtNumeroFactura.setText("001-001-00000123");
         dpFechaIngreso.setValue(LocalDate.now());
         cmbProveedor.setValue(null);
         cmbProveedor.getEditor().clear();
@@ -641,12 +674,12 @@ public class IngresoMercaderiaController implements Initializable {
         cmbGanancia.setValue(40);
     }
 
-    private void iniciarCbDescuento(){
-        ObservableList<Integer> items = FXCollections.observableArrayList();
-        for (int i = 0; i <= 100; i += 5) items.add(i);
-        ComboFilter.habilitarEnteros(cmbDescuento, items);
-        cmbDescuento.setValue(0);
-        cmbDescuento.valueProperty().addListener((obs, old, newVal) -> calcularTotalFactura());
+    private void configurarDescuento() {
+        txtDescuento.setText("0.00");
+        txtDescuento.textProperty().addListener((obs, old, val) -> {
+            if (!val.isEmpty() && !val.matches("\\d*(\\.\\d{0,3})?")) txtDescuento.setText(old);
+        });
+        txtDescuento.textProperty().addListener((obs, old, newVal) -> calcularTotalFactura());
     }
 
     private void configurarCalculoPrecio() {
@@ -665,49 +698,45 @@ public class IngresoMercaderiaController implements Initializable {
             return;
         }
         try {
-            double costo = Double.parseDouble(txtCostoSinIVA.getText().replace(",", "."));
-            double iva = costo * 0.15;
+            BigDecimal costo = new BigDecimal(txtCostoSinIVA.getText().replace(",", "."));
+            BigDecimal iva = costo.multiply(new BigDecimal("0.15")).setScale(3, RoundingMode.HALF_UP);
             int cant = spCantidad.getValue() != null ? spCantidad.getValue() : 1;
-            txtIVA.setText(String.format("%.2f", iva).replace(",", "."));
-            txtTotalIVA.setText(String.format("%.2f", (costo + iva) * cant).replace(",", "."));
+            txtIVA.setText(redondearMostrar(iva).toPlainString());
+            txtTotalIVA.setText(redondearMostrar(costo.add(iva).multiply(BigDecimal.valueOf(cant))).toPlainString());
         } catch (Exception ignored) {}
     }
 
     private void calcularPrecioVenta() {
         if (txtCostoSinIVA.getText().isEmpty()) return;
         try {
-            double costo = Double.parseDouble(txtCostoSinIVA.getText().replace(",", "."));
+            BigDecimal costo = new BigDecimal(txtCostoSinIVA.getText().replace(",", "."));
+            BigDecimal iva = costo.multiply(new BigDecimal("0.15")).setScale(3, RoundingMode.HALF_UP);
             int margen = cmbGanancia.getValue() != null ? cmbGanancia.getValue() : 0;
-            txtPrecioVenta.setText(String.format("%.2f", costo + (costo * margen / 100.0)).replace(",", "."));
+            BigDecimal totalConIVA = costo.add(iva);
+            BigDecimal precio = totalConIVA.add(totalConIVA.multiply(BigDecimal.valueOf(margen))
+                    .divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP));
+            txtPrecioVenta.setText(redondearMostrar(precio).toPlainString());
         } catch (Exception ignored) {}
     }
 
     private void validarSoloNumeros(){
         txtCostoSinIVA.textProperty().addListener((obs, old, val) -> {
-            if (!val.isEmpty() && !val.matches("\\d*(\\.\\d{0,2})?")) txtCostoSinIVA.setText(old);
+            if (!val.isEmpty() && !val.matches("\\d*(\\.\\d{0,3})?")) txtCostoSinIVA.setText(old);
         });
     }
 
     private void configurarCodigoAuto() {
         txtCodigo.setEditable(false);
         Runnable actualizarCodigo = () -> {
-            Grupo g = cmbGrupo.getValue();
-            Marca m = cmbMarca.getValue();
-            String desc = txtDescripcion.getText();
-            BigDecimal costo = null;
-            try {
-                costo = (!txtCostoSinIVA.getText().isEmpty())
-                        ? new BigDecimal(txtCostoSinIVA.getText().replace(",", "."))
-                        : null;
-            } catch (NumberFormatException ignored) {}
-            if (desc != null && !desc.isEmpty()) {
-                txtCodigo.setText(generarCodigo(desc, g, m, costo));
+            if (txtPrecioVenta.getText() != null && !txtPrecioVenta.getText().isEmpty()) {
+                txtCodigo.setText(generarCodigo());
             } else {
                 txtCodigo.clear();
             }
         };
         txtDescripcion.textProperty().addListener((obs, o, n) -> actualizarCodigo.run());
         txtCostoSinIVA.textProperty().addListener((obs, o, n) -> actualizarCodigo.run());
+        txtPrecioVenta.textProperty().addListener((obs, o, n) -> actualizarCodigo.run());
         cmbGrupo.setOnAction(e -> actualizarCodigo.run());
         cmbMarca.setOnAction(e -> actualizarCodigo.run());
     }
@@ -791,6 +820,7 @@ public class IngresoMercaderiaController implements Initializable {
         private final DoubleProperty totalLinea = new SimpleDoubleProperty(0);
         private final DoubleProperty precioVenta;
         private final IntegerProperty margen;
+        private boolean estado = true;
 
         public FilaProducto(String codigo, String codigoManual, String descripcion, int grupoId, int marcaId,
                             BigDecimal costoSinIVA, int cantidad, BigDecimal precioVenta, int margen) {
@@ -826,5 +856,7 @@ public class IngresoMercaderiaController implements Initializable {
         public DoubleProperty precioVentaProperty() { return precioVenta; }
         public int getMargen() { return margen.get(); }
         public IntegerProperty margenProperty() { return margen; }
+        public boolean getEstado() { return estado; }
+        public void setEstado(boolean estado) { this.estado = estado; }
     }
 }

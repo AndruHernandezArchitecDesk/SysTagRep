@@ -134,7 +134,7 @@ public class SRIWebService {
         return parsearAutorizacion(respuestaXml);
     }
 
-    private String postSoap(String url, String soapBody) {
+    protected String postSoap(String url, String soapBody) {
         HttpURLConnection conn = null;
         try {
             URL u = new URL(url);

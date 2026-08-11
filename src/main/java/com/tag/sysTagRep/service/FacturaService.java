@@ -259,7 +259,7 @@ public class FacturaService {
 
     private BigDecimal calcularDescuento(BigDecimal totalBruto, BigDecimal descuentoPct) {
         if (descuentoPct == null) descuentoPct = AppConstants.CERO;
-        return totalBruto.multiply(descuentoPct).divide(AppConstants.CIEN).setScale(2, RoundingMode.HALF_UP);
+        return totalBruto.multiply(descuentoPct).divide(AppConstants.CIEN, 2, RoundingMode.HALF_UP);
     }
 
     private List<BigDecimal> distribuirDescuento(BigDecimal descuentoTotal, List<BigDecimal> bases) {

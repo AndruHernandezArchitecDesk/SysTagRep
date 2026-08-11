@@ -30,6 +30,15 @@ public class GrupoDAO {
         } catch (SQLException e) { e.printStackTrace(); }
     }
 
+    public boolean existe(String nombre) {
+        String sql = "SELECT 1 FROM grupo WHERE UPPER(nombre) = UPPER(?)";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, nombre);
+            try (ResultSet rs = ps.executeQuery()) { return rs.next(); }
+        } catch (SQLException e) { e.printStackTrace(); return false; }
+    }
+
     public void eliminar(int id) {
         String sql = "DELETE FROM grupo WHERE id=?";
         try (Connection con = DatabaseConnection.getConnection();
