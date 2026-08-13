@@ -2,7 +2,9 @@ package com.tag.sysTagRep.util;
 
 import com.tag.sysTagRep.config.DatabaseConnection;
 import com.tag.sysTagRep.dao.EmpresaDAO;
+import com.tag.sysTagRep.dao.SecuenciaDocumentoDAO;
 import com.tag.sysTagRep.model.Empresa;
+import com.tag.sysTagRep.model.SecuenciaDocumento;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -37,11 +39,17 @@ class SRIRealIntegracionTest {
         assumeTrue(!empresas.isEmpty(), "No hay empresa cargada en la BD; se omite la prueba real");
         Empresa empresa = empresas.get(0);
 
+        SecuenciaDocumentoDAO secuenciaDAO = new SecuenciaDocumentoDAO();
+        SecuenciaDocumento sec = secuenciaDAO.obtener("FACTURA");
+        String codEstab = sec.getEstablecimiento();
+        String codPtoEmi = sec.getPuntoEmision();
+        int secuencialFE = sec.getSiguienteNumero();
+
         String ruc = empresa.getRuc();
         String razonSocial = empresa.getRazonSocial();
         String claveAcceso = ClaveAcceso.generar(
                 AppConstants.TIPO_COMPROBANTE_FACTURA, ruc, AMBIENTE,
-                AppConstants.ESTABLECIMIENTO_DEFAULT, AppConstants.PUNTO_EMISION_DEFAULT, 999999999);
+                codEstab, codPtoEmi, secuencialFE);
 
         String fechaEmision = LocalDate.now().format(DateTimeFormatter.ofPattern(AppConstants.PATRON_FECHA_EMISION));
         List<Object[]> detalles = List.<Object[]>of(
@@ -49,7 +57,7 @@ class SRIRealIntegracionTest {
         );
         String xml = XmlSriBuilder.construirFactura(
                 AMBIENTE, claveAcceso, ruc, razonSocial,
-                AppConstants.ESTABLECIMIENTO_DEFAULT, AppConstants.PUNTO_EMISION_DEFAULT, 999999999,
+                codEstab, codPtoEmi, secuencialFE,
                 empresa.getDireccionCallePrincipal() + " y " + empresa.getDireccionCalleSecundaria(),
                 empresa.getAgenteRetencion(), "NO", "04",
                 "Cliente Prueba SRI", "1716854540002",
