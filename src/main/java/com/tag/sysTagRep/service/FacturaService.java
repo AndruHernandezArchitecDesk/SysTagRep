@@ -239,6 +239,66 @@ public class FacturaService {
                 resultado.sub, resultado.descCalc, resultado.ivaCalc, resultado.totCalc);
     }
 
+    /**
+     * Regenera el RIDE (PDF) de una factura ya registrada cuando llega su
+     * autorización de forma diferida, incorporando el número y fecha de
+     * autorización. Devuelve la ruta del PDF regenerado.
+     */
+    public String regenerarRide(String claveAcceso, String numeroAutorizacion, String fechaAutorizacion,
+                                File directorioEscritorio) {
+        FacturaRegistro fr = facturaRegistroDAO.obtenerPorClaveAcceso(claveAcceso);
+        if (fr == null) {
+            logDAO.guardar("FacturaService", "regenerarRide", "Factura no encontrada por clave " + claveAcceso);
+            return null;
+        }
+        Cliente cliente = clienteDAO.obtenerPorId(fr.getClienteId());
+        if (cliente == null) {
+            logDAO.guardar("FacturaService", "regenerarRide", "Cliente no encontrado para " + claveAcceso);
+            return null;
+        }
+        List<Empresa> empresas = empresaDAO.listar();
+        Empresa empresa = empresas.isEmpty() ? null : empresas.get(0);
+        if (empresa == null) {
+            logDAO.guardar("FacturaService", "regenerarRide", "Empresa no encontrada para " + claveAcceso);
+            return null;
+        }
+
+        String[] partesNum = fr.getNumComprobante() == null ? new String[]{"001", "001", "000000000"}
+                : fr.getNumComprobante().split("-");
+        String codEstab = partesNum.length > 0 ? partesNum[0] : "001";
+        String codPtoEmi = partesNum.length > 1 ? partesNum[1] : "001";
+        int secuencial = partesNum.length > 2 ? Integer.parseInt(partesNum[2]) : 0;
+
+        String tipoIdComp = cliente.getIdentificacion() != null
+                && cliente.getIdentificacion().length() == AppConstants.MAX_LONGITUD_IDENTIFICACION_JURIDICA ? "05" : "04";
+
+        String fechaEmisionFE = fr.getFecha() != null
+                ? fr.getFecha().format(DateTimeFormatter.ofPattern(AppConstants.PATRON_FECHA_EMISION)) : "";
+
+        String rutaPDF = directorioEscritorio.getAbsolutePath() + File.separator
+                + AppConstants.PREFIJO_PDF_FACTURA + fr.getNumComprobante().replace("-", "") + AppConstants.EXTENSION_PDF;
+
+        List<FacturaDetalle> detallesDb = facturaDetalleDAO.listarPorFacturaRegistroId(fr.getId());
+
+        PdfElectronico.generar(rutaPDF, fr.getClaveAcceso(), numeroAutorizacion, fechaAutorizacion, fr.getAmbienteSri(),
+                empresa.getRuc(), empresa.getRazonSocial(),
+                empresa.getDireccionCallePrincipal() + " y " + empresa.getDireccionCalleSecundaria(),
+                empresa.getTelefono(), empresa.getCorreo(),
+                "", "NO", empresa.getSucursal(),
+                empresa.getAgenteRetencion(), empresa.getResolucion(),
+                codEstab, codPtoEmi, secuencial,
+                fechaEmisionFE, tipoIdComp,
+                cliente.getNombre(), cliente.getIdentificacion(),
+                cliente.getDireccion(), cliente.getCorreo(), cliente.getTelefono(),
+                fr.getFormaPago(),
+                armarDetalles(detallesDb, fr.getDescuento() != null ? fr.getDescuento() : AppConstants.CERO),
+                fr.getSubtotal() != null ? fr.getSubtotal() : AppConstants.CERO,
+                fr.getDescuento() != null ? fr.getDescuento() : AppConstants.CERO,
+                fr.getIva() != null ? fr.getIva() : AppConstants.CERO,
+                fr.getTotal() != null ? fr.getTotal() : AppConstants.CERO);
+        return rutaPDF;
+    }
+
     public boolean enviarCorreoAutorizacion(String destinatario, String nombreCliente, String codigo,
                                             String rutaPDF, String rutaXML) {
         if (destinatario == null || destinatario.trim().isEmpty()) return false;

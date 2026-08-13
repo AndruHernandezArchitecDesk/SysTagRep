@@ -57,8 +57,8 @@ public class XmlSriBuilder {
             agregarElemento(infoTributaria, "ptoEmi", codPuntoEmision);
             agregarElemento(infoTributaria, "secuencial", String.format("%09d", secuencial));
             agregarElemento(infoTributaria, "dirMatriz", dirEstablecimiento);
-            if (contribuyenteEspecial != null && !contribuyenteEspecial.isEmpty()) {
-                agregarElemento(infoTributaria, "contribuyenteEspecial", contribuyenteEspecial);
+            if (esNumeroValido(contribuyenteEspecial, 8)) {
+                agregarElemento(infoTributaria, "agenteRetencion", contribuyenteEspecial);
             }
             factura.appendChild(infoTributaria);
 
@@ -66,8 +66,8 @@ public class XmlSriBuilder {
             Element infoFactura = doc.createElement("infoFactura");
             agregarElemento(infoFactura, "fechaEmision", fechaEmision);
             agregarElemento(infoFactura, "dirEstablecimiento", dirEstablecimiento);
-            if (contribuyenteEspecial != null && !contribuyenteEspecial.isEmpty()) {
-                agregarElemento(infoFactura, "contribuyenteEspecial", contribuyenteEspecial);
+            if (contribuyenteEspecial != null && contribuyenteEspecial.trim().length() >= 3) {
+                agregarElemento(infoFactura, "contribuyenteEspecial", contribuyenteEspecial.trim());
             }
             agregarElemento(infoFactura, "obligadoContabilidad", obligadoContabilidad != null ? obligadoContabilidad : "SI");
             agregarElemento(infoFactura, "tipoIdentificacionComprador", tipoIdentificacionComprador);
@@ -83,7 +83,7 @@ public class XmlSriBuilder {
             Element totalConImpuestosEl = doc.createElement("totalConImpuestos");
             Element impuesto = doc.createElement("totalImpuesto");
             agregarElemento(impuesto, "codigo", "2"); // 2=IVA
-            agregarElemento(impuesto, "codigoPorcentaje", "2"); // 2=IVA 15%
+            agregarElemento(impuesto, "codigoPorcentaje", "4"); // 4=IVA 15%
             agregarElemento(impuesto, "baseImponible", totalSinImpuestos);
             agregarElemento(impuesto, "valor", totalImpuesto);
             totalConImpuestosEl.appendChild(impuesto);
@@ -118,7 +118,7 @@ public class XmlSriBuilder {
                 Element detImpuestos = doc.createElement("impuestos");
                 Element detImp = doc.createElement("impuesto");
                 agregarElemento(detImp, "codigo", "2");
-                agregarElemento(detImp, "codigoPorcentaje", "2");
+                agregarElemento(detImp, "codigoPorcentaje", "4"); // 4=IVA 15%
                 agregarElemento(detImp, "tarifa", "15");
                 agregarElemento(detImp, "baseImponible", (String) det[5]);
                 BigDecimal valorIva = new BigDecimal((String) det[5]).multiply(new BigDecimal("0.15")).setScale(2, java.math.RoundingMode.HALF_UP);
@@ -160,6 +160,13 @@ public class XmlSriBuilder {
         Element el = padre.getOwnerDocument().createElement(nombre);
         el.setTextContent(valor != null ? valor : "");
         padre.appendChild(el);
+    }
+
+    private static boolean esNumeroValido(String valor, int maxLength) {
+        if (valor == null || valor.trim().isEmpty()) {
+            return false;
+        }
+        return valor.trim().matches("[0-9]+") && valor.trim().length() <= maxLength;
     }
 
     private static String mapearFormaPago(String formaPago) {

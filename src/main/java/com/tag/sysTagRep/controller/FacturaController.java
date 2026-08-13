@@ -6,6 +6,7 @@ import com.tag.sysTagRep.dao.InventarioDAO;
 import com.tag.sysTagRep.dao.LogDAO;
 import com.tag.sysTagRep.service.FacturaService;
 import com.tag.sysTagRep.util.EmailService;
+import com.tag.sysTagRep.util.ElectronicoUtil;
 import com.tag.sysTagRep.dao.ComprobanteDAO;
 import com.tag.sysTagRep.dao.SecuenciaDocumentoDAO;
 import com.tag.sysTagRep.model.*;
@@ -538,8 +539,7 @@ public class FacturaController implements Initializable {
         String correoCliente = txtCorreo.getText();
         if (correoCliente != null && !correoCliente.trim().isEmpty()) {
             final String destCorreo = correoCliente.trim();
-            if (AppConstants.ESTADO_AUTORIZADO.equals(estadoSri) && numeroAutorizacion != null && !numeroAutorizacion.isEmpty()
-                    && fechaAutorizacion != null && !fechaAutorizacion.isEmpty()) {
+            if (ElectronicoUtil.debeEnviarNotificacion(estadoSri, numeroAutorizacion, fechaAutorizacion)) {
                 final String nombreClienteCorreo = cmbCliente.getValue().getNombre();
                 final String codigoCorreo = resultado.numComprobante;
                 logDAO.guardar("FacturaController", "enviarCorreo", "Iniciando envío a " + destCorreo);

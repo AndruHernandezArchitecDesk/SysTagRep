@@ -29,20 +29,22 @@ public class ClaveAcceso {
     }
 
     private static int calcularDigitoVerificador(String base) {
-        int[] factores = {2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2};
+        // Módulo 11 del SRI: pesos 2,3,4,5,6,7 aplicados de derecha a izquierda,
+        // sin reducción de dígitos (no es módulo 10).
+        int[] factores = {2, 3, 4, 5, 6, 7};
         int suma = 0;
         int longitud = base.length();
 
-        for (int i = longitud - 1; i >= 0; i--) {
-            int digito = Character.getNumericValue(base.charAt(i));
-            int factor = factores[(longitud - 1 - i) % factores.length];
-            int producto = digito * factor;
-            if (producto >= 10) producto -= 9;
-            suma += producto;
+        for (int i = 0; i < longitud; i++) {
+            int digito = Character.getNumericValue(base.charAt(longitud - 1 - i));
+            suma += digito * factores[i % factores.length];
         }
 
-        int residuo = suma % 10;
-        return residuo == 0 ? 0 : 10 - residuo;
+        int residuo = suma % 11;
+        int digito = 11 - residuo;
+        if (digito == 11) return 0;
+        if (digito == 10) return 1;
+        return digito;
     }
 
     public static String getUrlConsulta(String claveAcceso) {

@@ -10,6 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 public class FacturaDetalleDAO {
@@ -46,6 +47,31 @@ public class FacturaDetalleDAO {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    public List<FacturaDetalle> listarPorFacturaRegistroId(int facturaRegistroId) {
+        List<FacturaDetalle> lista = new ArrayList<>();
+        String sql = "SELECT inventario_id, codigo, descripcion, cantidad, precio_unitario, precio_total " +
+                     "FROM factura_detalle WHERE factura_registro_id = ?";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, facturaRegistroId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    FacturaDetalle d = new FacturaDetalle(
+                            rs.getInt("inventario_id"),
+                            rs.getString("codigo"),
+                            rs.getString("descripcion"),
+                            rs.getInt("cantidad"),
+                            rs.getBigDecimal("precio_unitario"));
+                    d.setPrecioTotal(rs.getBigDecimal("precio_total"));
+                    lista.add(d);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return lista;
     }
 
     public boolean existeVentaPorInventarioIds(List<Integer> inventarioIds) {

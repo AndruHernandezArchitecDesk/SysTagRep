@@ -101,6 +101,87 @@ public class DashboardDAO {
     }
 
     /**
+     * Ventas del día: suma de total de factura_registro de la fecha indicada.
+     */
+    public double ventasDelDia(LocalDate fecha) {
+        double total = 0.0;
+        String sql = "SELECT COALESCE(SUM(total), 0) AS total_ventas " +
+                     "FROM factura_registro WHERE CAST(fecha AS DATE) = ?";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setObject(1, fecha);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                total = rs.getDouble("total_ventas");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return total;
+    }
+
+    /**
+     * Facturas emitidas: cantidad de registros de factura_registro de la fecha indicada.
+     */
+    public int facturasEmitidasDelDia(LocalDate fecha) {
+        int conteo = 0;
+        String sql = "SELECT COUNT(*) AS cantidad FROM factura_registro WHERE CAST(fecha AS DATE) = ?";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setObject(1, fecha);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                conteo = rs.getInt("cantidad");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return conteo;
+    }
+
+    /**
+     * Productos vendidos: suma de cantidad de factura_detalle de las facturas de la fecha indicada.
+     */
+    public int productosVendidosDelDia(LocalDate fecha) {
+        int cantidad = 0;
+        String sql = "SELECT COALESCE(SUM(fd.cantidad), 0) AS cantidad " +
+                     "FROM factura_detalle fd " +
+                     "JOIN factura_registro fr ON fr.id = fd.factura_registro_id " +
+                     "WHERE CAST(fr.fecha AS DATE) = ?";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setObject(1, fecha);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                cantidad = rs.getInt("cantidad");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return cantidad;
+    }
+
+    /**
+     * Clientes atendidos: clientes distintos con facturas en la fecha indicada.
+     */
+    public int clientesAtendidosDelDia(LocalDate fecha) {
+        int conteo = 0;
+        String sql = "SELECT COUNT(DISTINCT fr.cliente_id) AS cantidad " +
+                     "FROM factura_registro fr WHERE CAST(fr.fecha AS DATE) = ?";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setObject(1, fecha);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                conteo = rs.getInt("cantidad");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return conteo;
+    }
+
+    /**
      * Compras por día: suma de (costo_sin_iva * cantidad) de inventario agrupada por fecha_ingreso.
      */
     public Map<String, Double> comprasPorDia(int ultimosDias) {

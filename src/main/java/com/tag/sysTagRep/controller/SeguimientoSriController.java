@@ -6,7 +6,9 @@ import com.tag.sysTagRep.dao.FacturaRegistroDAO;
 import com.tag.sysTagRep.dao.LogDAO;
 import com.tag.sysTagRep.model.Cliente;
 import com.tag.sysTagRep.model.FacturaRegistro;
+import com.tag.sysTagRep.service.FacturaService;
 import com.tag.sysTagRep.util.EmailService;
+import com.tag.sysTagRep.util.ElectronicoUtil;
 import com.tag.sysTagRep.util.SortTable;
 import com.tag.sysTagRep.util.ComboFilter;
 import com.tag.sysTagRep.util.SRIWebService;
@@ -66,6 +68,7 @@ public class SeguimientoSriController implements Initializable {
     private final FacturaRegistroDAO dao = new FacturaRegistroDAO();
     private final LogDAO logDAO = new LogDAO();
     private final ClienteDAO clienteDAO = new ClienteDAO();
+    private final FacturaService facturaService = new FacturaService();
     private final ObservableList<FacturaRegistro> listaFacturas = FXCollections.observableArrayList();
 
     @Override
@@ -182,7 +185,7 @@ public class SeguimientoSriController implements Initializable {
                                 autorizadas++;
                                 String numAut = r.getNumeroAutorizacion();
                                 String fechaAut = r.getFechaAutorizacion();
-                                if (numAut != null && !numAut.isEmpty() && fechaAut != null && !fechaAut.isEmpty()) {
+                                if (ElectronicoUtil.debeEnviarNotificacion(estado, numAut, fechaAut)) {
                                     try {
                                         Cliente cliente = clienteDAO.obtenerPorId(f.getClienteId());
                                         if (cliente != null && cliente.getCorreo() != null && !cliente.getCorreo().trim().isEmpty()) {
@@ -191,6 +194,10 @@ public class SeguimientoSriController implements Initializable {
                                                     + File.separator + AppConstants.PREFIJO_PDF_FACTURA + numComp.replace("-", "") + AppConstants.EXTENSION_PDF;
                                             String rutaXML = System.getProperty("user.home") + File.separator + AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT
                                                     + File.separator + AppConstants.PREFIJO_PDF_FACTURA + numComp.replace("-", "") + AppConstants.EXTENSION_XML;
+                                            String pdfRegenerado = facturaService.regenerarRide(clave, numAut, fechaAut, obtenerDirectorioEscritorio());
+                                            if (pdfRegenerado != null) {
+                                                rutaPDF = pdfRegenerado;
+                                            }
                                             EmailService emailService = new EmailService();
                                             boolean enviado = emailService.enviarCorreoConArchivos(
                                                     cliente.getCorreo().trim(),
@@ -253,6 +260,19 @@ public class SeguimientoSriController implements Initializable {
         lblPaginaInfo.setText("Página " + currentPage + " de " + totalPages + " (" + totalCount + " registros)");
         btnAnterior.setDisable(currentPage <= 1);
         btnSiguiente.setDisable(currentPage >= totalPages);
+    }
+
+    private File obtenerDirectorioEscritorio() {
+        File home = new File(System.getProperty("user.home"));
+        for (String n : new String[]{AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT, AppConstants.DIRECTORIO_ESCRITORIO_ALT}) {
+            File d = new File(home, n);
+            if (d.exists() && d.isDirectory()) {
+                return d;
+            }
+        }
+        File d = new File(home, AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT);
+        d.mkdirs();
+        return d;
     }
 
     private String formatearEstado(String estado, String mensaje) {

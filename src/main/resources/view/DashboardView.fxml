@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.chart.BarChart?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+<ScrollPane fitToWidth="true" fitToHeight="true"
+            xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.tag.sysTagRep.controller.DashboardController">
+    <VBox spacing="15" style="-fx-padding: 20;">
+
+        <!-- HEADER CON FLECHA HACIA DASHBOARD 2 -->
+        <HBox alignment="CENTER_LEFT" spacing="12">
+            <Button onAction="#irDashboard2" styleClass="btn-orden" style="-fx-min-width: 40; -fx-min-height: 36;">
+                <graphic>
+                    <FontIcon iconLiteral="fas-arrow-right" iconSize="18" iconColor="#2c3e50"/>
+                </graphic>
+            </Button>
+            <HBox alignment="CENTER" spacing="15">
+                <ImageView fitWidth="80" preserveRatio="true">
+                    <image>
+                        <Image url="@/img/logoTag.jpeg"/>
+                    </image>
+                </ImageView>
+                <VBox alignment="CENTER_LEFT">
+                    <Label fx:id="lblTitulo" text="SYSTAG Repuestos Automotrices" style="-fx-font-family: 'Monospaced'; -fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #1a252f;"/>
+                    <Label text="Resumen del día — Dashboard principal" style="-fx-font-size: 13px; -fx-text-fill: #7f8c8d;"/>
+                </VBox>
+            </HBox>
+        </HBox>
+
+        <Separator/>
+
+        <!-- FILA KPIs -->
+        <HBox spacing="15">
+            <VBox spacing="6" HBox.hgrow="ALWAYS" styleClass="panel-claro" style="-fx-border-color: #d1d5db; -fx-border-radius: 8; -fx-padding: 14; -fx-background-radius: 8;">
+                <Label text="Ventas de hoy" style="-fx-font-size: 13px; -fx-text-fill: #7f8c8d;"/>
+                <Label fx:id="lblVentasHoy" text="0.00" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #27ae60;"/>
+            </VBox>
+            <VBox spacing="6" HBox.hgrow="ALWAYS" styleClass="panel-claro" style="-fx-border-color: #d1d5db; -fx-border-radius: 8; -fx-padding: 14; -fx-background-radius: 8;">
+                <Label text="Facturas emitidas" style="-fx-font-size: 13px; -fx-text-fill: #7f8c8d;"/>
+                <Label fx:id="lblFacturasEmitidas" text="0" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2980b9;"/>
+            </VBox>
+            <VBox spacing="6" HBox.hgrow="ALWAYS" styleClass="panel-claro" style="-fx-border-color: #d1d5db; -fx-border-radius: 8; -fx-padding: 14; -fx-background-radius: 8;">
+                <Label text="Productos vendidos" style="-fx-font-size: 13px; -fx-text-fill: #7f8c8d;"/>
+                <Label fx:id="lblProductosVendidos" text="0" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #e67e22;"/>
+            </VBox>
+            <VBox spacing="6" HBox.hgrow="ALWAYS" styleClass="panel-claro" style="-fx-border-color: #d1d5db; -fx-border-radius: 8; -fx-padding: 14; -fx-background-radius: 8;">
+                <Label text="Clientes atendidos" style="-fx-font-size: 13px; -fx-text-fill: #7f8c8d;"/>
+                <Label fx:id="lblClientesAtendidos" text="0" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #8e44ad;"/>
+            </VBox>
+        </HBox>
+
+        <!-- GRÁFICO DE VENTAS -->
+        <VBox spacing="5" styleClass="panel-claro" style="-fx-border-color: #d1d5db; -fx-border-radius: 8; -fx-padding: 10; -fx-background-radius: 8;">
+            <Label text="GRÁFICO DE VENTAS (Últimos 30 días)" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+            <BarChart fx:id="chartVentas" animated="true" prefHeight="280">
+                <xAxis>
+                    <CategoryAxis label="Fecha"/>
+                </xAxis>
+                <yAxis>
+                    <NumberAxis label="Valor ($)" autoRanging="true"/>
+                </yAxis>
+            </BarChart>
+        </VBox>
+
+        <!-- PRODUCTOS CON STOCK BAJO -->
+        <VBox spacing="8" styleClass="panel-claro" style="-fx-border-color: #d1d5db; -fx-border-radius: 8; -fx-padding: 12; -fx-background-radius: 8;">
+            <Label text="Productos con stock bajo" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #c0392b;"/>
+            <VBox fx:id="listaStockBajo" spacing="4"/>
+        </VBox>
+
+    </VBox>
+</ScrollPane>

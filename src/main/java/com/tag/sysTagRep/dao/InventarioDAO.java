@@ -354,6 +354,31 @@ public class InventarioDAO {
         }
     }
 
+    public List<Inventario> listarStockBajo(int umbral) {
+        List<Inventario> lista = new ArrayList<>();
+        String sql = "SELECT i.*, p.nombre as nombre_proveedor, g.nombre as nombre_grupo, m.nombre as nombre_marca, COALESCE(ub.codigo_ubicacion, u.nombre) as nombre_ubicacion " +
+                     "FROM inventario i " +
+                     "LEFT JOIN proveedor p ON p.id = i.proveedor_id " +
+                     "LEFT JOIN grupo g ON g.id = i.grupo_id " +
+                     "LEFT JOIN marca m ON m.id = i.marca_id " +
+                     "LEFT JOIN ubicacion_percha u ON u.id = i.ubicacion_percha_id " +
+                     "LEFT JOIN (SELECT id_producto, STRING_AGG(codigo_ubicacion, ', ' ORDER BY codigo_ubicacion) AS codigo_ubicacion FROM ubicacion WHERE id_producto IS NOT NULL GROUP BY id_producto) ub ON ub.id_producto = i.id " +
+                     "WHERE i.estado=true AND i.cantidad < ? ORDER BY i.cantidad ASC";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, umbral);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Inventario v = new Inventario();
+                mapearInventario(rs, v);
+                lista.add(v);
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Error en operacion de InventarioDAO", e);
+        }
+        return lista;
+    }
+
     public List<Inventario> listarActivosConStock() {
         List<Inventario> lista = new ArrayList<>();
         String sql = "SELECT i.*, p.nombre as nombre_proveedor, g.nombre as nombre_grupo, m.nombre as nombre_marca, COALESCE(ub.codigo_ubicacion, u.nombre) as nombre_ubicacion " +

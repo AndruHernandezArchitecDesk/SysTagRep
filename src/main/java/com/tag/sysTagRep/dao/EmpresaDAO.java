@@ -11,6 +11,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EmpresaDAO {
+    public Empresa obtenerPorId(int id) {
+        String sql = "SELECT * FROM empresa WHERE id = ?";
+        try (Connection con = new DatabaseConnection().getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapear(rs);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public List<Empresa> listar() {
         List<Empresa> lista = new ArrayList<>();
         String sql = "SELECT * FROM empresa WHERE estado = true ORDER BY id";
@@ -20,20 +34,7 @@ public class EmpresaDAO {
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-                Empresa e = new Empresa();
-                e.setId(rs.getInt("id"));
-                e.setRuc(rs.getString("ruc"));
-                e.setRazonSocial(rs.getString("razon_social"));
-                e.setSucursal(rs.getString("sucursal"));
-                e.setDireccionCallePrincipal(rs.getString("direccion_calle_principal"));
-                e.setDireccionCalleSecundaria(rs.getString("direccion_calle_secundaria"));
-                e.setTelefono(rs.getString("telefono"));
-                e.setCelular(rs.getString("celular"));
-                e.setCorreo(rs.getString("correo"));
-                e.setLogoUrl(rs.getString("logo_url"));
-                e.setAgenteRetencion(rs.getString("agente_retencion"));
-                e.setResolucion(rs.getString("resolucion"));
-                lista.add(e);
+                lista.add(mapear(rs));
             }
 
         } catch (SQLException e) {
@@ -41,5 +42,23 @@ public class EmpresaDAO {
         }
 
         return lista;
+    }
+
+    private Empresa mapear(ResultSet rs) throws SQLException {
+        Empresa e = new Empresa();
+        e.setId(rs.getInt("id"));
+        e.setRuc(rs.getString("ruc"));
+        e.setRazonSocial(rs.getString("razon_social"));
+        e.setSucursal(rs.getString("sucursal"));
+        e.setDireccionCallePrincipal(rs.getString("direccion_calle_principal"));
+        e.setDireccionCalleSecundaria(rs.getString("direccion_calle_secundaria"));
+        e.setTelefono(rs.getString("telefono"));
+        e.setCelular(rs.getString("celular"));
+        e.setCorreo(rs.getString("correo"));
+        e.setLogoUrl(rs.getString("logo_url"));
+        e.setAgenteRetencion(rs.getString("agente_retencion"));
+        e.setResolucion(rs.getString("resolucion"));
+        e.setEstado(rs.getBoolean("estado"));
+        return e;
     }
 }
