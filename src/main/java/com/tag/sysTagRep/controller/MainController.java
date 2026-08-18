@@ -292,11 +292,7 @@ public class MainController implements Initializable {
             logDAO.guardar("MainController", "cargarVista", detalle, e);
             String rutaArchivo;
             try {
-                String base = System.getProperty("user.dir");
-                if (base == null || base.isBlank()) {
-                    base = System.getProperty("user.home");
-                }
-                java.nio.file.Path dir = java.nio.file.Paths.get(base, "systagrep-errors");
+                java.nio.file.Path dir = obtenerDirectorioBase().resolve("systagrep-errors");
                 java.nio.file.Files.createDirectories(dir);
                 String timestamp = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
                 rutaArchivo = dir.resolve("error-" + timestamp + ".txt").toString();
@@ -317,6 +313,28 @@ public class MainController implements Initializable {
                  alert.showAndWait();
              });
          }
+     }
+
+     private java.nio.file.Path obtenerDirectorioBase() {
+         try {
+             java.security.CodeSource cs = MainController.class.getProtectionDomain().getCodeSource();
+             if (cs != null && cs.getLocation() != null) {
+                 java.nio.file.Path loc = java.nio.file.Paths.get(cs.getLocation().toURI());
+                 if (java.nio.file.Files.isRegularFile(loc)) {
+                     java.nio.file.Path padre = loc.getParent();
+                     if (padre != null && "app".equals(padre.getFileName().toString())) {
+                         return padre.getParent();
+                     }
+                     return padre;
+                 }
+             }
+         } catch (Exception ignored) {
+         }
+         String base = System.getProperty("user.dir");
+         if (base == null || base.isBlank()) {
+             base = System.getProperty("user.home");
+         }
+         return java.nio.file.Paths.get(base);
      }
 
      private void aplicarMayusculas(Node nodo) {

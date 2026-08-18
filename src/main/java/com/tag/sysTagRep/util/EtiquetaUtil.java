@@ -22,6 +22,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import org.w3c.dom.Element;
 
 public class EtiquetaUtil {
@@ -64,7 +66,7 @@ public class EtiquetaUtil {
         } catch (Exception ignored) {}
 
         g.setColor(Color.BLACK);
-        g.setFont(new Font("SansSerif", Font.BOLD, 26));
+        g.setFont(new Font("SansSerif", Font.BOLD, 24));
         g.drawString("TAG REPUESTOS AUTOMOTRICES", MARGIN + LOGO_SIZE + 4, y + LOGO_SIZE - 5);
 
         String codigo = item.getCodigo() != null ? item.getCodigo() : "";
@@ -94,7 +96,7 @@ public class EtiquetaUtil {
         int rightX = WIDTH_PX - MARGIN;
 
         if (!codigo.trim().isEmpty()) {
-            g.setFont(new Font("SansSerif", Font.PLAIN, 25));
+            g.setFont(new Font("SansSerif", Font.PLAIN, 23));
             g.drawString(codigo, MARGIN, y + 8);
             y += 30;
         }
@@ -103,29 +105,27 @@ public class EtiquetaUtil {
                 ? cifrarPrecio(item.getPrecioVenta().setScale(2, java.math.RoundingMode.HALF_UP).toString())
                 : "";
 
-        g.setFont(new Font("SansSerif", Font.PLAIN, 22));
-        if (descripcion.length() > 40) {
-            String line1 = descripcion.substring(0, 40);
-            g.drawString(line1, MARGIN, y + 6);
-            y += 28;
-
-            String line2 = descripcion.substring(40);
-            if (line2.length() > 40) {
-                line2 = line2.substring(0, 40) + "...";
-            }
-            g.drawString(line2, MARGIN, y + 6);
-            g.drawString(precioStr, rightX - g.getFontMetrics().stringWidth(precioStr), y + 6);
-            y += 28;
+        g.setFont(new Font("SansSerif", Font.PLAIN, 20));
+        int precioWidth = precioStr.isEmpty() ? 0 : g.getFontMetrics().stringWidth(precioStr);
+        int descMaxWidth = rightX - MARGIN - precioWidth - 8;
+        List<String> lineas = partirTexto(g, descripcion, descMaxWidth, 3);
+        if (lineas.isEmpty()) {
+            g.drawString(precioStr, rightX - precioWidth, y + 6);
+            y += 27;
         } else {
-            g.drawString(descripcion, MARGIN, y + 6);
-            g.drawString(precioStr, rightX - g.getFontMetrics().stringWidth(precioStr), y + 6);
-            y += 28;
+            for (int i = 0; i < lineas.size(); i++) {
+                g.drawString(lineas.get(i), MARGIN, y + 6);
+                if (i == lineas.size() - 1) {
+                    g.drawString(precioStr, rightX - precioWidth, y + 6);
+                }
+                y += 27;
+            }
         }
 
-        g.setFont(new Font("SansSerif", Font.PLAIN, 22));
+        g.setFont(new Font("SansSerif", Font.PLAIN, 20));
         g.drawString("Fecha: " + fechaStr, MARGIN, y + 5);
 
-        g.setFont(new Font("SansSerif", Font.PLAIN, 21));
+        g.setFont(new Font("SansSerif", Font.PLAIN, 19));
         String ubicText = "Ubic: " + ubicacion;
         g.drawString(ubicText, rightX - g.getFontMetrics().stringWidth(ubicText), y + 5);
 
@@ -142,6 +142,48 @@ public class EtiquetaUtil {
             e.printStackTrace();
             return null;
         }
+    }
+
+    private static List<String> partirTexto(Graphics2D g, String texto, int maxWidth, int maxLineas) {
+        List<String> lineas = new ArrayList<>();
+        if (texto == null || texto.trim().isEmpty()) {
+            return lineas;
+        }
+        FontMetrics fm = g.getFontMetrics();
+        String[] palabras = texto.trim().split("\\s+");
+        StringBuilder actual = new StringBuilder();
+        boolean truncado = false;
+        for (String palabra : palabras) {
+            String prueba = actual.length() == 0 ? palabra : actual + " " + palabra;
+            if (fm.stringWidth(prueba) <= maxWidth) {
+                actual.setLength(0);
+                actual.append(prueba);
+            } else {
+                if (actual.length() > 0) {
+                    if (lineas.size() == maxLineas - 1) {
+                        truncado = true;
+                        break;
+                    }
+                    lineas.add(actual.toString());
+                    actual.setLength(0);
+                }
+                actual.append(palabra);
+            }
+        }
+        if (truncado) {
+            lineas.add(conElipsis(fm, actual.toString(), maxWidth));
+        } else if (actual.length() > 0) {
+            lineas.add(actual.toString());
+        }
+        return lineas;
+    }
+
+    private static String conElipsis(FontMetrics fm, String texto, int maxWidth) {
+        String res = texto;
+        while (!res.isEmpty() && fm.stringWidth(res + "...") > maxWidth) {
+            res = res.substring(0, res.length() - 1);
+        }
+        return res.isEmpty() ? "..." : res + "...";
     }
 
     private static void escribirJpgConDpi(BufferedImage img, File outFile) throws Exception {

@@ -36,7 +36,7 @@ public class FacturaProveedorDAO {
                 ps.setBigDecimal(9, l.getIva());
                 ps.setInt(10, l.getCantidad());
                 ps.setBigDecimal(11, l.getTotalLinea());
-                ps.setObject(12, LocalDateTime.now());
+                ps.setObject(12, l.getFecha() != null ? l.getFecha() : LocalDateTime.now());
                 ps.addBatch();
             }
             ps.executeBatch();

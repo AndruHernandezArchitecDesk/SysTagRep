@@ -9,6 +9,7 @@ import com.tag.sysTagRep.dao.UbicacionDetalleDAO;
 import com.tag.sysTagRep.model.FacturaProveedor;
 import com.tag.sysTagRep.model.Inventario;
 import com.tag.sysTagRep.util.SortTable;
+import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -90,7 +91,7 @@ public class FacturasIngresadasController implements Initializable {
             }
         });
 
-        colDetCodigo.setCellValueFactory(new PropertyValueFactory<>("codigo"));
+        colDetCodigo.setCellValueFactory(cd -> new ReadOnlyStringWrapper(cd.getValue().getCodigoManual()));
         colDetDescripcion.setCellValueFactory(new PropertyValueFactory<>("descripcion"));
         colDetCantidad.setCellValueFactory(new PropertyValueFactory<>("cantidad"));
         colDetCosto.setCellValueFactory(new PropertyValueFactory<>("costoSinIVA"));
@@ -179,7 +180,7 @@ public class FacturasIngresadasController implements Initializable {
                 filtrados.setPredicate(p -> true);
             } else {
                 String texto = val.toLowerCase();
-                filtrados.setPredicate(l -> (l.getCodigo() + " " + l.getDescripcion()).toLowerCase().contains(texto));
+                filtrados.setPredicate(l -> (l.getCodigo() + " " + l.getCodigoManual() + " " + l.getDescripcion()).toLowerCase().contains(texto));
             }
         });
     }
@@ -235,7 +236,7 @@ public class FacturasIngresadasController implements Initializable {
                 Row row = shDetalle.createRow(rowIdx++);
                 row.createCell(0).setCellValue(l.getNumeroFactura());
                 row.createCell(1).setCellValue(l.getProveedor());
-                row.createCell(2).setCellValue(l.getCodigo());
+                row.createCell(2).setCellValue(l.getCodigoManual());
                 row.createCell(3).setCellValue(l.getDescripcion());
                 row.createCell(4).setCellValue(l.getCantidad());
                 row.createCell(5).setCellValue(l.getCostoSinIVA() != null ? l.getCostoSinIVA().doubleValue() : 0);

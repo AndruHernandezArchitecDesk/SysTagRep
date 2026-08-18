@@ -168,7 +168,7 @@ public class InventarioDAO {
             ps.setInt(5, inv.getCantidad());
             if (inv.getUbicacionPerchaId() > 0) ps.setInt(6, inv.getUbicacionPerchaId()); else ps.setNull(6, java.sql.Types.INTEGER);
             ps.setBigDecimal(7, inv.getPrecioVenta());
-            ps.setObject(8, LocalDateTime.now());
+            ps.setObject(8, inv.getFecha_ingreso() != null ? inv.getFecha_ingreso() : LocalDateTime.now());
             ps.setObject(9, inv.getEstado() != null ? inv.getEstado() : true);
             ps.setString(10, inv.getTagCodigo());
             ps.setString(11, inv.getCodigo());

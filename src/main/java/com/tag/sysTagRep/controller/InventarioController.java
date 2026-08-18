@@ -180,22 +180,18 @@ public class InventarioController implements Initializable {
             private final Button btnActualizar = new Button();
             private final Button btnEliminar = new Button();
             private final Button btnEtiqueta = new Button();
+            private final FontIcon iconEtiqueta = new FontIcon(FontAwesomeSolid.TAG);
             private final HBox hbox = new HBox(10);
             {
                 FontIcon iconEdit = new FontIcon(FontAwesomeSolid.EDIT); iconEdit.setIconSize(16); iconEdit.setIconColor(Color.DODGERBLUE);
                 FontIcon iconTrash = new FontIcon(FontAwesomeSolid.TRASH); iconTrash.setIconSize(16); iconTrash.setIconColor(Color.RED);
-                FontIcon iconEtiqueta = new FontIcon(FontAwesomeSolid.TAG); iconEtiqueta.setIconSize(16); iconEtiqueta.setIconColor(Color.MEDIUMSEAGREEN);
+                iconEtiqueta.setIconSize(16); iconEtiqueta.setIconColor(Color.MEDIUMSEAGREEN);
                 btnActualizar.setGraphic(iconEdit); btnEliminar.setGraphic(iconTrash); btnEtiqueta.setGraphic(iconEtiqueta);
                 btnActualizar.setStyle("-fx-background-color: transparent;"); btnEliminar.setStyle("-fx-background-color: transparent;"); btnEtiqueta.setStyle("-fx-background-color: transparent;");
                 hbox.setAlignment(Pos.CENTER); hbox.getChildren().addAll(btnActualizar, btnEliminar, btnEtiqueta);
                 btnActualizar.setOnAction(e -> abrirModalEdicion(getTableView().getItems().get(getIndex())));
                 btnEliminar.setOnAction(e -> eliminar(getTableView().getItems().get(getIndex())));
-                btnEtiqueta.setOnAction(e -> {
-                    Inventario item = getTableView().getItems().get(getIndex());
-                    if (item.getUbicacionPercha() != null && !item.getUbicacionPercha().trim().isEmpty()) {
-                        generarEtiqueta(item);
-                    }
-                });
+                btnEtiqueta.setOnAction(e -> generarEtiqueta(getTableView().getItems().get(getIndex())));
             }
             @Override protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
@@ -205,8 +201,8 @@ public class InventarioController implements Initializable {
                     int idx = getIndex();
                     if (idx >= 0 && idx < getTableView().getItems().size()) {
                         Inventario inv = getTableView().getItems().get(idx);
-                        btnEtiqueta.setVisible(inv.getUbicacionPercha() != null && !inv.getUbicacionPercha().trim().isEmpty());
-                        btnEtiqueta.setManaged(inv.getUbicacionPercha() != null && !inv.getUbicacionPercha().trim().isEmpty());
+                        boolean ubicado = inv.getUbicacionPercha() != null && !inv.getUbicacionPercha().trim().isEmpty();
+                        iconEtiqueta.setIconColor(ubicado ? Color.MEDIUMSEAGREEN : Color.RED);
                     }
                     setGraphic(hbox);
                 }

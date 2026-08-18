@@ -21,6 +21,7 @@ import com.tag.sysTagRep.dao.LogDAO;
 import com.tag.sysTagRep.util.ComboFilter;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -375,7 +376,7 @@ public class IngresoMercaderiaController implements Initializable {
             return true;
         });
 
-        colCodigo.setCellValueFactory(new PropertyValueFactory<>("codigo"));
+        colCodigo.setCellValueFactory(cd -> new ReadOnlyStringWrapper(cd.getValue().getCodigoManual()));
         colDescripcion.setCellValueFactory(new PropertyValueFactory<>("descripcion"));
         colCantidad.setCellValueFactory(new PropertyValueFactory<>("cantidad"));
         colCosto.setCellValueFactory(new PropertyValueFactory<>("costoSinIVA"));
@@ -497,6 +498,7 @@ public class IngresoMercaderiaController implements Initializable {
                 linea.setIva(BigDecimal.valueOf(fp.getIva()));
                 linea.setCantidad(fp.getCantidad());
                 linea.setTotalLinea(BigDecimal.valueOf(fp.getTotalLinea()));
+                linea.setFecha(fecha);
                 lineasFactura.add(linea);
             }
             facturaProveedorDAO.insertar(lineasFactura);
