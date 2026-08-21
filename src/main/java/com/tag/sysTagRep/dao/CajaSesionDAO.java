@@ -73,13 +73,14 @@ public class CajaSesionDAO {
         return lista;
     }
 
-    public boolean cerrar(int id, BigDecimal montoFisico, String observaciones) {
+    public boolean cerrar(int id, BigDecimal montoFisico, BigDecimal diferencia, String observaciones) {
         String sql = "UPDATE caja_sesion SET estado = 'CERRADA', fecha_cierre = NOW(), monto_fisico = ?, diferencia = ?, observaciones = ? WHERE id = ?";
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setBigDecimal(1, montoFisico);
-            ps.setString(2, observaciones);
-            ps.setInt(3, id);
+            ps.setBigDecimal(2, diferencia);
+            ps.setString(3, observaciones);
+            ps.setInt(4, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Error en CajaSesionDAO.cerrar", e);

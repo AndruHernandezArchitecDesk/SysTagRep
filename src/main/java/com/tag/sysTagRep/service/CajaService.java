@@ -35,7 +35,7 @@ public class CajaService {
         BigDecimal totalMovimientos = sesionDAO.calcularTotalMovimientos(sesionId);
         BigDecimal esperado = s.getMontoInicial().add(totalMovimientos);
         BigDecimal diferencia = montoFisico.subtract(esperado);
-        return sesionDAO.cerrar(sesionId, montoFisico, (observaciones != null ? observaciones : "") + " | Diferencia: " + diferencia);
+        return sesionDAO.cerrar(sesionId, montoFisico, diferencia, observaciones != null ? observaciones : "");
     }
 
     public int registrarMovimiento(int sesionId, String tipo, BigDecimal monto, String descripcion, int usuarioId) {

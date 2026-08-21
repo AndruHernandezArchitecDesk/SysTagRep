@@ -82,6 +82,7 @@ public class CajaController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        logDAO.guardar("CajaController", "initialize", "INICIO CajaController - sesionActual=" + sesionActual);
         cmbTipoMov.getItems().addAll("INGRESO", "EGRESO", "RETIRO", "AJUSTE");
         cmbTipoMov.setValue("INGRESO");
         configurarTablaMovimientos();
@@ -89,6 +90,7 @@ public class CajaController implements Initializable {
         dpDesde.setValue(LocalDate.now());
         dpHasta.setValue(LocalDate.now());
         cargarEstado();
+        logDAO.guardar("CajaController", "initialize", "FIN CajaController - sesionActual=" + sesionActual);
     }
 
     private void configurarTablaMovimientos() {
@@ -306,7 +308,11 @@ public class CajaController implements Initializable {
 
     @FXML
     private void abrirCierreCaja() {
-        if (sesionActual == null) return;
+        logDAO.guardar("CajaController", "abrirCierreCaja", "ENTRO al metodo - sesionActual=" + sesionActual);
+        if (sesionActual == null) {
+            logDAO.guardar("CajaController", "abrirCierreCaja", "sesionActual es null, saliendo");
+            return;
+        }
         TextInputDialog dialog = new TextInputDialog();
         dialog.setTitle("Cerrar Caja");
         dialog.setHeaderText("Sesión #" + sesionActual.getId() + " — Arqueo de caja");
@@ -328,10 +334,19 @@ public class CajaController implements Initializable {
                         montoFisico.setScale(2, BigDecimal.ROUND_HALF_UP),
                         diferencia.setScale(2, BigDecimal.ROUND_HALF_UP)));
                 if (confirm.showAndWait().orElse(ButtonType.NO) == ButtonType.YES) {
-                    boolean ok = cajaService.cerrarCaja(sesionActual.getId(), montoFisico, "Arqueo automático");
-                    if (ok) {
-                        new Alert(Alert.AlertType.INFORMATION, "Caja cerrada correctamente").showAndWait();
-                        cargarEstado();
+                    try {
+                        boolean ok = cajaService.cerrarCaja(sesionActual.getId(), montoFisico, "Arqueo automático");
+                        if (ok) {
+                            logDAO.guardar("CajaController", "abrirCierreCaja", "Caja cerrada OK - Sesion #" + sesionActual.getId() + " - Esperado=" + esperado + " - Fisico=" + montoFisico + " - Diferencia=" + diferencia);
+                            new Alert(Alert.AlertType.INFORMATION, "Caja cerrada correctamente").showAndWait();
+                            cargarEstado();
+                        } else {
+                            logDAO.guardar("CajaController", "abrirCierreCaja", "Fallo cerrarCaja - Sesion #" + sesionActual.getId() + " - ok=false");
+                            new Alert(Alert.AlertType.ERROR, "No se pudo cerrar la caja. Ver logs.").showAndWait();
+                        }
+                    } catch (Exception ex) {
+                        logDAO.guardar("CajaController", "abrirCierreCaja", "Excepcion cerrando sesion #" + sesionActual.getId() + ": " + ex.getMessage(), ex);
+                        new Alert(Alert.AlertType.ERROR, "Error al cerrar: " + ex.getMessage()).showAndWait();
                     }
                 }
             } catch (NumberFormatException ex) {
