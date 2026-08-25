@@ -4,6 +4,7 @@ public class Empresa {
     private int id;
     private String ruc;
     private String razonSocial;
+    private String titulo;
     private String sucursal;
     private String direccionCallePrincipal;
     private String direccionCalleSecundaria;
@@ -51,6 +52,14 @@ public class Empresa {
 
     public void setRazonSocial(String razonSocial) {
         this.razonSocial = razonSocial;
+    }
+
+    public String getTitulo() {
+        return titulo;
+    }
+
+    public void setTitulo(String titulo) {
+        this.titulo = titulo;
     }
 
     public String getSucursal() {

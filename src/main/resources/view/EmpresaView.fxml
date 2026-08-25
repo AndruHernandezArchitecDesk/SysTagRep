@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.tag.sysTagRep.controller.EmpresaController"
+            prefHeight="500.0" prefWidth="600.0"
+            style="-fx-padding: 10;">
+
+    <top>
+        <HBox spacing="10" alignment="CENTER_LEFT" styleClass="header" style="-fx-padding: 5 0 10 0;">
+            <Label text="Configuración de Empresa" styleClass="titulo">
+                <graphic><FontIcon iconLiteral="fas-building" styleClass="titulo-icono"/></graphic>
+            </Label>
+        </HBox>
+    </top>
+
+    <center>
+        <ScrollPane fitToWidth="true" style="-fx-padding: 0;">
+            <VBox spacing="12" style="-fx-padding: 10;">
+                <TitledPane text="Datos de la Empresa" collapsible="false" styleClass="section-card" style="-fx-font-weight: bold; -fx-padding: 8;">
+                    <content>
+                        <VBox spacing="8" style="-fx-padding: 5;">
+                            <HBox spacing="6" alignment="CENTER_LEFT">
+                                <StackPane prefWidth="20"><FontIcon iconLiteral="fas-building" iconSize="14"/></StackPane>
+                                <Label text="Razón Social" prefWidth="120"/>
+                                <TextField fx:id="txtRazonSocial" HBox.hgrow="ALWAYS" prefHeight="36"/>
+                            </HBox>
+                            <HBox spacing="6" alignment="CENTER_LEFT">
+                                <StackPane prefWidth="20"><FontIcon iconLiteral="fas-heading" iconSize="14"/></StackPane>
+                                <Label text="Título" prefWidth="120"/>
+                                <TextField fx:id="txtTitulo" HBox.hgrow="ALWAYS" prefHeight="36"/>
+                            </HBox>
+                            <HBox spacing="6" alignment="CENTER_LEFT">
+                                <StackPane prefWidth="20"><FontIcon iconLiteral="fas-phone" iconSize="14"/></StackPane>
+                                <Label text="Teléfono" prefWidth="120"/>
+                                <TextField fx:id="txtTelefono" HBox.hgrow="ALWAYS" prefHeight="36"/>
+                            </HBox>
+                            <HBox spacing="6" alignment="CENTER_LEFT">
+                                <StackPane prefWidth="20"><FontIcon iconLiteral="fas-envelope" iconSize="14"/></StackPane>
+                                <Label text="Correo" prefWidth="120"/>
+                                <TextField fx:id="txtCorreo" HBox.hgrow="ALWAYS" prefHeight="36"/>
+                            </HBox>
+                            <HBox spacing="6" alignment="CENTER_LEFT">
+                                <StackPane prefWidth="20"><FontIcon iconLiteral="fas-map-marker-alt" iconSize="14"/></StackPane>
+                                <Label text="Dirección" prefWidth="120"/>
+                                <TextField fx:id="txtDireccion" HBox.hgrow="ALWAYS" prefHeight="36"/>
+                            </HBox>
+                            <HBox spacing="6" alignment="CENTER_LEFT">
+                                <StackPane prefWidth="20"><FontIcon iconLiteral="fas-building" iconSize="14"/></StackPane>
+                                <Label text="Sucursal" prefWidth="120"/>
+                                <TextField fx:id="txtSucursal" HBox.hgrow="ALWAYS" prefHeight="36"/>
+                            </HBox>
+                            <HBox spacing="6" alignment="CENTER_LEFT">
+                                <StackPane prefWidth="20"><FontIcon iconLiteral="fas-image" iconSize="14"/></StackPane>
+                                <Label text="Logo" prefWidth="120"/>
+                                <TextField fx:id="txtLogoUrl" HBox.hgrow="ALWAYS" prefHeight="36"/>
+                                <Button text="Cambiar" onAction="#cambiarLogo" styleClass="btn-small"/>
+                            </HBox>
+                        </VBox>
+                    </content>
+                </TitledPane>
+            </VBox>
+        </ScrollPane>
+    </center>
+
+    <bottom>
+        <HBox spacing="10" alignment="CENTER_RIGHT" style="-fx-padding: 10;">
+            <Button fx:id="btnNuevo" text="Nuevo" onAction="#nuevo" styleClass="btn-opcion"/>
+            <Button fx:id="btnGuardar" text="Guardar Cambios" onAction="#guardar" styleClass="btn-guardar"/>
+            <Button fx:id="btnCancelar" text="Cancelar" onAction="#cancelar" styleClass="btn-cancelar"/>
+        </HBox>
+    </bottom>
+</BorderPane>
