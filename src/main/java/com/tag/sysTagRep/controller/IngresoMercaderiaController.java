@@ -671,16 +671,19 @@ public class IngresoMercaderiaController implements Initializable {
             pnlCredito.setManaged(false);
         }
 
-        for (FacturaProveedor l : lineas) {
+        for (int i = 0; i < lineas.size(); i++) {
+            FacturaProveedor l = lineas.get(i);
+            Inventario inv = inventarios.get(i);
             BigDecimal costo = l.getCostoSinIVA() != null ? l.getCostoSinIVA() : BigDecimal.ZERO;
             BigDecimal iva = l.getIva() != null ? l.getIva() : BigDecimal.ZERO;
+            BigDecimal precioVenta = inv.getPrecioVenta() != null ? inv.getPrecioVenta() : costo.add(iva);
             FilaProducto fp = new FilaProducto(
                     l.getCodigo() != null ? l.getCodigo() : "",
                     l.getCodigoManual() != null ? l.getCodigoManual() : "",
                     l.getDescripcion() != null ? l.getDescripcion() : "",
                     l.getGrupoId(), l.getMarcaId(),
                     costo, l.getCantidad(),
-                    costo.add(iva), 40
+                    precioVenta, 40
             );
             fp.setIva(iva.doubleValue());
             fp.setTotalLinea(l.getTotalLinea() != null ? l.getTotalLinea().doubleValue() : 0);
@@ -796,9 +799,15 @@ public class IngresoMercaderiaController implements Initializable {
         cmbFormaPago.getSelectionModel().selectFirst();
         cmbMesesPlazo.getSelectionModel().selectFirst();
         cmbInteres.getSelectionModel().selectFirst();
-        listaProductos.clear();
-        lblTotalFactura.setText("$ 0.00");
-
+// NO limpiar listaProductos - los productos ya fueron guardados en BD
+// solo limpiar campos de entrada para nuevo producto
+        txtDescripcion.clear();
+        txtCostoSinIVA.clear();
+        txtPrecioVenta.clear();
+        spCantidad.getValueFactory().setValue(1);
+        cmbGanancia.setValue(40);
+        calcularTotalFactura();
+        tblProductos.setItems(listaProductos); // refrescar tabla con lo que hay
         tblProductos.setVisible(true);
         tblProductos.setManaged(true);
         btnAgregar.setVisible(true);

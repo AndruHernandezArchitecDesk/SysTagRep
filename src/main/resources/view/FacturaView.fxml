@@ -91,8 +91,10 @@
                         <columns>
                             <TableColumn fx:id="colInvCodigo" text="Código" minWidth="100" prefWidth="120"/>
                             <TableColumn fx:id="colInvDescripcion" text="Descripción" minWidth="200"/>
+                            <TableColumn fx:id="colInvMarca" text="Marca" minWidth="120" prefWidth="140"/>
                             <TableColumn fx:id="colInvStock" text="Stock" minWidth="80" prefWidth="100"/>
                             <TableColumn fx:id="colInvPrecio" text="Precio Unitario" minWidth="100" prefWidth="120"/>
+                            <TableColumn fx:id="colInvUbicacion" text="Ubicación" minWidth="150" prefWidth="180"/>
                         </columns>
                     </TableView>
                 </VBox>

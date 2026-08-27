@@ -62,8 +62,10 @@ public class NotaVentaController implements Initializable {
     @FXML private TextField txtBuscarProducto;
     @FXML private TableView<Inventario> tblInventarioBusqueda;
     @FXML private TableColumn<Inventario, String> colInvCodigo, colInvDescripcion;
+    @FXML private TableColumn<Inventario, String> colInvMarca;
     @FXML private TableColumn<Inventario, Integer> colInvStock;
     @FXML private TableColumn<Inventario, BigDecimal> colInvPrecio;
+    @FXML private TableColumn<Inventario, String> colInvUbicacion;
 
     // Tabla Detalle
     @FXML private TableView<DetalleVenta> tblDetalle;
@@ -184,8 +186,10 @@ public class NotaVentaController implements Initializable {
     private void iniciarTablaInventario() {
         colInvCodigo.setCellValueFactory(new PropertyValueFactory<>("codigo"));
         colInvDescripcion.setCellValueFactory(new PropertyValueFactory<>("descripcion"));
+        colInvMarca.setCellValueFactory(new PropertyValueFactory<>("marca"));
         colInvStock.setCellValueFactory(new PropertyValueFactory<>("cantidad"));
         colInvPrecio.setCellValueFactory(new PropertyValueFactory<>("precioVenta"));
+        colInvUbicacion.setCellValueFactory(new PropertyValueFactory<>("ubicacionPercha"));
 
         listaInventario.setAll(daoInventario.listar());
         FilteredList<Inventario> filtradosProd = new FilteredList<>(listaInventario, p -> true);
