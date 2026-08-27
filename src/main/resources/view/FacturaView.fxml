@@ -132,14 +132,15 @@
                             <Label fx:id="lblSubtotal" text="0.00" prefWidth="100" alignment="CENTER_RIGHT"/>
                         </HBox>
                         <HBox alignment="CENTER_RIGHT" spacing="10">
-                            <Label text="Descuento:" style="-fx-font-weight: bold;"/>
-                            <ComboBox fx:id="cmbDescuento" prefWidth="110"/>
-                            <Label text="-" prefWidth="10"/>
-                            <Label fx:id="lblDescuento" text="0.00" prefWidth="100" alignment="CENTER_RIGHT"/>
-                        </HBox>
-                        <HBox alignment="CENTER_RIGHT" spacing="10">
                             <Label text="IVA (15%):" style="-fx-font-weight: bold;"/>
                             <Label fx:id="lblIva" text="0.00" prefWidth="100" alignment="CENTER_RIGHT"/>
+                        </HBox>
+                        <HBox alignment="CENTER_RIGHT" spacing="10">
+                            <Label text="Descuento (valor fijo):" style="-fx-font-weight: bold;"/>
+                            <TextField fx:id="txtDescuento" prefWidth="110" promptText="0.00"/>
+                            <Label text="-" prefWidth="10"/>
+                            <Label fx:id="lblDescuento" text="0.00" prefWidth="100" alignment="CENTER_RIGHT" visible="false" managed="false"/>
+                            <ComboBox fx:id="cmbDescuento" prefWidth="110" visible="false" managed="false"/>
                         </HBox>
                         <Separator />
                         <HBox alignment="CENTER_RIGHT" spacing="10">

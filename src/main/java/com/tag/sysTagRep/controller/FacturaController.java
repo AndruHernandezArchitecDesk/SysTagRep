@@ -82,6 +82,7 @@ public class FacturaController implements Initializable {
     @FXML private TableColumn<FacturaDetalle, Void> colAcciones;
 
     @FXML private Label lblSubtotal, lblIva, lblDescuento, lblTotal;
+    @FXML private TextField txtDescuento;
     @FXML private ComboBox<String> cmbFormaPago;
     @FXML private ComboBox<String> cmbDescuento;
     @FXML private HBox pnlCredito;
@@ -184,17 +185,40 @@ public class FacturaController implements Initializable {
         for (int i = 0; i <= 100; i += 5) descuentos.add(String.valueOf(i));
         ComboFilter.habilitar(cmbDescuento, descuentos);
         cmbDescuento.setValue("0");
+        cmbDescuento.getEditor().setPromptText("0.00 valor fijo");
         cmbDescuento.valueProperty().addListener((obs, old, val) -> calcularTotales());
+        cmbDescuento.getEditor().textProperty().addListener((obs, old, val) -> calcularTotales());
+        cmbDescuento.getEditor().textProperty().addListener((obs, old, val) -> {
+            if (val != null && !val.matches("\\d*\\.?\\d*")) cmbDescuento.getEditor().setText(old);
+        });
+        if (txtDescuento != null) {
+            txtDescuento.setText("0.00");
+            txtDescuento.textProperty().addListener((obs, old, val) -> {
+                if (val != null && !val.matches("\\d*\\.?\\d*")) { txtDescuento.setText(old); return; }
+                calcularTotales();
+            });
+        }
     }
 
     private BigDecimal obtenerDescuentoPct() {
-        BigDecimal pct = AppConstants.CERO;
+        BigDecimal fijo = AppConstants.CERO;
         try {
-            pct = new BigDecimal(cmbDescuento.getValue() != null ? cmbDescuento.getValue() : "0");
+            String txt = null;
+            if (txtDescuento != null && txtDescuento.getText() != null && !txtDescuento.getText().trim().isEmpty()) txt = txtDescuento.getText().trim();
+            else if (cmbDescuento.getEditor() != null) txt = cmbDescuento.getEditor().getText();
+            if (txt != null && !txt.trim().isEmpty()) fijo = new BigDecimal(txt.trim());
+            else if (cmbDescuento.getValue() != null && !cmbDescuento.getValue().trim().isEmpty()) fijo = new BigDecimal(cmbDescuento.getValue().trim());
         } catch (NumberFormatException ignored) {
             LOGGER.log(Level.WARNING, "Descuento invalido, usando 0", ignored);
         }
-        return pct;
+        if (fijo.compareTo(AppConstants.CERO) < 0) fijo = AppConstants.CERO;
+        return fijo.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal obtenerDescuentoFijo(BigDecimal totalBruto) {
+        BigDecimal fijo = obtenerDescuentoPct();
+        if (fijo.compareTo(totalBruto) > 0) fijo = totalBruto;
+        return fijo;
     }
 
     private List<BigDecimal> distribuirDescuento(BigDecimal descuentoTotal, List<BigDecimal> bases) {
@@ -389,7 +413,7 @@ public class FacturaController implements Initializable {
         BigDecimal subtotal = itemsDetalle.stream().map(FacturaDetalle::getPrecioTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal iva = subtotal.multiply(AppConstants.IVA_RATE).setScale(2, RoundingMode.HALF_UP);
         BigDecimal totalBruto = subtotal.add(iva);
-        BigDecimal descuento = totalBruto.multiply(obtenerDescuentoPct()).divide(AppConstants.CIEN).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal descuento = obtenerDescuentoFijo(totalBruto);
         BigDecimal total = totalBruto.subtract(descuento).setScale(2, RoundingMode.HALF_UP);
 
         lblSubtotal.setText(subtotal.setScale(2, RoundingMode.HALF_UP).toString());
@@ -579,6 +603,7 @@ public class FacturaController implements Initializable {
 
         itemsDetalle.clear();
         tblDetalle.refresh();
+        if (txtDescuento != null) txtDescuento.setText("0.00");
         cmbDescuento.setValue("0");
         calcularTotales();
         cmbCliente.getSelectionModel().clearSelection();

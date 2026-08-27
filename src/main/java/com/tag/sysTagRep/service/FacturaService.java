@@ -315,9 +315,12 @@ public class FacturaService {
         }
     }
 
-    private BigDecimal calcularDescuento(BigDecimal totalBruto, BigDecimal descuentoPct) {
-        if (descuentoPct == null) descuentoPct = AppConstants.CERO;
-        return totalBruto.multiply(descuentoPct).divide(AppConstants.CIEN, 2, RoundingMode.HALF_UP);
+    private BigDecimal calcularDescuento(BigDecimal totalBruto, BigDecimal descuentoValorFijo) {
+        if (descuentoValorFijo == null) return AppConstants.CERO.setScale(2, RoundingMode.HALF_UP);
+        BigDecimal fijo = descuentoValorFijo.setScale(2, RoundingMode.HALF_UP);
+        if (fijo.compareTo(AppConstants.CERO) < 0) fijo = AppConstants.CERO;
+        if (fijo.compareTo(totalBruto) > 0) fijo = totalBruto.setScale(2, RoundingMode.HALF_UP);
+        return fijo;
     }
 
     private List<BigDecimal> distribuirDescuento(BigDecimal descuentoTotal, List<BigDecimal> bases) {

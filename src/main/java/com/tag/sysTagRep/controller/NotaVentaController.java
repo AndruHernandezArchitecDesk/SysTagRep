@@ -1,6 +1,7 @@
 package com.tag.sysTagRep.controller;
 
 import com.tag.sysTagRep.dao.ClienteDAO;
+import com.tag.sysTagRep.dao.ComprobanteTempDAO;
 import com.tag.sysTagRep.dao.EmpresaDAO;
 import com.tag.sysTagRep.dao.InventarioDAO;
 import com.tag.sysTagRep.dao.LogDAO;
@@ -28,6 +29,7 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Modality;
@@ -66,6 +68,7 @@ public class NotaVentaController implements Initializable {
     @FXML private TableColumn<Inventario, Integer> colInvStock;
     @FXML private TableColumn<Inventario, BigDecimal> colInvPrecio;
     @FXML private TableColumn<Inventario, String> colInvUbicacion;
+    @FXML private Button btnProductoTemporal;
 
     // Tabla Detalle
     @FXML private TableView<DetalleVenta> tblDetalle;
@@ -76,6 +79,7 @@ public class NotaVentaController implements Initializable {
 
     // Totales
     @FXML private Label lblSubtotal, lblIva, lblDescuento, lblTotal;
+    @FXML private TextField txtDescuento;
     @FXML private ComboBox<String> cmbFormaPago;
     @FXML private ComboBox<String> cmbDescuento;
     @FXML private HBox pnlCredito;
@@ -88,6 +92,7 @@ public class NotaVentaController implements Initializable {
     private final NotaVentaRegistroDAO daoNotaVentaRegistro = new NotaVentaRegistroDAO();
     private final SecuenciaDocumentoDAO secuenciaDAO = new SecuenciaDocumentoDAO();
     private final NotaVentaDetalleDAO daoNotaVentaDetalle = new NotaVentaDetalleDAO();
+    private final ComprobanteTempDAO daoComprobanteTemp = new ComprobanteTempDAO();
     private final CuentaPorCobrarDAO daoCuentaPorCobrar = new CuentaPorCobrarDAO();
     private final LogDAO logDAO = new LogDAO();
     private final HistorialProductoDAO historialProductoDAO = new HistorialProductoDAO();
@@ -146,7 +151,19 @@ public class NotaVentaController implements Initializable {
         for (int i = 0; i <= 100; i += 5) descuentos.add(String.valueOf(i));
         ComboFilter.habilitar(cmbDescuento, descuentos);
         cmbDescuento.setValue("0");
+        cmbDescuento.getEditor().setPromptText("0.00 valor fijo");
         cmbDescuento.valueProperty().addListener((obs, old, val) -> calcularTotales());
+        cmbDescuento.getEditor().textProperty().addListener((obs, old, val) -> calcularTotales());
+        cmbDescuento.getEditor().textProperty().addListener((obs, old, val) -> {
+            if (val != null && !val.matches("\\d*\\.?\\d*")) cmbDescuento.getEditor().setText(old);
+        });
+        if (txtDescuento != null) {
+            txtDescuento.setText("0.00");
+            txtDescuento.textProperty().addListener((obs, old, val) -> {
+                if (val != null && !val.matches("\\d*\\.?\\d*")) { txtDescuento.setText(old); return; }
+                calcularTotales();
+            });
+        }
     }
 
     private void cargarListaClientes() {
@@ -215,7 +232,35 @@ public class NotaVentaController implements Initializable {
         colCantidad.setCellValueFactory(new PropertyValueFactory<>("cantidad"));
         colPrecioUnitario.setCellValueFactory(new PropertyValueFactory<>("precioUnitario"));
         colPrecioTotal.setCellValueFactory(new PropertyValueFactory<>("precioTotal"));
-        
+
+        // Indicador temporal en codigo y descripcion
+        colCodigo.setCellFactory(col -> new TableCell<DetalleVenta, String>() {
+            @Override protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) { setText(null); setStyle(""); }
+                else {
+                    DetalleVenta d = getTableView().getItems().get(getIndex());
+                    if (d.getProductoId() == 0) {
+                        setText(item + " \u2022 TEMP");
+                        setStyle("-fx-text-fill: #e67e22; -fx-font-weight: bold;");
+                    } else { setText(item); setStyle(""); }
+                }
+            }
+        });
+        colDescripcion.setCellFactory(col -> new TableCell<DetalleVenta, String>() {
+            @Override protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) { setText(null); setStyle(""); }
+                else {
+                    DetalleVenta d = getTableView().getItems().get(getIndex());
+                    if (d.getProductoId() == 0) {
+                        setText(item + " [TEMPORAL]");
+                        setStyle("-fx-text-fill: #e67e22;");
+                    } else { setText(item); setStyle(""); }
+                }
+            }
+        });
+
         colAcciones.setCellFactory(param -> new TableCell<>() {
             private final Button btn = new Button();
             {
@@ -225,12 +270,20 @@ public class NotaVentaController implements Initializable {
             }
             @Override protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty) { setGraphic(null); } 
+                if (empty) { setGraphic(null); }
                 else { setGraphic(btn); setAlignment(Pos.CENTER); }
             }
         });
         colAcciones.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(null));
         tblDetalle.setItems(itemsDetalle);
+        tblDetalle.setRowFactory(tv -> new TableRow<DetalleVenta>() {
+            @Override protected void updateItem(DetalleVenta item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) setStyle("");
+                else if (item.getProductoId() == 0) setStyle("-fx-background-color: #fef9e7;");
+                else setStyle("");
+            }
+        });
     }
 
     @FXML
@@ -297,6 +350,77 @@ public class NotaVentaController implements Initializable {
         return stockTotal - cantidadEnDetalle;
     }
 
+    @FXML
+    private void mostrarModalProductoTemporal() {
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Producto Temporal (Fantasma)");
+        dialog.setHeaderText("Registrar producto que no está en inventario");
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setStyle("-fx-padding: 15;");
+
+        TextField txtCodigo = new TextField();
+        txtCodigo.setPromptText("Ej: TMP-001");
+        txtCodigo.textProperty().addListener((obs, old, val) -> { if (val != null && !val.equals(val.toUpperCase())) { txtCodigo.setText(val.toUpperCase()); }});
+        TextField txtDesc = new TextField();
+        txtDesc.setPromptText("Descripción");
+        txtDesc.textProperty().addListener((obs, old, val) -> { if (val != null && !val.equals(val.toUpperCase())) { txtDesc.setText(val.toUpperCase()); }});
+        TextField txtCant = new TextField("1");
+        txtCant.setPromptText("1");
+        TextField txtPrecio = new TextField();
+        txtPrecio.setPromptText("0.00");
+
+        grid.add(new Label("Código*:"), 0, 0); grid.add(txtCodigo, 1, 0);
+        grid.add(new Label("Descripción*:"), 0, 1); grid.add(txtDesc, 1, 1);
+        grid.add(new Label("Cantidad*:"), 0, 2); grid.add(txtCant, 1, 2);
+        grid.add(new Label("P. Unitario*:"), 0, 3); grid.add(txtPrecio, 1, 3);
+        grid.getColumnConstraints().addAll(new javafx.scene.layout.ColumnConstraints(110), new javafx.scene.layout.ColumnConstraints(260));
+
+        dialog.getDialogPane().setContent(grid);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        dialog.getDialogPane().lookupButton(ButtonType.OK).setDisable(false);
+        ((Button) dialog.getDialogPane().lookupButton(ButtonType.OK)).setText("Añadir");
+        ((Button) dialog.getDialogPane().lookupButton(ButtonType.CANCEL)).setText("Cancelar");
+        Stage stage = (Stage) dialog.getDialogPane().getScene().getWindow();
+        stage.getIcons().clear();
+
+        // Simple validación en OK: campos obligatorios (ingreso manual)
+        dialog.setResultConverter(btn -> btn);
+
+        java.util.Optional<ButtonType> result = dialog.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            String codigo = txtCodigo.getText() != null ? txtCodigo.getText().trim().toUpperCase() : "";
+            String desc = txtDesc.getText() != null ? txtDesc.getText().trim().toUpperCase() : "";
+            String sCant = txtCant.getText() != null ? txtCant.getText().trim() : "";
+            String sPrecio = txtPrecio.getText() != null ? txtPrecio.getText().trim() : "";
+
+            if (codigo.isEmpty() || desc.isEmpty() || sCant.isEmpty() || sPrecio.isEmpty()) {
+                new Alert(Alert.AlertType.WARNING, "Todos los campos son obligatorios (código, descripción, cantidad, p. unitario).").showAndWait();
+                return;
+            }
+            int cant;
+            BigDecimal pUnit;
+            try {
+                cant = Integer.parseInt(sCant);
+                pUnit = new BigDecimal(sPrecio);
+            } catch (NumberFormatException e) {
+                new Alert(Alert.AlertType.WARNING, "Cantidad debe ser entero y P. Unitario numérico.").showAndWait();
+                return;
+            }
+            if (cant <= 0 || pUnit.compareTo(BigDecimal.ZERO) <= 0) {
+                new Alert(Alert.AlertType.WARNING, "Cantidad y P. Unitario deben ser mayores a 0.").showAndWait();
+                return;
+            }
+            // productoId = 0 indica temporal (fantasma) -> indicador visual TEMPORAL
+            DetalleVenta temp = new DetalleVenta(0, codigo, desc, cant, pUnit);
+            itemsDetalle.add(temp);
+            tblDetalle.refresh();
+            calcularTotales();
+        }
+    }
+
     private void calcularTotales() {
         BigDecimal subtotal = itemsDetalle.stream().map(DetalleVenta::getPrecioTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal iva = subtotal.multiply(new BigDecimal("0.15")).setScale(2, RoundingMode.HALF_UP);
@@ -311,11 +435,17 @@ public class NotaVentaController implements Initializable {
     }
 
     private BigDecimal calcularDescuento(BigDecimal totalBruto) {
-        BigDecimal pct = BigDecimal.ZERO;
+        BigDecimal fijo = BigDecimal.ZERO;
         try {
-            pct = new BigDecimal(cmbDescuento.getValue() != null ? cmbDescuento.getValue() : "0");
+            String txt = null;
+            if (txtDescuento != null && txtDescuento.getText() != null && !txtDescuento.getText().trim().isEmpty()) txt = txtDescuento.getText().trim();
+            else if (cmbDescuento.getEditor() != null) txt = cmbDescuento.getEditor().getText();
+            if (txt != null && !txt.trim().isEmpty()) fijo = new BigDecimal(txt.trim());
+            else if (cmbDescuento.getValue() != null && !cmbDescuento.getValue().trim().isEmpty()) fijo = new BigDecimal(cmbDescuento.getValue().trim());
         } catch (NumberFormatException ignored) {}
-        return totalBruto.multiply(pct).divide(new BigDecimal("100")).setScale(2, RoundingMode.HALF_UP);
+        if (fijo.compareTo(BigDecimal.ZERO) < 0) fijo = BigDecimal.ZERO;
+        if (fijo.compareTo(totalBruto) > 0) fijo = totalBruto;
+        return fijo.setScale(2, RoundingMode.HALF_UP);
     }
 
     private void cargarLogo() {
@@ -379,15 +509,24 @@ public class NotaVentaController implements Initializable {
 
         daoNotaVentaDetalle.insertarDetalle(notaVentaId, itemsDetalle);
 
+        // Guardar productos temporales (fantasma) en comprobante_temp — campos resumen venta
+        for (DetalleVenta d : itemsDetalle) {
+            if (d.getProductoId() == 0) {
+                daoComprobanteTemp.insertar(notaVentaId, d.getCodigo(), d.getDescripcion(),
+                        d.getCantidad(), d.getPrecioUnitario(), d.getPrecioTotal());
+            }
+        }
+
         String clienteNombre = cmbCliente.getValue().getNombre();
         List<HistorialProducto> historial = new ArrayList<>();
         for (DetalleVenta d : itemsDetalle) {
+            if (d.getProductoId() == 0) continue; // temporales no tienen inventario -> sin historial
             String provNombre = daoInventario.obtenerProveedorNombre(d.getProductoId());
             historial.add(new HistorialProducto(d.getProductoId(), d.getCodigo(), d.getDescripcion(),
                     d.getCantidad(), d.getPrecioUnitario(), "PROFORMA", codigo,
                     clienteNombre, provNombre, ahora));
         }
-        historialProductoDAO.insertar(historial);
+        if (!historial.isEmpty()) historialProductoDAO.insertar(historial);
 
         listaInventario.setAll(daoInventario.listar());
 
@@ -470,6 +609,7 @@ public class NotaVentaController implements Initializable {
 
         itemsDetalle.clear();
         tblDetalle.refresh();
+        if (txtDescuento != null) txtDescuento.setText("0.00");
         cmbDescuento.setValue("0");
         calcularTotales();
         cmbCliente.getSelectionModel().clearSelection();
