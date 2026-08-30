@@ -319,7 +319,12 @@ public class CajaController implements Initializable {
         dialog.setContentText("Monto físico contado ($):");
         dialog.showAndWait().ifPresent(montoStr -> {
             try {
-                BigDecimal montoFisico = new BigDecimal(montoStr.trim());
+                String raw = montoStr.trim().replace(",", ".");
+                if (raw.isEmpty()) {
+                    new Alert(Alert.AlertType.WARNING, "Ingrese el monto físico").showAndWait();
+                    return;
+                }
+                BigDecimal montoFisico = new BigDecimal(raw);
                 if (montoFisico.compareTo(BigDecimal.ZERO) < 0) {
                     new Alert(Alert.AlertType.WARNING, "El monto no puede ser negativo").showAndWait();
                     return;
@@ -333,6 +338,7 @@ public class CajaController implements Initializable {
                         esperado.setScale(2, BigDecimal.ROUND_HALF_UP),
                         montoFisico.setScale(2, BigDecimal.ROUND_HALF_UP),
                         diferencia.setScale(2, BigDecimal.ROUND_HALF_UP)));
+                confirm.getButtonTypes().setAll(ButtonType.YES, ButtonType.NO);
                 if (confirm.showAndWait().orElse(ButtonType.NO) == ButtonType.YES) {
                     try {
                         boolean ok = cajaService.cerrarCaja(sesionActual.getId(), montoFisico, "Arqueo automático");

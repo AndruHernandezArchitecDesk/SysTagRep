@@ -9,14 +9,14 @@ import java.util.List;
 
 public class GrupoDAO {
 
-    public void guardar(Grupo g) {
+    public void guardar(Grupo g) throws SQLException {
         String sql = "INSERT INTO grupo(nombre, estado) VALUES (?, ?)";
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, g.getNombre());
             ps.setBoolean(2, g.isEstado());
             ps.executeUpdate();
-        } catch (SQLException e) { e.printStackTrace(); }
+        }
     }
 
     public void actualizar(Grupo g) {

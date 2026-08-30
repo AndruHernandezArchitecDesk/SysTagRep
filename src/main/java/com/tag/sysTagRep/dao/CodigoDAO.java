@@ -9,14 +9,14 @@ import java.util.List;
 
 public class CodigoDAO {
 
-    public void guardar(Codigo c) {
+    public void guardar(Codigo c) throws SQLException {
         String sql = "INSERT INTO codigo(nombre, estado) VALUES (?, ?)";
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, c.getNombre());
             ps.setBoolean(2, c.isEstado());
             ps.executeUpdate();
-        } catch (SQLException e) { e.printStackTrace(); }
+        }
     }
 
     public boolean existe(String nombre) {

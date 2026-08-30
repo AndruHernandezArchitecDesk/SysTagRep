@@ -192,7 +192,13 @@ public class IngresoMercaderiaController implements Initializable {
             Codigo nuevo = new Codigo();
             nuevo.setNombre(codigo);
             nuevo.setEstado(true);
-            codigoDAO.guardar(nuevo);
+            try {
+                codigoDAO.guardar(nuevo);
+            } catch (java.sql.SQLException e) {
+                logDAO.guardar("IngresoMercaderiaController", "registrarCodigoNuevo", e.getMessage(), e);
+                new Alert(Alert.AlertType.ERROR, "Error al guardar código: " + e.getMessage()).showAndWait();
+                return;
+            }
             listaCodigos.setAll(codigoDAO.listar());
         }
     }
@@ -231,7 +237,13 @@ public class IngresoMercaderiaController implements Initializable {
             Grupo nuevo = new Grupo();
             nuevo.setNombre("TRANSPORTE");
             nuevo.setEstado(true);
-            grupoDAO.guardar(nuevo);
+            try {
+                grupoDAO.guardar(nuevo);
+            } catch (java.sql.SQLException e) {
+                logDAO.guardar("IngresoMercaderiaController", "servicioLogistico", e.getMessage(), e);
+                new Alert(Alert.AlertType.ERROR, "Error al guardar grupo TRANSPORTE: " + e.getMessage()).showAndWait();
+                return;
+            }
             listaGrupos.setAll(grupoDAO.listar());
             transporte = listaGrupos.stream()
                     .filter(g -> "TRANSPORTE".equalsIgnoreCase(g.getNombre()))

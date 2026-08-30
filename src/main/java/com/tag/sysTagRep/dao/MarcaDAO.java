@@ -9,14 +9,14 @@ import java.util.List;
 
 public class MarcaDAO {
 
-    public void guardar(Marca m) {
+    public void guardar(Marca m) throws SQLException {
         String sql = "INSERT INTO marca(nombre, estado) VALUES (?, ?)";
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, m.getNombre());
             ps.setBoolean(2, m.isEstado());
             ps.executeUpdate();
-        } catch (SQLException e) { e.printStackTrace(); }
+        }
     }
 
     public void actualizar(Marca m) {
