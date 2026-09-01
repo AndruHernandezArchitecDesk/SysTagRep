@@ -520,6 +520,17 @@ public class FacturaController implements Initializable {
         if (empresaActual == null) {
             throw new IllegalArgumentException("No se encontraron datos de la empresa.");
         }
+        // Validacion consumidor final >50 bloquea antes de consumir secuencial
+        Cliente cli = cmbCliente.getValue();
+        if (AppConstants.esConsumidorFinal(cli.getIdentificacion())) {
+            BigDecimal subtotal = itemsDetalle.stream().map(FacturaDetalle::getPrecioTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal iva = subtotal.multiply(AppConstants.IVA_RATE).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal totalBruto = subtotal.add(iva);
+            BigDecimal tot = totalBruto.subtract(obtenerDescuentoFijo(totalBruto)).setScale(2, RoundingMode.HALF_UP);
+            if (tot.compareTo(AppConstants.LIMITE_CONSUMIDOR_FINAL) > 0) {
+                throw new IllegalArgumentException("Consumidor Final (9999999999999 / tipo 07) solo permite facturas hasta $50.00. Total actual: $" + tot + ". Use identificación válida (cédula/RUC/pasaporte).");
+            }
+        }
     }
 
     private void finalizarGuardado(SRIWebService.SRIResponse sriResp, FacturaService.ResultadoFactura resultado) {

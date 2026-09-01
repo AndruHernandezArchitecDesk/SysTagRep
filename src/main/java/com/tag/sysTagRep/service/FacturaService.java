@@ -71,6 +71,11 @@ public class FacturaService {
         BigDecimal descCalc = calcularDescuento(totalBrutoCalc, descuentoPct);
         BigDecimal totCalc = totalBrutoCalc.subtract(descCalc).setScale(2, RoundingMode.HALF_UP);
 
+        // Validacion SRI: consumidor final (9999999999999 / 9999999999 tipo 07) no puede exceder $50
+        if (AppConstants.esConsumidorFinal(cliente.getIdentificacion()) && totCalc.compareTo(AppConstants.LIMITE_CONSUMIDOR_FINAL) > 0) {
+            throw new IllegalArgumentException("Factura a Consumidor Final (9999999999999 / tipo 07) no puede exceder $50.00. Total: $" + totCalc + ". Use identificación válida (cédula/RUC/pasaporte).");
+        }
+
         // Leer establecimiento/punto de la BD para multi-PC (001-001 centralizado)
         // marcarUsado es atomico (UPDATE ... RETURNING), evita que 192.168.1.5 reutilice el mismo que 192.168.1.7
         int secuencialFE = secuenciaDAO.marcarUsado("FACTURA");
@@ -136,7 +141,10 @@ public class FacturaService {
             cuentaPorCobrarDAO.insertar(cpc);
         }
 
-        String tipoIdComp = cliente.getIdentificacion().length() == AppConstants.MAX_LONGITUD_IDENTIFICACION_JURIDICA ? "05" : "04";
+        String tipoIdComp;
+        String identTrim = cliente.getIdentificacion() != null ? cliente.getIdentificacion().trim() : "";
+        if (AppConstants.esConsumidorFinal(identTrim)) tipoIdComp = AppConstants.TIPO_ID_CONSUMIDOR_FINAL;
+        else tipoIdComp = identTrim.length() == AppConstants.MAX_LONGITUD_IDENTIFICACION_JURIDICA ? "04" : "05";
 
         String xmlGenerado = XmlSriBuilder.construirFactura(
                 ambienteSri, claveAcceso, empresa.getRuc(), empresa.getRazonSocial(),
@@ -273,8 +281,10 @@ public class FacturaService {
         String codPtoEmi = partesNum.length > 1 ? partesNum[1] : "001";
         int secuencial = partesNum.length > 2 ? Integer.parseInt(partesNum[2]) : 0;
 
-        String tipoIdComp = cliente.getIdentificacion() != null
-                && cliente.getIdentificacion().length() == AppConstants.MAX_LONGITUD_IDENTIFICACION_JURIDICA ? "05" : "04";
+        String tipoIdComp;
+        String identRide = cliente.getIdentificacion() != null ? cliente.getIdentificacion().trim() : "";
+        if (AppConstants.esConsumidorFinal(identRide)) tipoIdComp = AppConstants.TIPO_ID_CONSUMIDOR_FINAL;
+        else tipoIdComp = identRide.length() == AppConstants.MAX_LONGITUD_IDENTIFICACION_JURIDICA ? "04" : "05";
 
         String fechaEmisionFE = fr.getFecha() != null
                 ? fr.getFecha().format(DateTimeFormatter.ofPattern(AppConstants.PATRON_FECHA_EMISION)) : "";

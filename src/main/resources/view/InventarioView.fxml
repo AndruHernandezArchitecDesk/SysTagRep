@@ -19,8 +19,11 @@
             <TextField fx:id="txtBuscar" promptText="Buscar:" prefWidth="250"/>
             <FontIcon iconLiteral="fas-search" iconSize="14"/>
             <TextField fx:id="txtBuscarFactura" promptText="Por Factura:" prefWidth="140"/>
-            <Button fx:id="btnNuevo" text="Nuevo Ingreso" styleClass="btn-guardar" onAction="#nuevoRegistro">
+            <Button fx:id="btnNuevo" text="Ingreso por Factura" styleClass="btn-guardar" onAction="#nuevoRegistro">
                 <graphic><FontIcon iconLiteral="fas-plus" iconSize="16"/></graphic>
+            </Button>
+            <Button text="Ingreso por Producto" styleClass="btn-guardar" onAction="#nuevoIngresoPorProducto" style="-fx-background-color: #2563eb;">
+                <graphic><FontIcon iconLiteral="fas-box" iconSize="16"/></graphic>
             </Button>
         </HBox>
     </top>

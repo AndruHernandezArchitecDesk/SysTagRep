@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.tag.sysTagRep.controller.IngresoProductoController"
+            prefHeight="420.0" prefWidth="560.0"
+            style="-fx-padding: 12;">
+
+    <top>
+        <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 5 0 10 0;">
+            <Label text="Ingreso por Producto" styleClass="titulo">
+                <graphic><FontIcon iconLiteral="fas-box" styleClass="titulo-icono"/></graphic>
+            </Label>
+        </HBox>
+    </top>
+
+    <center>
+        <VBox spacing="12" style="-fx-padding: 10;">
+
+            <VBox spacing="6">
+                <Label text="Datos del Producto" style="-fx-font-weight: bold; -fx-text-fill: #444;"/>
+                <HBox spacing="6" alignment="CENTER_LEFT">
+                    <StackPane prefWidth="20"><FontIcon iconLiteral="fas-align-left" iconSize="14"/></StackPane>
+                    <Label text="Descripción*" prefWidth="130"/>
+                    <TextField fx:id="txtDescripcion" HBox.hgrow="ALWAYS" promptText="Ej: FILTRO ACEITE"/>
+                </HBox>
+                <HBox spacing="6" alignment="CENTER_LEFT">
+                    <StackPane prefWidth="20"><FontIcon iconLiteral="fas-layer-group" iconSize="14"/></StackPane>
+                    <Label text="Grupo" prefWidth="130"/>
+                    <ComboBox fx:id="cmbGrupo" maxWidth="Infinity" HBox.hgrow="ALWAYS" promptText="Opcional"/>
+                    <Button onAction="#irAGrupo" style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 4 8; -fx-cursor: hand;">
+                        <graphic><FontIcon iconLiteral="fas-plus" iconSize="12"/></graphic>
+                    </Button>
+                </HBox>
+                <HBox spacing="6" alignment="CENTER_LEFT">
+                    <StackPane prefWidth="20"><FontIcon iconLiteral="fas-trademark" iconSize="14"/></StackPane>
+                    <Label text="Marca" prefWidth="130"/>
+                    <ComboBox fx:id="cmbMarca" maxWidth="Infinity" HBox.hgrow="ALWAYS" promptText="Opcional"/>
+                    <Button onAction="#irAMarca" style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 4 8; -fx-cursor: hand;">
+                        <graphic><FontIcon iconLiteral="fas-plus" iconSize="12"/></graphic>
+                    </Button>
+                </HBox>
+                <HBox spacing="6" alignment="CENTER_LEFT">
+                    <StackPane prefWidth="20"><FontIcon iconLiteral="fas-barcode" iconSize="14"/></StackPane>
+                    <Label text="Código" prefWidth="130"/>
+                    <ComboBox fx:id="cmbCodigo" maxWidth="Infinity" HBox.hgrow="ALWAYS" promptText="Opcional"/>
+                    <Button onAction="#irACodigo" style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 4 8; -fx-cursor: hand;">
+                        <graphic><FontIcon iconLiteral="fas-plus" iconSize="12"/></graphic>
+                    </Button>
+                </HBox>
+            </VBox>
+
+            <VBox spacing="6">
+                <Label text="Stock y Precio" style="-fx-font-weight: bold; -fx-text-fill: #444;"/>
+                <HBox spacing="12" alignment="CENTER_LEFT">
+                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                        <Label text="Cantidad*" style="-fx-font-size: 11px;"/>
+                        <Spinner fx:id="spCantidad" maxWidth="Infinity"/>
+                    </VBox>
+                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                        <Label text="Precio Venta Unit.* $" style="-fx-font-size: 11px;"/>
+                        <TextField fx:id="txtPrecioVenta" maxWidth="Infinity" promptText="0.00"/>
+                    </VBox>
+                </HBox>
+                <Label text="* Campos obligatorios. Sin fecha ni forma de pago. Grupo/Marca/Código pueden quedar vacíos (FK = NULL)." style="-fx-font-size: 10px; -fx-text-fill: #6b7280;" wrapText="true"/>
+            </VBox>
+
+            <HBox spacing="10" alignment="CENTER">
+                <Button text=" GUARDAR" styleClass="btn-guardar" onAction="#guardar">
+                    <graphic><FontIcon iconLiteral="fas-save" iconSize="18"/></graphic>
+                </Button>
+                <Button text=" Cancelar" onAction="#cancelar" style="-fx-background-color: #6b7280; -fx-text-fill: white; -fx-font-weight: bold;">
+                    <graphic><FontIcon iconLiteral="fas-times" iconSize="14"/></graphic>
+                </Button>
+            </HBox>
+
+        </VBox>
+    </center>
+
+</BorderPane>

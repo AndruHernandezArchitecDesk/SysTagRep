@@ -131,6 +131,23 @@ public class InventarioController implements Initializable {
         abrirModalEdicion(null);
     }
 
+    @FXML
+    private void nuevoIngresoPorProducto() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/IngresoProductoView.fxml"));
+            Parent vista = loader.load();
+            Stage modal = new Stage();
+            modal.initModality(Modality.APPLICATION_MODAL);
+            modal.setTitle("Ingreso por Producto");
+            modal.setScene(new Scene(vista, 560, 420));
+            modal.showAndWait();
+            cargarDatos();
+        } catch (Exception e) {
+            logDAO.guardar("InventarioController", "nuevoIngresoPorProducto", e.getMessage(), e);
+            new Alert(Alert.AlertType.ERROR, "Error al abrir ingreso por producto: " + e.getMessage()).showAndWait();
+        }
+    }
+
     private void abrirModalEdicion(Inventario i) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/IngresoMercaderiaView.fxml"));

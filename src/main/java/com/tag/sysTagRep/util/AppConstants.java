@@ -36,6 +36,17 @@ public final class AppConstants {
     public static final int MAX_DESCRIPCION_XML = 99;
     public static final int MAX_LONGITUD_IDENTIFICACION_JURIDICA = 13;
 
+    public static final String ID_CONSUMIDOR_FINAL_13 = "9999999999999";
+    public static final String ID_CONSUMIDOR_FINAL_10 = "9999999999";
+    public static final String TIPO_ID_CONSUMIDOR_FINAL = "07";
+    public static final BigDecimal LIMITE_CONSUMIDOR_FINAL = new BigDecimal("50.00");
+
+    public static boolean esConsumidorFinal(String identificacion) {
+        if (identificacion == null) return false;
+        String id = identificacion.trim();
+        return ID_CONSUMIDOR_FINAL_13.equals(id) || ID_CONSUMIDOR_FINAL_10.equals(id);
+    }
+
     public static final String ASUNTO_FACTURA = "FACTURA";
     public static final String ASUNTO_PROFORMA = "PROFORMA";
 
