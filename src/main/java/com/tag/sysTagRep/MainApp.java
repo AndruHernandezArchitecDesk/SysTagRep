@@ -1,5 +1,7 @@
 package com.tag.sysTagRep;
 
+import com.tag.sysTagRep.config.DatabaseConnection;
+import com.tag.sysTagRep.config.DbConfig;
 import com.tag.sysTagRep.controller.LicenseActivatorController;
 import com.tag.sysTagRep.util.LicenseManager;
 import com.tag.sysTagRep.util.ThemeManager;
@@ -16,7 +18,11 @@ import javafx.stage.Stage;
 public class MainApp extends Application {
     @Override
     public void start(Stage stage) throws Exception {
-        if (!LicenseManager.isActivated()) {
+        // Cargar ~/.systag/db.properties antes de cualquier DAO (soporte multi-PC 192.168.1.7 host)
+        DatabaseConnection.initFromConfig();
+        // Activacion solo en host (192.168.1.7). PC cliente 192.168.1.5 con db.url remota no requiere licencia local.
+        boolean esRemota = DbConfig.esRemota();
+        if (!esRemota && !LicenseManager.isActivated()) {
             FXMLLoader loader = new FXMLLoader(
                     getClass().getResource("/view/LicenseActivatorView.fxml"));
             Parent root = loader.load();

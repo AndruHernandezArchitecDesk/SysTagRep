@@ -154,6 +154,44 @@ public class UbicacionDetalleDAO {
         return lista;
     }
 
+    public List<UbicacionDetalle> listarPorProducto(int idProducto) {
+        List<UbicacionDetalle> lista = new ArrayList<>();
+        String sql = "SELECT u.id, u.codigo_ubicacion, u.id_perchero, u.estado, u.id_producto, u.cantidad AS stock_asignado, "
+                + "p.nombre_perchero, p.seccion, i.descripcion AS producto_desc, i.codigo AS producto_cod, i.cantidad, "
+                + "g.nombre AS grupo_nombre, m.nombre AS marca_nombre "
+                + "FROM ubicacion u "
+                + "JOIN perchero p ON p.id = u.id_perchero "
+                + "JOIN inventario i ON i.id = u.id_producto "
+                + "LEFT JOIN grupo g ON g.id = i.grupo_id "
+                + "LEFT JOIN marca m ON m.id = i.marca_id "
+                + "WHERE u.id_producto = ? AND u.estado = 'OCUPADO' "
+                + "ORDER BY split_part(u.codigo_ubicacion, '-', 1), split_part(u.codigo_ubicacion, '-', 2)::int, split_part(u.codigo_ubicacion, '-', 3)::int";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, idProducto);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    UbicacionDetalle u = new UbicacionDetalle();
+                    u.setId(rs.getInt("id"));
+                    u.setCodigoUbicacion(rs.getString("codigo_ubicacion"));
+                    u.setIdPerchero(rs.getInt("id_perchero"));
+                    u.setNombrePerchero(rs.getString("nombre_perchero"));
+                    u.setSeccion(rs.getString("seccion"));
+                    u.setEstado(rs.getString("estado"));
+                    u.setIdProducto(rs.getInt("id_producto"));
+                    u.setProductoDescripcion(rs.getString("producto_desc"));
+                    u.setProductoCodigo(rs.getString("producto_cod"));
+                    u.setCantidad(rs.getInt("cantidad"));
+                    u.setStockAsignado(rs.getObject("stock_asignado") != null ? rs.getInt("stock_asignado") : null);
+                    u.setGrupoNombre(rs.getString("grupo_nombre"));
+                    u.setMarcaNombre(rs.getString("marca_nombre"));
+                    lista.add(u);
+                }
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return lista;
+    }
+
     public List<com.tag.sysTagRep.model.Inventario> listarProductosDisponibles() {
         List<com.tag.sysTagRep.model.Inventario> lista = new ArrayList<>();
         String sql = "SELECT i.id, i.codigo, i.descripcion, i.cantidad, g.nombre AS nombre_grupo, m.nombre AS nombre_marca, " +

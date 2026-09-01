@@ -71,9 +71,13 @@ public class FacturaService {
         BigDecimal descCalc = calcularDescuento(totalBrutoCalc, descuentoPct);
         BigDecimal totCalc = totalBrutoCalc.subtract(descCalc).setScale(2, RoundingMode.HALF_UP);
 
-        String codEstab = AppConstants.ESTABLECIMIENTO_DEFAULT;
-        String codPtoEmi = AppConstants.PUNTO_EMISION_DEFAULT;
+        // Leer establecimiento/punto de la BD para multi-PC (001-001 centralizado)
+        // marcarUsado es atomico (UPDATE ... RETURNING), evita que 192.168.1.5 reutilice el mismo que 192.168.1.7
         int secuencialFE = secuenciaDAO.marcarUsado("FACTURA");
+        if (secuencialFE == -1) throw new IllegalStateException("No se pudo obtener el secuencial de FACTURA (secuencia_documento).");
+        SecuenciaDocumento secActual = secuenciaDAO.obtener("FACTURA");
+        String codEstab = secActual.getEstablecimiento() != null ? secActual.getEstablecimiento() : AppConstants.ESTABLECIMIENTO_DEFAULT;
+        String codPtoEmi = secActual.getPuntoEmision() != null ? secActual.getPuntoEmision() : AppConstants.PUNTO_EMISION_DEFAULT;
         String claveAcceso = ClaveAcceso.generar(
                 AppConstants.TIPO_COMPROBANTE_FACTURA,
                 empresa.getRuc(), ambienteSri, codEstab, codPtoEmi, secuencialFE

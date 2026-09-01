@@ -488,24 +488,31 @@ public class NotaVentaController implements Initializable {
 
         int clienteId = cmbCliente.getValue().getId();
         int empresaId = empresaActual.getId();
-        String codigo = lblNumNotaVenta.getText();
         LocalDateTime ahora = LocalDateTime.now();
 
-        if (secuenciaDAO.existeCodigoNotaVenta(codigo)) {
-            new Alert(Alert.AlertType.ERROR, "El número " + codigo + " ya existe en la base de datos, no se puede repetir.").showAndWait();
-            obtenerNumNotaVenta();
+        // Numeracion atomica centralizada 001-001: reservar secuencial ANTES de insertar
+        // UPDATE secuencia_documento SET siguiente_numero=siguiente_numero+1 RETURNING ... usado
+        // evita que 192.168.1.5 y 192.168.1.7 reutilicen el mismo numero
+        int secuencialUsado = secuenciaDAO.marcarUsado("PROFORMA");
+        if (secuencialUsado == -1) {
+            new Alert(Alert.AlertType.ERROR, "No se pudo obtener el secuencial de PROFORMA (secuencia_documento). Verifique la conexion a 192.168.1.7.").showAndWait();
             return;
         }
+        SecuenciaDocumento secInfo = secuenciaDAO.obtener("PROFORMA");
+        String estab = secInfo.getEstablecimiento() != null ? secInfo.getEstablecimiento() : "001";
+        String pto = secInfo.getPuntoEmision() != null ? secInfo.getPuntoEmision() : "001";
+        String codigo = estab + "-" + pto + "-" + String.format("%09d", secuencialUsado);
 
         NotaVentaRegistro nvr = new NotaVentaRegistro(empresaId, clienteId, ahora, codigo, cmbFormaPago.getValue(), ahora);
         int notaVentaId = daoNotaVentaRegistro.insertar(nvr);
 
         if (notaVentaId == -1) {
-            new Alert(Alert.AlertType.ERROR, "Error al registrar la proforma.").showAndWait();
+            // Hueco en numeracion intencional: no se revierte el secuencial para evitar reuso por la otra PC
+            // UNIQUE constraint en BD evita duplicado si hubo race manual
+            new Alert(Alert.AlertType.ERROR, "Error al registrar la proforma " + codigo + ". El secuencial queda consumido para evitar duplicados.").showAndWait();
+            obtenerNumNotaVenta();
             return;
         }
-
-        secuenciaDAO.marcarUsado("PROFORMA");
 
         daoNotaVentaDetalle.insertarDetalle(notaVentaId, itemsDetalle);
 
