@@ -33,13 +33,18 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import javafx.util.StringConverter;
 
+import java.io.File;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URL;
@@ -59,7 +64,7 @@ import java.util.ResourceBundle;
 public class IngresoMercaderiaController implements Initializable {
 
     @FXML private TextField txtId;
-    @FXML private TextField txtDescripcion;
+    @FXML private ComboBox<String> cmbDescripcion;
     @FXML private ComboBox<Grupo> cmbGrupo;
     @FXML private ComboBox<Marca> cmbMarca;
     @FXML private TextField txtCostoSinIVA;
@@ -115,7 +120,9 @@ public class IngresoMercaderiaController implements Initializable {
     private ObservableList<Grupo> listaGrupos = FXCollections.observableArrayList();
     private ObservableList<Marca> listaMarcas = FXCollections.observableArrayList();
     private ObservableList<Codigo> listaCodigos = FXCollections.observableArrayList();
+    private final ObservableList<String> listaDescripciones = FXCollections.observableArrayList();
     private final ObservableList<FilaProducto> listaProductos = FXCollections.observableArrayList();
+    private Timeline debounceDescripciones;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -123,6 +130,7 @@ public class IngresoMercaderiaController implements Initializable {
         iniciarCbMarcas();
         iniciarCbProveedores();
         iniciarCbCodigos();
+        iniciarCbDescripciones();
         iniciarSpCantidad();
         iniciarCbMargen();
         configurarDescuento();
@@ -131,12 +139,61 @@ public class IngresoMercaderiaController implements Initializable {
         validarSoloNumeros();
         configurarCodigoAuto();
         configurarTablaProductos();
-        txtDescripcion.textProperty().addListener((obs, oldText, newText) -> {
+        limpiarFrm();
+    }
+
+    private void iniciarCbDescripciones() {
+        cmbDescripcion.setEditable(true);
+        cmbDescripcion.setItems(listaDescripciones);
+        cmbDescripcion.setConverter(new StringConverter<>() {
+            @Override public String toString(String s) { return s == null ? "" : s; }
+            @Override public String fromString(String s) { return s; }
+        });
+        // Mantener uppercase como txtDescripcion original
+        cmbDescripcion.getEditor().textProperty().addListener((obs, oldText, newText) -> {
             if (newText != null && !newText.equals(newText.toUpperCase())) {
-                txtDescripcion.setText(newText.toUpperCase());
+                String caret = newText;
+                int pos = cmbDescripcion.getEditor().getCaretPosition();
+                cmbDescripcion.getEditor().setText(newText.toUpperCase());
+                cmbDescripcion.getEditor().positionCaret(pos);
             }
         });
-        limpiarFrm();
+        // ILIKE dinámico: MIN 2 chars, LIMIT 50, debounce 300ms, '%texto%'
+        cmbDescripcion.getEditor().textProperty().addListener((obs, oldVal, newVal) -> {
+            if (debounceDescripciones != null) debounceDescripciones.stop();
+            String filtro = newVal == null ? "" : newVal.trim();
+            if (filtro.length() < 2) {
+                listaDescripciones.clear();
+                Platform.runLater(() -> cmbDescripcion.hide());
+                return;
+            }
+            debounceDescripciones = new Timeline(new KeyFrame(Duration.millis(300), ev -> {
+                List<String> res = dao.buscarDescripciones(filtro, 50);
+                Platform.runLater(() -> {
+                    String editorTxt = cmbDescripcion.getEditor().getText();
+                    if (editorTxt == null) editorTxt = "";
+                    // Evitar loop si el usuario cambió texto mientras se consultaba
+                    if (!editorTxt.trim().equalsIgnoreCase(filtro.trim())) return;
+                    listaDescripciones.setAll(res);
+                    // Restaurar texto y caret que se pierde al setAll
+                    cmbDescripcion.getEditor().setText(editorTxt);
+                    cmbDescripcion.getEditor().positionCaret(editorTxt.length());
+                    if (!res.isEmpty() && cmbDescripcion.getEditor().isFocused()) {
+                        cmbDescripcion.show();
+                    } else {
+                        cmbDescripcion.hide();
+                    }
+                });
+            }));
+            debounceDescripciones.play();
+        });
+    }
+
+    private String descripcionIngresada() {
+        String ed = cmbDescripcion.getEditor().getText();
+        if (ed != null && !ed.trim().isEmpty()) return ed.trim().toUpperCase();
+        String sel = cmbDescripcion.getValue();
+        return sel == null ? "" : sel.trim().toUpperCase();
     }
 
     private void iniciarCbGrupos() {
@@ -228,7 +285,8 @@ public class IngresoMercaderiaController implements Initializable {
     @FXML
     private void servicioLogistico() {
         servicioLogistico = true;
-        txtDescripcion.setText("SERVICIO LOGISTICO");
+        cmbDescripcion.setValue("SERVICIO LOGISTICO");
+        cmbDescripcion.getEditor().setText("SERVICIO LOGISTICO");
 
         Grupo transporte = listaGrupos.stream()
                 .filter(g -> "TRANSPORTE".equalsIgnoreCase(g.getNombre()))
@@ -266,7 +324,7 @@ public class IngresoMercaderiaController implements Initializable {
     @FXML
     private void agregarProducto() {
         try {
-            String desc = txtDescripcion.getText() == null ? "" : txtDescripcion.getText().trim();
+            String desc = descripcionIngresada();
             if (desc.isEmpty()) {
                 new Alert(Alert.AlertType.WARNING, "Ingrese la descripción del producto.").showAndWait();
                 return;
@@ -323,7 +381,8 @@ public class IngresoMercaderiaController implements Initializable {
     }
 
     private void cargarProductoEnFormulario(FilaProducto fp) {
-        txtDescripcion.setText(fp.getDescripcion());
+        cmbDescripcion.setValue(fp.getDescripcion());
+        cmbDescripcion.getEditor().setText(fp.getDescripcion());
         for (Grupo g : listaGrupos) {
             if (g.getId() == fp.getGrupoId()) { cmbGrupo.setValue(g); break; }
         }
@@ -515,7 +574,59 @@ public class IngresoMercaderiaController implements Initializable {
             }
             facturaProveedorDAO.insertar(lineasFactura);
 
-            if (!modoEdicion && !modoEdicionFactura && !cerrarAlGuardar) {
+            // Generar hoja A4 en background para no colgar la UI (como InventarioController)
+            final String facturaNumFinal = numFactura;
+            final Proveedor provFinal = p;
+            final boolean esColocarPercheroFlow = !modoEdicion && !modoEdicionFactura && !cerrarAlGuardar;
+            Runnable generarHojaAsync = () -> {
+                Thread t = new Thread(() -> {
+                    long t0 = System.currentTimeMillis();
+                    logDAO.guardar("IngresoMercaderiaController", "generarHoja", "INICIO factura=" + facturaNumFinal + " prov=" + (provFinal != null ? provFinal.getId() : 0));
+                    try {
+                        List<Inventario> recien = dao.listarPorNumeroFactura(facturaNumFinal, provFinal != null ? provFinal.getId() : 0);
+                        logDAO.guardar("IngresoMercaderiaController", "generarHoja", "listarPorNumeroFactura OK size=" + recien.size() + " en " + (System.currentTimeMillis()-t0) + "ms");
+                        if (recien.isEmpty()) {
+                            javafx.application.Platform.runLater(() -> new Alert(Alert.AlertType.WARNING, "No se encontraron productos para hoja A4 (factura " + facturaNumFinal + ")").showAndWait());
+                            return;
+                        }
+                        // Limitar total etiquetas para no colgar con cantidades enormes
+                        long estEtiquetas = recien.stream().mapToLong(r -> r.getCantidad() > 0 ? r.getCantidad() : 1).sum();
+                        if (estEtiquetas > 300) {
+                            javafx.application.Platform.runLater(() -> new Alert(Alert.AlertType.WARNING, "Factura con " + estEtiquetas + " etiquetas, se limitará a 300 para no colgar. Productos: " + recien.size()).showAndWait());
+                        }
+                        File hoja = com.tag.sysTagRep.util.HojaEtiquetasPDF.generarHojaA4(recien, facturaNumFinal);
+                        long dt = System.currentTimeMillis()-t0;
+                        logDAO.guardar("IngresoMercaderiaController", "generarHoja", "PDF OK " + hoja.getAbsolutePath() + " (" + hoja.length()/1024 + "KB) en " + dt + "ms");
+                        // Auto-abrir PDF sin bloquear UI (background)
+                        try {
+                            String os2 = System.getProperty("os.name").toLowerCase();
+                            if (os2.contains("win")) new ProcessBuilder("rundll32", "url.dll,FileProtocolHandler", hoja.getAbsolutePath()).start();
+                            else new ProcessBuilder("xdg-open", hoja.getAbsolutePath()).start();
+                        } catch (Exception exOpen) {
+                            logDAO.guardar("IngresoMercaderiaController", "abrirHoja", exOpen.getMessage(), exOpen);
+                        }
+                        javafx.application.Platform.runLater(() -> {
+                            long totalEtiquetas = Math.min(estEtiquetas, 300);
+                            Alert a = new Alert(Alert.AlertType.INFORMATION);
+                            a.setTitle("Hoja A4 generada");
+                            a.setHeaderText("Hoja A4 generada en " + dt + "ms");
+                            a.setContentText("Archivo: " + hoja.getAbsolutePath() + "\nProductos: " + recien.size() + " | Etiquetas: " + totalEtiquetas + " (incluye SERVICIO LOGISTICO)");
+                            a.showAndWait();
+                        });
+                    } catch (Throwable ex) {
+                        logDAO.guardar("IngresoMercaderiaController", "generarHoja", "ERROR " + ex.getMessage(), new Exception(ex));
+                        ex.printStackTrace();
+                        javafx.application.Platform.runLater(() ->
+                            new Alert(Alert.AlertType.ERROR, "Error al generar hoja A4: " + ex.getMessage()).showAndWait()
+                        );
+                    }
+                });
+                t.setDaemon(true);
+                t.setName("hoja-a4-" + facturaNumFinal);
+                t.start();
+            };
+
+            if (esColocarPercheroFlow) {
                 int porUbicar = listaProductos.size();
                 Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
                 alert.setTitle("Ingreso guardado");
@@ -528,7 +639,9 @@ public class IngresoMercaderiaController implements Initializable {
                 if (resultado.isPresent() && resultado.get() == btnPerchero) {
                     abrirModal("/view/UbicacionPercheroView.fxml", "Ubicación Percha", 1000, 650);
                 }
+                // Generar hoja después (con o sin ubicar) sin bloquear UI
                 limpiarFrm();
+                generarHojaAsync.run();
             } else {
                 new Alert(Alert.AlertType.INFORMATION, "Guardado correctamente.").showAndWait();
                 if (cerrarAlGuardar) {
@@ -536,6 +649,7 @@ public class IngresoMercaderiaController implements Initializable {
                 } else {
                     limpiarFrm();
                 }
+                generarHojaAsync.run();
             }
         } catch (Exception e) {
             logDAO.guardar("IngresoMercaderiaController", "guardar", e.getMessage(), e);
@@ -600,7 +714,7 @@ public class IngresoMercaderiaController implements Initializable {
             i.setCodigo(fp.getCodigoManual());
             i.setEstado(!esServicioLogistico(fp));
         } else {
-            i.setDescripcion(txtDescripcion.getText());
+            i.setDescripcion(descripcionIngresada());
             Grupo g = cmbGrupo.getValue();
             i.setGrupoId(g != null ? g.getId() : 0);
             Marca m = cmbMarca.getValue();
@@ -719,7 +833,8 @@ public class IngresoMercaderiaController implements Initializable {
     public void cargarParaEdicion(Inventario i) {
         modoEdicion = true;
         txtId.setText(String.valueOf(i.getId()));
-        txtDescripcion.setText(i.getDescripcion());
+        cmbDescripcion.setValue(i.getDescripcion());
+        cmbDescripcion.getEditor().setText(i.getDescripcion() == null ? "" : i.getDescripcion());
 
         for (Grupo g : listaGrupos) {
             if (g.getId() == i.getGrupoId()) { cmbGrupo.setValue(g); break; }
@@ -778,13 +893,15 @@ public class IngresoMercaderiaController implements Initializable {
     }
 
     private void cerrarVentana() {
-        Stage stage = (Stage) txtDescripcion.getScene().getWindow();
+        Stage stage = (Stage) cmbDescripcion.getScene().getWindow();
         stage.close();
     }
 
     private void limpiarProducto() {
         servicioLogistico = false;
-        txtDescripcion.clear();
+        cmbDescripcion.getEditor().clear();
+        cmbDescripcion.setValue(null);
+        listaDescripciones.clear();
         cmbGrupo.setValue(null);
         cmbMarca.setValue(null);
         txtCostoSinIVA.clear();
@@ -811,9 +928,11 @@ public class IngresoMercaderiaController implements Initializable {
         cmbFormaPago.getSelectionModel().selectFirst();
         cmbMesesPlazo.getSelectionModel().selectFirst();
         cmbInteres.getSelectionModel().selectFirst();
-// NO limpiar listaProductos - los productos ya fueron guardados en BD
+ // NO limpiar listaProductos - los productos ya fueron guardados en BD
 // solo limpiar campos de entrada para nuevo producto
-        txtDescripcion.clear();
+        cmbDescripcion.getEditor().clear();
+        cmbDescripcion.setValue(null);
+        listaDescripciones.clear();
         txtCostoSinIVA.clear();
         txtPrecioVenta.clear();
         spCantidad.getValueFactory().setValue(1);
@@ -895,7 +1014,8 @@ public class IngresoMercaderiaController implements Initializable {
                 txtCodigo.clear();
             }
         };
-        txtDescripcion.textProperty().addListener((obs, o, n) -> actualizarCodigo.run());
+        cmbDescripcion.getEditor().textProperty().addListener((obs, o, n) -> actualizarCodigo.run());
+        cmbDescripcion.valueProperty().addListener((obs, o, n) -> actualizarCodigo.run());
         txtCostoSinIVA.textProperty().addListener((obs, o, n) -> actualizarCodigo.run());
         txtPrecioVenta.textProperty().addListener((obs, o, n) -> actualizarCodigo.run());
         cmbGrupo.setOnAction(e -> actualizarCodigo.run());

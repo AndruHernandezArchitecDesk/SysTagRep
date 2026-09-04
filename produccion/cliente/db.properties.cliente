@@ -1,0 +1,4 @@
+# CLIENTE 192.168.1.5 - apunta al HOST
+db.url=jdbc:postgresql://192.168.1.7:5432/dbTag
+db.user=app_systag
+db.password=CAMBIAR

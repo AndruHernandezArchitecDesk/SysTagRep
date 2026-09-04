@@ -435,6 +435,46 @@ public class InventarioDAO {
         return null;
     }
 
+    public List<String> buscarDescripciones(String filtro, int limit) {
+        List<String> lista = new ArrayList<>();
+        if (filtro == null || filtro.trim().length() < 2) return lista;
+        if (limit <= 0) limit = 50;
+        String sql = "SELECT DISTINCT descripcion FROM inventario WHERE estado=true AND descripcion ILIKE ? ORDER BY descripcion LIMIT ?";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, "%" + filtro.trim() + "%");
+            ps.setInt(2, limit);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String d = rs.getString(1);
+                    if (d != null) lista.add(d);
+                }
+            }
+        } catch (SQLException e) {
+            // Fallback para HSQLDB tests (ILIKE no soportado): usar LOWER LIKE
+            if (e.getMessage() != null && e.getMessage().toLowerCase().contains("ilike")) {
+                lista.clear();
+                String fallback = "SELECT DISTINCT descripcion FROM inventario WHERE estado=true AND LOWER(descripcion) LIKE LOWER(?) ORDER BY descripcion LIMIT ?";
+                try (Connection con2 = DatabaseConnection.getConnection();
+                     PreparedStatement ps2 = con2.prepareStatement(fallback)) {
+                    ps2.setString(1, "%" + filtro.trim() + "%");
+                    ps2.setInt(2, limit);
+                    try (ResultSet rs2 = ps2.executeQuery()) {
+                        while (rs2.next()) {
+                            String d = rs2.getString(1);
+                            if (d != null) lista.add(d);
+                        }
+                    }
+                } catch (SQLException ex) {
+                    LOGGER.log(Level.SEVERE, "Error en InventarioDAO.buscarDescripciones fallback", ex);
+                }
+            } else {
+                LOGGER.log(Level.SEVERE, "Error en InventarioDAO.buscarDescripciones", e);
+            }
+        }
+        return lista;
+    }
+
     private void mapearInventario(ResultSet rs, Inventario v) throws SQLException {
         v.setId(rs.getInt("id"));
         v.setDescripcion(rs.getString("descripcion"));

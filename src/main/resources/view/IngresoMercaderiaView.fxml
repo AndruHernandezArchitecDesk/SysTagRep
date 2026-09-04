@@ -54,7 +54,7 @@
                                 <HBox spacing="6" alignment="CENTER_LEFT">
                                     <StackPane prefWidth="20"><FontIcon iconLiteral="fas-align-left" iconSize="14"/></StackPane>
                                     <Label text="Descripción" prefWidth="100"/>
-                                    <TextField fx:id="txtDescripcion" HBox.hgrow="ALWAYS"/>
+                                    <ComboBox fx:id="cmbDescripcion" editable="true" maxWidth="Infinity" HBox.hgrow="ALWAYS" promptText="Descripción"/>
                                 </HBox>
                                 <HBox spacing="6" alignment="CENTER_LEFT">
                                     <StackPane prefWidth="20"><FontIcon iconLiteral="fas-layer-group" iconSize="14"/></StackPane>

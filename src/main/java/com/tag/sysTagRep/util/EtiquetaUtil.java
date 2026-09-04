@@ -154,8 +154,8 @@ public class EtiquetaUtil {
         } catch (Exception e) { e.printStackTrace(); return null; }
     }
 
-    private static File generarEtiquetaConIndice(Inventario item, com.tag.sysTagRep.model.UbicacionDetalle ubicacion, int indice, int total, String rutaLogo, String razonSocial) {
-        if (ubicacion == null) return generarEtiqueta(item, rutaLogo, razonSocial);
+    public static BufferedImage renderImagenEtiquetaConIndice(Inventario item, com.tag.sysTagRep.model.UbicacionDetalle ubicacion, int indice, int total, String rutaLogo) {
+        if (ubicacion == null) return renderImagenEtiquetaSimple(item, rutaLogo);
         Inventario copia = new Inventario();
         copia.setId(item.getId());
         copia.setCodigo(item.getCodigo());
@@ -249,37 +249,17 @@ public class EtiquetaUtil {
         if (fmUbic.stringWidth(ubicText) > rightX - MARGIN) ubicText = conElipsis(fmUbic, ubicText, rightX - MARGIN);
         g.drawString(ubicText, rightX - fmUbic.stringWidth(ubicText), y + 5);
         g.dispose();
-        try {
-            Path dir = getEtiquetasDir();
-            Files.createDirectories(dir);
-            String safeCodigo = codigo.replaceAll("[^a-zA-Z0-9]", "_");
-            String safeUbi = ubicacion.getCodigoUbicacion().replaceAll("[^a-zA-Z0-9]", "_");
-            File outFile = new File(dir.toFile(), "etiqueta_" + copia.getId() + "_" + safeCodigo + "_" + safeUbi + "_" + indice + "de" + total + ".jpg");
-            escribirJpgConDpi(img, outFile);
-            return outFile;
-        } catch (Exception e) { e.printStackTrace(); return null; }
+        return img;
     }
 
-    public static List<File> generarEtiquetasPorUbicacion(Inventario item, com.tag.sysTagRep.model.UbicacionDetalle ubicacion, String rutaLogo, String razonSocial) {
-        int total = (ubicacion != null && ubicacion.getStockAsignado() != null && ubicacion.getStockAsignado() > 0) ? ubicacion.getStockAsignado() : 1;
-        List<File> archivos = new ArrayList<>();
-        for (int i = 1; i <= total; i++) {
-            File f = generarEtiquetaConIndice(item, ubicacion, i, total, rutaLogo, razonSocial);
-            if (f != null) archivos.add(f);
-        }
-        return archivos;
-    }
-
-    public static File generarEtiqueta(Inventario item, String rutaLogo, String razonSocial) {
+    public static BufferedImage renderImagenEtiquetaSimple(Inventario item, String rutaLogo) {
         BufferedImage img = new BufferedImage(WIDTH_PX, HEIGHT_PX, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = img.createGraphics();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         g.setColor(Color.WHITE);
         g.fillRect(0, 0, WIDTH_PX, HEIGHT_PX);
-
         int y = 4;
-
         try {
             InputStream logoStream = EtiquetaUtil.class.getResourceAsStream(rutaLogo);
             if (logoStream != null) {
@@ -287,26 +267,19 @@ public class EtiquetaUtil {
                 g.drawImage(logo, MARGIN, y, null);
             }
         } catch (Exception ignored) {}
-
         g.setColor(Color.BLACK);
         g.setFont(new Font("SansSerif", Font.BOLD, 30));
         g.drawString("TAG REPUESTOS AUTOMOTRICES", MARGIN + LOGO_SIZE + 4, y + LOGO_SIZE - 4);
-
         String codigo = item.getCodigo() != null ? item.getCodigo() : "";
         String tagCodigo = item.getTagCodigo() != null ? item.getTagCodigo() : "";
         String descripcion = item.getDescripcion() != null ? item.getDescripcion() : "";
         String ubicacion = item.getUbicacionPercha() != null ? item.getUbicacionPercha() : "";
         LocalDateTime fechaIngreso = item.getFecha_ingreso();
-        String fechaStr = fechaIngreso != null
-                ? fechaIngreso.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-                : "";
-
+        String fechaStr = fechaIngreso != null ? fechaIngreso.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "";
         y += LOGO_SIZE + 4;
-
         int barcodeWidth = (WIDTH_PX - 2 * MARGIN) / 2;
         int barcodeHeight = 50;
         int barcodeX = MARGIN;
-
         if (!codigo.trim().isEmpty()) {
             try {
                 BitMatrix matrix = new Code128Writer().encode(codigo, BarcodeFormat.CODE_128, barcodeWidth, barcodeHeight);
@@ -315,9 +288,7 @@ public class EtiquetaUtil {
             } catch (Exception ignored) {}
         }
         y += barcodeHeight + 14;
-
         int rightX = WIDTH_PX - MARGIN;
-
         if (!codigo.trim().isEmpty()) {
             g.setFont(new Font("SansSerif", Font.PLAIN, 28));
             String codigoDraw = codigo;
@@ -326,11 +297,7 @@ public class EtiquetaUtil {
             g.drawString(codigoDraw, MARGIN, y + 8);
             y += 22;
         }
-
-        String precioStr = item.getPrecioVenta() != null
-                ? cifrarPrecio(item.getPrecioVenta().setScale(2, java.math.RoundingMode.HALF_UP).toString())
-                : "";
-
+        String precioStr = item.getPrecioVenta() != null ? cifrarPrecio(item.getPrecioVenta().setScale(2, java.math.RoundingMode.HALF_UP).toString()) : "";
         List<String> lineas = null;
         int precioWidth = 0;
         int descFontSize = 26;
@@ -351,27 +318,51 @@ public class EtiquetaUtil {
         } else {
             for (int i = 0; i < lineas.size(); i++) {
                 g.drawString(lineas.get(i), MARGIN, y + 6);
-                if (i == lineas.size() - 1) {
-                    g.drawString(precioStr, rightX - precioWidth, y + 6);
-                }
+                if (i == lineas.size() - 1) g.drawString(precioStr, rightX - precioWidth, y + 6);
                 y += 18;
             }
         }
-
         g.setFont(new Font("SansSerif", Font.PLAIN, 20));
         g.drawString("Fecha: " + fechaStr, MARGIN, y + 5);
-
         g.setFont(new Font("SansSerif", Font.PLAIN, 20));
         String ubicText = "Ubic: " + ubicacion;
         FontMetrics fmUbic2 = g.getFontMetrics();
         if (fmUbic2.stringWidth(ubicText) > rightX - MARGIN) ubicText = conElipsis(fmUbic2, ubicText, rightX - MARGIN);
         g.drawString(ubicText, rightX - fmUbic2.stringWidth(ubicText), y + 5);
-
         g.dispose();
+        return img;
+    }
 
+    private static File generarEtiquetaConIndice(Inventario item, com.tag.sysTagRep.model.UbicacionDetalle ubicacion, int indice, int total, String rutaLogo, String razonSocial) {
+        BufferedImage img = renderImagenEtiquetaConIndice(item, ubicacion, indice, total, rutaLogo);
         try {
             Path dir = getEtiquetasDir();
             Files.createDirectories(dir);
+            String codigo = item.getCodigo() != null ? item.getCodigo() : "";
+            String safeCodigo = codigo.replaceAll("[^a-zA-Z0-9]", "_");
+            String safeUbi = ubicacion.getCodigoUbicacion().replaceAll("[^a-zA-Z0-9]", "_");
+            File outFile = new File(dir.toFile(), "etiqueta_" + item.getId() + "_" + safeCodigo + "_" + safeUbi + "_" + indice + "de" + total + ".jpg");
+            escribirJpgConDpi(img, outFile);
+            return outFile;
+        } catch (Exception e) { e.printStackTrace(); return null; }
+    }
+
+    public static List<File> generarEtiquetasPorUbicacion(Inventario item, com.tag.sysTagRep.model.UbicacionDetalle ubicacion, String rutaLogo, String razonSocial) {
+        int total = (ubicacion != null && ubicacion.getStockAsignado() != null && ubicacion.getStockAsignado() > 0) ? ubicacion.getStockAsignado() : 1;
+        List<File> archivos = new ArrayList<>();
+        for (int i = 1; i <= total; i++) {
+            File f = generarEtiquetaConIndice(item, ubicacion, i, total, rutaLogo, razonSocial);
+            if (f != null) archivos.add(f);
+        }
+        return archivos;
+    }
+
+    public static File generarEtiqueta(Inventario item, String rutaLogo, String razonSocial) {
+        BufferedImage img = renderImagenEtiquetaSimple(item, rutaLogo);
+        try {
+            Path dir = getEtiquetasDir();
+            Files.createDirectories(dir);
+            String codigo = item.getCodigo() != null ? item.getCodigo() : "";
             String safeName = codigo.replaceAll("[^a-zA-Z0-9]", "_");
             File outFile = new File(dir.toFile(), "etiqueta_" + safeName + ".jpg");
             escribirJpgConDpi(img, outFile);
@@ -381,6 +372,8 @@ public class EtiquetaUtil {
             return null;
         }
     }
+
+    public static Path getEtiquetasDirPublic() { return getEtiquetasDir(); }
 
     private static List<String> partirTexto(Graphics2D g, String texto, int maxWidth, int maxLineas) {
         List<String> lineas = new ArrayList<>();

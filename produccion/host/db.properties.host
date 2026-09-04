@@ -1,0 +1,4 @@
+# HOST 192.168.1.7 - dejar localhost
+db.url=jdbc:postgresql://localhost:5432/dbTag
+db.user=postgres
+db.password=admin

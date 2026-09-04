@@ -1,0 +1,55 @@
+PASOS PARA PONER EN PRODUCCION - SysTagRep 1.5
+================================================
+Build: 2026-09-04 - JAR 44M incluye:
+ - Multi-PC 192.168.1.7 host + 192.168.1.5 cliente (DB 001-001 sin solape, UNIQUE, DbConfig ~/.systag/db.properties)
+ - Etiqueta 6x2.5cm 480x200 @203 DPI barcode 234x50 izq gap14, letras 30/28/26 auto-reduce 26->16, N copias 1/N por stock
+ - Inventario: Ingreso por Factura + Ingreso por Producto (solo descripcion,grupo,marca,codigo,cantidad,precio)
+ - Consumidor Final >50 bloqueado (9999999999999/9999999999 tipo07)
+ - Fix paginacion inventario STRING_AGG
+
+CARPETA produccion/ (y produccion.zip 39M)
+ - comun/SysTagRep-1.5-SNAPSHOT.jar
+ - comun/run.bat / ejecutar.sh  -> java -Xmx1024m --enable-native-access=ALL-UNNAMED -jar SysTagRep-1.5-SNAPSHOT.jar
+ - comun/empaquetar_instalador.bat + mvnw (para MSI en Windows con WiX 3.11)
+ - comun/sql/fix_multipc_numeracion_20260831.sql
+ - host/db.properties.host  (localhost)
+ - cliente/db.properties.cliente (192.168.1.7)
+ - README_PRODUCCION.txt + PASOS_PRD.txt (este archivo)
+
+=== COMPILAR (ya compilado, si recompilas) ===
+mvn clean package -DskipTests
+# genera target/SysTagRep-1.5-SNAPSHOT.jar -> copiar a produccion/comun/
+# MSI opcional solo en Windows:
+#   empaquetar_instalador.bat  -> dist/SysTagRep-1.5.0.msi (ya lleva JRE)
+
+=== HOST 192.168.1.7 ===
+1) Copiar produccion/comun/SysTagRep-1.5-SNAPSHOT.jar + run.bat a C:\SysTagRep\  (o instalar MSI)
+2) PostgreSQL:
+   postgresql.conf: listen_addresses='*'
+   pg_hba.conf: host dbTag app_systag 192.168.1.0/24 scram-sha-256
+   psql: CREATE USER app_systag WITH PASSWORD 'CAMBIAR';
+         GRANT CONNECT ON DATABASE dbTag TO app_systag;
+         GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO app_systag;
+         ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO app_systag;
+   Firewall: regla entrada TCP 5432 desde 192.168.1.5
+   Reserva DHCP router para 192.168.1.7
+3) SQL 1 vez en HOST:
+   psql -h localhost -U postgres -d dbTag -f produccion/comun/sql/fix_multipc_numeracion_20260831.sql
+   Verifica: SELECT tipo, establecimiento||'-'||punto_emision, siguiente_numero FROM secuencia_documento;
+4) Firma .p12 misma en ambas: C:\Systag\firma.p12 + C:\Users\TU_USUARIO\.systag\firma.properties
+   ambiente.properties => PRODUCCION
+5) Primera ejecucion crea C:\Users\TU_USUARIO\.systag\db.properties -> dejar host como localhost
+   Licencia solo HOST: 449E9-2E789-B71DA-6D23A-20260930 para emugoKABUsDQZhckLohKymLW
+6) Ejecutar: run.bat
+
+=== CLIENTE 192.168.1.5 ===
+1) Copiar MISMO JAR + run.bat a C:\SysTagRep\ (o mismo MSI)
+2) Copiar misma firma .p12 a C:\Systag\firma.p12 + firma.properties/ambiente.properties a C:\Users\Cliente\.systag\
+3) Editar C:\Users\Cliente\.systag\db.properties (plantilla cliente/db.properties.cliente):
+   db.url=jdbc:postgresql://192.168.1.7:5432/dbTag
+   db.user=app_systag
+   db.password=CAMBIAR
+4) Sin licencia (MainApp omite si db remota)
+5) Test: factura CF 9999999999999 >50 debe bloquear; etiqueta N copias 1/5...5/5 en A-1-1 6x2.5cm
+
+ZIP listo para USB a ambas maquinas
