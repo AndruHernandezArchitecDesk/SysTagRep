@@ -25,8 +25,9 @@ public class GeminiChatbotService {
 
     private static final Logger LOGGER = Logger.getLogger(GeminiChatbotService.class.getName());
     private static final ObjectMapper MAPPER = new ObjectMapper();
-    private static final String GEMINI_MODEL_PRIMARY = "gemini-1.5-flash-latest";
-    private static final String GEMINI_MODEL_FALLBACK = "gemini-2.0-flash";
+    private static final String GEMINI_MODEL_PRIMARY = "gemini-3.1-flash-lite";
+    private static final String GEMINI_MODEL_FALLBACK = "gemini-flash-latest";
+    private static final String GEMINI_MODEL_FALLBACK2 = "gemini-flash-lite-latest";
     private static final Duration TIMEOUT = Duration.ofSeconds(20);
 
     public enum EstadoIA {
@@ -262,13 +263,24 @@ public class GeminiChatbotService {
     }
 
     private String llamarGemini(String prompt, String apiKey) throws Exception {
-        // fallback automático si el modelo primario no existe (404)
         try {
             return llamarGeminiConModelo(prompt, apiKey, GEMINI_MODEL_PRIMARY);
         } catch (GeminiException e) {
-            if (e.estado == EstadoIA.SIN_IA_SERVIDOR && e.getMessage().contains("404")) {
-                LOGGER.log(Level.WARNING, "Modelo primario no encontrado, probando fallback " + GEMINI_MODEL_FALLBACK);
-                return llamarGeminiConModelo(prompt, apiKey, GEMINI_MODEL_FALLBACK);
+            boolean es404 = e.getMessage().contains("404");
+            boolean es503 = e.getMessage().contains("503") || e.getMessage().contains("UNAVAILABLE");
+            if (e.estado == EstadoIA.SIN_IA_SERVIDOR && (es404 || es503)) {
+                LOGGER.log(Level.WARNING, "Modelo " + GEMINI_MODEL_PRIMARY + " falló (" + e.getMessage().substring(0, Math.min(80, e.getMessage().length())) + "), probando " + GEMINI_MODEL_FALLBACK);
+                try {
+                    return llamarGeminiConModelo(prompt, apiKey, GEMINI_MODEL_FALLBACK);
+                } catch (GeminiException e2) {
+                    boolean e2_404 = e2.getMessage().contains("404");
+                    boolean e2_503 = e2.getMessage().contains("503") || e2.getMessage().contains("UNAVAILABLE");
+                    if (e2.estado == EstadoIA.SIN_IA_SERVIDOR && (e2_404 || e2_503)) {
+                        LOGGER.log(Level.WARNING, "Modelo " + GEMINI_MODEL_FALLBACK + " falló, probando " + GEMINI_MODEL_FALLBACK2);
+                        return llamarGeminiConModelo(prompt, apiKey, GEMINI_MODEL_FALLBACK2);
+                    }
+                    throw e2;
+                }
             }
             throw e;
         }
