@@ -1,4 +1,4 @@
-PASOS PARA PONER EN PRODUCCION - SysTagRep 1.5
+PASOS PARA PONER EN PRODUCCION - SysTagRep 2.0
 ================================================
 Build: 2026-09-04 - JAR 44M incluye:
  - Multi-PC 192.168.1.7 host + 192.168.1.5 cliente (DB 001-001 sin solape, UNIQUE, DbConfig ~/.systag/db.properties)
@@ -8,8 +8,8 @@ Build: 2026-09-04 - JAR 44M incluye:
  - Fix paginacion inventario STRING_AGG
 
 CARPETA produccion/ (y produccion.zip 39M)
- - comun/SysTagRep-1.5-SNAPSHOT.jar
- - comun/run.bat / ejecutar.sh  -> java -Xmx1024m --enable-native-access=ALL-UNNAMED -jar SysTagRep-1.5-SNAPSHOT.jar
+ - comun/SysTagRep-2.0-SNAPSHOT.jar
+ - comun/run.bat / ejecutar.sh  -> java -Xmx1024m --enable-native-access=ALL-UNNAMED -jar SysTagRep-2.0-SNAPSHOT.jar
  - comun/empaquetar_instalador.bat + mvnw (para MSI en Windows con WiX 3.11)
  - comun/sql/fix_multipc_numeracion_20260831.sql
  - host/db.properties.host  (localhost)
@@ -18,12 +18,12 @@ CARPETA produccion/ (y produccion.zip 39M)
 
 === COMPILAR (ya compilado, si recompilas) ===
 mvn clean package -DskipTests
-# genera target/SysTagRep-1.5-SNAPSHOT.jar -> copiar a produccion/comun/
+# genera target/SysTagRep-2.0-SNAPSHOT.jar -> copiar a produccion/comun/
 # MSI opcional solo en Windows:
-#   empaquetar_instalador.bat  -> dist/SysTagRep-1.5.0.msi (ya lleva JRE)
+#   empaquetar_instalador.bat  -> dist/SysTagRep-2.0.0.msi (ya lleva JRE)
 
 === HOST 192.168.1.7 ===
-1) Copiar produccion/comun/SysTagRep-1.5-SNAPSHOT.jar + run.bat a C:\SysTagRep\  (o instalar MSI)
+1) Copiar produccion/comun/SysTagRep-2.0-SNAPSHOT.jar + run.bat a C:\SysTagRep\  (o instalar MSI)
 2) PostgreSQL:
    postgresql.conf: listen_addresses='*'
    pg_hba.conf: host dbTag app_systag 192.168.1.0/24 scram-sha-256

@@ -1,4 +1,4 @@
-SysTagRep 1.5 - Paquete PRODUCCION multi-PC
+SysTagRep 2.0 - Paquete PRODUCCION multi-PC
 ===========================================
 HOST 192.168.1.7 (PostgreSQL) + CLIENTE 192.168.1.5 (BD remota)
 Numeracion 001-001 centralizada sin solapamiento (UPDATE RETURNING)
@@ -6,7 +6,7 @@ Etiqueta 6x2.5cm 480x200 @203 DPI, barcode 234x50 izq, N copias 1/N por stock
 Consumidor final >50 bloqueado
 
 CONTENIDO:
-- comun/SysTagRep-1.5-SNAPSHOT.jar (44M, Java 17 + JavaFX embebido via shade)
+- comun/SysTagRep-2.0-SNAPSHOT.jar (44M, Java 17 + JavaFX embebido via shade)
 - comun/ejecutar.sh , comun/run.bat (java -jar)
 - comun/sql/fix_multipc_numeracion_20260831.sql (UNIQUE + sincroniza secuencia)
 - host/ , cliente/ con plantillas db.properties
@@ -18,10 +18,10 @@ REQUISITOS:
 - Red LAN 192.168.1.0/24 accesible puerto 5432
 
 INSTALACION HOST 192.168.1.7:
-1) Copiar produccion/comun/SysTagRep-1.5-SNAPSHOT.jar a C:\SysTagRep\
+1) Copiar produccion/comun/SysTagRep-2.0-SNAPSHOT.jar a C:\SysTagRep\
    y copiar produccion/comun/run.bat ahi (editar si ruta cambia)
 2) Si no tienes MSI: generar MSI en Windows con empaquetar_instalador.bat
-   (requiere JDK 17 + WiX 3.11) -> dist\SysTagRep-1.5.0.msi e instalar en ambas PCs.
+   (requiere JDK 17 + WiX 3.11) -> dist\SysTagRep-2.0.0.msi e instalar en ambas PCs.
    Si usas JAR: asegurar JDK 17 instalado.
 3) Configurar PostgreSQL:
    - postgresql.conf: listen_addresses='*'
@@ -40,10 +40,10 @@ INSTALACION HOST 192.168.1.7:
    Firma ya viene en C:\Users\TU_USUARIO\.systag\firma.properties (rutaP12 + clave cifrada)
 6) Primera ejecucion crea C:\Users\TU_USUARIO\.systag\db.properties con localhost (dejar asi)
    Licencia: activar solo en HOST con 449E9-2E789-B71DA-6D23A-20260930 para maquina emugoKABUsDQZhckLohKymLW
-7) Ejecutar: run.bat o java -Xmx1024m --enable-native-access=ALL-UNNAMED -jar SysTagRep-1.5-SNAPSHOT.jar
+7) Ejecutar: run.bat o java -Xmx1024m --enable-native-access=ALL-UNNAMED -jar SysTagRep-2.0-SNAPSHOT.jar
 
 INSTALACION CLIENTE 192.168.1.5:
-1) Copiar mismo SysTagRep-1.5-SNAPSHOT.jar + run.bat a C:\SysTagRep\
+1) Copiar mismo SysTagRep-2.0-SNAPSHOT.jar + run.bat a C:\SysTagRep\
    (o mismo MSI)
 2) Copiar misma firma .p12 a misma ruta C:\Systag\firma.p12
    + copiar C:\Users\HOST\.systag\firma.properties y ambiente.properties a C:\Users\Cliente\.systag\
@@ -59,7 +59,7 @@ INSTALACION CLIENTE 192.168.1.5:
    Test CF: cliente 9999999999999 con total >50 debe bloquear con advertencia
 
 NOTAS:
-- Para generar MSI en Windows: empaquetar_instalador.bat -> dist\SysTagRep-1.5.0.msi
+- Para generar MSI en Windows: empaquetar_instalador.bat -> dist\SysTagRep-2.0.0.msi
   Ese MSI ya lleva JRE y no necesitas JDK en cliente.
 - Etiquetas: 480x200 JPG en Documentos/etiquetas SYSTAG/etiqueta_ID_COD_UBI_1de5.jpg
   Imprimir en A4 al 100% da 6x2.5cm cada una (mosaico ~30 por hoja)

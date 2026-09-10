@@ -112,3 +112,81 @@
 .mensajes-box { -fx-background-color: -bg-card-alt; }
 .mensaje-usuario { -fx-background-color: -accent-green; -fx-text-fill: white; }
 .mensaje-bot { -fx-background-color: #EEE7D8; -fx-text-fill: -text-primary; }
+
+/* About - claro */
+.about-container {
+    -fx-background-color: -bg-page;
+    -fx-background-radius: 20;
+    -fx-padding: 36 32;
+    -fx-alignment: center;
+    -fx-spacing: 4;
+}
+.about-avatar {
+    -fx-background-color: -sidebar-bg;
+    -fx-background-radius: 50%;
+    -fx-min-width: 76;
+    -fx-min-height: 76;
+    -fx-max-width: 76;
+    -fx-max-height: 76;
+    -fx-alignment: center;
+}
+.about-avatar .label {
+    -fx-text-fill: -bg-page;
+    -fx-font-size: 26px;
+    -fx-font-weight: 600;
+}
+.about-avatar-icon {
+    -fx-icon-color: -bg-page;
+    -fx-icon-size: 30px;
+}
+.about-subtitle {
+    -fx-text-fill: -text-secondary;
+    -fx-font-size: 12px;
+    -fx-letter-spacing: 0.5px;
+}
+.about-divider {
+    -fx-background-color: -accent-orange;
+    -fx-min-height: 2;
+    -fx-max-width: 40;
+    -fx-background-radius: 2;
+}
+.about-version {
+    -fx-text-fill: -text-primary;
+    -fx-font-size: 13px;
+    -fx-font-weight: 500;
+}
+.about-log-block {
+    -fx-background-color: -bg-card;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-border-color: -border;
+    -fx-border-width: 1;
+    -fx-padding: 16;
+    -fx-spacing: 6;
+}
+.about-log-label {
+    -fx-text-fill: -text-secondary;
+    -fx-font-size: 10px;
+    -fx-letter-spacing: 1px;
+}
+.about-contact-line {
+    -fx-text-fill: -text-primary;
+    -fx-font-size: 12px;
+}
+.about-contact-key {
+    -fx-text-fill: -text-secondary;
+    -fx-font-size: 12px;
+}
+.about-footer-text {
+    -fx-text-fill: -text-secondary;
+    -fx-font-size: 11px;
+    -fx-text-alignment: center;
+}
+.about-close-btn {
+    -fx-background-color: -accent-orange;
+    -fx-text-fill: white;
+    -fx-background-radius: 12;
+    -fx-padding: 10 32;
+    -fx-font-size: 13px;
+    -fx-font-weight: 500;
+}

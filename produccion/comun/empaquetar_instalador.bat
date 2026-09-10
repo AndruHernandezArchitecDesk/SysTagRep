@@ -3,8 +3,8 @@ setlocal
 chcp 65001 >nul
 cd /d "%~dp0"
 
-set VERSION=1.5.0
-set JAR=SysTagRep-1.5-SNAPSHOT.jar
+set VERSION=2.0.0
+set JAR=SysTagRep-2.0-SNAPSHOT.jar
 set NOMBRE=SysTagRep
 set ICON=src\main\resources\img\app.ico
 

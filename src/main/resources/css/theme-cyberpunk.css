@@ -134,6 +134,72 @@
 .dark-mode .mensaje-bot { -fx-background-color: #2A2D3A; -fx-text-fill: -text-primary; }
 .dark-mode .mensaje-bot-sin-ia { -fx-background-color: #3A2A1A; -fx-text-fill: #F5D742; -fx-border-color: -accent-magenta; }
 
+/* About - dark */
+.about-container {
+    -fx-background-color: -bg-page;
+    -fx-background-radius: 6;
+    -fx-padding: 32;
+    -fx-alignment: center;
+    -fx-spacing: 4;
+    -fx-border-color: -border;
+    -fx-border-width: 1;
+}
+.about-avatar {
+    -fx-background-color: transparent;
+}
+.about-avatar-icon {
+    -fx-icon-color: -accent-cyan;
+    -fx-icon-size: 30px;
+}
+.about-subtitle {
+    -fx-text-fill: -text-secondary;
+    -fx-font-size: 11px;
+}
+.about-divider {
+    -fx-background-color: -border;
+    -fx-min-height: 1;
+    -fx-max-width: 999;
+}
+.about-version {
+    -fx-text-fill: -accent-cyan;
+    -fx-font-size: 12px;
+}
+.about-log-block {
+    -fx-background-color: -bg-card;
+    -fx-border-color: -border;
+    -fx-border-width: 1;
+    -fx-padding: 16;
+    -fx-spacing: 6;
+}
+.about-log-label {
+    -fx-text-fill: -text-secondary;
+    -fx-font-size: 10px;
+    -fx-letter-spacing: 1px;
+}
+.about-contact-line {
+    -fx-text-fill: -text-primary;
+    -fx-font-size: 12px;
+}
+.about-contact-key {
+    -fx-text-fill: -accent-cyan;
+    -fx-font-size: 12px;
+}
+.about-footer-text {
+    -fx-text-fill: -text-secondary;
+    -fx-font-size: 11px;
+}
+.about-close-btn {
+    -fx-background-color: transparent;
+    -fx-border-color: -accent-cyan;
+    -fx-border-width: 1;
+    -fx-text-fill: -accent-cyan;
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+    -fx-padding: 9 30;
+    -fx-font-size: 12px;
+    -fx-letter-spacing: 1px;
+}
+
 /* Look cuadrado cyberpunk - sobrescribe radios base */
 .card, .stat-card, .table-view, .button-primary, .btn-guardar, .alert-box, .panel-claro, .panel-inventario, .section-card {
     -fx-background-radius: 4;
