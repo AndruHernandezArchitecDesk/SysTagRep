@@ -3,6 +3,9 @@ package com.tag.sysTagRep.controller;
 import com.tag.sysTagRep.chatbot.GeminiChatbotService;
 import com.tag.sysTagRep.config.GeminiConfig;
 import com.tag.sysTagRep.dao.RepuestoChatbotDAO;
+import javafx.animation.Animation;
+import javafx.animation.FadeTransition;
+import javafx.animation.ScaleTransition;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -13,6 +16,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Circle;
+import javafx.util.Duration;
 
 public class ChatWidgetController {
 
@@ -23,12 +28,26 @@ public class ChatWidgetController {
     @FXML private TextField inputField;
     @FXML private Button bubbleButton;
     @FXML private Label badgeIA;
+    @FXML private Circle pulseCircle;
 
     private final GeminiChatbotService chatbotService = new GeminiChatbotService(new RepuestoChatbotDAO());
 
     @FXML
     public void initialize() {
         actualizarBadge();
+        iniciarPulso();
+    }
+
+    private void iniciarPulso() {
+        if (pulseCircle == null) return;
+        ScaleTransition scale = new ScaleTransition(Duration.seconds(1.4), pulseCircle);
+        scale.setFromX(0.9); scale.setToX(1.25);
+        scale.setFromY(0.9); scale.setToY(1.25);
+        scale.setAutoReverse(true); scale.setCycleCount(Animation.INDEFINITE);
+        FadeTransition fade = new FadeTransition(Duration.seconds(1.4), pulseCircle);
+        fade.setFromValue(0.45); fade.setToValue(0.0);
+        fade.setAutoReverse(true); fade.setCycleCount(Animation.INDEFINITE);
+        scale.play(); fade.play();
     }
 
     @FXML

@@ -1,18 +1,47 @@
 .chat-bubble {
     -fx-background-radius: 50%;
-    -fx-min-width: 56px;
-    -fx-min-height: 56px;
-    -fx-max-width: 56px;
-    -fx-max-height: 56px;
+    -fx-min-width: 64px;
+    -fx-min-height: 64px;
+    -fx-max-width: 64px;
+    -fx-max-height: 64px;
     -fx-font-size: 22px;
-    -fx-background-color: #2f6fed;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #C88B4A, #6B8E6B);
     -fx-text-fill: white;
     -fx-cursor: hand;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 8, 0, 0, 2);
-    -fx-translate-x: -20;
-    -fx-translate-y: -20;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.45), 14, 0.3, 0, 6);
+    -fx-border-color: rgba(255,255,255,0.9);
+    -fx-border-width: 2;
+    -fx-border-radius: 50%;
+    -fx-padding: 0;
+    -fx-alignment: center;
+    -fx-content-display: graphic-only;
 }
-.chat-bubble:hover { -fx-background-color: #1a4fd6; }
+.chat-bubble:hover {
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.55), 18, 0.4, 0, 8);
+    -fx-scale-x: 1.05;
+    -fx-scale-y: 1.05;
+}
+
+.chat-bubble-assistant {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #C88B4A, #6B8E6B);
+}
+
+.chat-bubble-pulse {
+    -fx-fill: transparent;
+    -fx-stroke: #6B8E6B;
+    -fx-stroke-width: 2;
+    -fx-opacity: 0.35;
+}
+
+.chat-bubble-icon {
+    -fx-icon-color: #4285F4;
+    -fx-icon-size: 26px;
+}
+
+.chat-header-icon {
+    -fx-icon-color: #6B8E6B;
+    -fx-icon-size: 18px;
+}
 
 .chat-panel {
     -fx-background-color: white;

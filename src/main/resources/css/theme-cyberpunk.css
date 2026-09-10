@@ -13,6 +13,7 @@
     -accent-green:   #00F0FF;
     -accent-orange:  #FF3EA5;
     -accent-primary: #00F0FF;
+    -gemini-blue:    #8AB4F8;
     -border:         #2A2D3A;
     -sidebar-bg:     #14151F;
     -sidebar-text:   #C9CDD6;
@@ -99,7 +100,11 @@
 .stock-bajo:odd { -fx-background-color: rgba(255, 62, 165, 0.24); }
 
 /* Chat widget dark */
-.chat-bubble { -fx-background-color: -accent-magenta; }
+.chat-bubble { -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, -accent-cyan, -accent-purple); }
+.chat-bubble-assistant { -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, -accent-cyan, -accent-purple); }
+.chat-bubble-pulse { -fx-stroke: -gemini-blue; }
+.chat-bubble-icon { -fx-icon-color: -gemini-blue; }
+.chat-header-icon { -fx-icon-color: -gemini-blue; }
 .chat-panel { -fx-background-color: -bg-card; -fx-border-color: -border; }
 .chat-header-label { -fx-text-fill: -text-primary; }
 .mensajes-box { -fx-background-color: -bg-page; }

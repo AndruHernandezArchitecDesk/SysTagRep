@@ -28,7 +28,7 @@ public class GeminiChatbotService {
     private static final String GEMINI_MODEL_PRIMARY = "gemini-3.1-flash-lite";
     private static final String GEMINI_MODEL_FALLBACK = "gemini-flash-latest";
     private static final String GEMINI_MODEL_FALLBACK2 = "gemini-flash-lite-latest";
-    private static final Duration TIMEOUT = Duration.ofSeconds(20);
+    private static final Duration TIMEOUT = Duration.ofSeconds(45);
 
     public enum EstadoIA {
         IA_ACTIVA,          // key presente y último call ok
@@ -215,7 +215,7 @@ public class GeminiChatbotService {
             respuestaLocal = "💡 Sugerencia IA: " + motivo + " → buscando \"" + descripcion + "\"\n" + respuestaLocal;
         }
 
-        // Redacción final breve con IA (opcional, no falla si error)
+        // Redacción final breve con IA (best-effort, no invalida extracción)
         try {
             String promptRespuesta = """
                     Eres asistente SysTagRep. Responde breve en español (máx 3 líneas).
@@ -227,11 +227,10 @@ public class GeminiChatbotService {
                     """.formatted(texto.replace("\"", "'"), motivo != null ? motivo : "repuesto directo", respuestaLocal.replace("\"", "'"));
             String redaccion = llamarGemini(promptRespuesta, apiKey);
             if (redaccion != null && !redaccion.isBlank() && redaccion.length() < 700) {
-                // Si era síntoma, asegurar que la redacción incluya el motivo; si no, usar redacción tal cual
                 return redaccion.trim();
             }
         } catch (GeminiException ge) {
-            throw ge; // propagar para badge sin IA
+            LOGGER.log(Level.FINE, "Redacción Gemini falló (se usa respuesta local): " + ge.getMessage());
         } catch (Exception e) {
             LOGGER.log(Level.FINE, "Fallo redacción Gemini", e);
         }
@@ -307,7 +306,7 @@ public class GeminiChatbotService {
         try {
             resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
         } catch (java.net.http.HttpTimeoutException e) {
-            throw new GeminiException(EstadoIA.SIN_IA_CONEXION, "Timeout 20s: " + e.getMessage());
+            throw new GeminiException(EstadoIA.SIN_IA_CONEXION, "Timeout 45s: " + e.getMessage());
         } catch (java.io.IOException e) {
             throw new GeminiException(EstadoIA.SIN_IA_CONEXION, "Sin conexión: " + e.getMessage());
         }

@@ -13,6 +13,7 @@
     -accent-cyan:    #6B8E6B;
     -accent-magenta: #C88B4A;
     -accent-yellow:  #C88B4A;
+    -gemini-blue:    #4285F4;
     -border:         #EEE7D8;
     -sidebar-bg:     #7C8B6F;
     -sidebar-text:   #F5F0E6;
@@ -101,7 +102,11 @@
 .stock-bajo:odd { -fx-background-color: rgba(181, 101, 74, 0.18); }
 
 /* Chat widget overrides claro */
-.chat-bubble { -fx-background-color: -accent-orange; }
+.chat-bubble { -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, -accent-orange, -accent-green); }
+.chat-bubble-assistant { -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, -accent-orange, -accent-green); }
+.chat-bubble-pulse { -fx-stroke: -gemini-blue; }
+.chat-bubble-icon { -fx-icon-color: -gemini-blue; }
+.chat-header-icon { -fx-icon-color: -gemini-blue; }
 .chat-panel { -fx-background-color: -bg-card; -fx-border-color: -border; }
 .chat-header-label { -fx-text-fill: -text-primary; }
 .mensajes-box { -fx-background-color: -bg-card-alt; }

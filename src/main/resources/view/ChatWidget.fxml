@@ -5,9 +5,12 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Circle?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <StackPane fx:id="rootStack" pickOnBounds="false" alignment="BOTTOM_RIGHT"
            xmlns="http://javafx.com/javafx"
@@ -21,6 +24,7 @@
         <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
 
         <HBox styleClass="chat-header" alignment="CENTER_LEFT" spacing="6">
+            <FontIcon iconLiteral="fas-robot" styleClass="chat-header-icon"/>
             <Label text="Asistente de repuestos" styleClass="chat-header-label"/>
             <Label fx:id="badgeIA" text="○ Local" styleClass="badge-local"/>
             <HBox HBox.hgrow="ALWAYS"/>
@@ -41,8 +45,16 @@
         </HBox>
     </VBox>
 
-    <!-- Botón burbuja flotante -->
-    <Button fx:id="bubbleButton" text="💬" styleClass="chat-bubble" onAction="#onToggleChat"
-            StackPane.alignment="BOTTOM_RIGHT"/>
+       <!-- Botón burbuja asistente con pulso - ambos en esquina inferior derecha -->
+    <Circle fx:id="pulseCircle" styleClass="chat-bubble-pulse" radius="32" managed="false" mouseTransparent="true" opacity="0.35" StackPane.alignment="BOTTOM_RIGHT" style="-fx-translate-x: -52; -fx-translate-y: -52;"/>
+    <Button fx:id="bubbleButton" styleClass="chat-bubble chat-bubble-assistant" onAction="#onToggleChat"
+            StackPane.alignment="BOTTOM_RIGHT" style="-fx-translate-x: -20; -fx-translate-y: -20;">
+        <graphic>
+            <FontIcon iconLiteral="fas-robot" iconSize="26" styleClass="chat-bubble-icon"/>
+        </graphic>
+        <tooltip>
+            <Tooltip text="Asistente IA — pregunta por repuestos"/>
+        </tooltip>
+    </Button>
 
 </StackPane>
