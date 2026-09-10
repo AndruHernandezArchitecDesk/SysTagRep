@@ -80,7 +80,18 @@
 .titled-pane > .content { -fx-background-color: -bg-card; }
 .separator .line { -fx-border-color: -border; }
 .label { -fx-text-fill: -text-primary; }
+.text { -fx-fill: -text-primary; }
+.text-flow { -fx-fill: -text-primary; }
 .check-box .text, .radio-button .text { -fx-fill: -text-primary; }
+
+/* Login dark - texto claro acorde al tema */
+.login-card { -fx-background-color: -bg-card; -fx-border-color: -border; }
+.login-titulo { -fx-fill: -text-primary; }
+.login-subtitulo { -fx-fill: -text-secondary; }
+.login-copy { -fx-fill: -text-secondary; }
+
+/* Override para labels con style inline negro previo */
+.label-dark-override { -fx-text-fill: -text-primary; }
 
 /* Ubicacion Percha - dark */
 .perchero-seccion { -fx-background-color: -bg-card; -fx-border-color: -border; }
@@ -99,17 +110,29 @@
 .stock-bajo { -fx-background-color: rgba(255, 62, 165, 0.18); }
 .stock-bajo:odd { -fx-background-color: rgba(255, 62, 165, 0.24); }
 
-/* Chat widget dark */
+/* Chat widget dark - fondo y recuadros acorde al tema */
 .chat-bubble { -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, -accent-cyan, -accent-purple); }
 .chat-bubble-assistant { -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, -accent-cyan, -accent-purple); }
 .chat-bubble-pulse { -fx-stroke: -gemini-blue; }
 .chat-bubble-icon { -fx-icon-color: -gemini-blue; }
 .chat-header-icon { -fx-icon-color: -gemini-blue; }
 .chat-panel { -fx-background-color: -bg-card; -fx-border-color: -border; }
+.chat-header { -fx-border-color: transparent transparent -border transparent; }
 .chat-header-label { -fx-text-fill: -text-primary; }
+.chat-scroll, .chat-scroll .viewport { -fx-background-color: -bg-page; }
 .mensajes-box { -fx-background-color: -bg-page; }
 .mensaje-usuario { -fx-background-color: -accent-cyan; -fx-text-fill: -bg-page; }
-.mensaje-bot { -fx-background-color: -bg-card-alt; -fx-text-fill: -text-primary; }
+.mensaje-bot { -fx-background-color: #2A2D3A; -fx-border-color: -border; -fx-border-width: 1; -fx-text-fill: -text-primary; }
+.mensaje-bot-sin-ia { -fx-background-color: #3A2A1A; -fx-border-color: -accent-magenta; -fx-border-width: 1; -fx-text-fill: #F5D742; }
+.btn-enviar { -fx-background-color: -accent-cyan; -fx-text-fill: -bg-page; }
+.btn-cerrar { -fx-text-fill: -text-secondary; }
+
+/* Alta especificidad para pisar chat-widget.css claro cuando está cargado vía FXML */
+.dark-mode .chat-panel { -fx-background-color: -bg-card; -fx-border-color: -border; }
+.dark-mode .mensajes-box { -fx-background-color: -bg-page; }
+.dark-mode .chat-scroll, .dark-mode .chat-scroll .viewport { -fx-background-color: -bg-page; }
+.dark-mode .mensaje-bot { -fx-background-color: #2A2D3A; -fx-text-fill: -text-primary; }
+.dark-mode .mensaje-bot-sin-ia { -fx-background-color: #3A2A1A; -fx-text-fill: #F5D742; -fx-border-color: -accent-magenta; }
 
 /* Look cuadrado cyberpunk - sobrescribe radios base */
 .card, .stat-card, .table-view, .button-primary, .btn-guardar, .alert-box, .panel-claro, .panel-inventario, .section-card {

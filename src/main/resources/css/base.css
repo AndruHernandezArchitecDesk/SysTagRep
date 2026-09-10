@@ -255,3 +255,21 @@
 
 .stock-normal { -fx-background-color: -bg-card; }
 .stock-normal:odd { -fx-background-color: -bg-card-alt; }
+
+/* Login - estructura */
+.login-card {
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-padding: 30;
+    -fx-background-color: -bg-card;
+    -fx-border-color: -border;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 20, 0, 0, 8);
+}
+
+.login-titulo { -fx-fill: -text-primary; -fx-font-size: 18px; -fx-font-weight: bold; -fx-font-family: "Monospaced"; }
+.login-subtitulo { -fx-fill: -text-secondary; -fx-font-size: 12px; }
+.login-copy { -fx-fill: -text-secondary; -fx-font-size: 10px; }
+
+/* Global Text para pantallas con <Text> en dark */
+.text { -fx-fill: -text-primary; }
