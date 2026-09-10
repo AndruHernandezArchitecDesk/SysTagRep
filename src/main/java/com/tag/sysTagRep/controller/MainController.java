@@ -1,5 +1,6 @@
 package com.tag.sysTagRep.controller;
 
+import com.tag.sysTagRep.config.GeminiConfig;
 import com.tag.sysTagRep.dao.LogDAO;
 import com.tag.sysTagRep.service.AlertaService;
 import com.tag.sysTagRep.util.AboutDialog;
@@ -215,6 +216,51 @@ public class MainController implements Initializable {
     @FXML
     private void irFirma() {
         cargarVista("/view/FirmaView.fxml");
+    }
+
+    @FXML
+    private void irAsistenteRepuestos() {
+        try {
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/view/ChatWidget.fxml"));
+            Parent root = loader.load();
+            Object ctrl = loader.getController();
+            if (ctrl instanceof ChatWidgetController cwc) {
+                javafx.application.Platform.runLater(cwc::abrir);
+            }
+            Stage stage = new Stage();
+            stage.setTitle("Asistente de Repuestos - SysTag");
+            stage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+            stage.initOwner(contenedor.getScene().getWindow());
+            Scene scene = new Scene(root, 400, 500);
+            ThemeManager.aplicarTemaGuardado(scene);
+            stage.setScene(scene);
+            stage.setResizable(false);
+            stage.show();
+        } catch (Exception e) {
+            logDAO.guardar("MainController", "irAsistenteRepuestos", e.getMessage(), e);
+            Alert alert = new Alert(Alert.AlertType.ERROR, "No se pudo abrir el asistente: " + e.getMessage(), ButtonType.OK);
+            alert.showAndWait();
+        }
+    }
+
+    @FXML
+    private void irConfigurarIA() {
+        javafx.scene.control.TextInputDialog dlg = new javafx.scene.control.TextInputDialog(
+                GeminiConfig.obtenerApiKey() != null ? GeminiConfig.obtenerApiKey() : "");
+        dlg.setTitle("Configurar IA");
+        dlg.setHeaderText("Gemini API Key");
+        dlg.setContentText("API Key (https://aistudio.google.com/apikey):");
+        var result = dlg.showAndWait();
+        if (result.isPresent()) {
+            String key = result.get().trim();
+            if (key.isEmpty()) {
+                GeminiConfig.borrarApiKey();
+                new Alert(Alert.AlertType.INFORMATION, "API key eliminada. El chat usará modo local sin IA.", ButtonType.OK).showAndWait();
+            } else {
+                GeminiConfig.guardarApiKey(key);
+                new Alert(Alert.AlertType.INFORMATION, "API key guardada en ~/.systag/gemini.properties\nBadge mostrará ● IA Gemini", ButtonType.OK).showAndWait();
+            }
+        }
     }
 
     @FXML

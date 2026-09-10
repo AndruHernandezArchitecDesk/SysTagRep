@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<StackPane fx:id="rootStack" pickOnBounds="false" alignment="BOTTOM_RIGHT"
+           xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:controller="com.tag.sysTagRep.controller.ChatWidgetController"
+           stylesheets="@../css/chat-widget.css">
+
+    <!-- Panel de chat (oculto por defecto) -->
+    <VBox fx:id="chatPanel" styleClass="chat-panel" visible="false" managed="false"
+          maxWidth="360" maxHeight="480" StackPane.alignment="BOTTOM_RIGHT">
+        <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+
+        <HBox styleClass="chat-header" alignment="CENTER_LEFT" spacing="6">
+            <Label text="Asistente de repuestos" styleClass="chat-header-label"/>
+            <Label fx:id="badgeIA" text="○ Local" styleClass="badge-local"/>
+            <HBox HBox.hgrow="ALWAYS"/>
+            <Button text="✕" onAction="#onToggleChat" styleClass="btn-cerrar"/>
+        </HBox>
+
+        <ScrollPane fx:id="scrollPane" fitToWidth="true" styleClass="chat-scroll" VBox.vgrow="ALWAYS">
+            <VBox fx:id="mensajesBox" styleClass="mensajes-box" spacing="8">
+                <padding><Insets top="8" right="8" bottom="8" left="8"/></padding>
+            </VBox>
+        </ScrollPane>
+
+        <HBox spacing="6" styleClass="input-bar">
+            <padding><Insets top="8"/></padding>
+            <TextField fx:id="inputField" promptText="Ej: tapa radiador CHEV AVEO" HBox.hgrow="ALWAYS"
+                       onAction="#onEnviar"/>
+            <Button text="Enviar" onAction="#onEnviar" styleClass="btn-enviar"/>
+        </HBox>
+    </VBox>
+
+    <!-- Botón burbuja flotante -->
+    <Button fx:id="bubbleButton" text="💬" styleClass="chat-bubble" onAction="#onToggleChat"
+            StackPane.alignment="BOTTOM_RIGHT"/>
+
+</StackPane>

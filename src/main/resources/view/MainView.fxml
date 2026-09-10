@@ -5,11 +5,13 @@
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.image.Image?>
 <?import org.kordamp.ikonli.javafx.FontIcon?>
-<BorderPane xmlns="http://javafx.com/javafx/21"
-            xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.tag.sysTagRep.controller.MainController"
-            prefHeight="400.0" prefWidth="600.0"
-            styleClass="root-pane">
+<StackPane xmlns="http://javafx.com/javafx/21"
+           xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.tag.sysTagRep.controller.MainController"
+           prefHeight="400.0" prefWidth="600.0"
+           styleClass="root-pane">
+
+    <BorderPane StackPane.alignment="CENTER">
 
     <!-- MENÚ SUPERIOR -->
     <top>
@@ -62,6 +64,9 @@
                     <MenuItem text="Firma Electrónica" onAction="#irFirma"/>
                 </Menu>
                 <Menu text="Ayuda">
+                    <MenuItem text="Asistente de Repuestos" onAction="#irAsistenteRepuestos"/>
+                    <MenuItem text="Configurar IA (Gemini)" onAction="#irConfigurarIA"/>
+                    <SeparatorMenuItem/>
                     <MenuItem text="Acerca de" onAction="#acercaDe"/>
                 </Menu>
             </MenuBar>
@@ -88,3 +93,8 @@
         </HBox>
     </bottom>
 </BorderPane>
+
+    <!-- Widget flotante chatbot (pickOnBounds=false no bloquea clicks) -->
+    <fx:include source="ChatWidget.fxml"/>
+
+</StackPane>
