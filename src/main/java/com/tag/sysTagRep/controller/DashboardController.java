@@ -149,7 +149,7 @@ public class DashboardController implements Initializable {
             listaStockBajo.getChildren().clear();
             if (bajos.isEmpty()) {
                 Label vacio = new Label("No hay productos con stock bajo.");
-                vacio.setStyle("-fx-text-fill: #7f8c8d; -fx-font-size: 13px;");
+                vacio.setStyle("-fx-font-size: 13px");
                 listaStockBajo.getChildren().add(vacio);
                 return;
             }
@@ -161,19 +161,19 @@ public class DashboardController implements Initializable {
                 row.setAlignment(Pos.CENTER_LEFT);
                 row.setSpacing(8);
                 Label punto = new Label("•");
-                punto.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 14px; -fx-font-weight: bold;");
+                punto.setStyle("-fx-font-size: 14px; -fx-font-weight: bold");
                 Label nombre = new Label(inv.getDescripcion());
-                nombre.setStyle("-fx-font-size: 14px; -fx-text-fill: #2c3e50;");
+                nombre.setStyle("-fx-font-size: 14px");
                 Region region = new Region();
                 HBox.setHgrow(region, Priority.ALWAYS);
                 Label cantidad = new Label(String.valueOf(inv.getCantidad()));
-                cantidad.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #e74c3c;");
+                cantidad.setStyle("-fx-font-size: 14px; -fx-font-weight: bold");
                 row.getChildren().addAll(punto, nombre, region, cantidad);
                 listaStockBajo.getChildren().add(row);
             }
             if (bajos.size() > maxMostrar) {
                 Label mas = new Label("... y " + (bajos.size() - maxMostrar) + " más");
-                mas.setStyle("-fx-text-fill: #7f8c8d; -fx-font-size: 13px;");
+                mas.setStyle("-fx-font-size: 13px");
                 listaStockBajo.getChildren().add(mas);
             }
         } catch (Exception e) {

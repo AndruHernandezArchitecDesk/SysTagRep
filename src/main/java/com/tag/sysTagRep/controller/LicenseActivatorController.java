@@ -34,17 +34,17 @@ public class LicenseActivatorController {
         String cleanKey = key.trim();
         if (LicenseManager.isPerpetua(cleanKey)) {
             lblStatus.setText("Licencia VITALICIA — no expira.");
-            lblStatus.setStyle("-fx-text-fill: #00ffcc;");
+            lblStatus.setStyle("");
             return;
         }
         var vencimiento = LicenseManager.getVencimientoDeClave(cleanKey);
         if (vencimiento != null) {
             if (vencimiento.isBefore(java.time.LocalDate.now())) {
                 lblStatus.setText("Esta licencia ya venció (" + vencimiento + ").");
-                lblStatus.setStyle("-fx-text-fill: red;");
+                lblStatus.setStyle("");
             } else {
                 lblStatus.setText("Licencia válida hasta: " + vencimiento);
-                lblStatus.setStyle("-fx-text-fill: #00ffcc;");
+                lblStatus.setStyle("");
             }
         } else {
             lblStatus.setText("");
@@ -57,7 +57,7 @@ public class LicenseActivatorController {
 
         if (key.isEmpty()) {
             lblStatus.setText("Ingrese el código de licencia.");
-            lblStatus.setStyle("-fx-text-fill: red;");
+            lblStatus.setStyle("");
             return;
         }
 
@@ -65,7 +65,7 @@ public class LicenseActivatorController {
         var vencimiento = LicenseManager.getVencimientoDeClave(key);
         if (vencimiento == null && !perpetua) {
             lblStatus.setText("Formato de licencia inválido.");
-            lblStatus.setStyle("-fx-text-fill: red;");
+            lblStatus.setStyle("");
             return;
         }
 
@@ -76,12 +76,12 @@ public class LicenseActivatorController {
                     ? "Licencia VITALICIA activada correctamente."
                     : "Licencia activada correctamente (vence: " + vencimiento + ").";
             lblStatus.setText(msg);
-            lblStatus.setStyle("-fx-text-fill: green;");
+            lblStatus.setStyle("");
             Stage stage = (Stage) btnActivate.getScene().getWindow();
             stage.close();
         } else {
             lblStatus.setText("Código de licencia inválido.");
-            lblStatus.setStyle("-fx-text-fill: red;");
+            lblStatus.setStyle("");
         }
     }
 

@@ -1,0 +1,257 @@
+/* base.css - estructura compartida (layout, spacing, radios) sin colores */
+.card {
+    -fx-background-radius: 16;
+    -fx-border-radius: 16;
+    -fx-padding: 16;
+    -fx-background-color: -bg-card;
+    -fx-border-color: -border;
+    -fx-border-width: 1;
+}
+
+.stat-card {
+    -fx-background-radius: 16;
+    -fx-border-radius: 16;
+    -fx-padding: 14 16;
+    -fx-background-color: -bg-card;
+    -fx-border-color: -border;
+    -fx-border-width: 1;
+    -fx-spacing: 6;
+}
+
+.stat-card .label-title {
+    -fx-font-size: 12px;
+    -fx-text-fill: -text-secondary;
+}
+
+.stat-card .label-value {
+    -fx-font-size: 22px;
+    -fx-font-weight: 500;
+}
+
+.sidebar {
+    -fx-background-color: -sidebar-bg;
+    -fx-padding: 12;
+}
+
+.sidebar .label {
+    -fx-text-fill: -sidebar-text;
+}
+
+.table-view {
+    -fx-background-color: -bg-card;
+    -fx-border-color: -border;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: -bg-card-alt;
+}
+
+.table-view .column-header {
+    -fx-background-color: transparent;
+}
+
+.button-primary {
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-padding: 8 18;
+    -fx-font-weight: 500;
+}
+
+.btn-guardar {
+    -fx-background-radius: 8;
+    -fx-padding: 10 28;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+
+.btn-orden {
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+    -fx-padding: 1 5;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+    -fx-min-width: 24;
+}
+
+.alert-box {
+    -fx-background-radius: 14;
+    -fx-border-radius: 14;
+    -fx-padding: 14 16;
+    -fx-border-width: 1;
+    -fx-background-color: -bg-card;
+}
+
+.panel-claro {
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-padding: 14;
+    -fx-background-color: -bg-card;
+    -fx-border-color: -border;
+    -fx-border-width: 1;
+}
+
+.panel-inventario {
+    -fx-background-radius: 5;
+    -fx-border-radius: 5;
+    -fx-padding: 10;
+    -fx-background-color: -bg-card;
+    -fx-border-color: -border;
+    -fx-border-width: 1;
+}
+
+.section-card {
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-background-color: -bg-card;
+    -fx-border-color: -border;
+    -fx-border-width: 1;
+}
+
+.section-card > .title {
+    -fx-background-color: -bg-card-alt;
+    -fx-background-radius: 8 8 0 0;
+    -fx-border-radius: 8 8 0 0;
+}
+
+.section-card > .content {
+    -fx-background-color: -bg-card;
+}
+
+.nota-header {
+    -fx-padding: 20;
+    -fx-background-color: -bg-card-alt;
+    -fx-border-color: -border;
+    -fx-border-width: 0 0 1 0;
+}
+
+.factura-header {
+    -fx-padding: 10;
+    -fx-background-color: -bg-card-alt;
+    -fx-border-color: -border;
+    -fx-border-width: 0 0 1 0;
+}
+
+.footer-bar {
+    -fx-padding: 6 20;
+    -fx-background-color: -bg-card-alt;
+    -fx-border-color: -border;
+    -fx-border-width: 1 0 0 0;
+    -fx-opacity: 0.85;
+}
+
+.titulo {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-padding: 2 0 2 12;
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent transparent -accent-primary;
+    -fx-border-width: 0 0 0 4;
+}
+
+.titulo-icono {
+    -fx-icon-size: 20px;
+}
+
+.header {
+    -fx-background-color: -bg-card-alt;
+    -fx-padding: 5 0 10 0;
+}
+
+.empresa-razon {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+.empresa-info {
+    -fx-font-size: 12px;
+}
+
+/* Campos base - layout only, colores via theme */
+.text-field, .combo-box, .spinner, .date-picker {
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-padding: 5 8;
+    -fx-font-size: 13px;
+}
+
+.text-field:focused, .combo-box:focused, .spinner:focused, .date-picker:focused {
+    -fx-border-width: 1.5;
+    -fx-background-insets: 0;
+}
+
+.combo-box > .text-field {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+    -fx-padding: 0;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+.button {
+    -fx-font-weight: bold;
+    -fx-background-radius: 6;
+}
+
+/* Ubicacion Percha - estructura */
+.perchero-seccion {
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-padding: 12;
+    -fx-background-color: -bg-card;
+    -fx-border-color: -border;
+    -fx-border-width: 1;
+    -fx-spacing: 8;
+}
+
+.perchero-seccion-titulo {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-primary;
+}
+
+.perchero-bloque {
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-cursor: hand;
+    -fx-alignment: center;
+    -fx-padding: 4;
+}
+
+.perchero-bloque-libre {
+    -fx-border-color: -accent-green;
+}
+
+.perchero-bloque-ocupado {
+    -fx-border-color: -accent-danger;
+}
+
+.perchero-bloque-seleccionado {
+    -fx-border-width: 3;
+    -fx-border-color: -accent-primary;
+}
+
+.estado-disponible { -fx-text-fill: -accent-green; -fx-font-weight: bold; }
+.estado-ocupado { -fx-text-fill: -accent-danger; -fx-font-weight: bold; }
+
+/* Gestion Stock - estructura */
+.gestion-stock-pane {
+    -fx-border-color: -border;
+    -fx-border-width: 1;
+}
+
+.stock-bajo {
+    -fx-background-color: rgba(181, 101, 74, 0.12);
+}
+
+.stock-bajo:odd {
+    -fx-background-color: rgba(181, 101, 74, 0.18);
+}
+
+.stock-normal { -fx-background-color: -bg-card; }
+.stock-normal:odd { -fx-background-color: -bg-card-alt; }

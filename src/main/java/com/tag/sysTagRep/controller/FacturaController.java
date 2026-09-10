@@ -338,7 +338,7 @@ public class FacturaController implements Initializable {
             private final Button btn = new Button();
             {
                 btn.setGraphic(new FontIcon(FontAwesomeSolid.TRASH));
-                btn.setStyle("-fx-background-color: transparent; -fx-cursor: hand;");
+                btn.setStyle("-fx-background-color: transparent; -fx-cursor: hand");
                 btn.setOnAction(e -> { itemsDetalle.remove(getTableView().getItems().get(getIndex())); calcularTotales(); });
             }
             @Override protected void updateItem(Void item, boolean empty) {

@@ -242,7 +242,7 @@ public class NotaVentaController implements Initializable {
                     DetalleVenta d = getTableView().getItems().get(getIndex());
                     if (d.getProductoId() == 0) {
                         setText(item + " \u2022 TEMP");
-                        setStyle("-fx-text-fill: #e67e22; -fx-font-weight: bold;");
+                        setStyle("-fx-font-weight: bold");
                     } else { setText(item); setStyle(""); }
                 }
             }
@@ -255,7 +255,7 @@ public class NotaVentaController implements Initializable {
                     DetalleVenta d = getTableView().getItems().get(getIndex());
                     if (d.getProductoId() == 0) {
                         setText(item + " [TEMPORAL]");
-                        setStyle("-fx-text-fill: #e67e22;");
+                        setStyle("");
                     } else { setText(item); setStyle(""); }
                 }
             }
@@ -265,7 +265,7 @@ public class NotaVentaController implements Initializable {
             private final Button btn = new Button();
             {
                 btn.setGraphic(new FontIcon(FontAwesomeSolid.TRASH));
-                btn.setStyle("-fx-background-color: transparent; -fx-cursor: hand;");
+                btn.setStyle("-fx-background-color: transparent; -fx-cursor: hand");
                 btn.setOnAction(e -> { itemsDetalle.remove(getTableView().getItems().get(getIndex())); calcularTotales(); });
             }
             @Override protected void updateItem(Void item, boolean empty) {
@@ -280,7 +280,7 @@ public class NotaVentaController implements Initializable {
             @Override protected void updateItem(DetalleVenta item, boolean empty) {
                 super.updateItem(item, empty);
                 if (empty || item == null) setStyle("");
-                else if (item.getProductoId() == 0) setStyle("-fx-background-color: #fef9e7;");
+                else if (item.getProductoId() == 0) setStyle("");
                 else setStyle("");
             }
         });
@@ -359,7 +359,7 @@ public class NotaVentaController implements Initializable {
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
-        grid.setStyle("-fx-padding: 15;");
+        grid.setStyle("-fx-padding: 15");
 
         TextField txtCodigo = new TextField();
         txtCodigo.setPromptText("Ej: TMP-001");

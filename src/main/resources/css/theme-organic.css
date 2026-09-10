@@ -1,0 +1,109 @@
+/* theme-organic.css - Minimalismo Organico (tema claro) */
+.root {
+    -bg-page:        #F5F0E6;
+    -bg-card:        #FFFFFF;
+    -bg-card-alt:    #FBF7EE;
+    -text-primary:   #4A4030;
+    -text-secondary: #8A7F68;
+    -accent-green:   #6B8E6B;
+    -accent-orange:  #C88B4A;
+    -accent-purple:  #9B7B9E;
+    -accent-danger:  #B5654A;
+    -accent-primary: #6B8E6B;
+    -accent-cyan:    #6B8E6B;
+    -accent-magenta: #C88B4A;
+    -accent-yellow:  #C88B4A;
+    -border:         #EEE7D8;
+    -sidebar-bg:     #7C8B6F;
+    -sidebar-text:   #F5F0E6;
+
+    -fx-font-family: "Nunito";
+    -fx-background-color: -bg-page;
+    -fx-text-fill: -text-primary;
+    -fx-accent: -accent-green;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+/* Colores especificos tema claro */
+.label-value { -fx-text-fill: -accent-green; }
+.alert-box   { -fx-border-color: -accent-danger; -fx-background-color: -bg-card; }
+.button-primary { -fx-background-color: -accent-orange; -fx-text-fill: white; }
+.btn-guardar { -fx-background-color: -accent-orange; -fx-text-fill: white; }
+.btn-guardar:hover { -fx-background-color: #B97A3A; }
+.btn-orden { -fx-background-color: transparent; -fx-border-color: -border; -fx-text-fill: -text-primary; }
+.btn-orden:hover { -fx-background-color: -bg-card-alt; }
+.titulo { -fx-text-fill: -text-primary; }
+.titulo-icono { -fx-icon-color: -accent-green; }
+.empresa-razon { -fx-text-fill: -text-primary; }
+.empresa-info { -fx-text-fill: -text-secondary; }
+.footer-bar { -fx-background-color: -bg-card-alt; -fx-border-color: -border; }
+
+/* Campos */
+.text-field, .combo-box, .spinner, .date-picker {
+    -fx-background-color: -bg-card;
+    -fx-border-color: -border;
+    -fx-text-fill: -text-primary;
+}
+.text-field:focused, .combo-box:focused, .spinner:focused, .date-picker:focused {
+    -fx-border-color: -accent-green;
+}
+
+/* Tablas */
+.table-view { -fx-background-color: -bg-card; -fx-border-color: -border; }
+.table-view .column-header-background { -fx-background-color: -bg-card-alt; }
+.table-view .column-header .label { -fx-text-fill: -text-primary; }
+.table-view .table-cell { -fx-text-fill: -text-primary; }
+.table-view .table-row-cell { -fx-background-color: -bg-card; }
+.table-view .table-row-cell:odd { -fx-background-color: -bg-card-alt; }
+.table-view:focused .table-row-cell:filled:selected,
+.list-view:focused .list-cell:filled:selected {
+    -fx-background-color: -accent-green;
+    -fx-text-fill: white;
+}
+
+/* MenuBar */
+.menu-bar { -fx-background-color: -bg-card; }
+.menu-bar .label { -fx-text-fill: -text-primary; }
+.menu-item:focused { -fx-background-color: -accent-green; }
+.menu-item:focused .label { -fx-text-fill: white; }
+.context-menu { -fx-background-color: -bg-card; -fx-border-color: -border; }
+
+/* Tabs y otros */
+.tab-pane { -fx-background-color: -bg-page; }
+.tab-pane .tab-header-area { -fx-background-color: -bg-card-alt; }
+.tab-pane .tab { -fx-background-color: -bg-card; }
+.tab-pane .tab:selected { -fx-background-color: -accent-green; }
+.tab-pane .tab:selected .tab-label { -fx-text-fill: white; }
+.scroll-pane { -fx-background-color: -bg-page; }
+.scroll-pane .viewport { -fx-background-color: -bg-page; }
+.titled-pane > .title { -fx-background-color: -bg-card-alt; -fx-text-fill: -text-primary; }
+.titled-pane > .content { -fx-background-color: -bg-card; }
+.separator .line { -fx-border-color: -border; }
+.label { -fx-text-fill: -text-primary; }
+.check-box .text, .radio-button .text { -fx-fill: -text-primary; }
+
+/* Ubicacion Percha - claro */
+.perchero-seccion { -fx-background-color: -bg-card; -fx-border-color: -border; }
+.perchero-seccion-titulo { -fx-text-fill: -text-primary; }
+.perchero-bloque-libre { -fx-background-color: -bg-card-alt; -fx-border-color: -accent-green; }
+.perchero-bloque-ocupado { -fx-background-color: -bg-card; -fx-border-color: -accent-danger; }
+.perchero-bloque-libre .label { -fx-text-fill: -text-primary; }
+.perchero-bloque-ocupado .label { -fx-text-fill: -text-primary; }
+.perchero-bloque-seleccionado { -fx-border-color: -accent-primary; }
+.estado-disponible { -fx-text-fill: -accent-green; }
+.estado-ocupado { -fx-text-fill: -accent-danger; }
+
+/* Gestion Stock - claro */
+.gestion-stock-pane > .title { -fx-background-color: -bg-card-alt; -fx-border-color: -border; -fx-border-width: 0 0 0 4; }
+.gestion-stock-pane:expanded > .title { -fx-border-color: -accent-green; }
+.stock-bajo { -fx-background-color: rgba(181, 101, 74, 0.12); }
+.stock-bajo:odd { -fx-background-color: rgba(181, 101, 74, 0.18); }
+
+/* Chat widget overrides claro */
+.chat-bubble { -fx-background-color: -accent-orange; }
+.chat-panel { -fx-background-color: -bg-card; -fx-border-color: -border; }
+.chat-header-label { -fx-text-fill: -text-primary; }
+.mensajes-box { -fx-background-color: -bg-card-alt; }
+.mensaje-usuario { -fx-background-color: -accent-green; -fx-text-fill: white; }
+.mensaje-bot { -fx-background-color: #EEE7D8; -fx-text-fill: -text-primary; }

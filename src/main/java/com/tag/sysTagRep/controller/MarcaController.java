@@ -126,7 +126,7 @@ public class MarcaController implements Initializable {
                 FontIcon iconEdit = new FontIcon(FontAwesomeSolid.EDIT); iconEdit.setIconSize(16); iconEdit.setIconColor(Color.DODGERBLUE);
                 FontIcon iconTrash = new FontIcon(FontAwesomeSolid.TRASH); iconTrash.setIconSize(16); iconTrash.setIconColor(Color.RED);
                 btnActualizar.setGraphic(iconEdit); btnEliminar.setGraphic(iconTrash);
-                btnActualizar.setStyle("-fx-background-color: transparent;"); btnEliminar.setStyle("-fx-background-color: transparent;");
+                btnActualizar.setStyle("-fx-background-color: transparent"); btnEliminar.setStyle("-fx-background-color: transparent");
                 btnActualizar.setTooltip(new Tooltip("Actualizar")); btnEliminar.setTooltip(new Tooltip("Eliminar"));
                 hbox.setAlignment(Pos.CENTER); hbox.getChildren().addAll(btnActualizar, btnEliminar);
                 btnActualizar.setOnAction(e -> cargarFormulario(getTableView().getItems().get(getIndex())));

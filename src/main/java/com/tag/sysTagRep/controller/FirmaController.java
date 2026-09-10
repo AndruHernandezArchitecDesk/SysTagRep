@@ -37,7 +37,7 @@ public class FirmaController implements Initializable {
             txtRutaP12.setText(firma[0]);
             txtClaveP12.setText(firma[1]);
             lblEstado.setText("Firma configurada: " + firma[0]);
-            lblEstado.setStyle("-fx-font-size: 12px; -fx-text-fill: #27ae60;");
+            lblEstado.setStyle("-fx-font-size: 12px");
             if (ConfigFirma.terminosAceptados()) {
                 chkTerminos.setSelected(true);
             }
@@ -93,7 +93,7 @@ public class FirmaController implements Initializable {
 
             ConfigFirma.guardar(ruta, clave);
             lblEstado.setText("Firma configurada: " + ruta);
-            lblEstado.setStyle("-fx-font-size: 12px; -fx-text-fill: #27ae60;");
+            lblEstado.setStyle("-fx-font-size: 12px");
             new Alert(Alert.AlertType.INFORMATION, "Firma electrónica guardada correctamente (clave encriptada).").showAndWait();
         } catch (Exception e) {
             logDAO.guardar("FirmaController", "guardar", e.getMessage(), e);

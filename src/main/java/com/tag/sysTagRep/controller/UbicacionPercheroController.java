@@ -152,7 +152,7 @@ public class UbicacionPercheroController implements Initializable {
 
     private VBox crearFilaSeccion(Perchero seccion) {
         VBox contenedor = new VBox(8);
-        contenedor.setStyle("-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 12; -fx-border-color: #d1d5db; -fx-border-radius: 8;");
+        contenedor.getStyleClass().add("perchero-seccion");
 
         List<UbicacionDetalle> ubicaciones = ubicacionDAO.listarPorPerchero(seccion.getId());
 
@@ -167,11 +167,11 @@ public class UbicacionPercheroController implements Initializable {
                 .distinct().reduce((a, b) -> a + ", " + b).orElse("");
 
         Label lblSeccion = new Label("Sección " + seccion.getSeccion() + " — " + seccion.getCantidadLugares() + " lugares  |  Ocupados: " + ocupados);
+        lblSeccion.getStyleClass().add("perchero-seccion-titulo");
         lblSeccion.setFont(Font.font("Arial", FontWeight.BOLD, 14));
-        lblSeccion.setTextFill(javafx.scene.paint.Color.web("#2c3e50"));
 
         Button btnEliminarSeccion = new Button("✕");
-        btnEliminarSeccion.setStyle("-fx-background-color: #dc3545; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 2 8; -fx-cursor: hand;");
+        btnEliminarSeccion.setStyle("");
         btnEliminarSeccion.setTooltip(new Tooltip("Eliminar sección"));
         btnEliminarSeccion.setOnAction(e -> eliminarSeccion(seccion));
 
@@ -203,13 +203,13 @@ public class UbicacionPercheroController implements Initializable {
 
         boolean disponible = u.isDisponible();
 
+        bloque.getStyleClass().addAll("perchero-bloque", disponible ? "perchero-bloque-libre" : "perchero-bloque-ocupado");
+
         if (disponible) {
             Label lblLibre = new Label("LIBRE");
             lblLibre.setFont(Font.font("Arial", FontWeight.BOLD, 12));
-            lblLibre.setTextFill(javafx.scene.paint.Color.WHITE);
             bloque.getChildren().add(lblLibre);
 
-            bloque.setStyle("-fx-background-color: #27ae60; -fx-background-radius: 8; -fx-border-radius: 8; -fx-border-color: #1e8449; -fx-border-width: 1; -fx-cursor: hand;");
             bloque.setOnMouseClicked(event -> {
                 if (event.getButton() == MouseButton.PRIMARY) {
                     seleccionarBloque(bloque, u);
@@ -218,32 +218,28 @@ public class UbicacionPercheroController implements Initializable {
             });
             bloque.setOnMouseEntered(e -> {
                 if (bloque != bloqueSeleccionado) {
-                    bloque.setStyle("-fx-background-color: #2ecc71; -fx-background-radius: 8; -fx-border-radius: 8; -fx-border-color: #27ae60; -fx-border-width: 2; -fx-cursor: hand;");
+                    bloque.setStyle("-fx-border-width: 2;");
                 }
             });
             bloque.setOnMouseExited(e -> {
                 if (bloque != bloqueSeleccionado) {
-                    bloque.setStyle("-fx-background-color: #27ae60; -fx-background-radius: 8; -fx-border-radius: 8; -fx-border-color: #1e8449; -fx-border-width: 1; -fx-cursor: hand;");
+                    bloque.setStyle("-fx-border-width: 1;");
                 }
             });
         } else {
-            bloque.setStyle("-fx-background-color: #e74c3c; -fx-background-radius: 8; -fx-border-radius: 8; -fx-border-color: #c0392b; -fx-border-width: 1; -fx-cursor: pointer;");
             if (u.getMarcaNombre() != null) {
                 Label lblMarca = new Label(truncarTexto(u.getMarcaNombre(), 16));
                 lblMarca.setFont(Font.font("Arial", FontWeight.BOLD, 9));
-                lblMarca.setTextFill(javafx.scene.paint.Color.WHITE);
                 bloque.getChildren().add(lblMarca);
             }
             if (u.getProductoDescripcion() != null) {
                 Label lblModelo = new Label(truncarTexto(u.getProductoDescripcion(), 16));
                 lblModelo.setFont(Font.font("Arial", FontWeight.NORMAL, 8));
-                lblModelo.setTextFill(javafx.scene.paint.Color.web("#f5b7b1"));
                 bloque.getChildren().add(lblModelo);
             }
             if (u.getStockAsignado() != null) {
                 Label lblStock = new Label("Stock: " + u.getStockAsignado());
                 lblStock.setFont(Font.font("Arial", FontWeight.BOLD, 8));
-                lblStock.setTextFill(javafx.scene.paint.Color.WHITE);
                 bloque.getChildren().add(lblStock);
             }
             bloque.setOnMouseClicked(event -> {
@@ -261,7 +257,7 @@ public class UbicacionPercheroController implements Initializable {
         bloque.setOnContextMenuRequested(e -> menu.show(bloque, e.getScreenX(), e.getScreenY()));
 
         Tooltip tt = new Tooltip(crearTooltipText(u));
-        tt.setStyle("-fx-font-size: 12px; -fx-background-color: #2c3e50; -fx-text-fill: white; -fx-padding: 8;");
+        tt.setStyle("-fx-font-size: 12px; -fx-padding: 8");
         Tooltip.install(bloque, tt);
 
         return bloque;
@@ -291,17 +287,18 @@ public class UbicacionPercheroController implements Initializable {
 
     private void seleccionarBloque(VBox bloque, UbicacionDetalle u) {
         if (bloqueSeleccionado != null) {
-            UbicacionDetalle prev = (UbicacionDetalle) bloqueSeleccionado.getUserData();
-            if (prev.isDisponible()) {
-                bloqueSeleccionado.setStyle("-fx-background-color: #27ae60; -fx-background-radius: 8; -fx-border-radius: 8; -fx-border-color: #1e8449; -fx-border-width: 1; -fx-cursor: hand;");
-            }
+            bloqueSeleccionado.getStyleClass().remove("perchero-bloque-seleccionado");
+            bloqueSeleccionado.setStyle("-fx-border-width: 1;");
         }
         bloqueSeleccionado = bloque;
         ubicacionSeleccionada = u;
-        bloque.setStyle("-fx-background-color: #2c3e50; -fx-background-radius: 8; -fx-border-radius: 8; -fx-border-color: #3498db; -fx-border-width: 3; -fx-cursor: hand;");
+        bloque.getStyleClass().add("perchero-bloque-seleccionado");
+        bloque.setStyle("-fx-border-width: 3;");
         txtUbicacionSeleccionada.setText(u.getCodigoUbicacion());
         lblEstadoUbicacion.setText("[" + u.getEstado() + "]");
-        lblEstadoUbicacion.setTextFill(u.isDisponible() ? javafx.scene.paint.Color.web("#27ae60") : javafx.scene.paint.Color.web("#e74c3c"));
+        lblEstadoUbicacion.getStyleClass().removeAll("estado-disponible", "estado-ocupado");
+        lblEstadoUbicacion.getStyleClass().add(u.isDisponible() ? "estado-disponible" : "estado-ocupado");
+        lblEstadoUbicacion.setTextFill(null);
     }
 
     private void mostrarDialogoAsignarProducto(VBox bloque, UbicacionDetalle u) {

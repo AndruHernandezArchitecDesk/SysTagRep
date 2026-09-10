@@ -124,10 +124,10 @@ public class CajaController implements Initializable {
                 else {
                     setText(item);
                     switch (item) {
-                        case "INGRESO" -> setStyle("-fx-text-fill: #27ae60; -fx-font-weight: bold;");
-                        case "EGRESO" -> setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
-                        case "RETIRO" -> setStyle("-fx-text-fill: #f39c12; -fx-font-weight: bold;");
-                        case "AJUSTE" -> setStyle("-fx-text-fill: #9b59b6; -fx-font-weight: bold;");
+                        case "INGRESO" -> setStyle("-fx-font-weight: bold");
+                        case "EGRESO" -> setStyle("-fx-font-weight: bold");
+                        case "RETIRO" -> setStyle("-fx-font-weight: bold");
+                        case "AJUSTE" -> setStyle("-fx-font-weight: bold");
                         default -> setStyle("");
                     }
                 }
@@ -169,9 +169,9 @@ public class CajaController implements Initializable {
                 if (empty || item == null) { setText(null); setStyle(""); }
                 else {
                     setText("$" + item.setScale(2, BigDecimal.ROUND_HALF_UP));
-                    if (item.compareTo(BigDecimal.ZERO) == 0) setStyle("-fx-text-fill: #2c3e50;");
-                    else if (item.compareTo(BigDecimal.ZERO) > 0) setStyle("-fx-text-fill: #27ae60; -fx-font-weight: bold;");
-                    else setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
+                    if (item.compareTo(BigDecimal.ZERO) == 0) setStyle("");
+                    else if (item.compareTo(BigDecimal.ZERO) > 0) setStyle("-fx-font-weight: bold");
+                    else setStyle("-fx-font-weight: bold");
                 }
             }
         });
@@ -182,7 +182,7 @@ public class CajaController implements Initializable {
                 if (empty || item == null) { setText(null); setStyle(""); }
                 else {
                     setText(item);
-                    setStyle("ABIERTA".equals(item) ? "-fx-text-fill: #27ae60; -fx-font-weight: bold;" : "-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
+                    setStyle("ABIERTA".equals(item) ? "-fx-text-fill: -accent-green; -fx-font-weight: bold;" : "-fx-text-fill: -accent-danger; -fx-font-weight: bold;");
                 }
             }
         });
@@ -208,7 +208,7 @@ public class CajaController implements Initializable {
             pnlCajaAbierta.setVisible(true);
             pnlCajaAbierta.setManaged(true);
             lblEstado.setText("Caja ABIERTA — Sesión #" + sesionActual.getId());
-            lblEstado.setStyle("-fx-text-fill: #27ae60;");
+            lblEstado.setStyle("");
             cargarResumen();
             cargarMovimientos();
         } else {
@@ -217,7 +217,7 @@ public class CajaController implements Initializable {
             pnlCajaAbierta.setVisible(false);
             pnlCajaAbierta.setManaged(false);
             lblEstado.setText("Caja CERRADA");
-            lblEstado.setStyle("-fx-text-fill: #e74c3c;");
+            lblEstado.setStyle("");
         }
         cargarHistorial();
     }

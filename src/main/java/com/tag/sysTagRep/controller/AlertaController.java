@@ -79,9 +79,9 @@ public class AlertaController implements Initializable {
                 } else {
                     setText(item);
                     if ("Leída".equals(item)) {
-                        setStyle("-fx-text-fill: #27ae60; -fx-font-weight: bold;");
+                        setStyle("-fx-font-weight: bold");
                     } else {
-                        setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
+                        setStyle("-fx-font-weight: bold");
                     }
                 }
             }
@@ -101,14 +101,14 @@ public class AlertaController implements Initializable {
                 iconLeer.setIconColor(javafx.scene.paint.Color.web("#27ae60"));
                 btnLeer.setGraphic(iconLeer);
                 btnLeer.setTooltip(new Tooltip("Marcar como leída"));
-                btnLeer.setStyle("-fx-background-color: transparent;");
+                btnLeer.setStyle("-fx-background-color: transparent");
 
                 FontIcon iconEliminar = new FontIcon(FontAwesomeSolid.TRASH);
                 iconEliminar.setIconSize(14);
                 iconEliminar.setIconColor(javafx.scene.paint.Color.RED);
                 btnEliminar.setGraphic(iconEliminar);
                 btnEliminar.setTooltip(new Tooltip("Eliminar"));
-                btnEliminar.setStyle("-fx-background-color: transparent;");
+                btnEliminar.setStyle("-fx-background-color: transparent");
 
                 hbox.setAlignment(Pos.CENTER);
                 hbox.getChildren().addAll(btnLeer, btnEliminar);

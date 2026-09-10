@@ -458,34 +458,34 @@ public class IngresoMercaderiaController implements Initializable {
             @Override protected void updateItem(Number n, boolean empty) {
                 super.updateItem(n, empty);
                 setText(empty || n == null ? "" : "$ " + redondearMostrar(BigDecimal.valueOf(n.doubleValue())).toPlainString());
-                setStyle("-fx-alignment: CENTER_RIGHT;");
+                setStyle("-fx-alignment: CENTER_RIGHT");
             }
         });
         colIva.setCellFactory(c -> new TableCell<>() {
             @Override protected void updateItem(Number n, boolean empty) {
                 super.updateItem(n, empty);
                 setText(empty || n == null ? "" : "$ " + redondearMostrar(BigDecimal.valueOf(n.doubleValue())).toPlainString());
-                setStyle("-fx-alignment: CENTER_RIGHT;");
+                setStyle("-fx-alignment: CENTER_RIGHT");
             }
         });
         colTotalLinea.setCellFactory(c -> new TableCell<>() {
             @Override protected void updateItem(Number n, boolean empty) {
                 super.updateItem(n, empty);
                 setText(empty || n == null ? "" : "$ " + redondearMostrar(BigDecimal.valueOf(n.doubleValue())).toPlainString());
-                setStyle("-fx-alignment: CENTER_RIGHT; -fx-font-weight: bold;");
+                setStyle("-fx-alignment: CENTER_RIGHT; -fx-font-weight: bold");
             }
         });
         colCantidad.setCellFactory(c -> new TableCell<>() {
             @Override protected void updateItem(Number n, boolean empty) {
                 super.updateItem(n, empty);
                 setText(empty || n == null ? "" : String.valueOf(n.intValue()));
-                setStyle("-fx-alignment: CENTER;");
+                setStyle("-fx-alignment: CENTER");
             }
         });
         colEliminar.setCellFactory(c -> new TableCell<>() {
             private final Button btn = new Button("✕");
             {
-                btn.setStyle("-fx-background-color: #dc3545; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-padding: 2 8;");
+                btn.setStyle("");
                 btn.setOnAction(e -> {
                     FilaProducto fp = getTableView().getItems().get(getIndex());
                     if (fp != null) eliminarProducto(fp);
@@ -494,13 +494,13 @@ public class IngresoMercaderiaController implements Initializable {
             @Override protected void updateItem(FilaProducto item, boolean empty) {
                 super.updateItem(item, empty);
                 setGraphic(empty ? null : btn);
-                setStyle("-fx-alignment: CENTER;");
+                setStyle("-fx-alignment: CENTER");
             }
         });
         colEditar.setCellFactory(c -> new TableCell<>() {
             private final Button btn = new Button("✎");
             {
-                btn.setStyle("-fx-background-color: #f39c12; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-padding: 2 8;");
+                btn.setStyle("");
                 btn.setOnAction(e -> {
                     FilaProducto fp = getTableView().getItems().get(getIndex());
                     if (fp != null) cargarProductoEnFormulario(fp);
@@ -509,7 +509,7 @@ public class IngresoMercaderiaController implements Initializable {
             @Override protected void updateItem(FilaProducto item, boolean empty) {
                 super.updateItem(item, empty);
                 setGraphic(empty ? null : btn);
-                setStyle("-fx-alignment: CENTER;");
+                setStyle("-fx-alignment: CENTER");
             }
         });
     }

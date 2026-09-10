@@ -13,12 +13,14 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
+import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.io.IOException;
 import java.net.URL;
@@ -34,6 +36,12 @@ public class MainController implements Initializable {
 
     @FXML
     private MenuItem menuModoTema;
+
+    @FXML
+    private Button btnToggleTema;
+
+    @FXML
+    private FontIcon iconToggleTema;
 
     @FXML
     private MenuItem menuAlertas;
@@ -313,8 +321,10 @@ public class MainController implements Initializable {
     }
 
     private void actualizarTextoModoTema() {
-        if (menuModoTema == null) return;
-        menuModoTema.setText(ThemeManager.esDarkMode() ? "Modo Light" : "Modo Dark");
+        boolean dark = ThemeManager.esDarkMode();
+        if (menuModoTema != null) menuModoTema.setText(dark ? "Modo Light" : "Modo Dark");
+        if (iconToggleTema != null) iconToggleTema.setIconLiteral(dark ? "fas-sun" : "fas-moon");
+        if (btnToggleTema != null) btnToggleTema.setText(dark ? "Light" : "Dark");
     }
 
     private void cargarVista(String ruta) {

@@ -86,11 +86,11 @@ public class PorPagarController implements Initializable {
                     bar.setPrefWidth(160);
                     bar.setPrefHeight(18);
                     if (progreso >= 1.0) {
-                        bar.setStyle("-fx-accent: red;");
+                        bar.setStyle("");
                     } else if (progreso > 0.5) {
-                        bar.setStyle("-fx-accent: orange;");
+                        bar.setStyle("");
                     } else {
-                        bar.setStyle("-fx-accent: limegreen;");
+                        bar.setStyle("");
                     }
 
                     String texto = String.format("%.0f%%", progreso * 100);
@@ -100,7 +100,7 @@ public class PorPagarController implements Initializable {
                         texto += "  (" + diasRestantes + " dias)";
                     }
                     Label lblInfo = new Label(texto);
-                    lblInfo.setStyle("-fx-font-size: 11px; -fx-font-weight: bold;");
+                    lblInfo.setStyle("-fx-font-size: 11px; -fx-font-weight: bold");
 
                     VBox box = new VBox(3, bar, lblInfo);
                     box.setAlignment(Pos.CENTER_LEFT);
@@ -116,7 +116,7 @@ public class PorPagarController implements Initializable {
                 FontIcon icon = new FontIcon("fas-eye");
                 icon.setIconColor(javafx.scene.paint.Color.WHITE);
                 btnVer.setGraphic(icon);
-                btnVer.setStyle("-fx-background-color: #3498db; -fx-cursor: hand; -fx-padding: 4 8;");
+                btnVer.setStyle("-fx-cursor: hand; -fx-padding: 4 8");
                 btnVer.setTooltip(new Tooltip("Ver detalle de compra"));
                 btnVer.setOnAction(e -> {
                     Object[] fila = getTableView().getItems().get(getIndex());
@@ -166,7 +166,7 @@ public class PorPagarController implements Initializable {
                 FontIcon icon = new FontIcon("fas-save");
                 icon.setIconColor(javafx.scene.paint.Color.WHITE);
                 btnGuardar.setGraphic(icon);
-                btnGuardar.setStyle("-fx-background-color: #27ae60; -fx-cursor: hand; -fx-padding: 5 8;");
+                btnGuardar.setStyle("-fx-cursor: hand; -fx-padding: 5 8");
                 btnGuardar.setTooltip(new Tooltip("Registrar abono"));
                 btnGuardar.setOnAction(e -> {
                     Object[] fila = getTableView().getItems().get(getIndex());
@@ -212,7 +212,7 @@ public class PorPagarController implements Initializable {
                     String estado = (String) fila[12];
                     if ("Pagado".equals(estado)) {
                         Label lblPagado = new Label("PAGADO");
-                        lblPagado.setStyle("-fx-text-fill: green; -fx-font-weight: bold;");
+                        lblPagado.setStyle("-fx-font-weight: bold");
                         setGraphic(lblPagado);
                     } else {
                         HBox box = new HBox(5, txtAdelanto, btnGuardar);
@@ -248,7 +248,7 @@ public class PorPagarController implements Initializable {
 
         VBox contenido = new VBox(12);
         contenido.setPadding(new Insets(20));
-        contenido.setStyle("-fx-background-color: white;");
+        contenido.setStyle("");
 
         Label lblTitulo = new Label("Detalle de Compra a Proveedor");
         lblTitulo.setFont(Font.font("System", FontWeight.BOLD, 16));
@@ -300,7 +300,7 @@ public class PorPagarController implements Initializable {
         );
 
         Button btnCerrar = new Button("Cerrar");
-        btnCerrar.setStyle("-fx-background-color: #95a5a6; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 20;");
+        btnCerrar.setStyle("");
         btnCerrar.setOnAction(e -> modal.close());
 
         contenido.getChildren().addAll(lblTitulo, new Separator(), info, new Separator(), tblDetalles, totales, btnCerrar);
@@ -312,13 +312,13 @@ public class PorPagarController implements Initializable {
 
     private Label crearLabel(String texto) {
         Label lbl = new Label(texto);
-        lbl.setStyle("-fx-font-size: 13px;");
+        lbl.setStyle("-fx-font-size: 13px");
         return lbl;
     }
 
     private Label crearLabelBold(String texto) {
         Label lbl = new Label(texto);
-        lbl.setStyle("-fx-font-size: 13px; -fx-font-weight: bold;");
+        lbl.setStyle("-fx-font-size: 13px; -fx-font-weight: bold");
         return lbl;
     }
 

@@ -43,13 +43,14 @@ public class AboutDialog {
 
         Button cerrar = new Button("Cerrar");
         cerrar.setOnAction(e -> stage.close());
-        cerrar.setStyle("-fx-background-color: #2c3e50; -fx-text-fill: white; "
+        cerrar.setStyle("-fx-background-color: -accent-orange; -fx-text-fill: white; "
                 + "-fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 8 24; -fx-cursor: hand;");
+        cerrar.getStyleClass().add("button-primary");
 
         VBox box = new VBox(16, canvas, version, creditos, cerrar);
         box.setAlignment(Pos.CENTER);
         box.setPadding(new Insets(24));
-        box.setStyle("-fx-background-color: #0A0A0A;");
+        box.setStyle("");
 
         stage.setOnHidden(e -> anim.stop());
         stage.setScene(new Scene(box));

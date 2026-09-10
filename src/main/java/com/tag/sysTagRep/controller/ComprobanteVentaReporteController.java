@@ -68,21 +68,21 @@ public class ComprobanteVentaReporteController implements Initializable {
             @Override protected void updateItem(LocalDateTime f, boolean empty) {
                 super.updateItem(f, empty);
                 setText(empty || f == null ? "" : f.toLocalDate().format(FMT_FECHA));
-                setStyle("-fx-alignment: CENTER;");
+                setStyle("-fx-alignment: CENTER");
             }
         });
         colTotal.setCellFactory(c -> new TableCell<>() {
             @Override protected void updateItem(BigDecimal b, boolean empty) {
                 super.updateItem(b, empty);
                 setText(empty || b == null ? "" : "$ " + b.setScale(2, RoundingMode.HALF_UP));
-                setStyle("-fx-alignment: CENTER_RIGHT; -fx-font-weight: bold;");
+                setStyle("-fx-alignment: CENTER_RIGHT; -fx-font-weight: bold");
             }
         });
         colItems.setCellFactory(c -> new TableCell<>() {
             @Override protected void updateItem(Integer n, boolean empty) {
                 super.updateItem(n, empty);
                 setText(empty || n == null ? "" : String.valueOf(n));
-                setStyle("-fx-alignment: CENTER;");
+                setStyle("-fx-alignment: CENTER");
             }
         });
 
@@ -97,28 +97,28 @@ public class ComprobanteVentaReporteController implements Initializable {
             @Override protected void updateItem(Integer n, boolean empty) {
                 super.updateItem(n, empty);
                 setText(empty || n == null ? "" : String.valueOf(n));
-                setStyle("-fx-alignment: CENTER;");
+                setStyle("-fx-alignment: CENTER");
             }
         });
         colDetPrecio.setCellFactory(c -> new TableCell<>() {
             @Override protected void updateItem(BigDecimal b, boolean empty) {
                 super.updateItem(b, empty);
                 setText(empty || b == null ? "" : "$ " + b.setScale(2, RoundingMode.HALF_UP));
-                setStyle("-fx-alignment: CENTER_RIGHT;");
+                setStyle("-fx-alignment: CENTER_RIGHT");
             }
         });
         colDetIva.setCellFactory(c -> new TableCell<>() {
             @Override protected void updateItem(BigDecimal b, boolean empty) {
                 super.updateItem(b, empty);
                 setText(empty || b == null ? "" : "$ " + b.setScale(2, RoundingMode.HALF_UP));
-                setStyle("-fx-alignment: CENTER_RIGHT;");
+                setStyle("-fx-alignment: CENTER_RIGHT");
             }
         });
         colDetTotal.setCellFactory(c -> new TableCell<>() {
             @Override protected void updateItem(BigDecimal b, boolean empty) {
                 super.updateItem(b, empty);
                 setText(empty || b == null ? "" : "$ " + b.setScale(2, RoundingMode.HALF_UP));
-                setStyle("-fx-alignment: CENTER_RIGHT; -fx-font-weight: bold;");
+                setStyle("-fx-alignment: CENTER_RIGHT; -fx-font-weight: bold");
             }
         });
 

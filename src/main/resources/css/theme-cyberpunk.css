@@ -1,0 +1,117 @@
+/* theme-cyberpunk.css - Retro-Cyberpunk (tema oscuro) */
+.root {
+    -bg-page:        #0D0E14;
+    -bg-card:        #14151F;
+    -bg-card-alt:    #181A26;
+    -text-primary:   #C9CDD6;
+    -text-secondary: #6B7280;
+    -accent-cyan:    #00F0FF;
+    -accent-magenta: #FF3EA5;
+    -accent-yellow:  #F5D742;
+    -accent-purple:  #9D5CFF;
+    -accent-danger:  #FF3EA5;
+    -accent-green:   #00F0FF;
+    -accent-orange:  #FF3EA5;
+    -accent-primary: #00F0FF;
+    -border:         #2A2D3A;
+    -sidebar-bg:     #14151F;
+    -sidebar-text:   #C9CDD6;
+
+    -fx-font-family: "JetBrains Mono";
+    -fx-background-color: -bg-page;
+    -fx-text-fill: -text-primary;
+    -fx-accent: -accent-cyan;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+/* Colores especificos tema oscuro */
+.label-value { -fx-text-fill: -accent-cyan; }
+.alert-box   { -fx-border-color: -accent-yellow; -fx-background-color: -bg-card; }
+.button-primary { -fx-background-color: -accent-magenta; -fx-text-fill: white; }
+.btn-guardar { -fx-background-color: -accent-magenta; -fx-text-fill: white; }
+.btn-guardar:hover { -fx-background-color: #E02E90; }
+.btn-orden { -fx-background-color: transparent; -fx-border-color: -border; -fx-text-fill: -text-primary; }
+.btn-orden:hover { -fx-background-color: -bg-card-alt; }
+.titulo { -fx-text-fill: -text-primary; }
+.titulo-icono { -fx-icon-color: -accent-cyan; }
+.empresa-razon { -fx-text-fill: -text-primary; }
+.empresa-info { -fx-text-fill: -text-secondary; }
+.footer-bar { -fx-background-color: -bg-card; -fx-border-color: -border; }
+
+/* Campos */
+.text-field, .combo-box, .spinner, .date-picker {
+    -fx-background-color: -bg-card-alt;
+    -fx-border-color: -border;
+    -fx-text-fill: -text-primary;
+}
+.text-field:focused, .combo-box:focused, .spinner:focused, .date-picker:focused {
+    -fx-border-color: -accent-cyan;
+}
+
+/* Tablas */
+.table-view { -fx-background-color: -bg-page; -fx-border-color: -border; }
+.table-view .column-header-background { -fx-background-color: -bg-card-alt; }
+.table-view .column-header .label { -fx-text-fill: -text-primary; }
+.table-view .table-cell { -fx-text-fill: -text-primary; }
+.table-view .table-row-cell { -fx-background-color: -bg-card; }
+.table-view .table-row-cell:odd { -fx-background-color: -bg-card-alt; }
+.table-view:focused .table-row-cell:filled:selected,
+.list-view:focused .list-cell:filled:selected {
+    -fx-background-color: -accent-cyan;
+    -fx-text-fill: -bg-page;
+}
+
+/* MenuBar dark */
+.menu-bar { -fx-background-color: -bg-card; }
+.menu-bar .label { -fx-text-fill: -text-primary; }
+.menu-item:focused { -fx-background-color: -accent-cyan; }
+.menu-item:focused .label { -fx-text-fill: -bg-page; }
+.context-menu { -fx-background-color: -bg-card; -fx-border-color: -border; }
+.tab-pane { -fx-background-color: -bg-page; }
+.tab-pane .tab-header-area { -fx-background-color: -bg-card; }
+.tab-pane .tab { -fx-background-color: -bg-card; }
+.tab-pane .tab:selected { -fx-background-color: -accent-cyan; }
+.tab-pane .tab:selected .tab-label { -fx-text-fill: -bg-page; }
+.scroll-pane { -fx-background-color: -bg-page; }
+.scroll-pane .viewport { -fx-background-color: -bg-page; }
+.titled-pane > .title { -fx-background-color: -bg-card-alt; -fx-text-fill: -text-primary; }
+.titled-pane > .content { -fx-background-color: -bg-card; }
+.separator .line { -fx-border-color: -border; }
+.label { -fx-text-fill: -text-primary; }
+.check-box .text, .radio-button .text { -fx-fill: -text-primary; }
+
+/* Ubicacion Percha - dark */
+.perchero-seccion { -fx-background-color: -bg-card; -fx-border-color: -border; }
+.perchero-seccion-titulo { -fx-text-fill: -text-primary; }
+.perchero-bloque-libre { -fx-background-color: -bg-card-alt; -fx-border-color: -accent-cyan; }
+.perchero-bloque-ocupado { -fx-background-color: -bg-card; -fx-border-color: -accent-magenta; }
+.perchero-bloque-libre .label { -fx-text-fill: -text-primary; }
+.perchero-bloque-ocupado .label { -fx-text-fill: -text-primary; }
+.perchero-bloque-seleccionado { -fx-border-color: -accent-cyan; }
+.estado-disponible { -fx-text-fill: -accent-cyan; }
+.estado-ocupado { -fx-text-fill: -accent-magenta; }
+
+/* Gestion Stock - dark */
+.gestion-stock-pane > .title { -fx-background-color: -bg-card; -fx-border-color: -border; -fx-border-width: 0 0 0 4; }
+.gestion-stock-pane:expanded > .title { -fx-border-color: -accent-cyan; }
+.stock-bajo { -fx-background-color: rgba(255, 62, 165, 0.18); }
+.stock-bajo:odd { -fx-background-color: rgba(255, 62, 165, 0.24); }
+
+/* Chat widget dark */
+.chat-bubble { -fx-background-color: -accent-magenta; }
+.chat-panel { -fx-background-color: -bg-card; -fx-border-color: -border; }
+.chat-header-label { -fx-text-fill: -text-primary; }
+.mensajes-box { -fx-background-color: -bg-page; }
+.mensaje-usuario { -fx-background-color: -accent-cyan; -fx-text-fill: -bg-page; }
+.mensaje-bot { -fx-background-color: -bg-card-alt; -fx-text-fill: -text-primary; }
+
+/* Look cuadrado cyberpunk - sobrescribe radios base */
+.card, .stat-card, .table-view, .button-primary, .btn-guardar, .alert-box, .panel-claro, .panel-inventario, .section-card {
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+}
+.card, .stat-card, .table-view { -fx-border-color: -border; -fx-border-width: 1; }
+
+/* Dark mode class para compatibilidad con overrides heredados */
+.dark-mode { -fx-background-color: -bg-page; }

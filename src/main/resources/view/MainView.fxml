@@ -78,6 +78,11 @@
                     <MenuItem fx:id="menuModoTema" text="Modo Dark" onAction="#cambiarTema"/>
                 </Menu>
             </MenuBar>
+            <Button fx:id="btnToggleTema" onAction="#cambiarTema" styleClass="btn-orden" prefHeight="28" prefWidth="42">
+                <graphic>
+                    <FontIcon fx:id="iconToggleTema" iconLiteral="fas-moon" iconSize="16"/>
+                </graphic>
+            </Button>
         </HBox>
     </top>
 
@@ -87,9 +92,9 @@
     </center>
 
     <bottom>
-        <HBox alignment="CENTER" spacing="8" style="-fx-background-color: rgba(0,0,0,0.05); -fx-padding: 12 10; -fx-opacity: 0.95;">
-            <FontIcon iconLiteral="fas-copyright" iconSize="12" style="-fx-text-fill: #4b5563;"/>
-            <Label text="© 2026 Desync by AndruDesk — The Toy Maker — Developer Software" style="-fx-font-size: 11px; -fx-text-fill: #4b5563;"/>
+        <HBox alignment="CENTER" spacing="8" styleClass="footer-bar">
+            <FontIcon iconLiteral="fas-copyright" iconSize="12"/>
+            <Label text="© 2026 Desync by AndruDesk — The Toy Maker — Developer Software" style="-fx-font-size: 11px;"/>
         </HBox>
     </bottom>
 </BorderPane>

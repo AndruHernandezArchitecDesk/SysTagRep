@@ -253,8 +253,8 @@ public class ProveedorController implements Initializable {
                 btnActualizar.setGraphic(iconEditar);
                 btnEliminar.setGraphic(iconEliminar);
 
-                btnActualizar.setStyle("-fx-background-color: transparent;");
-                btnEliminar.setStyle("-fx-background-color: transparent;");
+                btnActualizar.setStyle("-fx-background-color: transparent");
+                btnEliminar.setStyle("-fx-background-color: transparent");
 
                 btnActualizar.setTooltip(new Tooltip("Actualizar"));
                 btnEliminar.setTooltip(new Tooltip("Eliminar"));

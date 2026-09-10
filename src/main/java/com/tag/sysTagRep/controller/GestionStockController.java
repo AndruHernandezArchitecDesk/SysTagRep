@@ -67,6 +67,10 @@ public class GestionStockController implements Initializable {
             TableView<Inventario> table = crearTimelineTable(items);
             TitledPane pane = new TitledPane(desc + "  (" + items.size() + " compras, " + totalCant + " uds.)", table);
             pane.setAnimated(false);
+            pane.getStyleClass().add("gestion-stock-pane");
+            // diferenciar TitledPane según stock bajo en el grupo
+            boolean tieneStockBajo = items.stream().anyMatch(inv -> inv.getCantidad() <= 5);
+            if (tieneStockBajo) pane.getStyleClass().add("stock-bajo");
             accordionProductos.getPanes().add(pane);
         }
 
@@ -128,6 +132,21 @@ public class GestionStockController implements Initializable {
         table.setPrefHeight(Math.min(items.size() * 30 + 30, 200));
         table.getColumns().addAll(colFecha, colProveedor, colCosto, colPrecio, colCant, colForma);
         SortTable.agregarBotones(table);
+        // filas con stock bajo diferenciadas por tema
+        table.setRowFactory(tv -> new TableRow<>() {
+            @Override
+            protected void updateItem(Inventario item, boolean empty) {
+                super.updateItem(item, empty);
+                getStyleClass().removeAll("stock-bajo", "stock-normal");
+                if (empty || item == null) {
+                    setStyle("");
+                } else if (item.getCantidad() <= 5) {
+                    getStyleClass().add("stock-bajo");
+                } else {
+                    getStyleClass().add("stock-normal");
+                }
+            }
+        });
 
         return table;
     }
