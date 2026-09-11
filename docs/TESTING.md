@@ -1,4 +1,4 @@
-# Pruebas Unitarias - SysTagRep
+# Pruebas Unitarias - Vendex
 
 ## Resumen
 
@@ -20,7 +20,7 @@
 ## Estructura de pruebas
 
 ```
-src/test/java/com/tag/sysTagRep/
+src/test/java/com/tag/vendex/
 ├── controller/
 │   ├── FacturaCalculatorTest.java
 │   └── ProformaCalculatorTest.java
@@ -49,7 +49,7 @@ Se modificó para aislar las pruebas de DAOs usando bases de datos HSQLDB en mem
 **Antes:**
 ```java
 public class DatabaseConnection {
-    private static final String URL = "jdbc:postgresql://localhost:5432/dbTag";
+    private static final String URL = "jdbc:postgresql://localhost:5432/dbVendex";
     private static final String USER = "postgres";
     private static final String PASSWORD = "admin";
 
@@ -62,7 +62,7 @@ public class DatabaseConnection {
 **Después:**
 ```java
 public class DatabaseConnection {
-    private static final String DEFAULT_URL = "jdbc:postgresql://localhost:5432/dbTag";
+    private static final String DEFAULT_URL = "jdbc:postgresql://localhost:5432/dbVendex";
     private static final String DEFAULT_USER = "postgres";
     private static final String DEFAULT_PASSWORD = "admin";
 
@@ -610,7 +610,7 @@ mvn test -Dtest=ClienteDAOTest,ProveedorDAOTest,SRIWebServiceTest,NotaVentaPDFTe
 ### Ver reportes
 
 ```bash
-cat target/surefire-reports/com.tag.sysTagRep.*.txt | grep "Tests run"
+cat target/surefire-reports/com.vendex.*.txt | grep "Tests run"
 ```
 
 ## Patrones de testing utilizados

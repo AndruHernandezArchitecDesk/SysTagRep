@@ -5,7 +5,7 @@
 --   INSERT nota_venta_detalle descripcion 87 chars > 50
 --   Ej: 'KIT CAUCHOS PISTON MORDAZAS HY TUCOSN IX/SPORTAGE R/GRAND I10 1.ELANTRA/CERATO FORTE LS'
 -- Homologa a comprobante_temp.sql:5 y factura_proveedor.sql:7 (VARCHAR(500))
--- Idempotente - ejecutar en PRD dbTag
+-- Idempotente - ejecutar en PRD dbVendex
 -- =============================================================
 
 -- 0) Diagnóstico

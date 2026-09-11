@@ -4,12 +4,12 @@ chcp 65001 >nul
 cd /d "%~dp0"
 
 set VERSION=2.0.0
-set JAR=SysTagRep-2.0-SNAPSHOT.jar
-set NOMBRE=SysTagRep
+set JAR=Vendex-2.0-SNAPSHOT.jar
+set NOMBRE=Vendex
 set ICON=src\main\resources\img\app.ico
 
 echo ============================================
-echo  SysTagRep - Generador de instalador Windows
+echo  Vendex - Generador de instalador Windows
 echo ============================================
 echo.
 
@@ -37,10 +37,10 @@ jpackage --input target ^
   --name "%NOMBRE%" ^
   --app-version %VERSION% ^
   --main-jar %JAR% ^
-  --main-class com.tag.sysTagRep.Launcher ^
+  --main-class com.vendex.Launcher ^
   --icon "%ICON%" ^
   --type msi ^
-  --win-menu --win-menu-group "SysTag Repuestos" ^
+  --win-menu --win-menu-group "Vendex Repuestos" ^
   --win-shortcut ^
   --java-options "-Xmx1024m -Xms128m" ^
   --java-options "--enable-native-access=ALL-UNNAMED" ^
@@ -58,7 +58,7 @@ jpackage --input target ^
   --name "%NOMBRE%" ^
   --app-version %VERSION% ^
   --main-jar %JAR% ^
-  --main-class com.tag.sysTagRep.Launcher ^
+  --main-class com.vendex.Launcher ^
   --icon "%ICON%" ^
   --type app-image ^
   --win-menu ^

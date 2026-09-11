@@ -1,6 +1,6 @@
 -- Fix multi-PC 192.168.1.7 (host) + 192.168.1.5 (cliente) - numeracion sin solapamiento
--- Ejecutar UNA VEZ en la BD central (dbTag en 192.168.1.7) como postgres/app_systag:
--- psql -h localhost -U postgres -d dbTag -f fix_multipc_numeracion_20260831.sql
+-- Ejecutar UNA VEZ en la BD central (dbVendex en 192.168.1.7) como postgres/app_vendex:
+-- psql -h localhost -U postgres -d dbVendex -f fix_multipc_numeracion_20260831.sql
 
 -- 1. Asegurar tabla secuencia_documento existe y tiene filas 001-001 para ambas PCs compartiendo secuencia
 CREATE TABLE IF NOT EXISTS secuencia_documento (

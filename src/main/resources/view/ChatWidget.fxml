@@ -15,7 +15,7 @@
 <StackPane fx:id="rootStack" pickOnBounds="false" alignment="BOTTOM_RIGHT"
            xmlns="http://javafx.com/javafx"
            xmlns:fx="http://javafx.com/fxml"
-           fx:controller="com.tag.sysTagRep.controller.ChatWidgetController"
+           fx:controller="com.vendex.controller.ChatWidgetController"
            stylesheets="@../css/chat-widget.css">
 
     <!-- Panel de chat (oculto por defecto) -->

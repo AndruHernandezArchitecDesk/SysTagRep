@@ -15,7 +15,7 @@ habilitado el ambiente de **Pruebas / Certificación** en el portal del SRI.
 
 ## Contexto
 
-- La aplicación SysTagRep ya envía los comprobantes al ambiente PRUEBAS
+- La aplicación Vendex ya envía los comprobantes al ambiente PRUEBAS
   correctamente: `<ambiente>2</ambiente>`, clave de acceso con dígito de
   ambiente `2`, y el WS de recepción/autorización `celcer.sri.gob.ec`.
 - Si el SRI devuelve *"El ambiente de la solicitud PRODUCCIÓN no coincide con

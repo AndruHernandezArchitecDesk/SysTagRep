@@ -1,7 +1,7 @@
 -- =============================================================
 -- fix_sequences_prod_20260828.sql
 -- Corrige secuencias SERIAL desincronizadas tras pg_restore
--- en producción (dbTag). Cubre error reportado:
+-- en producción (dbVendex). Cubre error reportado:
 --   PSQLException: duplicate key violates unique constraint "marca_pkey"
 --   Detail: Key (id)=(16) already exists  en MarcaDAO.java:18
 -- Causa: dump/restore con INSERTs explícitos de id sin actualizar

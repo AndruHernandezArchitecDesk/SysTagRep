@@ -1,4 +1,4 @@
-# Ideas pendientes para SysTagRep
+# Ideas pendientes para Vendex
 
 > Módulo 2 (Alertas) ya implementado. A continuación las ideas restantes organizadas por prioridad.
 
