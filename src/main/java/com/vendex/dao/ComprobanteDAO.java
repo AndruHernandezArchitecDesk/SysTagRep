@@ -31,15 +31,21 @@ public class ComprobanteDAO {
 
     public void insertar(String claveAcceso, Integer idRelacionado, String numeroComprobante,
                          String ambiente, String xmlGenerado) {
+        insertar(claveAcceso, idRelacionado, numeroComprobante, ambiente, xmlGenerado, "01");
+    }
+
+    public void insertar(String claveAcceso, Integer idRelacionado, String numeroComprobante,
+                         String ambiente, String xmlGenerado, String tipoComprobante) {
         String sql = "INSERT INTO comprobantes_electronicos(nota_venta_id, tipo_comprobante, clave_acceso, " +
-                     "numero_comprobante, ambiente, estado_sri, xml_generado) VALUES (?, '01', ?, ?, ?, 'PENDIENTE', ?)";
+                     "numero_comprobante, ambiente, estado_sri, xml_generado) VALUES (?, ?, ?, ?, ?, 'PENDIENTE', ?)";
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setObject(1, idRelacionado, Types.INTEGER);
-            ps.setString(2, claveAcceso);
-            ps.setString(3, numeroComprobante);
-            ps.setString(4, ambiente);
-            ps.setString(5, xmlGenerado);
+            ps.setString(2, tipoComprobante);
+            ps.setString(3, claveAcceso);
+            ps.setString(4, numeroComprobante);
+            ps.setString(5, ambiente);
+            ps.setString(6, xmlGenerado);
             ps.executeUpdate();
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Error en operacion de ComprobanteDAO", e);
@@ -67,21 +73,28 @@ public class ComprobanteDAO {
     public void guardarEnvio(String claveAcceso, String numeroComprobante, String ambiente,
                              String xmlEnviado, String respuestaRecepcion, String respuestaAutorizacion,
                              String estado, String mensaje, String numeroAutorizacion, String fechaAutorizacion) {
+        guardarEnvio(claveAcceso, numeroComprobante, ambiente, xmlEnviado, respuestaRecepcion, respuestaAutorizacion, estado, mensaje, numeroAutorizacion, fechaAutorizacion, "01");
+    }
+
+    public void guardarEnvio(String claveAcceso, String numeroComprobante, String ambiente,
+                             String xmlEnviado, String respuestaRecepcion, String respuestaAutorizacion,
+                             String estado, String mensaje, String numeroAutorizacion, String fechaAutorizacion, String tipoComprobante) {
         String sql = "INSERT INTO xml_enviados(clave_acceso, numero_comprobante, ambiente, tipo_comprobante, " +
                      "xml_enviado, respuesta_recepcion, respuesta_autorizacion, estado_sri, mensaje_sri, " +
-                     "numero_autorizacion, fecha_autorizacion) VALUES (?, ?, ?, '01', ?, ?, ?, ?, ?, ?, ?)";
+                     "numero_autorizacion, fecha_autorizacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, claveAcceso);
             ps.setString(2, numeroComprobante);
             ps.setString(3, ambiente);
-            ps.setString(4, xmlEnviado);
-            ps.setString(5, respuestaRecepcion);
-            ps.setString(6, respuestaAutorizacion);
-            ps.setString(7, estado);
-            ps.setString(8, mensaje);
-            ps.setString(9, numeroAutorizacion);
-            ps.setTimestamp(10, parsearFechaAutorizacion(fechaAutorizacion));
+            ps.setString(4, tipoComprobante);
+            ps.setString(5, xmlEnviado);
+            ps.setString(6, respuestaRecepcion);
+            ps.setString(7, respuestaAutorizacion);
+            ps.setString(8, estado);
+            ps.setString(9, mensaje);
+            ps.setString(10, numeroAutorizacion);
+            ps.setTimestamp(11, parsearFechaAutorizacion(fechaAutorizacion));
             ps.executeUpdate();
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Error en operacion de ComprobanteDAO", e);

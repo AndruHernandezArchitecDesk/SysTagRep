@@ -71,7 +71,7 @@ public class EmpresaDAO {
         e.setId(rs.getInt("id"));
         e.setRuc(rs.getString("ruc"));
         e.setRazonSocial(rs.getString("razon_social"));
-        e.setTitulo(rs.getString("titulo"));
+        try { e.setTitulo(rs.getString("titulo")); } catch (SQLException ignore) {}
         e.setSucursal(rs.getString("sucursal"));
         e.setDireccionCallePrincipal(rs.getString("direccion_calle_principal"));
         e.setDireccionCalleSecundaria(rs.getString("direccion_calle_secundaria"));

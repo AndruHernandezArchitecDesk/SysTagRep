@@ -4,9 +4,12 @@ import com.vendex.dao.ClienteDAO;
 import com.vendex.dao.ComprobanteDAO;
 import com.vendex.dao.FacturaRegistroDAO;
 import com.vendex.dao.LogDAO;
+import com.vendex.dao.NotaCreditoRegistroDAO;
 import com.vendex.model.Cliente;
 import com.vendex.model.FacturaRegistro;
+import com.vendex.model.NotaCreditoRegistro;
 import com.vendex.service.FacturaService;
+import com.vendex.service.NotaCreditoService;
 import com.vendex.util.EmailService;
 import com.vendex.util.ElectronicoUtil;
 import com.vendex.util.SortTable;
@@ -159,8 +162,10 @@ public class SeguimientoSriController implements Initializable {
     @FXML
     private void consultarSri() {
         List<FacturaRegistro> pendientes = dao.listarPendientesSri();
-        if (pendientes.isEmpty()) {
-            new Alert(Alert.AlertType.INFORMATION, "No hay facturas pendientes por consultar con el SRI.").showAndWait();
+        NotaCreditoRegistroDAO ncDao = new NotaCreditoRegistroDAO();
+        List<NotaCreditoRegistro> pendientesNc = ncDao.listarPendientesSri();
+        if (pendientes.isEmpty() && pendientesNc.isEmpty()) {
+            new Alert(Alert.AlertType.INFORMATION, "No hay facturas/notas de crédito pendientes por consultar con el SRI.").showAndWait();
             return;
         }
         btnConsultarSri.setDisable(true);
@@ -233,6 +238,40 @@ public class SeguimientoSriController implements Initializable {
                         logDAO.guardar("SeguimientoSriController", "consultarSri", "Error consultando " + clave + ": " + e.getMessage(), e);
                     }
                 }
+                // Procesar NC pendientes
+                NotaCreditoService ncService = new NotaCreditoService();
+                File dirEsc = obtenerDirectorioEscritorio();
+                for (NotaCreditoRegistro nc : pendientesNc) {
+                    String clave = nc.getClaveAcceso();
+                    if (clave == null || clave.trim().isEmpty()) continue;
+                    try {
+                        String ambiente = "PRUEBAS";
+                        // intentar recuperar ambiente desde comprobante si existe
+                        SRIWebService.SRIResponse r = new SRIWebService(ambiente).consultarAutorizacion(clave);
+                        String estado = r.getEstado();
+                        if (AppConstants.ESTADO_AUTORIZADO.equals(estado) || AppConstants.ESTADO_RECHAZADA.equals(estado) || AppConstants.ESTADO_DEVUELTA.equals(estado)) {
+                            ceDAO.actualizarEstado(clave, estado, r.getMensaje(), null, r.getNumeroAutorizacion(), r.getFechaAutorizacion());
+                            ncDao.actualizarEstado(clave, estado, r.getMensaje(), r.getNumeroAutorizacion(), r.getFechaAutorizacion());
+                            if (AppConstants.ESTADO_AUTORIZADO.equals(estado)) {
+                                autorizadas++;
+                                String numAut = r.getNumeroAutorizacion();
+                                String fechaAut = r.getFechaAutorizacion();
+                                try {
+                                    NotaCreditoRegistro ncFull = ncDao.obtenerPorClave(clave);
+                                    String pdfRegenerado = ncService.regenerarRide(clave, numAut, fechaAut, dirEsc);
+                                    Cliente cli = clienteDAO.obtenerPorId(ncFull.getClienteId());
+                                    if (cli != null && cli.getCorreo()!=null && !cli.getCorreo().trim().isEmpty() && pdfRegenerado!=null) {
+                                        String rutaXML = System.getProperty("user.home")+File.separator+AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT+File.separator+AppConstants.PREFIJO_PDF_NOTA_CREDITO+ncFull.getNumComprobante().replace("-","")+AppConstants.EXTENSION_XML;
+                                        EmailService es = new EmailService();
+                                        boolean enviado = es.enviarCorreoConArchivos(cli.getCorreo().trim(), cli.getNombre(), ncFull.getNumComprobante(), AppConstants.TIPO_DOCUMENTO_NOTA_CREDITO, new File(pdfRegenerado), new File(rutaXML));
+                                        if (enviado) emailsEnviados.append("✓ NC ").append(cli.getCorreo()).append("\n");
+                                    }
+                                } catch (Exception exEmail) { logDAO.guardar("SeguimientoSriController","consultarSri NC", "Error correo NC "+clave+": "+exEmail.getMessage(), exEmail); }
+                            } else rechazadas++;
+                        } else if (AppConstants.ESTADO_ERROR.equals(estado)) errores++; else pendientesN++;
+                    } catch (Exception e) { errores++; logDAO.guardar("SeguimientoSriController","consultarSri NC","Error NC "+clave+": "+e.getMessage(), e); }
+                }
+
                 String resumen = "Autorizadas: " + autorizadas + "\nRechazadas/Devueltas: " + rechazadas
                         + "\nSiguen pendientes: " + pendientesN + "\nCon error: " + errores;
                 if (emailsEnviados.length() > 0) {

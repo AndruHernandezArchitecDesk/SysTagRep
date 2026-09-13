@@ -361,6 +361,18 @@ public class InventarioDAO {
         }
     }
 
+    public void devolverStock(int productoId, java.math.BigDecimal cantidad) {
+        String sql = "UPDATE inventario SET cantidad = cantidad + ? WHERE id = ?";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setBigDecimal(1, cantidad);
+            ps.setInt(2, productoId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Error en operacion de InventarioDAO.devolverStock", e);
+        }
+    }
+
     public List<Inventario> listarStockBajo(int umbral) {
         List<Inventario> lista = new ArrayList<>();
         String sql = "SELECT i.*, p.nombre as nombre_proveedor, g.nombre as nombre_grupo, m.nombre as nombre_marca, COALESCE(ub.codigo_ubicacion, u.nombre) as nombre_ubicacion " +

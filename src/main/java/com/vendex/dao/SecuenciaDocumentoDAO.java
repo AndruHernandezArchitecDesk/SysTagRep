@@ -83,6 +83,10 @@ public class SecuenciaDocumentoDAO {
         return existeCodigo("factura_registro", "codigo", codigo);
     }
 
+    public boolean existeCodigoNotaCredito(String codigo) {
+        return existeCodigo("nota_credito_registro", "clave_acceso", codigo);
+    }
+
     private boolean existeCodigo(String tabla, String columna, String codigo) {
         String sql = "SELECT COUNT(*) FROM " + tabla + " WHERE " + columna + "=?";
         try (Connection con = DatabaseConnection.getConnection();

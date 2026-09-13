@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.vendex.controller.NotaCreditoController" prefHeight="720" prefWidth="1100" style="-fx-padding: 10">
+  <top><HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 5 0 10 0">
+    <Label text="Nota de Crédito Electrónica (SRI 04)" styleClass="titulo"><graphic><FontIcon iconLiteral="fas-file-invoice" styleClass="titulo-icono"/></graphic></Label>
+    <Label fx:id="lblSecuencial" text="001-001-000000001" style="-fx-font-weight: bold; -fx-font-size: 14px"/>
+    <Region HBox.hgrow="ALWAYS"/>
+    <Label text="Ambiente:"/><ComboBox fx:id="cmbAmbiente" prefWidth="130"/>
+  </HBox></top>
+  <center><ScrollPane fitToWidth="true" style="-fx-background-color: transparent"><VBox spacing="12" style="-fx-padding: 8">
+    <TitledPane text="Factura a modificar (solo AUTORIZADAS)" collapsible="false" styleClass="section-card"><VBox spacing="8" style="-fx-padding: 5">
+      <HBox spacing="10" alignment="CENTER_LEFT"><Label text="Factura:" prefWidth="80"/><ComboBox fx:id="cmbFactura" prefWidth="650" promptText="Seleccione factura autorizada"/><Button text="Actualizar" onAction="#emitirNotaCredito" visible="false" managed="false"/></HBox>
+      <HBox spacing="15"><Label fx:id="lblNumFactura" style="-fx-font-weight: bold"/><Label fx:id="lblFechaFactura"/><Label fx:id="lblTotalFactura" style="-fx-font-weight: bold"/><Label fx:id="lblSaldoDisponible" style="-fx-text-fill: #198754; -fx-font-weight: bold"/></HBox>
+      <Label fx:id="lblCliente" style="-fx-font-style: italic"/>
+    </VBox></TitledPane>
+    <HBox spacing="12">
+      <TitledPane text="Detalles de la factura" collapsible="false" HBox.hgrow="ALWAYS" styleClass="section-card"><VBox spacing="5"><TableView fx:id="tblDetallesOrigen" prefHeight="220"><columns>
+        <TableColumn fx:id="colCodigo" text="Código" prefWidth="90"/><TableColumn fx:id="colDesc" text="Descripción" prefWidth="220"/><TableColumn fx:id="colCantOrig" text="Cant" prefWidth="70"/><TableColumn fx:id="colPrecio" text="P.Unit" prefWidth="90"/><TableColumn fx:id="colAccion" text="Acción" prefWidth="80"/>
+      </columns></TableView><Label text="Seleccione items y agregue a la NC"/></VBox></TitledPane>
+      <TitledPane text="Items a acreditar (Nota de Crédito)" collapsible="false" HBox.hgrow="ALWAYS" styleClass="section-card"><VBox spacing="5"><TableView fx:id="tblDetallesNc" prefHeight="220"><columns>
+        <TableColumn fx:id="colNcCodigo" text="Código" prefWidth="90"/><TableColumn fx:id="colNcDesc" text="Descripción" prefWidth="220"/><TableColumn fx:id="colNcCant" text="Cantidad" prefWidth="80"/><TableColumn fx:id="colNcPrecio" text="P.Unit" prefWidth="90"/><TableColumn fx:id="colNcAccion" text="" prefWidth="80"/>
+      </columns></TableView>
+      <HBox spacing="10" alignment="CENTER_RIGHT"><Label text="Subtotal:"/><Label fx:id="lblSubtotal" text="0.00" style="-fx-font-weight: bold"/><Label text="IVA:"/><Label fx:id="lblIva" text="0.00"/><Label text="Total:"/><Label fx:id="lblTotal" text="0.00" style="-fx-font-weight: bold; -fx-font-size: 13px"/></HBox>
+      </VBox></TitledPane>
+    </HBox>
+    <TitledPane text="Motivo y opciones" collapsible="false" styleClass="section-card"><VBox spacing="8" style="-fx-padding: 5">
+      <HBox spacing="10" alignment="CENTER_LEFT"><Label text="Tipo motivo:" prefWidth="100"/><ComboBox fx:id="cmbTipoMotivo" prefWidth="150"/><CheckBox fx:id="chkReingresaStock" text="Reingresa stock (devolución)"/><Label text="(editable para todo tipo, auditable)" style="-fx-font-size: 11px; -fx-text-fill: gray"/></HBox>
+      <Label text="Motivo (obligatorio, max 300, visible en PDF y SRI):"/><TextArea fx:id="txtMotivo" prefRowCount="3" wrapText="true" promptText="Ej: DEVOLUCION DE MERCADERIA - cliente devuelve 2 unidades defectuosas"/>
+      <HBox alignment="CENTER_RIGHT"><Button text="Emitir Nota de Crédito" onAction="#emitirNotaCredito" styleClass="btn-guardar" style="-fx-font-weight: bold"><graphic><FontIcon iconLiteral="fas-paper-plane"/></graphic></Button></HBox>
+    </VBox></TitledPane>
+  </VBox></ScrollPane></center>
+</BorderPane>

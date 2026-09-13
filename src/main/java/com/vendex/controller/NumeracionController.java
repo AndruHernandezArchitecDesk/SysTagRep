@@ -23,6 +23,11 @@ public class NumeracionController implements Initializable {
     @FXML private TextField txtPtoFactura;
     @FXML private TextField txtInicioFactura;
 
+    @FXML private Label lblSiguienteNotaCredito;
+    @FXML private TextField txtEstabNotaCredito;
+    @FXML private TextField txtPtoNotaCredito;
+    @FXML private TextField txtInicioNotaCredito;
+
     private final SecuenciaDocumentoDAO secuenciaDAO = new SecuenciaDocumentoDAO();
 
     @Override
@@ -33,12 +38,16 @@ public class NumeracionController implements Initializable {
     private void cargarSecuencias() {
         SecuenciaDocumento proforma = secuenciaDAO.obtener("PROFORMA");
         SecuenciaDocumento factura = secuenciaDAO.obtener("FACTURA");
+        SecuenciaDocumento nc = secuenciaDAO.obtener("NOTA_CREDITO");
         lblSiguienteProforma.setText(proforma.getProximoCodigo());
         lblSiguienteFactura.setText(factura.getProximoCodigo());
+        if (lblSiguienteNotaCredito != null) lblSiguienteNotaCredito.setText(nc.getProximoCodigo());
         txtEstabProforma.setText(proforma.getEstablecimiento());
         txtPtoProforma.setText(proforma.getPuntoEmision());
         txtEstabFactura.setText(factura.getEstablecimiento());
         txtPtoFactura.setText(factura.getPuntoEmision());
+        if (txtEstabNotaCredito != null) txtEstabNotaCredito.setText(nc.getEstablecimiento());
+        if (txtPtoNotaCredito != null) txtPtoNotaCredito.setText(nc.getPuntoEmision());
     }
 
     @FXML
@@ -49,6 +58,11 @@ public class NumeracionController implements Initializable {
     @FXML
     private void establecerFactura() {
         establecer("FACTURA", txtInicioFactura, txtEstabFactura, txtPtoFactura, lblSiguienteFactura, true);
+    }
+
+    @FXML
+    private void establecerNotaCredito() {
+        establecer("NOTA_CREDITO", txtInicioNotaCredito, txtEstabNotaCredito, txtPtoNotaCredito, lblSiguienteNotaCredito, false);
     }
 
     private void establecer(String tipo, TextField txt, TextField txtEstab, TextField txtPto,
