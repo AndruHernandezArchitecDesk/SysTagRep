@@ -61,13 +61,13 @@ public class XmlNotaCreditoBuilder {
             Element infoNC = doc.createElement("infoNotaCredito");
             agregar(infoNC, "fechaEmision", fechaEmision);
             agregar(infoNC, "dirEstablecimiento", dirEstablecimiento != null ? dirEstablecimiento : dirMatriz);
+            agregar(infoNC, "tipoIdentificacionComprador", tipoIdentificacionComprador);
+            agregar(infoNC, "razonSocialComprador", razonSocialComprador);
+            agregar(infoNC, "identificacionComprador", identificacionComprador);
             if (contribuyenteEspecial != null && contribuyenteEspecial.trim().length() >= 3) {
                 agregar(infoNC, "contribuyenteEspecial", contribuyenteEspecial.trim());
             }
             agregar(infoNC, "obligadoContabilidad", obligadoContabilidad != null ? obligadoContabilidad : "NO");
-            agregar(infoNC, "tipoIdentificacionComprador", tipoIdentificacionComprador);
-            agregar(infoNC, "razonSocialComprador", razonSocialComprador);
-            agregar(infoNC, "identificacionComprador", identificacionComprador);
             agregar(infoNC, "codDocModificado", codDocModificado != null ? codDocModificado : AppConstants.COD_DOC_MODIFICADO_FACTURA);
             agregar(infoNC, "numDocModificado", numDocModificado);
             agregar(infoNC, "fechaEmisionDocSustento", fechaEmisionDocSustento);
