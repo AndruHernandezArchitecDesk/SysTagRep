@@ -22,6 +22,7 @@ public class MainApp extends Application {
         cargarFuentes();
         // Cargar ~/.vendex/db.properties antes de cualquier DAO (soporte multi-PC 192.168.1.7 host)
         DatabaseConnection.initFromConfig();
+        DatabaseConnection.ensureNotaCreditoSchema();
         // Activacion solo en host (192.168.1.7). PC cliente 192.168.1.5 con db.url remota no requiere licencia local.
         boolean esRemota = DbConfig.esRemota();
         if (!esRemota && !LicenseManager.isActivated()) {

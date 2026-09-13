@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS nota_credito_registro (
     numero_autorizacion     VARCHAR(49),
     fecha_autorizacion      TIMESTAMP,
     xml_firmado             TEXT,
-    usuario_id              INTEGER NOT NULL REFERENCES usuario(id),
+    usuario_id              INTEGER NOT NULL REFERENCES usuarios(id),
     creado_en               TIMESTAMP NOT NULL DEFAULT now()
 );
 

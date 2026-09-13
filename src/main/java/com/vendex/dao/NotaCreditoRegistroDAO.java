@@ -102,7 +102,12 @@ public class NotaCreditoRegistroDAO {
                 if (rs.next()) return rs.getBigDecimal(1);
             }
         } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Error en NotaCreditoRegistroDAO.sumarValorModificacionPorFactura", e);
+            if (e.getMessage() != null && e.getMessage().contains("does not exist")) {
+                // tabla aún no migrada (fresh install) - intentar auto-migrar una vez
+                DatabaseConnection.ensureNotaCreditoSchema();
+            } else {
+                LOGGER.log(Level.SEVERE, "Error en NotaCreditoRegistroDAO.sumarValorModificacionPorFactura", e);
+            }
         }
         return BigDecimal.ZERO;
     }
