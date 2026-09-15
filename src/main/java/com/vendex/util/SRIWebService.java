@@ -28,7 +28,7 @@ public class SRIWebService {
     private static final String URL_AUTORIZACION_PRODUCCION =
             "https://cel.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline";
 
-    private static final int TIEMPO_ESPERA_MS = 20000;
+    private static final int TIEMPO_ESPERA_MS = 60000;
 
     private String ambiente;
 
@@ -136,36 +136,41 @@ public class SRIWebService {
 
     protected String postSoap(String url, String soapBody) {
         HttpURLConnection conn = null;
-        try {
-            URL u = new URL(url);
-            conn = (HttpURLConnection) u.openConnection();
-            conn.setRequestMethod("POST");
-            conn.setDoOutput(true);
-            conn.setConnectTimeout(TIEMPO_ESPERA_MS);
-            conn.setReadTimeout(TIEMPO_ESPERA_MS);
-            conn.setRequestProperty("Content-Type", "text/xml; charset=utf-8");
-            conn.setRequestProperty("SOAPAction", "");
-            conn.setRequestProperty("Accept", "text/xml");
-
-            byte[] bytes = soapBody.getBytes(StandardCharsets.UTF_8);
-            try (OutputStream os = conn.getOutputStream()) {
-                os.write(bytes);
+        int intentos = 0;
+        while (intentos < 3) {
+            try {
+                URL u = new URL(url);
+                conn = (HttpURLConnection) u.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setDoOutput(true);
+                conn.setConnectTimeout(TIEMPO_ESPERA_MS);
+                conn.setReadTimeout(TIEMPO_ESPERA_MS);
+                conn.setRequestProperty("Content-Type", "text/xml; charset=utf-8");
+                conn.setRequestProperty("SOAPAction", "");
+                conn.setRequestProperty("Accept", "text/xml");
+                byte[] bytes = soapBody.getBytes(StandardCharsets.UTF_8);
+                try (OutputStream os = conn.getOutputStream()) { os.write(bytes); }
+                int codigo = conn.getResponseCode();
+                byte[] respuesta;
+                if (codigo >= 200 && codigo < 300) {
+                    respuesta = conn.getInputStream().readAllBytes();
+                } else {
+                    respuesta = conn.getErrorStream() != null ? conn.getErrorStream().readAllBytes() : new byte[0];
+                }
+                return new String(respuesta, StandardCharsets.UTF_8);
+            } catch (java.net.SocketTimeoutException e) {
+                intentos++;
+                if (intentos >= 3) { e.printStackTrace(); return null; }
+                try { Thread.sleep(2000 * intentos); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); return null; }
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            } finally {
+                if (conn != null) conn.disconnect();
+                conn = null;
             }
-
-            int codigo = conn.getResponseCode();
-            byte[] respuesta;
-            if (codigo >= 200 && codigo < 300) {
-                respuesta = conn.getInputStream().readAllBytes();
-            } else {
-                respuesta = conn.getErrorStream() != null ? conn.getErrorStream().readAllBytes() : new byte[0];
-            }
-            return new String(respuesta, StandardCharsets.UTF_8);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        } finally {
-            if (conn != null) conn.disconnect();
         }
+        return null;
     }
 
     private SRIResponse parsearRecepcion(String respuestaXml, String estadoEsperado) {

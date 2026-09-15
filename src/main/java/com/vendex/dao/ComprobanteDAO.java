@@ -36,8 +36,8 @@ public class ComprobanteDAO {
 
     public void insertar(String claveAcceso, Integer idRelacionado, String numeroComprobante,
                          String ambiente, String xmlGenerado, String tipoComprobante) {
-        String sql = "INSERT INTO comprobantes_electronicos(nota_venta_id, tipo_comprobante, clave_acceso, " +
-                     "numero_comprobante, ambiente, estado_sri, xml_generado) VALUES (?, ?, ?, ?, ?, 'PENDIENTE', ?)";
+        String sql = "INSERT INTO comprobantes_electronicos(documento_relacionado_id, tipo_comprobante, clave_acceso, " +
+                      "numero_comprobante, ambiente, estado_sri, xml_generado) VALUES (?, ?, ?, ?, ?, 'PENDIENTE', ?)";
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setObject(1, idRelacionado, Types.INTEGER);

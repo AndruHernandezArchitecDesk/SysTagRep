@@ -134,8 +134,7 @@ public class NotaCreditoService {
 
         String tipoIdComp;
         String identTrim = cliente.getIdentificacion() != null ? cliente.getIdentificacion().trim() : "";
-        if (AppConstants.esConsumidorFinal(identTrim)) tipoIdComp = "05";
-        else tipoIdComp = identTrim.length() == AppConstants.MAX_LONGITUD_IDENTIFICACION_JURIDICA ? "04" : "05";
+        tipoIdComp = AppConstants.esConsumidorFinal(identTrim) ? "05" : (identTrim.length() == AppConstants.MAX_LONGITUD_IDENTIFICACION_JURIDICA ? "04" : "05");
 
         String dirMatriz = empresa.getDireccionCallePrincipal() + " y " + empresa.getDireccionCalleSecundaria();
         String xmlGenerado = XmlNotaCreditoBuilder.construirNotaCredito(
@@ -321,7 +320,7 @@ public class NotaCreditoService {
         FacturaRegistro factura = obtenerFacturaPorId(nc.getFacturaRegistroId());
         String numDocMod = factura != null ? factura.getNumComprobante() : "";
         String fechaDocSust = factura != null && factura.getFecha()!=null ? factura.getFecha().format(DateTimeFormatter.ofPattern(AppConstants.PATRON_FECHA_EMISION)) : "";
-        String tipoIdComp = AppConstants.esConsumidorFinal(cliente.getIdentificacion()!=null?cliente.getIdentificacion().trim():"")?AppConstants.TIPO_ID_CONSUMIDOR_FINAL: (cliente.getIdentificacion()!=null&&cliente.getIdentificacion().trim().length()==13?"04":"05");
+        String tipoIdComp = AppConstants.esConsumidorFinal(cliente.getIdentificacion()!=null?cliente.getIdentificacion().trim():"") ? "05" : (cliente.getIdentificacion()!=null&&cliente.getIdentificacion().trim().length()==13?"04":"05");
         String fechaEmision = nc.getFechaEmision()!=null? nc.getFechaEmision().format(DateTimeFormatter.ofPattern(AppConstants.PATRON_FECHA_EMISION)) : "";
         String[] partes = nc.getSecuencial()!=null? new String[]{nc.getEstablecimiento(), nc.getPuntoEmision(), nc.getSecuencial()} : (nc.getNumComprobante()!=null? nc.getNumComprobante().split("-"): new String[]{"001","001","000000000"});
         String codEstab = partes.length>0?partes[0]:"001"; String codPtoEmi = partes.length>1?partes[1]:"001"; int sec = partes.length>2? Integer.parseInt(partes[2].replaceAll("\\D","")):0;
