@@ -69,12 +69,20 @@ public class EmailService {
                         + "Si tiene alguna consulta, no dude en contactarnos.\n\n"
                         + "Atentamente,\n"
                         + "Vendex Repuestos Automotrices";
-            } else if ("NOTA_CREDITO".equals(tipo) || "NOTA DE CREDITO".equals(tipo) || "NOTA_CREDITO".equals(tipoDocumento)) {
+             } else if ("NOTA_CREDITO".equals(tipo) || "NOTA DE CREDITO".equals(tipo) || "NOTA_CREDITO".equals(tipoDocumento)) {
                 asunto = "Estimado/a " + nombreCliente + ",\n\n"
                         + "Le informamos que se ha emitido la Nota de Crédito N. " + codigoDocumento + " en Vendex Repuestos Automotrices.\n\n"
                         + "Este documento acredita el ajuste/devuelto correspondiente a su factura original. "
                         + "Conserve este comprobante junto a su factura.\n\n"
                         + "Si tiene alguna consulta sobre el motivo del ajuste, no dude en contactarnos.\n\n"
+                        + "Atentamente,\n"
+                        + "Vendex Repuestos Automotrices";
+            } else if ("NOTA_DEBITO".equals(tipo) || "NOTA DE DEBITO".equals(tipo) || "NOTA_DEBITO".equals(tipoDocumento)) {
+                asunto = "Estimado/a " + nombreCliente + ",\n\n"
+                        + "Le informamos que se ha emitido la Nota de Débito N. " + codigoDocumento + " en Vendex Repuestos Automotrices.\n\n"
+                        + "Este documento acredita el cargo adicional correspondiente a su factura original. "
+                        + "Conserve este comprobante junto a su factura.\n\n"
+                        + "Si tiene alguna consulta sobre el motivo del cargo, no dude en contactarnos.\n\n"
                         + "Atentamente,\n"
                         + "Vendex Repuestos Automotrices";
             } else {

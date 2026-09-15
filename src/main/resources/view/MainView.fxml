@@ -25,8 +25,9 @@
                     <Menu text="Emisión">
                         <MenuItem text="Proforma" onAction="#irNotaVenta"/>
                         <MenuItem text="Factura" onAction="#irFactura"/>
-                        <MenuItem text="Nota de Crédito" onAction="#irNotaCredito"/>
-                        <MenuItem text="Seguimiento SRI" onAction="#irSeguimientoSri"/>
+                         <MenuItem text="Nota de Crédito" onAction="#irNotaCredito"/>
+                         <MenuItem text="Nota de Débito" onAction="#irNotaDebito"/>
+                         <MenuItem text="Seguimiento SRI" onAction="#irSeguimientoSri"/>
                         <MenuItem text="Facturas Emitidas" onAction="#irComprobanteVentaReporte"/>
                     </Menu>
                 </Menu>

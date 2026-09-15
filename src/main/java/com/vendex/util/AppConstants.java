@@ -10,11 +10,14 @@ public final class AppConstants {
     public static final String PUNTO_EMISION_DEFAULT = "001";
     public static final String TIPO_COMPROBANTE_FACTURA = "01";
     public static final String TIPO_COMPROBANTE_NOTA_CREDITO = "04";
+    public static final String TIPO_COMPROBANTE_NOTA_DEBITO = "05";
     public static final String COD_DOC_MODIFICADO_FACTURA = "01";
     public static final String NOMBRE_DOCUMENTO_FACTURA = "FACTURA";
     public static final String TIPO_DOCUMENTO_FACTURA = "FACTURA";
     public static final String TIPO_DOCUMENTO_NOTA_CREDITO = "NOTA_CREDITO";
+    public static final String TIPO_DOCUMENTO_NOTA_DEBITO = "NOTA_DEBITO";
     public static final String NOMBRE_DOCUMENTO_NOTA_CREDITO = "NOTA DE CREDITO";
+    public static final String NOMBRE_DOCUMENTO_NOTA_DEBITO = "NOTA DE DEBITO";
 
     public static final String ESTADO_PENDIENTE = "PENDIENTE";
     public static final String ESTADO_AUTORIZADO = "AUTORIZADO";
@@ -54,6 +57,7 @@ public final class AppConstants {
     public static final String ASUNTO_FACTURA = "FACTURA";
     public static final String ASUNTO_PROFORMA = "PROFORMA";
     public static final String ASUNTO_NOTA_CREDITO = "NOTA DE CREDITO";
+    public static final String ASUNTO_NOTA_DEBITO = "NOTA DE DEBITO";
 
     public static final String SMTP_HOST = "smtp.gmail.com";
     public static final int SMTP_PORT = 587;
@@ -69,6 +73,7 @@ public final class AppConstants {
     public static final String EXTENSION_XML = ".xml";
     public static final String PREFIJO_PDF_FACTURA = "FacturaElectronica_";
     public static final String PREFIJO_PDF_NOTA_CREDITO = "NotaCredito_";
+    public static final String PREFIJO_PDF_NOTA_DEBITO = "NotaDebito_";
 
     public static final String ESTADO_SIN_ENVIO = "NO ENVIADO";
     public static final String ESTADO_ERROR_CONEXION = "ERROR DE CONEXIÓN";

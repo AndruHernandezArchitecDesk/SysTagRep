@@ -137,6 +137,11 @@ public class MainController implements Initializable {
     }
 
     @FXML
+    private void irNotaDebito() {
+        cargarVista("/view/NotaDebitoView.fxml");
+    }
+
+    @FXML
     private void irUsuarios() {
         cargarVista("/view/UsuariosView.fxml");
     }

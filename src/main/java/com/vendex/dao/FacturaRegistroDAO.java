@@ -61,6 +61,18 @@ public class FacturaRegistroDAO {
         return -1;
     }
 
+    public FacturaRegistro obtenerPorId(int id) {
+        String sql = "SELECT fr.*, c.nombre AS nombre_cliente, ce.mensaje_sri AS mensaje_sri, COALESCE(ce.estado_sri, fr.estado_sri) AS estado_sri_actual FROM factura_registro fr LEFT JOIN cliente c ON c.id = fr.cliente_id LEFT JOIN comprobantes_electronicos ce ON ce.clave_acceso = fr.clave_acceso WHERE fr.id = ? LIMIT 1";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) { FacturaRegistro f = new FacturaRegistro(); mapear(rs, f); f.setNombreCliente(rs.getString("nombre_cliente")); return f; }
+            }
+        } catch (SQLException e) { LOGGER.log(Level.SEVERE, "Error en FacturaRegistroDAO.obtenerPorId", e); }
+        return null;
+    }
+
     public FacturaRegistro obtenerPorClaveAcceso(String claveAcceso) {
         String sql = "SELECT fr.*, c.nombre AS nombre_cliente, ce.mensaje_sri AS mensaje_sri, " +
                      "COALESCE(ce.estado_sri, fr.estado_sri) AS estado_sri_actual " +

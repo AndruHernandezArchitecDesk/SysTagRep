@@ -4,6 +4,7 @@ import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.scene.control.ComboBox;
 import javafx.util.StringConverter;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Habilita en un ComboBox la escritura con filtrado a medida que se escribe.
@@ -31,27 +32,31 @@ public class ComboFilter {
         };
         combo.setConverter(conv);
 
+        AtomicBoolean updating = new AtomicBoolean(false);
         combo.getEditor().textProperty().addListener((obs, oldVal, newVal) -> {
-            String texto = newVal == null ? "" : newVal.trim();
-            T seleccionado = combo.getSelectionModel().getSelectedItem();
-            if (seleccionado == null || !texto(converter, seleccionado).equalsIgnoreCase(texto)) {
-                String filtro = texto.toLowerCase();
-                filtrados.setPredicate(item -> {
-                    if (texto.isEmpty()) return true;
-                    String t = texto(converter, item);
-                    return t != null && t.toLowerCase().contains(filtro);
-                });
-                if (combo.isShowing() || combo.getEditor().isFocused()) {
-                    combo.show();
-                }
-                for (T item : items) {
-                    String t = texto(converter, item);
-                    if (t != null && t.equalsIgnoreCase(texto)) {
-                        combo.getSelectionModel().select(item);
-                        break;
+            if (updating.getAndSet(true)) { updating.set(false); return; }
+            try {
+                String texto = newVal == null ? "" : newVal.trim();
+                T seleccionado = combo.getSelectionModel().getSelectedItem();
+                if (seleccionado == null || !texto(converter, seleccionado).equalsIgnoreCase(texto)) {
+                    String filtro = texto.toLowerCase();
+                    filtrados.setPredicate(item -> {
+                        if (texto.isEmpty()) return true;
+                        String t = texto(converter, item);
+                        return t != null && t.toLowerCase().contains(filtro);
+                    });
+                    if (combo.isShowing() || combo.getEditor().isFocused()) {
+                        combo.show();
+                    }
+                    for (T item : items) {
+                        String t = texto(converter, item);
+                        if (t != null && t.equalsIgnoreCase(texto)) {
+                            combo.getSelectionModel().select(item);
+                            break;
+                        }
                     }
                 }
-            }
+            } finally { updating.set(false); }
         });
         return filtrados;
     }

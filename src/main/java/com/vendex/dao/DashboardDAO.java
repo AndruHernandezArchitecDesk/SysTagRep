@@ -154,6 +154,27 @@ public class DashboardDAO {
         return 0;
     }
 
+    public Map<String, Double> notasDebitoPorDia(int ultimosDias) {
+        Map<String, Double> mapa = new LinkedHashMap<>();
+        String sql = "SELECT CAST(fecha_emision AS DATE) AS dia, SUM(valor_total) AS total FROM nota_debito_registro WHERE estado_sri='AUTORIZADO' AND fecha_emision >= NOW() - (? || ' days')::INTERVAL GROUP BY dia ORDER BY dia ASC";
+        try (Connection con = DatabaseConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, ultimosDias);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) mapa.put(rs.getDate("dia").toLocalDate().toString(), rs.getDouble("total"));
+        } catch (SQLException e) { /* ignore si tabla no existe */ }
+        return mapa;
+    }
+
+    public int notasDebitoEmitidasDelDia(LocalDate fecha) {
+        String sql = "SELECT COUNT(*) FROM nota_debito_registro WHERE CAST(fecha_emision AS DATE)=?";
+        try (Connection con = DatabaseConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setObject(1, fecha);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt(1);
+        } catch (SQLException e) {}
+        return 0;
+    }
+
     /**
      * Facturas emitidas: cantidad de registros de factura_registro de la fecha indicada.
      */

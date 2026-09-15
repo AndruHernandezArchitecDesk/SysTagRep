@@ -5,11 +5,14 @@ import com.vendex.dao.ComprobanteDAO;
 import com.vendex.dao.FacturaRegistroDAO;
 import com.vendex.dao.LogDAO;
 import com.vendex.dao.NotaCreditoRegistroDAO;
+import com.vendex.dao.NotaDebitoRegistroDAO;
 import com.vendex.model.Cliente;
 import com.vendex.model.FacturaRegistro;
 import com.vendex.model.NotaCreditoRegistro;
+import com.vendex.model.NotaDebitoRegistro;
 import com.vendex.service.FacturaService;
 import com.vendex.service.NotaCreditoService;
+import com.vendex.service.NotaDebitoService;
 import com.vendex.util.EmailService;
 import com.vendex.util.ElectronicoUtil;
 import com.vendex.util.SortTable;
@@ -164,8 +167,9 @@ public class SeguimientoSriController implements Initializable {
         List<FacturaRegistro> pendientes = dao.listarPendientesSri();
         NotaCreditoRegistroDAO ncDao = new NotaCreditoRegistroDAO();
         List<NotaCreditoRegistro> pendientesNc = ncDao.listarPendientesSri();
-        if (pendientes.isEmpty() && pendientesNc.isEmpty()) {
-            new Alert(Alert.AlertType.INFORMATION, "No hay facturas/notas de crédito pendientes por consultar con el SRI.").showAndWait();
+        final List<NotaDebitoRegistro> pendientesNd = new NotaDebitoRegistroDAO().listarPendientesSri();
+        if (pendientes.isEmpty() && pendientesNc.isEmpty() && pendientesNd.isEmpty()) {
+            new Alert(Alert.AlertType.INFORMATION, "No hay facturas/notas de crédito/débito pendientes por consultar con el SRI.").showAndWait();
             return;
         }
         btnConsultarSri.setDisable(true);
@@ -270,6 +274,38 @@ public class SeguimientoSriController implements Initializable {
                             } else rechazadas++;
                         } else if (AppConstants.ESTADO_ERROR.equals(estado)) errores++; else pendientesN++;
                     } catch (Exception e) { errores++; logDAO.guardar("SeguimientoSriController","consultarSri NC","Error NC "+clave+": "+e.getMessage(), e); }
+                }
+                // Procesar ND pendientes
+                NotaDebitoRegistroDAO ndDao = new NotaDebitoRegistroDAO();
+                NotaDebitoService ndService = new NotaDebitoService();
+                for (NotaDebitoRegistro nd : pendientesNd) {
+                    String clave = nd.getClaveAcceso();
+                    if (clave == null || clave.trim().isEmpty()) continue;
+                    try {
+                        String ambiente = "PRUEBAS";
+                        SRIWebService.SRIResponse r = new SRIWebService(ambiente).consultarAutorizacion(clave);
+                        String estado = r.getEstado();
+                        if (AppConstants.ESTADO_AUTORIZADO.equals(estado) || AppConstants.ESTADO_RECHAZADA.equals(estado) || AppConstants.ESTADO_DEVUELTA.equals(estado)) {
+                            ceDAO.actualizarEstado(clave, estado, r.getMensaje(), null, r.getNumeroAutorizacion(), r.getFechaAutorizacion());
+                            ndDao.actualizarEstado(clave, estado, r.getMensaje(), r.getNumeroAutorizacion(), r.getFechaAutorizacion());
+                            if (AppConstants.ESTADO_AUTORIZADO.equals(estado)) {
+                                autorizadas++;
+                                String numAut = r.getNumeroAutorizacion();
+                                String fechaAut = r.getFechaAutorizacion();
+                                try {
+                                    NotaDebitoRegistro ndFull = ndDao.obtenerPorClave(clave);
+                                    String pdfRegenerado = ndService.regenerarRide(clave, numAut, fechaAut, dirEsc);
+                                    Cliente cli = clienteDAO.obtenerPorId(ndFull.getClienteId());
+                                    if (cli != null && cli.getCorreo()!=null && !cli.getCorreo().trim().isEmpty() && pdfRegenerado!=null) {
+                                        String rutaXML = System.getProperty("user.home")+File.separator+AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT+File.separator+AppConstants.PREFIJO_PDF_NOTA_DEBITO+ndFull.getNumComprobante().replace("-","")+AppConstants.EXTENSION_XML;
+                                        EmailService es = new EmailService();
+                                        boolean enviado = es.enviarCorreoConArchivos(cli.getCorreo().trim(), cli.getNombre(), ndFull.getNumComprobante(), AppConstants.TIPO_DOCUMENTO_NOTA_DEBITO, new File(pdfRegenerado), new File(rutaXML));
+                                        if (enviado) emailsEnviados.append("✓ ND ").append(cli.getCorreo()).append("\n");
+                                    }
+                                } catch (Exception exEmail) { logDAO.guardar("SeguimientoSriController","consultarSri ND", "Error correo ND "+clave+": "+exEmail.getMessage(), exEmail); }
+                            } else rechazadas++;
+                        } else if (AppConstants.ESTADO_ERROR.equals(estado)) errores++; else pendientesN++;
+                    } catch (Exception e) { errores++; logDAO.guardar("SeguimientoSriController","consultarSri ND","Error ND "+clave+": "+e.getMessage(), e); }
                 }
 
                 String resumen = "Autorizadas: " + autorizadas + "\nRechazadas/Devueltas: " + rechazadas
