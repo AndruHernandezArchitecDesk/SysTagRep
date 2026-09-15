@@ -134,7 +134,7 @@ public class NotaCreditoService {
 
         String tipoIdComp;
         String identTrim = cliente.getIdentificacion() != null ? cliente.getIdentificacion().trim() : "";
-        if (AppConstants.esConsumidorFinal(identTrim)) tipoIdComp = AppConstants.TIPO_ID_CONSUMIDOR_FINAL;
+        if (AppConstants.esConsumidorFinal(identTrim)) tipoIdComp = "05";
         else tipoIdComp = identTrim.length() == AppConstants.MAX_LONGITUD_IDENTIFICACION_JURIDICA ? "04" : "05";
 
         String dirMatriz = empresa.getDireccionCallePrincipal() + " y " + empresa.getDireccionCalleSecundaria();
