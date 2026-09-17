@@ -54,7 +54,6 @@ public class XmlRetencionBuilder {
             agregar(infoComp, "obligadoContabilidad", "SI");
             agregar(infoComp, "tipoIdentificacionSujetoRetenido", tipoIdentificacionSujeto);
             agregar(infoComp, "parteRel", "NO");
-            agregar(infoComp, "tipoSujetoRetenido", "01");
             agregar(infoComp, "razonSocialSujetoRetenido", razonSocialSujeto);
             agregar(infoComp, "identificacionSujetoRetenido", identificacionSujeto);
             agregar(infoComp, "periodoFiscal", periodoFiscal);
@@ -66,13 +65,29 @@ public class XmlRetencionBuilder {
                     Element docEl = doc.createElement("docSustento");
                     agregar(docEl, "codSustento", (String) ds[0]);
                     agregar(docEl, "codDocSustento", (String) ds[1]);
-                    agregar(docEl, "numDocSustento", (String) ds[2]);
+                    String numDocRaw = (String) ds[2];
+                    String numDocFmt = numDocRaw != null ? numDocRaw.replaceAll("[^0-9]", "") : "";
+                    if (numDocFmt.length() == 15) { /* ok */ } else if (numDocFmt.length() > 15) { numDocFmt = numDocFmt.substring(numDocFmt.length()-15); } else if (!numDocFmt.isEmpty()) { numDocFmt = String.format("%15s", numDocFmt).replace(' ', '0'); } else { numDocFmt = "000000000000000"; }
+                    agregar(docEl, "numDocSustento", numDocFmt);
                     agregar(docEl, "fechaEmisionDocSustento", (String) ds[3]);
-                    agregar(docEl, "numAutDocSustento", ds[5] != null ? (String) ds[5] : (String) ds[2]);
+                    String numAutRaw = ds[5] != null ? (String) ds[5] : (String) ds[2];
+                    String numAutFmt = numAutRaw != null ? numAutRaw.replaceAll("[^0-9]", "") : numDocFmt;
+                    // numAut debe ser 10 (autorización SRI) o 37/49 si es clave; si es 15 lo dejamos, si no lo completamos
+                    if (numAutFmt.length() < 10) numAutFmt = String.format("%10s", numAutFmt).replace(' ', '0');
+                    agregar(docEl, "numAutDocSustento", numAutFmt);
+                    agregar(docEl, "pagoLocExt", "01");
                     agregar(docEl, "totalSinImpuestos", (String) ds[4]);
-                    agregar(docEl, "totalComprobantesReembolso", "0.00");
-                    agregar(docEl, "totalConImpuestos", "0.00");
                     agregar(docEl, "importeTotal", (String) ds[4]);
+                    // impuestosDocSustento requerido por XSD 2.0.0 antes de retenciones
+                    Element impuestosEl = doc.createElement("impuestosDocSustento");
+                    Element impEl = doc.createElement("impuestoDocSustento");
+                    agregar(impEl, "codImpuestoDocSustento", "2");
+                    agregar(impEl, "codigoPorcentaje", "2");
+                    agregar(impEl, "baseImponible", (String) ds[4]);
+                    agregar(impEl, "tarifa", "0");
+                    agregar(impEl, "valorImpuesto", "0.00");
+                    impuestosEl.appendChild(impEl);
+                    docEl.appendChild(impuestosEl);
                     @SuppressWarnings("unchecked")
                     List<Object[]> rets = ds.length > 6 ? (List<Object[]>) ds[6] : null;
                     Element retsEl = doc.createElement("retenciones");
