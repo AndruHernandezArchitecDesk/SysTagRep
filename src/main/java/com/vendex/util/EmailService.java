@@ -92,6 +92,13 @@ public class EmailService {
                         + "Si tiene alguna consulta sobre el traslado, no dude en contactarnos.\n\n"
                         + "Atentamente,\n"
                         + "Vendex Repuestos Automotrices";
+            } else if ("RETENCION".equals(tipo) || "RETENCIÓN".equals(tipo) || "COMPROBANTE DE RETENCIÓN".equals(tipo) || AppConstants.TIPO_DOCUMENTO_RETENCION.equals(tipoDocumento)) {
+                asunto = "Estimado/a " + nombreCliente + ",\n\n"
+                        + "Le informamos que se ha emitido el Comprobante de Retención N. " + codigoDocumento + " en Vendex Repuestos Automotrices.\n\n"
+                        + "Este documento acredita las retenciones efectuadas. Conserve este comprobante para su declaración.\n\n"
+                        + "Si tiene alguna consulta, no dude en contactarnos.\n\n"
+                        + "Atentamente,\n"
+                        + "Vendex Repuestos Automotrices";
             } else {
                 asunto = "Estimado/a " + nombreCliente + ",\n\n"
                         + "En Vendex Repuestos Automotrices le presentamos su PROFORMA N. " + codigoDocumento + ".\n\n"

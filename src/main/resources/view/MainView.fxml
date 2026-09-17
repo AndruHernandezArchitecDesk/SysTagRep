@@ -28,6 +28,7 @@
                          <MenuItem text="Nota de Crédito" onAction="#irNotaCredito"/>
                          <MenuItem text="Nota de Débito" onAction="#irNotaDebito"/>
                          <MenuItem text="Guía de Remisión" onAction="#irGuiaRemision"/>
+                         <MenuItem text="Retención" onAction="#irRetencion"/>
                           <MenuItem text="Seguimiento SRI" onAction="#irSeguimientoSri"/>
                         <MenuItem text="Facturas Emitidas" onAction="#irComprobanteVentaReporte"/>
                     </Menu>

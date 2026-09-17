@@ -147,6 +147,11 @@ public class MainController implements Initializable {
     }
 
     @FXML
+    private void irRetencion() {
+        cargarVista("/view/RetencionView.fxml");
+    }
+
+    @FXML
     private void irUsuarios() {
         cargarVista("/view/UsuariosView.fxml");
     }

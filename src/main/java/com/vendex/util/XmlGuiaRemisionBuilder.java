@@ -96,10 +96,14 @@ public class XmlGuiaRemisionBuilder {
             }
             guia.appendChild(destinatariosEl);
 
-            // infoAdicional solo si hay al menos un campo; vacío viola XSD (cvc-complex-type.2.4.b)
-            // No se agrega por defecto para GR; si se requiere info adicional se puede añadir aquí
-            // Element infoAdicional = doc.createElement("infoAdicional");
-            // guia.appendChild(infoAdicional);
+            Element infoAdicional = doc.createElement("infoAdicional");
+            {
+                Element campoProv = doc.createElement("campoAdicional");
+                campoProv.setAttribute("nombre", "RUC Proveedor");
+                campoProv.setTextContent(AppConstants.RUC_PROVEEDOR_SISTEMA);
+                infoAdicional.appendChild(campoProv);
+            }
+            guia.appendChild(infoAdicional);
 
             TransformerFactory tf = TransformerFactory.newInstance();
             Transformer transformer = tf.newTransformer();

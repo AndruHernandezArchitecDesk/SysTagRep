@@ -138,6 +138,13 @@ public class XmlSriBuilder {
                 campoAdic.setTextContent(direccionComprador);
                 infoAdicional.appendChild(campoAdic);
             }
+            // RUC Proveedor sistema - obligatorio desde 26-sep-2026 si software es de terceros
+            {
+                Element campoProv = doc.createElement("campoAdicional");
+                campoProv.setAttribute("nombre", "RUC Proveedor");
+                campoProv.setTextContent(AppConstants.RUC_PROVEEDOR_SISTEMA);
+                infoAdicional.appendChild(campoProv);
+            }
             factura.appendChild(infoAdicional);
 
             // Transform to String

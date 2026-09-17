@@ -24,6 +24,7 @@ public class MainApp extends Application {
         DatabaseConnection.initFromConfig();
         DatabaseConnection.ensureNotaCreditoSchema();
         DatabaseConnection.ensureGuiaRemisionSchema();
+        DatabaseConnection.ensureRetencionSchema();
         // Activacion solo en host (192.168.1.7). PC cliente 192.168.1.5 con db.url remota no requiere licencia local.
         boolean esRemota = DbConfig.esRemota();
         if (!esRemota && !LicenseManager.isActivated()) {

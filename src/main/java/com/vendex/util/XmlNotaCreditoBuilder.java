@@ -109,13 +109,19 @@ public class XmlNotaCreditoBuilder {
             }
             notaCredito.appendChild(detallesEl);
 
-            // infoAdicional vacia o con motivo
+            // infoAdicional vacia o con motivo + RUC Proveedor
             Element infoAdicional = doc.createElement("infoAdicional");
             if (motivo != null && !motivo.isEmpty()) {
                 Element campo = doc.createElement("campoAdicional");
                 campo.setAttribute("nombre", "Motivo");
                 campo.setTextContent(motivo.length() > 300 ? motivo.substring(0,300) : motivo);
                 infoAdicional.appendChild(campo);
+            }
+            {
+                Element campoProv = doc.createElement("campoAdicional");
+                campoProv.setAttribute("nombre", "RUC Proveedor");
+                campoProv.setTextContent(AppConstants.RUC_PROVEEDOR_SISTEMA);
+                infoAdicional.appendChild(campoProv);
             }
             notaCredito.appendChild(infoAdicional);
 

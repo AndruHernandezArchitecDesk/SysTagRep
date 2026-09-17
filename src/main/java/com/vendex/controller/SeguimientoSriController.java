@@ -7,15 +7,18 @@ import com.vendex.dao.LogDAO;
 import com.vendex.dao.NotaCreditoRegistroDAO;
 import com.vendex.dao.GuiaRemisionRegistroDAO;
 import com.vendex.dao.NotaDebitoRegistroDAO;
+import com.vendex.dao.RetencionRegistroDAO;
 import com.vendex.model.Cliente;
 import com.vendex.model.FacturaRegistro;
 import com.vendex.model.GuiaRemisionRegistro;
 import com.vendex.model.NotaCreditoRegistro;
 import com.vendex.model.NotaDebitoRegistro;
+import com.vendex.model.RetencionRegistro;
 import com.vendex.service.FacturaService;
 import com.vendex.service.GuiaRemisionService;
 import com.vendex.service.NotaCreditoService;
 import com.vendex.service.NotaDebitoService;
+import com.vendex.service.RetencionService;
 import com.vendex.util.EmailService;
 import com.vendex.util.ElectronicoUtil;
 import com.vendex.util.SortTable;
@@ -172,8 +175,9 @@ public class SeguimientoSriController implements Initializable {
         List<NotaCreditoRegistro> pendientesNc = ncDao.listarPendientesSri();
         final List<NotaDebitoRegistro> pendientesNd = new NotaDebitoRegistroDAO().listarPendientesSri();
         final List<GuiaRemisionRegistro> pendientesGr = new GuiaRemisionRegistroDAO().listarPendientesSri();
-        if (pendientes.isEmpty() && pendientesNc.isEmpty() && pendientesNd.isEmpty() && pendientesGr.isEmpty()) {
-            new Alert(Alert.AlertType.INFORMATION, "No hay facturas/notas de crédito/débito/guía de remisión pendientes por consultar con el SRI.").showAndWait();
+        final List<RetencionRegistro> pendientesRet = new RetencionRegistroDAO().listarPendientesSri();
+        if (pendientes.isEmpty() && pendientesNc.isEmpty() && pendientesNd.isEmpty() && pendientesGr.isEmpty() && pendientesRet.isEmpty()) {
+            new Alert(Alert.AlertType.INFORMATION, "No hay facturas/notas de crédito/débito/guía de remisión/retención pendientes por consultar con el SRI.").showAndWait();
             return;
         }
         btnConsultarSri.setDisable(true);
@@ -353,6 +357,45 @@ public class SeguimientoSriController implements Initializable {
                             } else rechazadas++;
                         } else if (AppConstants.ESTADO_ERROR.equals(estado)) errores++; else pendientesN++;
                     } catch (Exception e) { errores++; logDAO.guardar("SeguimientoSriController","consultarSri GR","Error GR "+clave+": "+e.getMessage(), e); }
+                }
+                // Procesar Retenciones pendientes
+                RetencionRegistroDAO retDao = new RetencionRegistroDAO();
+                RetencionService retService = new RetencionService();
+                for (RetencionRegistro ret : pendientesRet) {
+                    String clave = ret.getClaveAcceso();
+                    if (clave == null || clave.trim().isEmpty()) continue;
+                    try {
+                        String ambiente = "PRUEBAS";
+                        SRIWebService.SRIResponse r = new SRIWebService(ambiente).consultarAutorizacion(clave);
+                        String estado = r.getEstado();
+                        if (AppConstants.ESTADO_AUTORIZADO.equals(estado) || AppConstants.ESTADO_RECHAZADA.equals(estado) || AppConstants.ESTADO_DEVUELTA.equals(estado)) {
+                            ceDAO.actualizarEstado(clave, estado, r.getMensaje(), null, r.getNumeroAutorizacion(), r.getFechaAutorizacion());
+                            retDao.actualizarEstado(clave, estado, r.getMensaje(), r.getNumeroAutorizacion(), r.getFechaAutorizacion());
+                            if (AppConstants.ESTADO_AUTORIZADO.equals(estado)) {
+                                autorizadas++;
+                                String numAut = r.getNumeroAutorizacion();
+                                String fechaAut = r.getFechaAutorizacion();
+                                try {
+                                    RetencionRegistro retFull = retDao.obtenerPorClave(clave);
+                                    String pdfRegenerado = retService.regenerarRide(clave, numAut, fechaAut, dirEsc);
+                                    if (pdfRegenerado != null) {
+                                        String rutaXML = System.getProperty("user.home")+File.separator+AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT+File.separator+AppConstants.PREFIJO_PDF_RETENCION+retFull.getNumComprobante().replace("-","")+AppConstants.EXTENSION_XML;
+                                        // correo a proveedor
+                                        String correo = null; String nombre = retFull.getRazonSocialSujeto();
+                                        if (retFull.getProveedorId()!=null) {
+                                            for (com.vendex.model.Proveedor p : new com.vendex.dao.ProveedorDAO().listar()) if (p.getId()==retFull.getProveedorId()) { correo = p.getCorreo(); nombre = p.getNombre(); break; }
+                                        }
+                                        if (correo==null) for (com.vendex.model.Proveedor p : new com.vendex.dao.ProveedorDAO().listar()) if (retFull.getIdentificacionSujeto().equals(p.getIdentificacion())) { correo = p.getCorreo(); break; }
+                                        if (correo != null && !correo.trim().isEmpty()) {
+                                            EmailService es = new EmailService();
+                                            boolean enviado = es.enviarCorreoConArchivos(correo.trim(), nombre, retFull.getNumComprobante(), AppConstants.TIPO_DOCUMENTO_RETENCION, new File(pdfRegenerado), new File(rutaXML));
+                                            if (enviado) emailsEnviados.append("✓ RET ").append(correo).append("\n");
+                                        }
+                                    }
+                                } catch (Exception exEmail) { logDAO.guardar("SeguimientoSriController","consultarSri RET", "Error correo RET "+clave+": "+exEmail.getMessage(), exEmail); }
+                            } else rechazadas++;
+                        } else if (AppConstants.ESTADO_ERROR.equals(estado)) errores++; else pendientesN++;
+                    } catch (Exception e) { errores++; logDAO.guardar("SeguimientoSriController","consultarSri RET","Error RET "+clave+": "+e.getMessage(), e); }
                 }
 
                 String resumen = "Autorizadas: " + autorizadas + "\nRechazadas/Devueltas: " + rechazadas

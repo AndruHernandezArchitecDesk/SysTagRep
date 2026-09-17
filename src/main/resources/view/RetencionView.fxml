@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.vendex.controller.RetencionController" prefHeight="850" prefWidth="1150" style="-fx-padding: 10;">
+    <top>
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <Label text="Comprobante de Retención (SRI 07 v2.0.0)" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #600060;"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label text="Secuencial:" style="-fx-font-weight: bold;"/>
+            <Label fx:id="lblSecuencial" text="001-001-000000001" style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
+            <ComboBox fx:id="cmbAmbiente" prefWidth="130"/>
+        </HBox>
+    </top>
+    <center>
+        <ScrollPane fitToWidth="true">
+            <VBox spacing="12" style="-fx-padding: 10;">
+                <TitledPane text="Sujeto Retenido (Proveedor)" collapsible="false">
+                    <GridPane hgap="10" vgap="8">
+                        <columnConstraints>
+                            <ColumnConstraints percentWidth="33"/>
+                            <ColumnConstraints percentWidth="33"/>
+                            <ColumnConstraints percentWidth="33"/>
+                        </columnConstraints>
+                        <Label text="Proveedor (opcional - autocompleta):" GridPane.rowIndex="0" GridPane.columnIndex="0" GridPane.columnSpan="3"/>
+                        <ComboBox fx:id="cmbProveedor" prefWidth="400" promptText="Seleccione proveedor o llene manual" GridPane.rowIndex="1" GridPane.columnIndex="0" GridPane.columnSpan="3"/>
+                        <Label text="Razón Social Sujeto:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                        <Label text="Identificación:" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+                        <Label text="Tipo ID / Periodo Fiscal MM/YYYY:" GridPane.rowIndex="2" GridPane.columnIndex="2"/>
+                        <TextField fx:id="txtRazonSujeto" promptText="Razón social" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                        <TextField fx:id="txtIdentSujeto" promptText="RUC / Cédula" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+                        <HBox spacing="5" GridPane.rowIndex="3" GridPane.columnIndex="2">
+                            <ComboBox fx:id="cmbTipoIdSujeto" prefWidth="80"/>
+                            <TextField fx:id="txtPeriodoFiscal" promptText="MM/YYYY" prefWidth="130"/>
+                        </HBox>
+                    </GridPane>
+                </TitledPane>
+
+                <TitledPane text="Documentos Sustento (1..N cada uno con sus retenciones)" collapsible="false">
+                    <VBox spacing="8">
+                        <GridPane hgap="8" vgap="6">
+                            <columnConstraints>
+                                <ColumnConstraints percentWidth="15"/>
+                                <ColumnConstraints percentWidth="15"/>
+                                <ColumnConstraints percentWidth="25"/>
+                                <ColumnConstraints percentWidth="20"/>
+                                <ColumnConstraints percentWidth="25"/>
+                            </columnConstraints>
+                            <ComboBox fx:id="cmbCodSustento" prefWidth="100" promptText="Cod Sust 01" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                            <ComboBox fx:id="cmbCodDocSustento" prefWidth="100" promptText="Cod Doc 01" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                            <TextField fx:id="txtNumDocSustento" promptText="001-001-000000001" GridPane.rowIndex="0" GridPane.columnIndex="2"/>
+                            <DatePicker fx:id="dpFechaDocSustento" prefWidth="140" GridPane.rowIndex="0" GridPane.columnIndex="3"/>
+                            <HBox spacing="5" GridPane.rowIndex="0" GridPane.columnIndex="4">
+                                <TextField fx:id="txtTotalSinImpuestos" promptText="Total sin imp." prefWidth="120" HBox.hgrow="ALWAYS"/>
+                                <Button text="Agregar Doc" onAction="#agregarDocSustento" styleClass="btn-guardar"/>
+                                <Button text="Quitar" onAction="#quitarDocSustento" styleClass="btn-eliminar"/>
+                            </HBox>
+                        </GridPane>
+                        <TableView fx:id="tblDocs" prefHeight="140">
+                            <columns>
+                                <TableColumn fx:id="colDocNum" text="Num. Doc" prefWidth="180"/>
+                                <TableColumn fx:id="colDocFecha" text="Fecha" prefWidth="110"/>
+                                <TableColumn fx:id="colDocTotal" text="Total" prefWidth="110"/>
+                                <TableColumn fx:id="colDocRetCount" text="# Ret." prefWidth="70"/>
+                            </columns>
+                        </TableView>
+                    </VBox>
+                </TitledPane>
+
+                <TitledPane text="Retenciones del documento seleccionado (código / base / % / valor)" collapsible="false">
+                    <VBox spacing="8">
+                        <HBox spacing="8">
+                            <ComboBox fx:id="cmbCodigo" prefWidth="80" promptText="Código 1/2"/>
+                            <ComboBox fx:id="cmbCodigoRetencion" prefWidth="140" promptText="Cod Ret."/>
+                            <TextField fx:id="txtBase" promptText="Base imponible" prefWidth="130"/>
+                            <TextField fx:id="txtPorcentaje" promptText="Porc." prefWidth="80"/>
+                            <TextField fx:id="txtValor" promptText="Valor retenido" prefWidth="120" editable="false" style="-fx-background-color: #e9ecef;"/>
+                            <Button text="Agregar Retención" onAction="#agregarRetencion" styleClass="btn-guardar"/>
+                            <Button text="Quitar" onAction="#quitarRetencion" styleClass="btn-eliminar"/>
+                        </HBox>
+                        <TableView fx:id="tblRetenciones" prefHeight="180">
+                            <columns>
+                                <TableColumn fx:id="colRetCodigo" text="Código" prefWidth="80"/>
+                                <TableColumn fx:id="colRetCodigoRet" text="Cod. Retención" prefWidth="130"/>
+                                <TableColumn fx:id="colRetBase" text="Base" prefWidth="130"/>
+                                <TableColumn fx:id="colRetPorc" text="Pct" prefWidth="80"/>
+                                <TableColumn fx:id="colRetValor" text="Valor Retenido" prefWidth="130"/>
+                            </columns>
+                        </TableView>
+                    </VBox>
+                </TitledPane>
+
+                <HBox alignment="CENTER">
+                    <Button text="Emitir Comprobante de Retención" onAction="#emitirRetencion" style="-fx-background-color: #600060; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px; -fx-padding: 10 20;">
+                        <graphic><FontIcon iconLiteral="fas-paper-plane" iconSize="14" iconColor="white"/></graphic>
+                    </Button>
+                </HBox>
+            </VBox>
+        </ScrollPane>
+    </center>
+</BorderPane>
