@@ -12,12 +12,17 @@ import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
 import java.awt.Desktop;
 import java.io.File;
 import java.math.BigDecimal;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ResourceBundle;
@@ -216,9 +221,11 @@ public class GuiaRemisionController implements Initializable {
                             logDAO.guardar("GuiaRemisionController","SRI-DEVUELTA", "GR "+res.numComprobante+" estado="+estado+" msg="+msg+" clave="+res.claveAcceso);
                         }
                         if (AppConstants.ESTADO_RECHAZADA.equals(estado) || AppConstants.ESTADO_DEVUELTA.equals(estado) || "NO AUTORIZADO".equals(estado)) {
-                            new Alert(Alert.AlertType.ERROR, "SRI "+estado+": "+msg+"\nClave: "+res.claveAcceso+"\nRevisa tabla logs y carpeta ~/vendex_errors").showAndWait();
+                            String detalle = "SRI "+estado+": "+msg+"\nClave: "+res.claveAcceso+"\nNum: "+res.numComprobante+"\nPDF: "+res.rutaPDF+"\n\nRevisa tabla logs y carpeta ~/vendex_errors\nXML volcados en ~/vendex_errors/GR_*";
+                            volcarErrorSRI(detalle, resp, res);
+                            mostrarAlertaCopiable(Alert.AlertType.ERROR, "SRI - Guía de Remisión", "SRI devuelta", detalle);
                         } else {
-                            new Alert(Alert.AlertType.INFORMATION, "GR "+res.numComprobante+" registrada. Estado: "+estado+(msg!=null&&!msg.isEmpty()?"\n"+msg:"")+"\nClave: "+res.claveAcceso+"\nPDF: "+res.rutaPDF).showAndWait();
+                            mostrarAlertaCopiable(Alert.AlertType.INFORMATION, "Guía de Remisión", "GR registrada", "GR "+res.numComprobante+" registrada. Estado: "+estado+(msg!=null&&!msg.isEmpty()?"\n"+msg:"")+"\nClave: "+res.claveAcceso+"\nPDF: "+res.rutaPDF);
                         }
                         new Thread(() -> { try { if (Desktop.isDesktopSupported()) Desktop.getDesktop().open(new File(res.rutaPDF)); } catch (Exception ignore) {} }, "Hilo-Abrir-PDF-GR").start();
                         if (AppConstants.ESTADO_AUTORIZADO.equals(estado)) {
@@ -245,9 +252,41 @@ public class GuiaRemisionController implements Initializable {
                     });
                 }, "Hilo-Finalizar-GR").start();
             });
-            tarea.setOnFailed(e-> { prog.close(); Throwable ex = tarea.getException(); logDAO.guardar("GuiaRemisionController","SRI-Tarea", ex!=null?ex.getMessage():"desconocido", ex instanceof Exception ? (Exception)ex : new Exception(ex)); new Alert(Alert.AlertType.ERROR, "Error SRI: "+ (ex!=null?ex.getMessage():"desconocido")+"\nRevisa tabla logs y ~/vendex_errors").showAndWait(); });
+            tarea.setOnFailed(e-> { prog.close(); Throwable ex = tarea.getException(); logDAO.guardar("GuiaRemisionController","SRI-Tarea", ex!=null?ex.getMessage():"desconocido", ex instanceof Exception ? (Exception)ex : new Exception(ex)); volcarErrorSRI("Error SRI: "+(ex!=null?ex.getMessage():"desconocido"), null, res); mostrarAlertaCopiable(Alert.AlertType.ERROR, "SRI Error", "Error al consultar SRI", "Error SRI: "+(ex!=null?ex.getMessage():"desconocido")+"\nClave: "+res.claveAcceso+"\nRevisa tabla logs y ~/vendex_errors"); });
             new Thread(tarea, "Hilo-SRI-GR").start(); prog.show();
-        } catch (Exception ex) { logDAO.guardar("GuiaRemisionController","emitirGuiaRemision", ex.getMessage(), ex); new Alert(Alert.AlertType.ERROR, "Error: "+ex.getMessage()).showAndWait(); }
+        } catch (Exception ex) { logDAO.guardar("GuiaRemisionController","emitirGuiaRemision", ex.getMessage(), ex); mostrarAlertaCopiable(Alert.AlertType.ERROR, "Error", "Error al emitir", ex.getMessage()); }
+    }
+
+    private void mostrarAlertaCopiable(Alert.AlertType tipo, String titulo, String header, String contenido) {
+        Alert alert = new Alert(tipo);
+        alert.setTitle(titulo);
+        alert.setHeaderText(header);
+        TextArea ta = new TextArea(contenido != null ? contenido : "");
+        ta.setWrapText(true);
+        ta.setEditable(false);
+        ta.setPrefHeight(280);
+        ta.setPrefWidth(560);
+        VBox box = new VBox(ta);
+        VBox.setVgrow(ta, Priority.ALWAYS);
+        alert.getDialogPane().setContent(box);
+        alert.getDialogPane().setPrefSize(620, 420);
+        alert.setResizable(true);
+        // permitir seleccionar y copiar con Ctrl+C
+        ta.requestFocus();
+        ta.selectAll();
+        alert.showAndWait();
+    }
+
+    private void volcarErrorSRI(String detalle, SRIWebService.SRIResponse resp, GuiaRemisionService.ResultadoGuiaRemision res) {
+        try {
+            String home = System.getProperty("user.home");
+            java.io.File dir = new java.io.File(home, "vendex_errors");
+            if (!dir.exists()) dir.mkdirs();
+            String base = "GR_ERROR_" + (res!=null?res.numComprobante.replace("-",""):"") + "_" + System.currentTimeMillis();
+            String contenido = detalle + "\n\n--- Respuesta Recepción ---\n" + (resp!=null && resp.getRespuestaRecepcionXml()!=null?resp.getRespuestaRecepcionXml():"") + "\n\n--- Respuesta Autorización ---\n" + (resp!=null && resp.getRespuestaAutorizacionXml()!=null?resp.getRespuestaAutorizacionXml():"") + "\n\n--- XML Enviado ---\n" + (res!=null && res.xmlFirmado!=null?res.xmlFirmado:"");
+            Files.write(Paths.get(new java.io.File(dir, base + ".txt").getAbsolutePath()), contenido.getBytes(StandardCharsets.UTF_8));
+            logDAO.guardar("GuiaRemisionController","SRI-ERROR-TXT", detalle);
+        } catch (Exception e) { logDAO.guardar("GuiaRemisionController","volcarErrorSRI", e.getMessage(), e instanceof Exception ? (Exception)e : new Exception(e)); }
     }
 
     private File obtenerDirEscritorio(){ File h=new File(System.getProperty("user.home")); for(String n: new String[]{AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT, AppConstants.DIRECTORIO_ESCRITORIO_ALT}){ File d=new File(h,n); if(d.exists()&&d.isDirectory()) return d; } File d=new File(h, AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT); d.mkdirs(); return d; }

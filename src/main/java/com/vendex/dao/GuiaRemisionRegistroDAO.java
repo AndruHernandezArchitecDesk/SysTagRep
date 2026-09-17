@@ -14,6 +14,7 @@ import java.util.logging.Logger;
 public class GuiaRemisionRegistroDAO {
 
     private static final Logger LOGGER = Logger.getLogger(GuiaRemisionRegistroDAO.class.getName());
+    private final LogDAO logDAO = new LogDAO();
 
     public int insertar(GuiaRemisionRegistro r) {
         String sql = "INSERT INTO guia_remision_registro(clave_acceso, establecimiento, punto_emision, secuencial, fecha_emision, dir_partida, razon_social_transportista, tipo_identificacion_transportista, ruc_transportista, placa, fecha_ini_transporte, fecha_fin_transporte, estado_sri, xml_firmado, usuario_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id";
@@ -41,6 +42,7 @@ public class GuiaRemisionRegistroDAO {
                 return insertar(r);
             }
             LOGGER.log(Level.SEVERE, "insertar GR", e);
+            try { logDAO.guardar("GuiaRemisionRegistroDAO","insertar","SQL: "+e.getMessage()+" clave="+r.getClaveAcceso()+" placa="+r.getPlaca()+" rucTrans="+r.getRucTransportista(), e); } catch (Exception ignore) {}
         }
         return -1;
     }

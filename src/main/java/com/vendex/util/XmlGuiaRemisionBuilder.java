@@ -96,8 +96,10 @@ public class XmlGuiaRemisionBuilder {
             }
             guia.appendChild(destinatariosEl);
 
-            Element infoAdicional = doc.createElement("infoAdicional");
-            guia.appendChild(infoAdicional);
+            // infoAdicional solo si hay al menos un campo; vacío viola XSD (cvc-complex-type.2.4.b)
+            // No se agrega por defecto para GR; si se requiere info adicional se puede añadir aquí
+            // Element infoAdicional = doc.createElement("infoAdicional");
+            // guia.appendChild(infoAdicional);
 
             TransformerFactory tf = TransformerFactory.newInstance();
             Transformer transformer = tf.newTransformer();
