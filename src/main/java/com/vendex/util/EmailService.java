@@ -85,6 +85,13 @@ public class EmailService {
                         + "Si tiene alguna consulta sobre el motivo del cargo, no dude en contactarnos.\n\n"
                         + "Atentamente,\n"
                         + "Vendex Repuestos Automotrices";
+            } else if ("GUIA_REMISION".equals(tipo) || "GUIA DE REMISION".equals(tipo) || AppConstants.TIPO_DOCUMENTO_GUIA_REMISION.equals(tipoDocumento)) {
+                asunto = "Estimado/a " + nombreCliente + ",\n\n"
+                        + "Le informamos que se ha emitido la Guía de Remisión N. " + codigoDocumento + " en Vendex Repuestos Automotrices.\n\n"
+                        + "Este documento sustenta el traslado de mercadería. Conserve este comprobante junto a su factura cuando exista documento sustento.\n\n"
+                        + "Si tiene alguna consulta sobre el traslado, no dude en contactarnos.\n\n"
+                        + "Atentamente,\n"
+                        + "Vendex Repuestos Automotrices";
             } else {
                 asunto = "Estimado/a " + nombreCliente + ",\n\n"
                         + "En Vendex Repuestos Automotrices le presentamos su PROFORMA N. " + codigoDocumento + ".\n\n"

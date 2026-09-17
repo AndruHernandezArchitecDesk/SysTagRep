@@ -147,25 +147,41 @@ public class NotaDebitoController implements Initializable {
             NotaDebitoService.ResultadoNotaDebito res = ndService.emitirNotaDebito(fr.getId(), copia, formaPago, ambiente, rutaP12, claveP12, dir, usuarioId);
 
             Task<SRIWebService.SRIResponse> tarea = new Task<>(){ protected SRIWebService.SRIResponse call(){ return ndService.enviarYSolicitarAutorizacion(ambiente, res.xmlFirmado, res.claveAcceso); }};
-            Alert prog = new Alert(Alert.AlertType.INFORMATION); prog.setTitle("Nota de Debito"); prog.setHeaderText("Consultando al SRI..."); prog.setContentText("Enviando ND "+res.numComprobante+" al SRI"); prog.getButtonTypes().setAll(new ButtonType("Minimizar", ButtonBar.ButtonData.CANCEL_CLOSE));
+            Alert prog = new Alert(Alert.AlertType.INFORMATION); prog.setTitle("Nota de Debito"); prog.setHeaderText("Consultando al SRI..."); prog.setContentText("Enviando ND "+res.numComprobante+" al SRI\nNo cierre la ventana."); prog.getButtonTypes().setAll(new ButtonType("Minimizar", ButtonBar.ButtonData.CANCEL_CLOSE));
             tarea.setOnSucceeded(e-> {
-                prog.close();
-                ndService.finalizarEnvioSRI(tarea.getValue(), res, dir);
-                String estado = tarea.getValue().getEstado();
-                if (AppConstants.ESTADO_RECHAZADA.equals(estado) || AppConstants.ESTADO_DEVUELTA.equals(estado)) new Alert(Alert.AlertType.ERROR, "SRI "+estado+": "+tarea.getValue().getMensaje()).showAndWait();
-                else new Alert(Alert.AlertType.INFORMATION, "ND "+res.numComprobante+" registrada. Estado: "+estado+"\nClave: "+res.claveAcceso+"\nPDF: "+res.rutaPDF).showAndWait();
-                try { if (Desktop.isDesktopSupported()) Desktop.getDesktop().open(new File(res.rutaPDF)); } catch (Exception ignore) {}
-                if (AppConstants.ESTADO_AUTORIZADO.equals(estado)) {
-                    String correo = res.cliente.getCorreo();
-                    if (correo!=null && !correo.trim().isEmpty() && ElectronicoUtil.debeEnviarNotificacion(estado, tarea.getValue().getNumeroAutorizacion(), tarea.getValue().getFechaAutorizacion())) {
-                        Task<String> tMail=new Task<>(){ protected String call(){ return ndService.enviarCorreoAutorizacion(correo.trim(), res.cliente.getNombre(), res.numComprobante, res.rutaPDF, res.rutaXML)?null:"Error correo"; }};
-                        tMail.setOnSucceeded(ev-> { if (tMail.getValue()==null) new Alert(Alert.AlertType.INFORMATION, "Correo enviado a "+correo).showAndWait(); });
-                        new Thread(tMail, "Hilo-Correo-ND").start();
-                    }
-                }
-                motivos.clear(); txtRazon.clear(); txtValor.clear(); cargarFacturasAutorizadas(); actualizarSecuencial(); calcularTotales();
+                SRIWebService.SRIResponse resp = tarea.getValue();
+                // finalizar en hilo de fondo para no colgar UI (DB + PDF son pesados)
+                new Thread(() -> {
+                    try { ndService.finalizarEnvioSRI(resp, res, dir); } catch (Exception ex) { logDAO.guardar("NotaDebitoController","finalizarEnvioSRI", ex.getMessage(), ex); }
+                    javafx.application.Platform.runLater(() -> {
+                        prog.close();
+                        String estado = resp.getEstado();
+                        String msg = resp.getMensaje();
+                        // log detallado a vendex_errors y tabla logs
+                        if (msg != null && msg.toLowerCase().contains("no cumple") || "DEVUELTA".equals(estado) || "RECHAZADA".equals(estado) || "NO AUTORIZADO".equals(estado)) {
+                            logDAO.guardar("NotaDebitoController","SRI-DEVUELTA", "ND "+res.numComprobante+" estado="+estado+" msg="+msg + " clave="+res.claveAcceso);
+                        }
+                        if (AppConstants.ESTADO_RECHAZADA.equals(estado) || AppConstants.ESTADO_DEVUELTA.equals(estado) || "NO AUTORIZADO".equals(estado)) {
+                            new Alert(Alert.AlertType.ERROR, "SRI "+estado+": "+msg+"\nClave: "+res.claveAcceso+"\nRevisa tabla logs y carpeta ~/vendex_errors").showAndWait();
+                        } else {
+                            new Alert(Alert.AlertType.INFORMATION, "ND "+res.numComprobante+" registrada. Estado: "+estado+(msg!=null&&!msg.isEmpty()?"\n"+msg:"")+"\nClave: "+res.claveAcceso+"\nPDF: "+res.rutaPDF).showAndWait();
+                        }
+                        // abrir PDF sin bloquear UI
+                        new Thread(() -> { try { if (Desktop.isDesktopSupported()) Desktop.getDesktop().open(new File(res.rutaPDF)); } catch (Exception ignore) { logDAO.guardar("NotaDebitoController","abrirPDF", ignore.getMessage(), ignore instanceof Exception ? (Exception)ignore : new Exception(ignore)); } }, "Hilo-Abrir-PDF-ND").start();
+                        if (AppConstants.ESTADO_AUTORIZADO.equals(estado)) {
+                            String correo = res.cliente.getCorreo();
+                            if (correo!=null && !correo.trim().isEmpty() && ElectronicoUtil.debeEnviarNotificacion(estado, resp.getNumeroAutorizacion(), resp.getFechaAutorizacion())) {
+                                Task<String> tMail=new Task<>(){ protected String call(){ return ndService.enviarCorreoAutorizacion(correo.trim(), res.cliente.getNombre(), res.numComprobante, res.rutaPDF, res.rutaXML)?null:"Error correo"; }};
+                                tMail.setOnSucceeded(ev-> { if (tMail.getValue()==null) new Alert(Alert.AlertType.INFORMATION, "Correo enviado a "+correo).showAndWait(); else logDAO.guardar("NotaDebitoController","correoND", tMail.getValue()); });
+                                tMail.setOnFailed(ev-> logDAO.guardar("NotaDebitoController","correoND", ev.getSource().getException()!=null?ev.getSource().getException().getMessage():"error", ev.getSource().getException() instanceof Exception ? (Exception)ev.getSource().getException() : null));
+                                new Thread(tMail, "Hilo-Correo-ND").start();
+                            }
+                        }
+                        motivos.clear(); txtRazon.clear(); txtValor.clear(); cargarFacturasAutorizadas(); actualizarSecuencial(); calcularTotales();
+                    });
+                }, "Hilo-Finalizar-ND").start();
             });
-            tarea.setOnFailed(e-> { prog.close(); new Alert(Alert.AlertType.ERROR, "Error SRI: "+ (tarea.getException()!=null?tarea.getException().getMessage():"desconocido")).showAndWait(); });
+            tarea.setOnFailed(e-> { prog.close(); Throwable ex = tarea.getException(); logDAO.guardar("NotaDebitoController","SRI-Tarea", ex!=null?ex.getMessage():"desconocido", ex instanceof Exception ? (Exception)ex : new Exception(ex)); new Alert(Alert.AlertType.ERROR, "Error SRI: "+ (ex!=null?ex.getMessage():"desconocido")+"\nRevisa tabla logs y ~/vendex_errors").showAndWait(); });
             new Thread(tarea, "Hilo-SRI-ND").start(); prog.show();
         } catch (Exception ex) { logDAO.guardar("NotaDebitoController","emitirNotaDebito", ex.getMessage(), ex); new Alert(Alert.AlertType.ERROR, "Error: "+ex.getMessage()).showAndWait(); }
     }

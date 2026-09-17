@@ -232,6 +232,19 @@ public class NotaDebitoService {
         String estado = sriResp.getEstado();
         String numAut = sriResp.getNumeroAutorizacion();
         String fechaAut = sriResp.getFechaAutorizacion();
+        // Si SRI devuelve DEVUELTA/RECHAZADA/NO AUTORIZADO volcar XML y respuesta a vendex_errors para diagnóstico
+        if ("DEVUELTA".equals(estado) || "RECHAZADA".equals(estado) || "NO AUTORIZADO".equals(estado) || (sriResp.getMensaje()!=null && sriResp.getMensaje().toLowerCase().contains("no cumple"))) {
+            try {
+                String home = System.getProperty("user.home");
+                java.io.File dir = new java.io.File(home, "vendex_errors");
+                if (!dir.exists()) dir.mkdirs();
+                String base = "ND_" + resultado.numComprobante.replace("-", "") + "_" + resultado.claveAcceso;
+                Files.write(Paths.get(new java.io.File(dir, base + "_enviado.xml").getAbsolutePath()), resultado.xmlFirmado.getBytes(StandardCharsets.UTF_8));
+                if (sriResp.getRespuestaRecepcionXml()!=null) Files.write(Paths.get(new java.io.File(dir, base + "_recepcion.xml").getAbsolutePath()), sriResp.getRespuestaRecepcionXml().getBytes(StandardCharsets.UTF_8));
+                if (sriResp.getRespuestaAutorizacionXml()!=null) Files.write(Paths.get(new java.io.File(dir, base + "_autorizacion.xml").getAbsolutePath()), sriResp.getRespuestaAutorizacionXml().getBytes(StandardCharsets.UTF_8));
+                logDAO.guardar("NotaDebitoService","SRI-DEVUELTA","ND "+resultado.numComprobante+" clave="+resultado.claveAcceso+" estado="+estado+" msg="+sriResp.getMensaje());
+            } catch (Exception e) { logDAO.guardar("NotaDebitoService","volcarXMLError", e.getMessage(), e); }
+        }
         notaDebitoDAO.actualizarEstado(resultado.claveAcceso, estado, sriResp.getMensaje(), numAut, fechaAut);
         comprobanteDAO.actualizarEstado(resultado.claveAcceso, estado, sriResp.getMensaje(), resultado.xmlFirmado, numAut, fechaAut);
         comprobanteDAO.guardarEnvio(resultado.claveAcceso, resultado.numComprobante, resultado.ambienteSri, resultado.xmlFirmado, sriResp.getRespuestaRecepcionXml(), sriResp.getRespuestaAutorizacionXml(), estado, sriResp.getMensaje(), numAut, fechaAut, AppConstants.TIPO_COMPROBANTE_NOTA_DEBITO);

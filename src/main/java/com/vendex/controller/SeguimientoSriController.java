@@ -5,12 +5,15 @@ import com.vendex.dao.ComprobanteDAO;
 import com.vendex.dao.FacturaRegistroDAO;
 import com.vendex.dao.LogDAO;
 import com.vendex.dao.NotaCreditoRegistroDAO;
+import com.vendex.dao.GuiaRemisionRegistroDAO;
 import com.vendex.dao.NotaDebitoRegistroDAO;
 import com.vendex.model.Cliente;
 import com.vendex.model.FacturaRegistro;
+import com.vendex.model.GuiaRemisionRegistro;
 import com.vendex.model.NotaCreditoRegistro;
 import com.vendex.model.NotaDebitoRegistro;
 import com.vendex.service.FacturaService;
+import com.vendex.service.GuiaRemisionService;
 import com.vendex.service.NotaCreditoService;
 import com.vendex.service.NotaDebitoService;
 import com.vendex.util.EmailService;
@@ -168,8 +171,9 @@ public class SeguimientoSriController implements Initializable {
         NotaCreditoRegistroDAO ncDao = new NotaCreditoRegistroDAO();
         List<NotaCreditoRegistro> pendientesNc = ncDao.listarPendientesSri();
         final List<NotaDebitoRegistro> pendientesNd = new NotaDebitoRegistroDAO().listarPendientesSri();
-        if (pendientes.isEmpty() && pendientesNc.isEmpty() && pendientesNd.isEmpty()) {
-            new Alert(Alert.AlertType.INFORMATION, "No hay facturas/notas de crédito/débito pendientes por consultar con el SRI.").showAndWait();
+        final List<GuiaRemisionRegistro> pendientesGr = new GuiaRemisionRegistroDAO().listarPendientesSri();
+        if (pendientes.isEmpty() && pendientesNc.isEmpty() && pendientesNd.isEmpty() && pendientesGr.isEmpty()) {
+            new Alert(Alert.AlertType.INFORMATION, "No hay facturas/notas de crédito/débito/guía de remisión pendientes por consultar con el SRI.").showAndWait();
             return;
         }
         btnConsultarSri.setDisable(true);
@@ -306,6 +310,49 @@ public class SeguimientoSriController implements Initializable {
                             } else rechazadas++;
                         } else if (AppConstants.ESTADO_ERROR.equals(estado)) errores++; else pendientesN++;
                     } catch (Exception e) { errores++; logDAO.guardar("SeguimientoSriController","consultarSri ND","Error ND "+clave+": "+e.getMessage(), e); }
+                }
+                // Procesar GR pendientes
+                GuiaRemisionRegistroDAO grDao = new GuiaRemisionRegistroDAO();
+                GuiaRemisionService grService = new GuiaRemisionService();
+                for (GuiaRemisionRegistro gr : pendientesGr) {
+                    String clave = gr.getClaveAcceso();
+                    if (clave == null || clave.trim().isEmpty()) continue;
+                    try {
+                        String ambiente = "PRUEBAS";
+                        SRIWebService.SRIResponse r = new SRIWebService(ambiente).consultarAutorizacion(clave);
+                        String estado = r.getEstado();
+                        if (AppConstants.ESTADO_AUTORIZADO.equals(estado) || AppConstants.ESTADO_RECHAZADA.equals(estado) || AppConstants.ESTADO_DEVUELTA.equals(estado)) {
+                            ceDAO.actualizarEstado(clave, estado, r.getMensaje(), null, r.getNumeroAutorizacion(), r.getFechaAutorizacion());
+                            grDao.actualizarEstado(clave, estado, r.getMensaje(), r.getNumeroAutorizacion(), r.getFechaAutorizacion());
+                            if (AppConstants.ESTADO_AUTORIZADO.equals(estado)) {
+                                autorizadas++;
+                                String numAut = r.getNumeroAutorizacion();
+                                String fechaAut = r.getFechaAutorizacion();
+                                try {
+                                    GuiaRemisionRegistro grFull = grDao.obtenerPorClave(clave);
+                                    String pdfRegenerado = grService.regenerarRide(clave, numAut, fechaAut, dirEsc);
+                                    // intentar enviar correo si el destinatario tiene email como cliente
+                                    if (pdfRegenerado != null) {
+                                        String rutaXML = System.getProperty("user.home")+File.separator+AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT+File.separator+AppConstants.PREFIJO_PDF_GUIA_REMISION+grFull.getNumComprobante().replace("-","")+AppConstants.EXTENSION_XML;
+                                        // correo opcional: buscar primer destinatario que coincida con cliente
+                                        try {
+                                            java.util.List<com.vendex.model.GuiaRemisionDestinatario> dests = new com.vendex.dao.GuiaRemisionDestinatarioDAO().listarPorGuiaId(grFull.getId());
+                                            if (!dests.isEmpty()) {
+                                                String ident = dests.get(0).getIdentificacionDestinatario();
+                                                String correo = null; String nombre = dests.get(0).getRazonSocialDestinatario();
+                                                for (Cliente cli : clienteDAO.listar()) if (ident.equals(cli.getIdentificacion()) && cli.getCorreo()!=null) { correo = cli.getCorreo().trim(); nombre = cli.getNombre(); break; }
+                                                if (correo != null && !correo.isEmpty()) {
+                                                    EmailService es = new EmailService();
+                                                    boolean enviado = es.enviarCorreoConArchivos(correo, nombre, grFull.getNumComprobante(), AppConstants.TIPO_DOCUMENTO_GUIA_REMISION, new File(pdfRegenerado), new File(rutaXML));
+                                                    if (enviado) emailsEnviados.append("✓ GR ").append(correo).append("\n");
+                                                }
+                                            }
+                                        } catch (Exception ignore) {}
+                                    }
+                                } catch (Exception exEmail) { logDAO.guardar("SeguimientoSriController","consultarSri GR", "Error correo GR "+clave+": "+exEmail.getMessage(), exEmail); }
+                            } else rechazadas++;
+                        } else if (AppConstants.ESTADO_ERROR.equals(estado)) errores++; else pendientesN++;
+                    } catch (Exception e) { errores++; logDAO.guardar("SeguimientoSriController","consultarSri GR","Error GR "+clave+": "+e.getMessage(), e); }
                 }
 
                 String resumen = "Autorizadas: " + autorizadas + "\nRechazadas/Devueltas: " + rechazadas

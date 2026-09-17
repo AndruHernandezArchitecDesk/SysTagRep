@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.vendex.controller.GuiaRemisionController" prefHeight="800" prefWidth="1100" style="-fx-padding: 10;">
+    <top>
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <Label text="Guía de Remisión Electrónica (SRI 06)" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #004080;"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label text="Secuencial:" style="-fx-font-weight: bold;"/>
+            <Label fx:id="lblSecuencial" text="001-001-000000001" style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
+            <ComboBox fx:id="cmbAmbiente" prefWidth="120"/>
+        </HBox>
+    </top>
+    <center>
+        <ScrollPane fitToWidth="true">
+            <VBox spacing="12" style="-fx-padding: 10;">
+                <TitledPane text="Datos de Transporte" collapsible="false">
+                    <GridPane hgap="10" vgap="8">
+                        <columnConstraints>
+                            <ColumnConstraints hgrow="ALWAYS" percentWidth="50"/>
+                            <ColumnConstraints hgrow="ALWAYS" percentWidth="50"/>
+                        </columnConstraints>
+                        <Label text="Dir. Partida (autocompletada):" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                        <TextField fx:id="txtDirPartida" promptText="Dir. partida" GridPane.rowIndex="1" GridPane.columnIndex="0" GridPane.columnSpan="2"/>
+                        <Label text="Razón Social Transportista:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                        <Label text="Tipo ID / RUC Transportista:" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+                        <TextField fx:id="txtRazonTransportista" promptText="Transportista" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                        <HBox spacing="5" GridPane.rowIndex="3" GridPane.columnIndex="1">
+                            <ComboBox fx:id="cmbTipoIdTransportista" prefWidth="80" promptText="Tipo"/>
+                            <TextField fx:id="txtRucTransportista" promptText="RUC / Cédula" HBox.hgrow="ALWAYS"/>
+                        </HBox>
+                        <Label text="Placa:" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                        <Label text="Fechas Transporte (ini - fin):" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+                        <TextField fx:id="txtPlaca" promptText="ABC-1234" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+                        <HBox spacing="5" GridPane.rowIndex="5" GridPane.columnIndex="1">
+                            <DatePicker fx:id="dpFechaIni" prefWidth="150"/>
+                            <DatePicker fx:id="dpFechaFin" prefWidth="150"/>
+                        </HBox>
+                    </GridPane>
+                </TitledPane>
+
+                <TitledPane text="Destinatarios (1..N cada uno con su detalle)" collapsible="false">
+                    <VBox spacing="8">
+                        <GridPane hgap="8" vgap="6">
+                            <columnConstraints>
+                                <ColumnConstraints percentWidth="25"/>
+                                <ColumnConstraints percentWidth="25"/>
+                                <ColumnConstraints percentWidth="25"/>
+                                <ColumnConstraints percentWidth="25"/>
+                            </columnConstraints>
+                            <TextField fx:id="txtIdentDest" promptText="Identificación destinatario" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                            <TextField fx:id="txtRazonDest" promptText="Razón social destinatario" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                            <TextField fx:id="txtDirDest" promptText="Dirección destinatario" GridPane.rowIndex="0" GridPane.columnIndex="2"/>
+                            <TextField fx:id="txtMotivoTraslado" promptText="Motivo traslado" GridPane.rowIndex="0" GridPane.columnIndex="3"/>
+                            <ComboBox fx:id="cmbFacturaSustento" prefWidth="300" promptText="Sin documento sustento" GridPane.rowIndex="1" GridPane.columnIndex="0" GridPane.columnSpan="3"/>
+                            <HBox spacing="5" GridPane.rowIndex="1" GridPane.columnIndex="3">
+                                <Button text="Agregar Destinatario" onAction="#agregarDestinatario" styleClass="btn-guardar" HBox.hgrow="ALWAYS" maxWidth="Infinity">
+                                    <graphic><FontIcon iconLiteral="fas-plus" iconSize="12"/></graphic>
+                                </Button>
+                                <Button text="Quitar" onAction="#quitarDestinatario" styleClass="btn-eliminar"/>
+                            </HBox>
+                        </GridPane>
+                        <TableView fx:id="tblDestinatarios" prefHeight="150">
+                            <columns>
+                                <TableColumn fx:id="colDestIdent" text="Identificación" prefWidth="130"/>
+                                <TableColumn fx:id="colDestRazon" text="Razón Social" prefWidth="200"/>
+                                <TableColumn fx:id="colDestDir" text="Dirección" prefWidth="220"/>
+                                <TableColumn fx:id="colDestMotivo" text="Motivo" prefWidth="180"/>
+                                <TableColumn fx:id="colDestSustento" text="Sustento" prefWidth="100"/>
+                            </columns>
+                        </TableView>
+                    </VBox>
+                </TitledPane>
+
+                <TitledPane text="Detalles del destinatario seleccionado (bienes a trasladar)" collapsible="false">
+                    <VBox spacing="8">
+                        <HBox spacing="8">
+                            <TextField fx:id="txtCodigoInterno" promptText="Código interno" prefWidth="120"/>
+                            <TextField fx:id="txtDescripcion" promptText="Descripción" HBox.hgrow="ALWAYS"/>
+                            <TextField fx:id="txtCantidad" promptText="Cantidad" prefWidth="100"/>
+                            <Button text="Agregar Ítem" onAction="#agregarDetalle" styleClass="btn-guardar"/>
+                            <Button text="Quitar" onAction="#quitarDetalle" styleClass="btn-eliminar"/>
+                        </HBox>
+                        <TableView fx:id="tblDetalles" prefHeight="180">
+                            <columns>
+                                <TableColumn fx:id="colDetCodigo" text="Código" prefWidth="120"/>
+                                <TableColumn fx:id="colDetDesc" text="Descripción" prefWidth="400"/>
+                                <TableColumn fx:id="colDetCant" text="Cantidad" prefWidth="100"/>
+                            </columns>
+                        </TableView>
+                    </VBox>
+                </TitledPane>
+
+                <HBox alignment="CENTER">
+                    <Button text="Emitir Guía de Remisión" onAction="#emitirGuiaRemision" style="-fx-background-color: #004080; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px; -fx-padding: 10 20;" >
+                        <graphic><FontIcon iconLiteral="fas-paper-plane" iconSize="14" iconColor="white"/></graphic>
+                    </Button>
+                </HBox>
+            </VBox>
+        </ScrollPane>
+    </center>
+</BorderPane>

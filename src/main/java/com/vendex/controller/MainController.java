@@ -142,6 +142,11 @@ public class MainController implements Initializable {
     }
 
     @FXML
+    private void irGuiaRemision() {
+        cargarVista("/view/GuiaRemisionView.fxml");
+    }
+
+    @FXML
     private void irUsuarios() {
         cargarVista("/view/UsuariosView.fxml");
     }

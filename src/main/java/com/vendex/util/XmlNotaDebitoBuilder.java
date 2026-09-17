@@ -10,7 +10,7 @@ import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import java.io.ByteArrayOutputStream;
+import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
@@ -38,7 +38,7 @@ public class XmlNotaDebitoBuilder {
 
             Element notaDebito = doc.createElement("notaDebito");
             notaDebito.setAttribute("id", "comprobante");
-            notaDebito.setAttribute("version", "1.1.0");
+            notaDebito.setAttribute("version", "1.0.0");
             doc.appendChild(notaDebito);
 
             Element infoTributaria = doc.createElement("infoTributaria");
@@ -69,15 +69,17 @@ public class XmlNotaDebitoBuilder {
             agregar(infoND, "numDocModificado", numDocModificado);
             agregar(infoND, "fechaEmisionDocSustento", fechaEmisionDocSustento);
             agregar(infoND, "totalSinImpuestos", totalSinImpuestos);
-            agregar(infoND, "moneda", "DOLAR");
-            Element totalConImpuestos = doc.createElement("totalConImpuestos");
-            Element ti = doc.createElement("totalImpuesto");
-            agregar(ti, "codigo", "2");
-            agregar(ti, "codigoPorcentaje", "4");
-            agregar(ti, "baseImponible", totalSinImpuestos);
-            agregar(ti, "valor", valorIva);
-            totalConImpuestos.appendChild(ti);
-            infoND.appendChild(totalConImpuestos);
+            Element impuestos = doc.createElement("impuestos");
+            if (valorIva != null && new BigDecimal(valorIva).compareTo(BigDecimal.ZERO) > 0) {
+                Element imp = doc.createElement("impuesto");
+                agregar(imp, "codigo", "2");
+                agregar(imp, "codigoPorcentaje", "4");
+                agregar(imp, "tarifa", "15");
+                agregar(imp, "baseImponible", totalSinImpuestos);
+                agregar(imp, "valor", valorIva);
+                impuestos.appendChild(imp);
+            }
+            infoND.appendChild(impuestos);
             agregar(infoND, "valorTotal", valorTotal);
             if (formaPago != null && !formaPago.isEmpty()) {
                 Element pagos = doc.createElement("pagos");
@@ -88,28 +90,6 @@ public class XmlNotaDebitoBuilder {
                 infoND.appendChild(pagos);
             }
             notaDebito.appendChild(infoND);
-
-            Element detallesEl = doc.createElement("detalles");
-            for (Object[] mot : motivos) {
-                Element detEl = doc.createElement("detalle");
-                agregar(detEl, "codigoInterno", (String) mot[0]);
-                agregar(detEl, "descripcion", (String) mot[0]);
-                agregar(detEl, "cantidad", "1");
-                agregar(detEl, "precioUnitario", (String) mot[1]);
-                agregar(detEl, "descuento", "0.00");
-                agregar(detEl, "precioTotalSinImpuesto", (String) mot[1]);
-                Element detImpuestos = doc.createElement("impuestos");
-                Element detImp = doc.createElement("impuesto");
-                agregar(detImp, "codigo", "2");
-                agregar(detImp, "codigoPorcentaje", "4");
-                agregar(detImp, "tarifa", "15");
-                agregar(detImp, "baseImponible", (String) mot[1]);
-                agregar(detImp, "valor", valorIva);
-                detImpuestos.appendChild(detImp);
-                detEl.appendChild(detImpuestos);
-                detallesEl.appendChild(detEl);
-            }
-            notaDebito.appendChild(detallesEl);
 
             Element motivosEl = doc.createElement("motivos");
             for (Object[] mot : motivos) {
@@ -133,10 +113,9 @@ public class XmlNotaDebitoBuilder {
             Transformer transformer = tf.newTransformer();
             transformer.setOutputProperty(OutputKeys.INDENT, "yes");
             transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            transformer.transform(new DOMSource(doc), new StreamResult(baos));
-            return baos.toString("UTF-8");
+            StringWriter writer = new StringWriter();
+            transformer.transform(new DOMSource(doc), new StreamResult(writer));
+            return writer.toString();
         } catch (Exception e) {
             e.printStackTrace();
             return null;
