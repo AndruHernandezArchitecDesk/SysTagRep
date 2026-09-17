@@ -12,6 +12,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -24,6 +25,7 @@ public class LoginController implements Initializable {
 
     @FXML private TextField txtUsuario;
     @FXML private PasswordField txtPassword;
+    @FXML private ImageView imgLogo;
 
     public static Usuario usuarioAutenticado;
 
@@ -31,6 +33,9 @@ public class LoginController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        if (imgLogo != null) {
+            try { imgLogo.setImage(new Image(getClass().getResourceAsStream(com.vendex.util.ThemeManager.getLogoPath()))); } catch (Exception ignored) {}
+        }
         txtPassword.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.ENTER) ingresar();
         });

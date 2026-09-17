@@ -19,6 +19,8 @@ import javafx.scene.chart.PieChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableView;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
@@ -51,6 +53,9 @@ public class Dashboard2Controller implements Initializable {
     @FXML
     private Label lblTitulo;
 
+    @FXML
+    private ImageView imgLogo;
+
     private MainController mainController;
 
     private final DashboardDAO dashboardDAO = new DashboardDAO();
@@ -63,6 +68,9 @@ public class Dashboard2Controller implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        if (imgLogo != null) {
+            try { imgLogo.setImage(new Image(getClass().getResourceAsStream(com.vendex.util.ThemeManager.getLogoPath()))); } catch (Exception ignored) {}
+        }
         new ScrambleText(lblTitulo, "VENDEX Repuestos Automotrices").repeat(true).play();
         cargarGraficos();
         cargarAlertasHome();

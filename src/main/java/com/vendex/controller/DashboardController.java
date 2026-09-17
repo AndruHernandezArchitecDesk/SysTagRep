@@ -15,6 +15,8 @@ import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Label;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -37,6 +39,9 @@ public class DashboardController implements Initializable {
 
     @FXML
     private Label lblTitulo;
+
+    @FXML
+    private ImageView imgLogo;
 
     @FXML
     private Label lblFacturasEmitidas;
@@ -65,6 +70,9 @@ public class DashboardController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        if (imgLogo != null) {
+            try { imgLogo.setImage(new Image(getClass().getResourceAsStream(ThemeManager.getLogoPath()))); } catch (Exception ignored) {}
+        }
         new ScrambleText(lblTitulo, "VENDEX Repuestos Automotrices").repeat(true).play();
         cargarKpis();
         cargarGraficoVentas();

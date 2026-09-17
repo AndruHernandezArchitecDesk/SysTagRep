@@ -79,6 +79,10 @@ public class ThemeManager {
         return THEME_DARK.equalsIgnoreCase(cargarTema());
     }
 
+    public static String getLogoPath() {
+        return esDarkMode() ? "/img/VendexLogoDark.png" : "/img/logoVendex.png";
+    }
+
     private static String cargarTema() {
         String tema = PREFS.get(KEY_THEME, THEME_LIGHT);
         return (tema == null || tema.trim().isEmpty()) ? THEME_LIGHT : tema;
