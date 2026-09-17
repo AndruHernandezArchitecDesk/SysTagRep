@@ -41,7 +41,29 @@ public class FirmaController implements Initializable {
             if (ConfigFirma.terminosAceptados()) {
                 chkTerminos.setSelected(true);
             }
+            mostrarEstadoCertificado(firma[0], firma[1]);
         }
+    }
+
+    private void mostrarEstadoCertificado(String ruta, String clave) {
+        new Thread(() -> {
+            try {
+                var info = com.vendex.util.CertificadoDigitalInfo.leer(ruta, clave);
+                String texto = "Titular: " + info.getTitular().split(",")[0] + " | Emite: " + info.getFechaEmision() + " | Expira: " + info.getFechaExpiracion() + " (" + info.getDiasRestantes() + " días) [" + info.getNivel().name() + "]";
+                String color = switch (info.getNivel()) {
+                    case VIGENTE -> "#198754";
+                    case AVISO -> "#856404";
+                    case ADVERTENCIA -> "#7a3e00";
+                    case CRITICO, EXPIRADO -> "#dc3545";
+                };
+                javafx.application.Platform.runLater(() -> {
+                    lblEstado.setText(lblEstado.getText() + "\n" + texto);
+                    lblEstado.setStyle("-fx-font-size: 12px; -fx-text-fill: " + color + "; -fx-font-weight: bold;");
+                });
+            } catch (Exception e) {
+                javafx.application.Platform.runLater(() -> lblEstado.setText(lblEstado.getText() + "\nNo se pudo leer certificado: " + e.getMessage()));
+            }
+        }, "Hilo-Estado-Certificado").start();
     }
 
     @FXML

@@ -12,13 +12,19 @@ import javafx.fxml.Initializable;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.concurrent.Task;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.kordamp.ikonli.javafx.FontIcon;
 
@@ -46,6 +52,12 @@ public class MainController implements Initializable {
     @FXML
     private MenuItem menuAlertas;
 
+    @FXML
+    private HBox bannerCertificado;
+
+    @FXML
+    private Label lblBannerCertificado;
+
     private final LogDAO logDAO = new LogDAO();
     private final AlertaService alertaService = new AlertaService();
 
@@ -60,6 +72,7 @@ public class MainController implements Initializable {
         if (contenedor.getScene() != null) {
             ThemeManager.aplicarTemaGuardado(contenedor.getScene());
         }
+        verificarCertificadoAsync();
     }
 
     public void abrirDashboard1() {
@@ -345,6 +358,64 @@ public class MainController implements Initializable {
         if (menuModoTema != null) menuModoTema.setText(dark ? "Modo Light" : "Modo Dark");
         if (iconToggleTema != null) iconToggleTema.setIconLiteral(dark ? "fas-sun" : "fas-moon");
         if (btnToggleTema != null) btnToggleTema.setText(dark ? "Light" : "Dark");
+    }
+
+    private void verificarCertificadoAsync() {
+        Task<com.vendex.service.CertificadoAlertaService.ResultadoAlerta> task = new Task<>() {
+            @Override protected com.vendex.service.CertificadoAlertaService.ResultadoAlerta call() {
+                try { return new com.vendex.service.CertificadoAlertaService().verificarEstadoCertificado(); } catch (Exception e) { return null; }
+            }
+        };
+        task.setOnSucceeded(e -> {
+            var res = task.getValue();
+            if (res == null) return;
+            if (res.debeMostrarBanner) mostrarBannerCertificado(res);
+            if (res.debeMostrarModal) mostrarModalCertificado(res);
+        });
+        new Thread(task, "Hilo-Verifica-Certificado").start();
+    }
+
+    private void mostrarBannerCertificado(com.vendex.service.CertificadoAlertaService.ResultadoAlerta res) {
+        if (bannerCertificado == null || lblBannerCertificado == null) return;
+        String nivel = res.info.getNivel().name();
+        String colorFondo = switch (nivel) {
+            case "AVISO" -> "#fff3cd";
+            case "ADVERTENCIA" -> "#ffe0b2";
+            case "CRITICO" -> "#f8d7da";
+            case "EXPIRADO" -> "#f5c6cb";
+            default -> "#fff3cd";
+        };
+        String colorTexto = switch (nivel) {
+            case "AVISO" -> "#856404";
+            case "ADVERTENCIA" -> "#7a3e00";
+            case "CRITICO", "EXPIRADO" -> "#721c24";
+            default -> "#856404";
+        };
+        bannerCertificado.setStyle("-fx-background-color: " + colorFondo + "; -fx-border-color: #ffc107; -fx-border-width: 0 0 1 0; -fx-padding: 8 12;");
+        lblBannerCertificado.setStyle("-fx-text-fill: " + colorTexto + "; -fx-font-weight: bold;");
+        lblBannerCertificado.setText(res.mensajeBanner + "  (Titular: " + res.info.getTitular().split(",")[0] + " | Expira: " + res.info.getFechaExpiracion() + " | " + res.info.getDiasRestantes() + " días)");
+        bannerCertificado.setVisible(true);
+        bannerCertificado.setManaged(true);
+    }
+
+    @FXML
+    private void cerrarBannerCertificado() {
+        if (bannerCertificado != null) { bannerCertificado.setVisible(false); bannerCertificado.setManaged(false); }
+    }
+
+    private void mostrarModalCertificado(com.vendex.service.CertificadoAlertaService.ResultadoAlerta res) {
+        javafx.application.Platform.runLater(() -> {
+            Alert alert = new Alert(res.info.getNivel() == com.vendex.util.CertificadoDigitalInfo.Nivel.EXPIRADO ? Alert.AlertType.ERROR : Alert.AlertType.WARNING);
+            alert.setTitle("Certificado de Firma - " + res.info.getNivel().name());
+            alert.setHeaderText(res.mensajeModal != null ? res.mensajeModal.split("\n")[0] : "Certificado por expirar");
+            TextArea ta = new TextArea(res.mensajeModal != null ? res.mensajeModal : res.mensajeBanner);
+            ta.setWrapText(true); ta.setEditable(false); ta.setPrefHeight(220); ta.setPrefWidth(520);
+            VBox box = new VBox(ta); VBox.setVgrow(ta, Priority.ALWAYS);
+            alert.getDialogPane().setContent(box);
+            alert.getDialogPane().setPrefSize(580, 340);
+            alert.setResizable(true);
+            alert.showAndWait();
+        });
     }
 
     private void cargarVista(String ruta) {

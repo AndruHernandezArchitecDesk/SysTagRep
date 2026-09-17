@@ -99,6 +99,12 @@ public class EmailService {
                         + "Si tiene alguna consulta, no dude en contactarnos.\n\n"
                         + "Atentamente,\n"
                         + "Vendex Repuestos Automotrices";
+            } else if ("CERTIFICADO_POR_EXPIRAR".equals(tipo) || "CERTIFICADO".equals(tipo)) {
+                asunto = "⚠ " + codigoDocumento + "\n\n"
+                        + "Estimado Administrador,\n\n"
+                        + nombreCliente + "\n\n"
+                        + "Este es un aviso automático de Vendex: revisa el apartado Firma Electrónica para renovar el certificado antes del vencimiento.\n\n"
+                        + "Atentamente,\nVendex Sistema";
             } else {
                 asunto = "Estimado/a " + nombreCliente + ",\n\n"
                         + "En Vendex Repuestos Automotrices le presentamos su PROFORMA N. " + codigoDocumento + ".\n\n"
