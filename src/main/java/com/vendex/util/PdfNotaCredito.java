@@ -57,7 +57,7 @@ public class PdfNotaCredito {
             celdaIzq.setBorder(PdfPCell.NO_BORDER);
             celdaIzq.setPadding(0);
             try {
-                java.io.InputStream logoStream = PdfNotaCredito.class.getResourceAsStream("/img/logoVendex.jpeg");
+                java.io.InputStream logoStream = PdfNotaCredito.class.getResourceAsStream("/img/logoVendex.png");
                 if (logoStream != null) {
                     Image logo = Image.getInstance(logoStream.readAllBytes());
                     logo.scaleToFit(110, 110);

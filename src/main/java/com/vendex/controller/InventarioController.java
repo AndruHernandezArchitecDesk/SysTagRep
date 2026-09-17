@@ -306,7 +306,7 @@ public class InventarioController implements Initializable {
                         fake.setCodigoUbicacion(item.getUbicacionPercha()!=null && !item.getUbicacionPercha().isBlank()? item.getUbicacionPercha().split(",")[0].trim() : "SIN-UBIC");
                         fake.setStockAsignado(total);
                         // usar metodo con indice para generar etiqueta numerada
-                        File f = EtiquetaUtil.generarEtiquetasPorUbicacion(item, fake, "/img/logoVendex.jpeg", razonSocial).get(i-1);
+                        File f = EtiquetaUtil.generarEtiquetasPorUbicacion(item, fake, "/img/logoVendex.png", razonSocial).get(i-1);
                         archivos.add(f);
                         if (archivos.size() >= total) break;
                     }
@@ -317,12 +317,12 @@ public class InventarioController implements Initializable {
                             UbicacionDetalle fu = new UbicacionDetalle();
                             fu.setCodigoUbicacion("SIN-UBIC");
                             fu.setStockAsignado(total);
-                            archivos.addAll(EtiquetaUtil.generarEtiquetasPorUbicacion(item, fu, "/img/logoVendex.jpeg", razonSocial).subList(i-1,i));
+                            archivos.addAll(EtiquetaUtil.generarEtiquetasPorUbicacion(item, fu, "/img/logoVendex.png", razonSocial).subList(i-1,i));
                             if(archivos.size()>=total) break;
                         }
                     }
                 } else {
-                    archivos = EtiquetaUtil.generarEtiquetasPorUbicacion(item, ubicacion, "/img/logoVendex.jpeg", razonSocial);
+                    archivos = EtiquetaUtil.generarEtiquetasPorUbicacion(item, ubicacion, "/img/logoVendex.png", razonSocial);
                 }
                 if (archivos != null && !archivos.isEmpty()) {
                     String msg = archivos.size() + " etiqueta(s) generada(s) en:\n" + archivos.get(0).getParentFile().getAbsolutePath() + "\n" + archivos.get(0).getName() + (archivos.size()>1 ? " ... (+"+(archivos.size()-1)+")":"");
@@ -347,8 +347,8 @@ public class InventarioController implements Initializable {
                 List<Empresa> empresas = daoEmpresa.listar();
                 String razonSocial = empresas.isEmpty() ? "Tag Repuestos" : empresas.get(0).getRazonSocial();
                 File etiqueta = (ubicacion == null)
-                        ? EtiquetaUtil.generarEtiqueta(item, "/img/logoVendex.jpeg", razonSocial)
-                        : EtiquetaUtil.generarEtiquetaUbicacion(item, ubicacion, "/img/logoVendex.jpeg", razonSocial);
+                        ? EtiquetaUtil.generarEtiqueta(item, "/img/logoVendex.png", razonSocial)
+                        : EtiquetaUtil.generarEtiquetaUbicacion(item, ubicacion, "/img/logoVendex.png", razonSocial);
                 if (etiqueta != null && etiqueta.exists()) {
                     String msg = "Etiqueta generada en:\n" + etiqueta.getAbsolutePath();
                     javafx.application.Platform.runLater(() -> {

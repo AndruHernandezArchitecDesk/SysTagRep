@@ -37,7 +37,7 @@ public class PdfRetencion {
             enc.setWidthPercentage(100);
             PdfPCell cIzq = new PdfPCell(); cIzq.setBorder(PdfPCell.NO_BORDER);
             try {
-                java.io.InputStream is = PdfRetencion.class.getResourceAsStream("/img/logoVendex.jpeg");
+                java.io.InputStream is = PdfRetencion.class.getResourceAsStream("/img/logoVendex.png");
                 if (is != null) { Image logo = Image.getInstance(is.readAllBytes()); logo.scaleToFit(110,110); logo.setAlignment(Element.ALIGN_CENTER); cIzq.addElement(logo); }
             } catch (Exception ignored) {}
             cIzq.addElement(new Paragraph(" "));

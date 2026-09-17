@@ -449,7 +449,7 @@ public class NotaVentaController implements Initializable {
     }
 
     private void cargarLogo() {
-        try { imgLogo.setImage(new Image(getClass().getResourceAsStream("/img/logoVendex.jpeg"))); } catch (Exception ignored) {}
+        try { imgLogo.setImage(new Image(getClass().getResourceAsStream("/img/logoVendex.png"))); } catch (Exception ignored) {}
     }
 
     private void obtenerDatosEmpresa() {

@@ -28,7 +28,7 @@ import javax.imageio.ImageIO;
  */
 public class HojaEtiquetasPDF {
 
-    private static final String RUTA_LOGO = "/img/logoVendex.jpeg";
+    private static final String RUTA_LOGO = "/img/logoVendex.png";
 
     public static File generarHojaA4(List<Inventario> productos, String numeroFactura) throws Exception {
         if (productos == null || productos.isEmpty()) throw new IllegalArgumentException("Lista de productos vacía");

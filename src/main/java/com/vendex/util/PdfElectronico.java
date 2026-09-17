@@ -70,7 +70,7 @@ public class PdfElectronico {
             celdaIzq.setPadding(0);
 
             try {
-                java.io.InputStream logoStream = PdfElectronico.class.getResourceAsStream("/img/logoVendex.jpeg");
+                java.io.InputStream logoStream = PdfElectronico.class.getResourceAsStream("/img/logoVendex.png");
                 if (logoStream != null) {
                     Image logo = Image.getInstance(logoStream.readAllBytes());
                     logo.scaleToFit(110, 110);
