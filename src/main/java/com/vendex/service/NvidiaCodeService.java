@@ -1,6 +1,7 @@
 package com.vendex.service;
 
-import java.io.IOException;
+import com.vendex.config.NvidiaConfig;
+
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -8,9 +9,19 @@ import java.net.http.HttpResponse;
 
 public class NvidiaCodeService {
 
-    private final String apiKey = "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";
     private final String baseUrl = "https://api.nvidia.com/v1/chat/completions";
     private final HttpClient httpClient = HttpClient.newHttpClient();
+
+    private String resolverApiKey() {
+        String k = NvidiaConfig.obtenerApiKey();
+        if (k != null && !k.isBlank()) return k;
+        // compat env directo
+        String env = System.getenv("NVIDIA_API_KEY");
+        if (env != null && !env.isBlank()) return env.trim();
+        String prop = System.getProperty("NVIDIA_API_KEY");
+        if (prop != null && !prop.isBlank()) return prop.trim();
+        return null;
+    }
 
     /**
      * Genera código Java basado en una descripción en natural
@@ -26,6 +37,10 @@ public class NvidiaCodeService {
         );
 
         try {
+            String apiKey = resolverApiKey();
+            if (apiKey == null || apiKey.isBlank()) {
+                throw new IllegalStateException("NVIDIA_API_KEY no configurada. Configure en ~/.vendex/nvidia.properties (cifrado) o env NVIDIA_API_KEY");
+            }
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(baseUrl))
                     .header("Authorization", "Bearer " + apiKey)

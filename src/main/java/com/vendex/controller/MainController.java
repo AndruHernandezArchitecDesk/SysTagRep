@@ -291,20 +291,37 @@ public class MainController implements Initializable {
 
     @FXML
     private void irConfigurarIA() {
-        javafx.scene.control.TextInputDialog dlg = new javafx.scene.control.TextInputDialog(
-                GeminiConfig.obtenerApiKey() != null ? GeminiConfig.obtenerApiKey() : "");
-        dlg.setTitle("Configurar IA");
-        dlg.setHeaderText("Gemini API Key");
-        dlg.setContentText("API Key (https://aistudio.google.com/apikey):");
+        javafx.scene.control.ChoiceDialog<String> tipoDlg = new javafx.scene.control.ChoiceDialog<>("Gemini", "Gemini", "NVIDIA");
+        tipoDlg.setTitle("Configurar IA");
+        tipoDlg.setHeaderText("Seleccione proveedor");
+        tipoDlg.setContentText("Proveedor:");
+        var tipoRes = tipoDlg.showAndWait();
+        if (tipoRes.isEmpty()) return;
+        boolean esNvidia = "NVIDIA".equals(tipoRes.get());
+        String keyActual = esNvidia ? com.vendex.config.NvidiaConfig.obtenerApiKey() : GeminiConfig.obtenerApiKey();
+        javafx.scene.control.TextInputDialog dlg = new javafx.scene.control.TextInputDialog(keyActual != null ? keyActual : "");
+        dlg.setTitle("Configurar IA - " + tipoRes.get());
+        dlg.setHeaderText(tipoRes.get() + " API Key");
+        dlg.setContentText("API Key" + (esNvidia ? " (https://build.nvidia.com):" : " (https://aistudio.google.com/apikey):"));
         var result = dlg.showAndWait();
         if (result.isPresent()) {
             String key = result.get().trim();
-            if (key.isEmpty()) {
-                GeminiConfig.borrarApiKey();
-                new Alert(Alert.AlertType.INFORMATION, "API key eliminada. El chat usará modo local sin IA.", ButtonType.OK).showAndWait();
+            if (esNvidia) {
+                if (key.isEmpty()) {
+                    com.vendex.config.NvidiaConfig.borrarApiKey();
+                    new Alert(Alert.AlertType.INFORMATION, "NVIDIA API key eliminada.", ButtonType.OK).showAndWait();
+                } else {
+                    com.vendex.config.NvidiaConfig.guardarApiKey(key);
+                    new Alert(Alert.AlertType.INFORMATION, "NVIDIA API key guardada cifrada en ~/.vendex/nvidia.properties", ButtonType.OK).showAndWait();
+                }
             } else {
-                GeminiConfig.guardarApiKey(key);
-                new Alert(Alert.AlertType.INFORMATION, "API key guardada en ~/.vendex/gemini.properties\nBadge mostrará ● IA Gemini", ButtonType.OK).showAndWait();
+                if (key.isEmpty()) {
+                    GeminiConfig.borrarApiKey();
+                    new Alert(Alert.AlertType.INFORMATION, "API key eliminada. El chat usará modo local sin IA.", ButtonType.OK).showAndWait();
+                } else {
+                    GeminiConfig.guardarApiKey(key);
+                    new Alert(Alert.AlertType.INFORMATION, "API key guardada cifrada en ~/.vendex/gemini.properties\nBadge mostrará ● IA Gemini", ButtonType.OK).showAndWait();
+                }
             }
         }
     }
