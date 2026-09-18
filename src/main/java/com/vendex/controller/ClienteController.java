@@ -83,8 +83,10 @@ public class ClienteController implements Initializable {
             }
         });
 
-        txtDireccion.setTextFormatter(new TextFormatter<>(change ->
-                change.getControlNewText().length() <= 70 ? change : null));
+        txtDireccion.setTextFormatter(new TextFormatter<>(change -> {
+            if (change.getText() != null) change.setText(change.getText().toUpperCase());
+            return change.getControlNewText().length() <= 70 ? change : null;
+        }));
 
         txtTelefono.textProperty().addListener((obs, old, newValue) -> {
             if (newValue != null) {

@@ -84,9 +84,11 @@ public class ProveedorController implements Initializable {
             }
         });
 
-        // Dirección: max 70
-        txtDireccion.setTextFormatter(new TextFormatter<>(change -> 
-            change.getControlNewText().length() <= 70 ? change : null));
+        // Dirección: max 70 + mayúsculas (compuesto, respeta no-uppercase global)
+        txtDireccion.setTextFormatter(new TextFormatter<>(change -> {
+            if (change.getText() != null) change.setText(change.getText().toUpperCase());
+            return change.getControlNewText().length() <= 70 ? change : null;
+        }));
 
         // Teléfono: solo números y max 10
         txtTelefono.textProperty().addListener((obs, old, newValue) -> {

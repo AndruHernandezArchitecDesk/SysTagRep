@@ -449,9 +449,7 @@ public class MainController implements Initializable {
             } else if (loader.getController() instanceof Dashboard2Controller dashboard2Controller) {
                 dashboard2Controller.setMainController(this);
             }
-            if (!ruta.contains("ClienteView.fxml")) {
-                aplicarMayusculas(vista);
-            }
+            aplicarMayusculas(vista);
             contenedor.getChildren().setAll(vista);
         } catch (Exception e) {
             java.io.StringWriter sw = new java.io.StringWriter();
@@ -506,11 +504,14 @@ public class MainController implements Initializable {
          return java.nio.file.Paths.get(base);
      }
 
-     private void aplicarMayusculas(Node nodo) {
-        if (nodo instanceof Parent parent) {
-            for (Node n : parent.lookupAll(".text-field")) {
-                UpperCaseTextFormatter.apply((TextField) n);
-            }
-        }
-    }
+       private void aplicarMayusculas(Node nodo) {
+          if (nodo instanceof Parent parent) {
+              for (Node n : parent.lookupAll(".text-field")) {
+                  if (n instanceof TextField tf) {
+                      if (tf.getStyleClass().contains("no-uppercase")) continue;
+                      UpperCaseTextFormatter.apply(tf);
+                  }
+              }
+          }
+      }
 }

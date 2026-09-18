@@ -72,7 +72,10 @@ public class MainApp extends Application {
     private void aplicarMayusculas(Node nodo) {
         if (nodo instanceof javafx.scene.Parent parent) {
             for (Node n : parent.lookupAll(".text-field")) {
-                UpperCaseTextFormatter.apply((javafx.scene.control.TextField) n);
+                if (n instanceof javafx.scene.control.TextField tf) {
+                    if (tf.getStyleClass().contains("no-uppercase")) continue;
+                    UpperCaseTextFormatter.apply(tf);
+                }
             }
         }
     }
