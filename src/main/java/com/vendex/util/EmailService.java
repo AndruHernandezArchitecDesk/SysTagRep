@@ -1,9 +1,12 @@
 package com.vendex.util;
 
+import com.vendex.dao.ConfiguracionEmailDAO;
+import com.vendex.model.ConfiguracionEmail;
 import jakarta.mail.*;
 import jakarta.mail.internet.*;
 
 import java.io.File;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -11,13 +14,56 @@ import java.util.logging.Logger;
 public class EmailService {
 
     private static final Logger LOGGER = Logger.getLogger(EmailService.class.getName());
-    private static final String REMITENTE = "tagrepuestosvick@gmail.com";
-    private static final String PASSWORD = "awnfnmidbtqyyclz";
+
+    private static volatile ConfiguracionEmail cachedConfig;
+    private static final Object CACHE_LOCK = new Object();
+
+    // Fallback legacy (solo si no hay fila activa y para compatibilidad tests sin BD)
+    private static final String FALLBACK_REMITENTE = "tagrepuestosvick@gmail.com";
+    private static final String FALLBACK_PASSWORD = "awnfnmidbtqyyclz";
+    private static final String FALLBACK_HOST = "smtp.gmail.com";
+    private static final int FALLBACK_PORT = 587;
 
     private String ultimoError;
 
     public String getUltimoError() {
         return ultimoError;
+    }
+
+    public static void recargarConfiguracion() {
+        synchronized (CACHE_LOCK) {
+            cachedConfig = null;
+        }
+    }
+
+    public static void invalidarCache() { recargarConfiguracion(); }
+
+    private ConfiguracionEmail obtenerConfig() {
+        ConfiguracionEmail c = cachedConfig;
+        if (c != null) return c;
+        synchronized (CACHE_LOCK) {
+            if (cachedConfig != null) return cachedConfig;
+            try {
+                Optional<ConfiguracionEmail> opt = new ConfiguracionEmailDAO().obtenerActiva();
+                if (opt.isPresent()) {
+                    cachedConfig = opt.get();
+                    return cachedConfig;
+                }
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, "No se pudo leer configuracion_email, usando fallback", e);
+            }
+            return null;
+        }
+    }
+
+    private String desencriptarPassword(ConfiguracionEmail cfg) {
+        if (cfg == null || cfg.getPasswordCifrado() == null) return "";
+        try {
+            return Cifrado.desencriptar(cfg.getPasswordCifrado());
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "No se pudo desencriptar password SMTP", e);
+            return "";
+        }
     }
 
     public boolean enviarCorreoConPDF(String destinatario, String nombreCliente,
@@ -29,20 +75,73 @@ public class EmailService {
     public boolean enviarCorreoConArchivos(String destinatario, String nombreCliente,
                                            String codigoDocumento, String tipoDocumento,
                                            File pdfAdjunto, File xmlAdjunto) {
+        if (destinatario == null || destinatario.trim().isEmpty()) {
+            ultimoError = "Destinatario vacío";
+            return false;
+        }
+
+        ConfiguracionEmail cfg = obtenerConfig();
+        String host;
+        int puerto;
+        boolean usarTls;
+        String remitente;
+        String nombreRemitente;
+        String usuario;
+        String passwordPlano;
+        String replyTo;
+
+        if (cfg != null) {
+            host = cfg.getHostSmtp();
+            puerto = cfg.getPuertoSmtp();
+            usarTls = cfg.isUsarTls();
+            remitente = cfg.getEmailRemitente();
+            nombreRemitente = cfg.getNombreRemitente();
+            usuario = cfg.getUsuarioSmtp();
+            passwordPlano = desencriptarPassword(cfg);
+            replyTo = cfg.getReplyTo();
+            if (host == null || host.trim().isEmpty() || remitente == null || remitente.trim().isEmpty()) {
+                ultimoError = "Configuración de correo incompleta. Vaya a Administración → Correo Electrónico y complete los datos.";
+                LOGGER.warning("Configuracion email incompleta: host/remitente vacio");
+                return false;
+            }
+            if (passwordPlano == null || passwordPlano.isEmpty()) {
+                ultimoError = "Configuración de correo sin contraseña. Configure la contraseña SMTP.";
+                LOGGER.warning("Configuracion email sin password descifrable");
+                return false;
+            }
+        } else {
+            // Fallback legacy solo si no hay configuración en BD (primer arranque sin migrar o test sin BD)
+            LOGGER.warning("Sin configuracion_email activa, usando fallback legacy. Configure el correo en Administración → Correo Electrónico.");
+            host = FALLBACK_HOST;
+            puerto = FALLBACK_PORT;
+            usarTls = true;
+            remitente = FALLBACK_REMITENTE;
+            nombreRemitente = "Vendex Repuestos";
+            usuario = FALLBACK_REMITENTE;
+            passwordPlano = FALLBACK_PASSWORD;
+            replyTo = null;
+        }
+
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.starttls.enable", "true");
-        props.put("mail.smtp.host", "smtp.gmail.com");
-        props.put("mail.smtp.port", "587");
-        props.put("mail.smtp.ssl.trust", "smtp.gmail.com");
+        props.put("mail.smtp.host", host);
+        props.put("mail.smtp.port", String.valueOf(puerto));
+        props.put("mail.smtp.ssl.trust", host);
         props.put("mail.smtp.connectiontimeout", "15000");
         props.put("mail.smtp.timeout", "15000");
         props.put("mail.smtp.writetimeout", "15000");
+        if (puerto == 465) {
+            props.put("mail.smtp.ssl.enable", "true");
+            props.put("mail.smtp.starttls.enable", "false");
+        } else {
+            props.put("mail.smtp.starttls.enable", String.valueOf(usarTls));
+            if (!usarTls) props.put("mail.smtp.ssl.enable", "false");
+        }
 
         Session session = Session.getInstance(props, new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(REMITENTE, PASSWORD);
+                return new PasswordAuthentication(usuario, passwordPlano);
             }
         });
 
@@ -50,7 +149,10 @@ public class EmailService {
             String tipo = (tipoDocumento == null || tipoDocumento.trim().isEmpty()) ? "PROFORMA" : tipoDocumento.toUpperCase();
 
             Message mensaje = new MimeMessage(session);
-            mensaje.setFrom(new InternetAddress(REMITENTE, "Vendex Repuestos"));
+            mensaje.setFrom(new InternetAddress(remitente, nombreRemitente != null ? nombreRemitente : "Vendex Repuestos"));
+            if (replyTo != null && !replyTo.trim().isEmpty()) {
+                mensaje.setReplyTo(InternetAddress.parse(replyTo.trim()));
+            }
             mensaje.setRecipients(Message.RecipientType.TO, InternetAddress.parse(destinatario));
             mensaje.setSubject(tipo + " " + codigoDocumento + " - Vendex Repuestos");
 
@@ -147,7 +249,7 @@ public class EmailService {
             return true;
         } catch (Exception e) {
             ultimoError = (e.getMessage() != null ? e.getMessage() : e.toString());
-            LOGGER.log(Level.SEVERE, "Error enviando correo", e);
+            LOGGER.log(Level.SEVERE, "Error enviando correo via " + host + ":" + puerto, e);
             return false;
         }
     }

@@ -260,6 +260,11 @@ public class MainController implements Initializable {
     }
 
     @FXML
+    private void irConfiguracionEmail() {
+        cargarVista("/view/ConfiguracionEmailView.fxml");
+    }
+
+    @FXML
     private void irAsistenteRepuestos() {
         try {
             javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/view/ChatWidget.fxml"));

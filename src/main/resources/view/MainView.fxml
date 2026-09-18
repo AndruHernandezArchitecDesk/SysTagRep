@@ -67,6 +67,7 @@
                     </Menu>
                     <MenuItem text="Numeración de Documentos" onAction="#irNumeracion"/>
                     <MenuItem text="Firma Electrónica" onAction="#irFirma"/>
+                    <MenuItem text="Correo Electrónico" onAction="#irConfiguracionEmail"/>
                 </Menu>
                 <Menu text="Ayuda">
                     <MenuItem text="Asistente de Repuestos" onAction="#irAsistenteRepuestos"/>

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.vendex.controller.ConfiguracionEmailController" prefHeight="720.0" prefWidth="780.0" style="-fx-padding: 10">
+    <top>
+        <HBox spacing="10" alignment="CENTER_LEFT" styleClass="header" style="-fx-padding: 5 0 10 0">
+            <Label text="Configuración de Correo Electrónico" styleClass="titulo">
+                <graphic><FontIcon iconLiteral="fas-envelope" styleClass="titulo-icono"/></graphic>
+            </Label>
+        </HBox>
+    </top>
+    <center>
+        <ScrollPane fitToWidth="true" style="-fx-background-color: transparent">
+            <VBox spacing="12" style="-fx-padding: 10">
+                <Label fx:id="lblEstado" text="Cargando..." style="-fx-font-size: 12px; -fx-text-fill: #6c757d;" wrapText="true"/>
+
+                <TitledPane text="Servidor SMTP" collapsible="false" styleClass="section-card" style="-fx-font-weight: bold; -fx-padding: 8">
+                    <content>
+                        <VBox spacing="8" style="-fx-padding: 8">
+                            <HBox spacing="6" alignment="CENTER_LEFT">
+                                <StackPane prefWidth="20"><FontIcon iconLiteral="fas-server" iconSize="14"/></StackPane>
+                                <Label text="Host SMTP" prefWidth="130"/>
+                                <TextField fx:id="txtHost" promptText="ej. smtp.gmail.com, smtp.office365.com" HBox.hgrow="ALWAYS" prefHeight="36"/>
+                            </HBox>
+                            <HBox spacing="6" alignment="CENTER_LEFT">
+                                <StackPane prefWidth="20"><FontIcon iconLiteral="fas-plug" iconSize="14"/></StackPane>
+                                <Label text="Puerto" prefWidth="130"/>
+                                <TextField fx:id="txtPuerto" promptText="587" prefWidth="120" prefHeight="36"/>
+                                <CheckBox fx:id="chkTls" text="Usar TLS / STARTTLS" style="-fx-font-weight: normal"/>
+                                <Label text="(587 TLS, 465 SSL, 25 sin cifrar)" style="-fx-font-size: 11px; -fx-text-fill: #6c757d;"/>
+                            </HBox>
+                            <Label text="Tip: Gmail usa smtp.gmail.com:587 TLS. Office365 usa smtp.office365.com:587 TLS. Puerto 465 es SSL directo." style="-fx-font-size: 11px; -fx-text-fill: #6c757d;" wrapText="true"/>
+                        </VBox>
+                    </content>
+                </TitledPane>
+
+                <TitledPane text="Credenciales SMTP" collapsible="false" styleClass="section-card" style="-fx-font-weight: bold; -fx-padding: 8">
+                    <content>
+                        <VBox spacing="8" style="-fx-padding: 8">
+                            <HBox spacing="6" alignment="CENTER_LEFT">
+                                <StackPane prefWidth="20"><FontIcon iconLiteral="fas-user" iconSize="14"/></StackPane>
+                                <Label text="Usuario SMTP" prefWidth="130"/>
+                                <TextField fx:id="txtUsuarioSmtp" promptText="usuario SMTP (normalmente igual al email)" HBox.hgrow="ALWAYS" prefHeight="36"/>
+                            </HBox>
+                            <HBox spacing="6" alignment="CENTER_LEFT">
+                                <StackPane prefWidth="20"><FontIcon iconLiteral="fas-lock" iconSize="14"/></StackPane>
+                                <Label text="Contraseña" prefWidth="130"/>
+                                <PasswordField fx:id="txtPassword" promptText="Contraseña / App password" HBox.hgrow="ALWAYS" prefHeight="36"/>
+                            </HBox>
+                            <Label text="La contraseña se guarda cifrada (AES/GCM). Al editar, dejar vacío conserva la anterior." style="-fx-font-size: 11px; -fx-text-fill: #6c757d;" wrapText="true"/>
+                        </VBox>
+                    </content>
+                </TitledPane>
+
+                <TitledPane text="Remitente" collapsible="false" styleClass="section-card" style="-fx-font-weight: bold; -fx-padding: 8">
+                    <content>
+                        <VBox spacing="8" style="-fx-padding: 8">
+                            <HBox spacing="6" alignment="CENTER_LEFT">
+                                <StackPane prefWidth="20"><FontIcon iconLiteral="fas-envelope" iconSize="14"/></StackPane>
+                                <Label text="Email remitente" prefWidth="130"/>
+                                <TextField fx:id="txtEmailRemitente" promptText="ej. facturacion@miempresa.com" HBox.hgrow="ALWAYS" prefHeight="36"/>
+                            </HBox>
+                            <HBox spacing="6" alignment="CENTER_LEFT">
+                                <StackPane prefWidth="20"><FontIcon iconLiteral="fas-tag" iconSize="14"/></StackPane>
+                                <Label text="Nombre remitente" prefWidth="130"/>
+                                <TextField fx:id="txtNombreRemitente" promptText="ej. Ferretería XYZ - Facturación" HBox.hgrow="ALWAYS" prefHeight="36"/>
+                            </HBox>
+                            <HBox spacing="6" alignment="CENTER_LEFT">
+                                <StackPane prefWidth="20"><FontIcon iconLiteral="fas-reply" iconSize="14"/></StackPane>
+                                <Label text="Reply-To (opcional)" prefWidth="130"/>
+                                <TextField fx:id="txtReplyTo" promptText="Correo donde responderán los clientes (opcional)" HBox.hgrow="ALWAYS" prefHeight="36"/>
+                            </HBox>
+                        </VBox>
+                    </content>
+                </TitledPane>
+
+                <TitledPane text="Probar configuración" collapsible="false" styleClass="section-card" style="-fx-font-weight: bold; -fx-padding: 8">
+                    <content>
+                        <VBox spacing="8" style="-fx-padding: 8">
+                            <HBox spacing="8" alignment="CENTER_LEFT">
+                                <Button fx:id="btnProbarConexion" text="Probar conexión" onAction="#probarConexion" styleClass="btn-orden" prefHeight="36"/>
+                                <Label text="Verifica host/puerto y credenciales sin enviar correo." style="-fx-font-size: 11px; -fx-text-fill: #6c757d;"/>
+                            </HBox>
+                            <HBox spacing="6" alignment="CENTER_LEFT">
+                                <StackPane prefWidth="20"><FontIcon iconLiteral="fas-paper-plane" iconSize="14"/></StackPane>
+                                <Label text="Enviar a" prefWidth="130"/>
+                                <TextField fx:id="txtCorreoPrueba" promptText="correo destino para prueba" HBox.hgrow="ALWAYS" prefHeight="36"/>
+                                <Button fx:id="btnEnviarPrueba" text="Enviar correo de prueba" onAction="#enviarCorreoPrueba" styleClass="btn-orden" prefHeight="36"/>
+                            </HBox>
+                        </VBox>
+                    </content>
+                </TitledPane>
+
+                <HBox spacing="12" alignment="CENTER_RIGHT" style="-fx-padding: 10 0 0 0">
+                    <Button fx:id="btnGuardar" text="Guardar configuración" onAction="#guardar" styleClass="btn-accion" prefHeight="38" defaultButton="true">
+                        <graphic><FontIcon iconLiteral="fas-save" iconSize="14"/></graphic>
+                    </Button>
+                </HBox>
+            </VBox>
+        </ScrollPane>
+    </center>
+</BorderPane>
