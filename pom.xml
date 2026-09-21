@@ -165,6 +165,22 @@
             <version>2.7.2</version>
             <scope>test</scope>
         </dependency>
+        <!-- Fase 1 completa: keyring OS para master key (DPAPI/Keychain/libsecret) -->
+        <dependency>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna</artifactId>
+            <version>5.14.0</version>
+        </dependency>
+        <dependency>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna-platform</artifactId>
+            <version>5.14.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.javakeyring</groupId>
+            <artifactId>java-keyring</artifactId>
+            <version>1.0.1</version>
+        </dependency>
     </dependencies>
 
     <build>

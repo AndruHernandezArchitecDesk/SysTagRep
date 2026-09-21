@@ -30,8 +30,8 @@ public final class GeminiConfig {
         String prop = System.getProperty("GEMINI_API_KEY");
         if (prop != null && !prop.isBlank()) return prop.trim();
         if (!ARCHIVO.exists()) return null;
-        // migrar si aún está en claro
-        SecureConfigStore.migrarSiEsNecesario(ARCHIVO, KEY_PROP);
+        // migrar si aún está en claro o legacy SECRETO → keyring (Fase 1 completa)
+        SecureConfigStore.migrarTodoSiEsNecesario(ARCHIVO, KEY_PROP);
         Properties p = new Properties();
         try (FileInputStream fis = new FileInputStream(ARCHIVO)) {
             p.load(fis);

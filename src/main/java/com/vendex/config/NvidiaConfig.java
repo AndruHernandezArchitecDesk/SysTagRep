@@ -29,7 +29,7 @@ public final class NvidiaConfig {
         String prop = System.getProperty("NVIDIA_API_KEY");
         if (prop != null && !prop.isBlank()) return prop.trim();
         if (!ARCHIVO.exists()) return null;
-        SecureConfigStore.migrarSiEsNecesario(ARCHIVO, KEY_PROP);
+        SecureConfigStore.migrarTodoSiEsNecesario(ARCHIVO, KEY_PROP);
         Properties p = new Properties();
         try (FileInputStream fis = new FileInputStream(ARCHIVO)) { p.load(fis); } catch (IOException ignored) { return null; }
         String raw = p.getProperty(KEY_PROP, "").trim();

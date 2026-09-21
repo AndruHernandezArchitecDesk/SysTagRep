@@ -1,14 +1,20 @@
 package com.vendex.config;
 
+import com.vendex.util.PasswordDebilValidator;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class DatabaseConnection {
     private static final String DEFAULT_URL = DbConfig.DEFAULT_URL;
     private static final String DEFAULT_USER = DbConfig.DEFAULT_USER;
     private static final String DEFAULT_PASSWORD = DbConfig.DEFAULT_PASSWORD;
+
+    private static final Logger LOG = Logger.getLogger(DatabaseConnection.class.getName());
 
     private static final ThreadLocal<String> URL = new ThreadLocal<>();
     private static final ThreadLocal<String> USER = new ThreadLocal<>();
@@ -24,8 +30,8 @@ public class DatabaseConnection {
 
     /**
      * Carga ~/.vendex/db.properties una vez al inicio. Llamado desde MainApp.start().
-     * Si el archivo no existe lo crea con defaults (localhost). Para PC cliente
-     * editar db.url a jdbc:postgresql://192.168.1.7:5432/dbVendex.
+     * Descifra db.password en memoria via DbConfig/SecureConfigStore. Valida password débil
+     * con warning+log (no bloqueante).
      */
     public static synchronized void initFromConfig() {
         if (configLoaded) return;
@@ -35,14 +41,31 @@ public class DatabaseConnection {
             USER.set(cfg[1]);
             PASSWORD.set(cfg[2]);
             configLoaded = true;
+            validarPasswordDebil(cfg[2]);
         } catch (Exception e) {
-            // fallback a defaults si el archivo esta corrupto
-            e.printStackTrace();
+            // fallback a defaults si el archivo esta corrupto — no loguear password ni connection string
+            LOG.log(Level.WARNING, "No se pudo cargar db.properties, usando defaults en memoria", e);
             URL.set(DEFAULT_URL);
             USER.set(DEFAULT_USER);
             PASSWORD.set(DEFAULT_PASSWORD);
             configLoaded = true;
+            validarPasswordDebil(DEFAULT_PASSWORD);
         }
+    }
+
+    private static void validarPasswordDebil(String password) {
+        if (PasswordDebilValidator.esDebil(password)) {
+            LOG.warning("Contraseña de BD débil detectada (valor por defecto o predecible). "
+                    + "Se recomienda rotarla cuanto antes en todas las PCs de la instalación. "
+                    + "No se bloquea el arranque por compatibilidad con instalaciones existentes.");
+        }
+    }
+
+    /** Solo warning+log, no bloquea. Para uso desde UI si se quiere mostrar dialog. */
+    public static boolean esPasswordDebilActual() {
+        String p = PASSWORD.get();
+        if (p == null) p = DEFAULT_PASSWORD;
+        return PasswordDebilValidator.esDebil(p);
     }
 
     public static Connection getConnection() throws SQLException {

@@ -19,7 +19,7 @@ public class ConfigFirma {
 
     /**
      * @return arreglo {rutaP12, clave} con los valores guardados (pueden estar vacíos).
-     * La clave se devuelve desencriptada.
+     * La clave se devuelve desencriptada. Migra lazy legacy→keyring.
      */
     public static String[] cargar() {
         Properties p = new Properties();
@@ -27,15 +27,26 @@ public class ConfigFirma {
             try (FileInputStream fis = new FileInputStream(ARCHIVO)) {
                 p.load(fis);
             } catch (IOException ignored) {}
+            // migrar tanto claro→cifrado como legacy→keyring (Fase 1 completa)
+            boolean migro = SecureConfigStore.migrarTodoSiEsNecesario(ARCHIVO, "clave");
+            if (migro) {
+                p.clear();
+                try (FileInputStream fis = new FileInputStream(ARCHIVO)) { p.load(fis); } catch (IOException ignored) {}
+            }
         }
         String ruta = p.getProperty("rutaP12", "");
         String clave = p.getProperty("clave", "");
         if (!clave.isEmpty()) {
-            try {
-                clave = Cifrado.desencriptar(clave);
-            } catch (Exception e) {
-                clave = "";
+            // SecureConfigStore.descifrar maneja dual-read keyring→legacy; fallback a Cifrado directo
+            String desc = SecureConfigStore.descifrar(clave);
+            // si SecureConfigStore no descifró (retornó raw por no ser esCifrado pero es legacy claro), intentar Cifrado
+            if (desc.equals(clave) && SecureConfigStore.esCifrado(clave)) {
+                try { desc = Cifrado.desencriptar(clave); } catch (Exception e) { desc = ""; }
+            } else if (!SecureConfigStore.esCifrado(clave)) {
+                // legacy claro con ":" falló, intentar igual
+                try { String tmp = Cifrado.desencriptar(clave); if (!tmp.isEmpty()) desc = tmp; } catch (Exception ignored) {}
             }
+            clave = desc;
         }
         return new String[] { ruta, clave };
     }
@@ -59,11 +70,15 @@ public class ConfigFirma {
         try {
             if (!DIR.exists() && !DIR.mkdirs()) return;
             Properties p = new Properties();
+            if (ARCHIVO.exists()) {
+                try (FileInputStream fis = new FileInputStream(ARCHIVO)) { p.load(fis); } catch (IOException ignored) {}
+            }
             p.setProperty("rutaP12", rutaP12 == null ? "" : rutaP12);
-            p.setProperty("clave", Cifrado.encriptar(clave == null ? "" : clave));
+            String claveCifrada = (clave == null || clave.isEmpty()) ? "" : SecureConfigStore.cifrar(clave);
+            p.setProperty("clave", claveCifrada);
             p.setProperty("terminosAceptados", "true");
             try (FileOutputStream fos = new FileOutputStream(ARCHIVO)) {
-                p.store(fos, "Firma electronica");
+                p.store(fos, "Firma electronica - clave cifrada keyring AES/GCM");
             }
         } catch (Exception ignored) {}
     }

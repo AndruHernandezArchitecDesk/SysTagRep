@@ -1,5 +1,7 @@
 package com.vendex.config;
 
+import com.vendex.util.SecureConfigStore;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -13,8 +15,15 @@ import java.util.Properties;
  * PC host (192.168.1.7):  db.url=jdbc:postgresql://localhost:5432/dbVendex
  * PC cliente (192.168.1.5): db.url=jdbc:postgresql://192.168.1.7:5432/dbVendex
  *
- * Si el archivo no existe se crea con defaults. Si existe, DatabaseConnection
- * lo lee al inicio via {@link DatabaseConnection#initFromConfig()}.
+ * <p>Seguridad Fase 1: db.password se guarda cifrado AES/GCM via {@link SecureConfigStore}.
+ * Formato en disco: sal:iv:cifrado. Migración lazy desde texto plano.
+ * Prioridad password: env DB_PASSWORD &gt; -Ddb.password &gt; archivo cifrado &gt; archivo texto plano (legacy) &gt; default "admin" solo en memoria.</p>
+ *
+ * <p>NOTA Fase 1 completa: la clave deriva de {@code Cifrado.SECRETO} embebido.
+ * Futuro: derivar de keyring OS (DPAPI/Keychain/libsecret) via java-keyring sin tocar callers.</p>
+ *
+ * <p>Si el archivo no existe NO se autocrea con password por defecto. El wizard de primer arranque
+ * ({@link com.vendex.MainApp}) se encarga de generarlo/solicitarlo.</p>
  */
 public final class DbConfig {
 
@@ -29,9 +38,11 @@ public final class DbConfig {
 
     public static File getArchivo() { return ARCHIVO; }
 
+    public static File getDir() { return DIR; }
+
     /**
-     * Carga url/user/password desde archivo. Si no existe, lo crea con defaults
-     * y retorna los defaults.
+     * Carga url/user/password. Password se descifra si está en formato cifrado.
+     * No autocrea archivo con defaults; si no existe retorna defaults solo en memoria.
      */
     public static synchronized String[] cargar() {
         Properties p = new Properties();
@@ -39,29 +50,85 @@ public final class DbConfig {
             try (FileInputStream fis = new FileInputStream(ARCHIVO)) {
                 p.load(fis);
             } catch (IOException ignored) {}
+            // migración lazy: claro→cifrado y legacy→keyring (Fase 1 completa), recargar si migró
+            boolean migro = SecureConfigStore.migrarTodoSiEsNecesario(ARCHIVO, "db.password");
+            if (migro) {
+                p.clear();
+                try (FileInputStream fis = new FileInputStream(ARCHIVO)) {
+                    p.load(fis);
+                } catch (IOException ignored) {}
+            }
         } else {
-            // crear archivo con defaults para que el usuario sepa donde editar
-            guardar(DEFAULT_URL, DEFAULT_USER, DEFAULT_PASSWORD);
+            // no autocrear con defaults; retornar defaults solo en memoria para que el wizard lo genere
+            String envPass = resolverPasswordEnv();
+            if (envPass != null) return new String[]{DEFAULT_URL, DEFAULT_USER, envPass};
             return new String[]{DEFAULT_URL, DEFAULT_USER, DEFAULT_PASSWORD};
         }
-        String url = p.getProperty("db.url", DEFAULT_URL).trim();
-        String user = p.getProperty("db.user", DEFAULT_USER).trim();
-        String pass = p.getProperty("db.password", DEFAULT_PASSWORD);
-        // pass puede contener espacios, no trim
+        String url = p.getProperty("db.url", DEFAULT_URL);
+        String user = p.getProperty("db.user", DEFAULT_USER);
+        String rawPass = p.getProperty("db.password", null);
+        url = url == null ? DEFAULT_URL : url.trim();
+        user = user == null ? DEFAULT_USER : user.trim();
         if (url.isEmpty()) url = DEFAULT_URL;
         if (user.isEmpty()) user = DEFAULT_USER;
+
+        String pass;
+        if (rawPass == null) {
+            String envPass = resolverPasswordEnv();
+            pass = envPass != null ? envPass : DEFAULT_PASSWORD;
+        } else {
+            rawPass = rawPass.trim();
+            if (rawPass.isEmpty()) {
+                String envPass = resolverPasswordEnv();
+                pass = envPass != null ? envPass : "";
+            } else if (SecureConfigStore.esCifrado(rawPass)) {
+                String desc = SecureConfigStore.descifrar(rawPass);
+                // si descifrado falla, SecureConfigStore retorna raw; detectar y fallback
+                pass = desc.isEmpty() && !rawPass.isEmpty() ? rawPass : desc;
+                // env override tiene prioridad sobre archivo
+                String envPass = resolverPasswordEnv();
+                if (envPass != null) pass = envPass;
+            } else {
+                // legacy en claro
+                pass = rawPass;
+                String envPass = resolverPasswordEnv();
+                if (envPass != null) pass = envPass;
+            }
+        }
         return new String[]{url, user, pass};
+    }
+
+    private static String resolverPasswordEnv() {
+        String env = System.getenv("DB_PASSWORD");
+        if (env != null && !env.isBlank()) return env;
+        String prop = System.getProperty("db.password");
+        if (prop != null && !prop.isBlank()) return prop;
+        return null;
     }
 
     public static synchronized void guardar(String url, String user, String password) {
         try {
             if (!DIR.exists() && !DIR.mkdirs()) return;
             Properties p = new Properties();
+            if (ARCHIVO.exists()) {
+                try (FileInputStream fis = new FileInputStream(ARCHIVO)) { p.load(fis); } catch (IOException ignored) {}
+            }
             p.setProperty("db.url", url == null || url.isBlank() ? DEFAULT_URL : url.trim());
             p.setProperty("db.user", user == null || user.isBlank() ? DEFAULT_USER : user.trim());
-            p.setProperty("db.password", password == null ? "" : password);
-            try (FileOutputStream fos = new FileOutputStream(ARCHIVO)) {
-                p.store(fos, "Vendex - Conexion PostgreSQL. Editar db.url para BD remota. Ej: jdbc:postgresql://192.168.1.7:5432/dbVendex");
+            // password cifrado via SecureConfigStore; si vacío, eliminar key
+            if (password == null || password.isBlank()) {
+                p.remove("db.password");
+                try (FileOutputStream fos = new FileOutputStream(ARCHIVO)) {
+                    p.store(fos, "Vendex - Conexion PostgreSQL. Editar db.url para BD remota. Ej: jdbc:postgresql://192.168.1.7:5432/dbVendex");
+                }
+            } else {
+                // guardar url/user directos y password cifrado (SecureConfigStore maneja cifrado)
+                // para no duplicar store, escribir manualmente con cifrado
+                String cifrado = SecureConfigStore.cifrar(password);
+                p.setProperty("db.password", cifrado);
+                try (FileOutputStream fos = new FileOutputStream(ARCHIVO)) {
+                    p.store(fos, "Vendex - Conexion PostgreSQL. Editar db.url para BD remota. Ej: jdbc:postgresql://192.168.1.7:5432/dbVendex - db.password cifrado AES/GCM");
+                }
             }
         } catch (IOException ignored) {}
     }
