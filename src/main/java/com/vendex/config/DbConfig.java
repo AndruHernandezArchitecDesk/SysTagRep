@@ -15,15 +15,15 @@ import java.util.Properties;
  * PC host (192.168.1.7):  db.url=jdbc:postgresql://localhost:5432/dbVendex
  * PC cliente (192.168.1.5): db.url=jdbc:postgresql://192.168.1.7:5432/dbVendex
  *
- * <p>Seguridad Fase 1: db.password se guarda cifrado AES/GCM via {@link SecureConfigStore}.
- * Formato en disco: sal:iv:cifrado. Migración lazy desde texto plano.
- * Prioridad password: env DB_PASSWORD &gt; -Ddb.password &gt; archivo cifrado &gt; archivo texto plano (legacy) &gt; default "admin" solo en memoria.</p>
+ * <p>Mínimo privilegio (2026-09-20): rol por defecto {@code app_vendex} con grants explícitos
+ * por tabla/sequence (ver {@code sql/migracion_minimo_privilegio_20260920.sql} y {@code docs/permisos_bd.md}).
+ * Ejecutar migración como {@code postgres} superuser antes de usar {@code app_vendex}.</p>
  *
- * <p>NOTA Fase 1 completa: la clave deriva de {@code Cifrado.SECRETO} embebido.
- * Futuro: derivar de keyring OS (DPAPI/Keychain/libsecret) via java-keyring sin tocar callers.</p>
+ * <p>Seguridad: db.password cifrado AES/GCM keyring (HKDF master key SO) via {@link SecureConfigStore}.
+ * Formato: sal:iv:cifrado. Migración lazy claro/legacy→keyring. Prioridad env DB_PASSWORD &gt; -Ddb.password &gt; archivo &gt; default.</p>
  *
  * <p>Si el archivo no existe NO se autocrea con password por defecto. El wizard de primer arranque
- * ({@link com.vendex.MainApp}) se encarga de generarlo/solicitarlo.</p>
+ * ({@link com.vendex.MainApp}) se encarga de generarlo/solicitarlo con usuario {@code app_vendex}.</p>
  */
 public final class DbConfig {
 
@@ -31,7 +31,10 @@ public final class DbConfig {
     private static final File ARCHIVO = new File(DIR, "db.properties");
 
     public static final String DEFAULT_URL = "jdbc:postgresql://localhost:5432/dbVendex";
-    public static final String DEFAULT_USER = "postgres";
+    /** Rol de aplicación con mínimo privilegio (GRANT explícito por tabla). Migración previa como postgres requerida. */
+    public static final String DEFAULT_USER = "app_vendex";
+    /** Fallback superuser solo para instalaciones legacy sin migrar; rotar a app_vendex cuanto antes. */
+    public static final String LEGACY_DEFAULT_USER = "postgres";
     public static final String DEFAULT_PASSWORD = "admin";
 
     private DbConfig() {}

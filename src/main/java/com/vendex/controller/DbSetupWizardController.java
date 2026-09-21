@@ -82,15 +82,17 @@ public class DbSetupWizardController {
         txtPasswordExistente.setDisable(esNueva);
         txtPasswordExistenteVisible.setDisable(esNueva);
         chkMostrarPassword.setDisable(esNueva);
+        String userForMsg = txtUser.getText() == null || txtUser.getText().trim().isEmpty() ? DbConfig.DEFAULT_USER : txtUser.getText().trim();
         if (esNueva) {
-            lblInfo.setText("Instalación nueva: se generará una contraseña fuerte (24 caracteres). "
-                    + "Guárdala en lugar seguro — la necesitarán las demás PCs que se conecten a esta BD. "
-                    + "Después ejecútala en Postgres: ALTER ROLE " + txtUser.getText().trim() + " WITH PASSWORD '...';");
-            btnGuardar.setText("Generar y Guardar (cifrado)");
+            lblInfo.setText("Instalación nueva (" + userForMsg + " mínimo privilegio): se generará contraseña fuerte 24 chars. "
+                    + "Guárdala — la usarán las demás PCs. Si es primera vez con app_vendex, ejecuta ANTES como postgres:\n"
+                    + "psql -f sql/migracion_minimo_privilegio_20260920.sql\n"
+                    + "Luego: CREATE ROLE " + userForMsg + " WITH LOGIN PASSWORD '***'; o ALTER ROLE " + userForMsg + " WITH PASSWORD '***'; (ver docs/permisos_bd.md)");
+            btnGuardar.setText("Generar y Guardar (cifrado keyring)");
         } else {
-            lblInfo.setText("PC adicional: pega la contraseña ya generada para esta instalación. "
-                    + "Se probará la conexión y se guardará cifrada localmente (AES/GCM). "
-                    + "Recuerda: cada PC cifra con su propia clave local, el archivo no es portable.");
+            lblInfo.setText("PC adicional: pega la contraseña ya generada para " + userForMsg + ". "
+                    + "Se probará la conexión y se guardará cifrada localmente (keyring/fallback, no portable). "
+                    + "Usuario por defecto: " + DbConfig.DEFAULT_USER + " (legado postgres solo si aún no migrado).");
             btnGuardar.setText("Probar y Guardar");
         }
     }

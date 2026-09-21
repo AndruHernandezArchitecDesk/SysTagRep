@@ -15,14 +15,20 @@
 2. Ejecuta Vendex → wizard “Configuración de Base de Datos” aparece antes del login.
 3. Selecciona **Instalación nueva — generar contraseña fuerte** → click “Regenerar” genera 24 chars (`A-Z,a-z,0-9,-_!@#$%&*`, `SecureRandom` en `DbSetupWizardController.java:19`).
 4. Copia con “Copiar” y **guárdala en gestor de contraseñas** (se muestra una sola vez, como API keys cloud).
-5. Completa `JDBC URL` (`jdbc:postgresql://localhost:5432/dbVendex` en host `192.168.1.7`, `jdbc:postgresql://192.168.1.7:5432/dbVendex` en clientes) y usuario (`postgres`).
-6. Click **Probar conexión** → valida `DriverManager.getConnection()` sin exponer password en logs.
-7. **Guardar (cifrado)** → escribe `~/.vendex/db.properties` con `db.password=cifrado`. Actualiza `DatabaseConnection` en memoria.
-8. **En Postgres** (una sola vez, superuser):
-   ```sql
-   ALTER ROLE postgres WITH PASSWORD 'la-generada-24-chars';
+5. Completa `JDBC URL` (`jdbc:postgresql://localhost:5432/dbVendex` en host `192.168.1.7`, `jdbc:postgresql://192.168.1.7:5432/dbVendex` en clientes) y usuario (`app_vendex` mínimo privilegio — `postgres` solo legacy).
+6. Si es primera vez con `app_vendex`, ejecuta **como postgres** el script de privilegios:
+   ```bash
+   psql -h 127.0.0.1 -U postgres -d dbVendex -f src/main/resources/sql/migracion_minimo_privilegio_20260920.sql
+   # ver docs/permisos_bd.md §1-3
    ```
-   o si migras a rol dedicado: `CREATE ROLE app_vendex WITH LOGIN PASSWORD '...';` + `GRANT CONNECT` mínimo (no `ALL`).
+7. Click **Probar conexión** → valida `DriverManager.getConnection()` sin exponer password en logs.
+8. **Guardar (cifrado keyring)** → escribe `~/.vendex/db.properties` con `db.password=cifrado` (no portable). Actualiza `DatabaseConnection` en memoria.
+9. **En Postgres** (una sola vez, superuser):
+   ```sql
+   ALTER ROLE app_vendex WITH PASSWORD 'la-generada-24-chars';
+   -- rotar también postgres después de migrar
+   ALTER ROLE postgres WITH PASSWORD 'nueva-superuser-24';
+   ```
 
 ### PC adicional (mismo local, BD compartida)
 1. Instala Vendex en nueva PC → wizard aparece.
@@ -36,14 +42,16 @@
 - **Rotación recomendada**: ver abajo. No es bloqueante por decisión (punto 1).
 
 ## Rotación de contraseña (todas las PCs)
-> BD es secreto compartido — hay que rotar en **cada PC** del local + Postgres.
+> BD es secreto compartido — hay que rotar en **cada PC** del local + Postgres. Rol por defecto `app_vendex` (ver `docs/permisos_bd.md`).
 
 1. En **una PC** (cualquiera con acceso superuser), genera nueva: borra `~/.vendex/db.properties` o usa wizard → Regenerar → Copiar nueva.
-2. En Postgres:
+2. En Postgres (como `postgres`):
    ```sql
-   ALTER ROLE postgres WITH PASSWORD 'nueva-24-chars';
+   ALTER ROLE app_vendex WITH PASSWORD 'nueva-24-chars';
+   -- opcional rotar superuser
+   -- ALTER ROLE postgres WITH PASSWORD 'nueva-24-super';
    ```
-3. Guarda en esa PC (wizard → Guardar). Verifica login.
+3. Guarda en esa PC (wizard → usuario `app_vendex`, Probar y Guardar cifrado keyring). Verifica login.
 4. **En cada otra PC**:
    - Borra o edita `~/.vendex/db.properties` o simplemente reinicia Vendex y deja que wizard pida nueva → pega la misma `nueva-24-chars` → Probar → Guardar.
    - Alternativa sin wizard: `DB_PASSWORD=nueva-24-chars` env no persiste; mejor usar wizard para cifrar en disco.

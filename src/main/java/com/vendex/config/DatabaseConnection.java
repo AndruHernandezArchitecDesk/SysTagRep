@@ -85,6 +85,19 @@ public class DatabaseConnection {
         return DriverManager.getConnection(url, USER.get(), PASSWORD.get());
     }
 
+    /**
+     * DDL de migración: requiere rol con CREATE (postgres/vendex_migrator), no app_vendex.
+     * Con mínimo privilegio, app_vendex tiene REVOKE CREATE — este método loguea WARNING si
+     * falla por permission denied e ignora IF NOT EXISTS en ejecuciones normales.
+     * Ver sql/migracion_minimo_privilegio_20260920.sql y docs/permisos_bd.md
+     */
+    private static void logIfPermissionDenied(SQLException e, String contexto) {
+        String msg = e.getMessage() == null ? "" : e.getMessage().toLowerCase();
+        if (msg.contains("permission denied") || msg.contains("must be owner") || msg.contains("not allowed")) {
+            LOG.log(Level.WARNING, contexto + " requiere rol migrador (postgres) — app_vendex sin CREATE: " + e.getMessage());
+        }
+    }
+
     public static void ensureNotaCreditoSchema() {
         String[] ddls = new String[]{
             "CREATE TABLE IF NOT EXISTS nota_credito_registro ("+
@@ -126,8 +139,8 @@ public class DatabaseConnection {
               "CREATE INDEX IF NOT EXISTS idx_nota_debito_motivo ON nota_debito_motivo(nota_debito_id)"
           };
         try (Connection con = getConnection(); java.sql.Statement st = con.createStatement()) {
-            for (String sql : ddls) try { st.execute(sql); } catch (SQLException ignore) {}
-        } catch (SQLException ignore) {}
+            for (String sql : ddls) try { st.execute(sql); } catch (SQLException e) { logIfPermissionDenied(e, "ensureNotaCreditoSchema"); }
+        } catch (SQLException e) { logIfPermissionDenied(e, "ensureNotaCreditoSchema conexión"); }
     }
 
     public static void ensureGuiaRemisionSchema() {
@@ -156,8 +169,8 @@ public class DatabaseConnection {
             "CREATE INDEX IF NOT EXISTS idx_guia_detalle_dest ON guia_remision_detalle(guia_remision_destinatario_id)"
         };
         try (Connection con = getConnection(); java.sql.Statement st = con.createStatement()) {
-            for (String sql : ddls) try { st.execute(sql); } catch (SQLException ignore) {}
-        } catch (SQLException ignore) {}
+            for (String sql : ddls) try { st.execute(sql); } catch (SQLException e) { logIfPermissionDenied(e, "ensureGuiaRemisionSchema"); }
+        } catch (SQLException e) { logIfPermissionDenied(e, "ensureGuiaRemisionSchema conexión"); }
     }
 
     public static void ensureRetencionSchema() {
@@ -193,8 +206,8 @@ public class DatabaseConnection {
             "INSERT INTO tabla_retencion (codigo_retencion, descripcion, tipo, porcentaje, vigente_desde) SELECT '322','Seguros y reaseguros','1',1.75,'2026-03-01' WHERE NOT EXISTS (SELECT 1 FROM tabla_retencion WHERE codigo_retencion='322' AND vigente_desde='2026-03-01')"
         };
         try (Connection con = getConnection(); java.sql.Statement st = con.createStatement()) {
-            for (String sql : ddls) try { st.execute(sql); } catch (SQLException ignore) {}
-        } catch (SQLException ignore) {}
+            for (String sql : ddls) try { st.execute(sql); } catch (SQLException e) { logIfPermissionDenied(e, "ensureRetencionSchema"); }
+        } catch (SQLException e) { logIfPermissionDenied(e, "ensureRetencionSchema conexión"); }
     }
 
     public static void ensureCertificadoEstadoSchema() {
@@ -203,8 +216,8 @@ public class DatabaseConnection {
             "CREATE INDEX IF NOT EXISTS idx_certificado_ruta ON certificado_estado(ruta_p12)"
         };
         try (Connection con = getConnection(); java.sql.Statement st = con.createStatement()) {
-            for (String sql : ddls) try { st.execute(sql); } catch (SQLException ignore) {}
-        } catch (SQLException ignore) {}
+            for (String sql : ddls) try { st.execute(sql); } catch (SQLException e) { logIfPermissionDenied(e, "ensureCertificadoEstadoSchema"); }
+        } catch (SQLException e) { logIfPermissionDenied(e, "ensureCertificadoEstadoSchema conexión"); }
     }
 
     public static void ensureConfiguracionEmailSchema() {
@@ -218,8 +231,8 @@ public class DatabaseConnection {
             "CREATE UNIQUE INDEX IF NOT EXISTS idx_config_email_unica_activa ON configuracion_email(activo) WHERE activo=true"
         };
         try (Connection con = getConnection(); java.sql.Statement st = con.createStatement()) {
-            for (String sql : ddls) try { st.execute(sql); } catch (SQLException ignore) {}
-        } catch (SQLException ignore) {}
+            for (String sql : ddls) try { st.execute(sql); } catch (SQLException e) { logIfPermissionDenied(e, "ensureConfiguracionEmailSchema"); }
+        } catch (SQLException e) { logIfPermissionDenied(e, "ensureConfiguracionEmailSchema conexión"); }
         // HSQLDB fallback (SERIAL -> IDENTITY, partial index no soportado)
         try (Connection con = getConnection(); java.sql.Statement st = con.createStatement()) {
             st.execute("CREATE TABLE IF NOT EXISTS configuracion_email ("+
@@ -228,7 +241,7 @@ public class DatabaseConnection {
                     "nombre_remitente VARCHAR(150) NOT NULL, usuario_smtp VARCHAR(150) NOT NULL, "+
                     "password_cifrado TEXT NOT NULL, reply_to VARCHAR(150), activo BOOLEAN NOT NULL DEFAULT true, "+
                     "actualizado_en TIMESTAMP NOT NULL DEFAULT now(), actualizado_por INTEGER)");
-        } catch (SQLException ignore) {}
+        } catch (SQLException e) { logIfPermissionDenied(e, "ensureConfiguracionEmailSchema hsqldb fallback"); }
         // seed inicial con credencial hardcodeada previa si tabla vacía (no corta envíos el día del deploy)
         try (Connection con = getConnection(); java.sql.Statement st = con.createStatement();
              java.sql.ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM configuracion_email WHERE activo=true")) {
@@ -247,9 +260,9 @@ public class DatabaseConnection {
                         ps.setString(7, pwdCifrado);
                         ps.executeUpdate();
                     }
-                } catch (Exception ignore) {}
+                } catch (Exception e) { logIfPermissionDenied(new SQLException(e.getMessage()), "ensureConfiguracionEmailSchema seed"); }
             }
-        } catch (SQLException ignore) {}
+        } catch (SQLException e) { logIfPermissionDenied(e, "ensureConfiguracionEmailSchema seed conexión"); }
     }
 
     public static void setConnectionParams(String url, String user, String password) {
