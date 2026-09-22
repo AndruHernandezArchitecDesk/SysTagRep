@@ -59,10 +59,12 @@ No mover `config/DatabaseConnection.java:88` `ensure*Schema` aún — se tolera 
 | 38 | `tabla_retencion` | L | `SELECT` | `TablaRetencionDAO` solo lectura (`303/312/725…`) |
 | 39 | `certificado_estado` | Se/A | `SELECT,INSERT,UPDATE` | `CertificadoEstadoDAO` |
 | 40 | `configuracion_email` | Se | `SELECT,INSERT,UPDATE` | `ConfiguracionEmailDAO` (excluida de keyring, fila compartida) |
-| 41 | `usuarios` | Se | `SELECT,INSERT,UPDATE,DELETE` | `UsuarioDAO` (`DELETE WHERE id`) |
+| 41 | `usuarios` | Se | `SELECT,INSERT,UPDATE,DELETE` | `UsuarioDAO` (`DELETE`, `UPDATE intentos_fallidos/bloqueado_hasta` anti fuerza bruta) |
 | 42 | `empresa` | Se/L | `SELECT,UPDATE` | `EmpresaDAO` solo `SELECT/UPDATE` (sin `INSERT/DELETE`) |
+| 43 | `login_intento_log` | A | `SELECT,INSERT` | `LoginIntentoLogDAO` solo `INSERT/SELECT` (nunca `UPDATE/DELETE`) |
+| 44 | `configuracion` | A | `SELECT` | `PoliticaBloqueo` (`bloqueo.*`), `GRANT SELECT` a `app_vendex`; `UPDATE` solo migrador/admin |
 
-**31 SERIAL → 31 sequences** `*_id_seq`: `GRANT USAGE, SELECT ON ALL SEQUENCES` necesario para `INSERT` sin `id` (`nextval`). Sin esto `INSERT` falla `permission denied for sequence`.
+**31 SERIAL → 31 sequences + `login_intento_log_id_seq`**: `GRANT USAGE, SELECT ON ALL SEQUENCES` necesario para `INSERT` sin `id` (`nextval`). Sin esto `INSERT` falla `permission denied for sequence`.
 
 **Nunca otorgado**: `TRUNCATE` (solo `postgres` para `sql/reset_test_data.sql:15`), `CREATE ON SCHEMA public` (solo migrador).
 

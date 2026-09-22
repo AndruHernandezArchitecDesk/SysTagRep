@@ -14,6 +14,10 @@ public class Usuario {
     private LocalDateTime ultimo_login;
     private boolean estado;
     private String permisos;
+    // anti fuerza bruta (Fase 4)
+    private int intentosFallidos;
+    private LocalDateTime ultimoIntentoFallido;
+    private LocalDateTime bloqueadoHasta;
 
     public Usuario() {}
 
@@ -59,4 +63,13 @@ public class Usuario {
 
     public String getPermisos() { return permisos; }
     public void setPermisos(String permisos) { this.permisos = permisos; }
+
+    public int getIntentosFallidos() { return intentosFallidos; }
+    public void setIntentosFallidos(int intentosFallidos) { this.intentosFallidos = intentosFallidos; }
+
+    public LocalDateTime getUltimoIntentoFallido() { return ultimoIntentoFallido; }
+    public void setUltimoIntentoFallido(LocalDateTime ultimoIntentoFallido) { this.ultimoIntentoFallido = ultimoIntentoFallido; }
+
+    public LocalDateTime getBloqueadoHasta() { return bloqueadoHasta; }
+    public void setBloqueadoHasta(LocalDateTime bloqueadoHasta) { this.bloqueadoHasta = bloqueadoHasta; }
 }

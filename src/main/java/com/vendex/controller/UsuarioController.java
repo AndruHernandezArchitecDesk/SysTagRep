@@ -277,8 +277,10 @@ public class UsuarioController implements Initializable {
         colAcciones.setCellFactory(param -> new TableCell<>() {
             private final FontIcon iconEditar = new FontIcon(FontAwesomeSolid.EDIT);
             private final FontIcon iconEliminar = new FontIcon(FontAwesomeSolid.TRASH);
+            private final FontIcon iconDesbloquear = new FontIcon(FontAwesomeSolid.UNLOCK);
             private final Button btnActualizar = new Button();
             private final Button btnEliminar = new Button();
+            private final Button btnDesbloquear = new Button();
             private final HBox hbox = new HBox(10);
 
             {
@@ -286,28 +288,63 @@ public class UsuarioController implements Initializable {
                 iconEditar.setIconColor(Color.DODGERBLUE);
                 iconEliminar.setIconSize(16);
                 iconEliminar.setIconColor(Color.RED);
+                iconDesbloquear.setIconSize(16);
+                iconDesbloquear.setIconColor(Color.ORANGE);
 
                 btnActualizar.setGraphic(iconEditar);
                 btnEliminar.setGraphic(iconEliminar);
+                btnDesbloquear.setGraphic(iconDesbloquear);
                 btnActualizar.setStyle("-fx-background-color: transparent");
                 btnEliminar.setStyle("-fx-background-color: transparent");
+                btnDesbloquear.setStyle("-fx-background-color: transparent");
                 btnActualizar.setTooltip(new Tooltip("Actualizar"));
                 btnEliminar.setTooltip(new Tooltip("Eliminar"));
+                btnDesbloquear.setTooltip(new Tooltip("Desbloquear cuenta (solo ADMIN)"));
 
                 hbox.setAlignment(Pos.CENTER);
-                hbox.getChildren().addAll(btnActualizar, btnEliminar);
 
                 btnActualizar.setOnAction(e -> cargarFormulario(getTableView().getItems().get(getIndex())));
                 btnEliminar.setOnAction(e -> eliminarUsuario(getTableView().getItems().get(getIndex())));
+                btnDesbloquear.setOnAction(e -> desbloquearUsuario(getTableView().getItems().get(getIndex())));
             }
 
             @Override
             protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
-                setGraphic(empty ? null : hbox);
+                if (empty) { setGraphic(null); return; }
+                Usuario u = getTableView().getItems().get(getIndex());
+                boolean bloqueada = u.getBloqueadoHasta() != null && u.getBloqueadoHasta().isAfter(LocalDateTime.now());
+                boolean esAdmin = LoginController.usuarioAutenticado != null && "ADMINISTRADOR".equals(LoginController.usuarioAutenticado.getRol());
+                hbox.getChildren().clear();
+                hbox.getChildren().addAll(btnActualizar, btnEliminar);
+                if (bloqueada && esAdmin) hbox.getChildren().add(btnDesbloquear);
+                // tooltip con info de bloqueo
+                if (bloqueada) {
+                    long mins = com.vendex.util.PoliticaBloqueo.minutosRestantes(u.getBloqueadoHasta());
+                    btnDesbloquear.setTooltip(new Tooltip("Desbloquear (" + u.getIntentosFallidos() + " fallos, bloqueada " + mins + " min)"));
+                }
+                setGraphic(hbox);
             }
         });
         colAcciones.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(null));
+    }
+
+    private void desbloquearUsuario(Usuario u) {
+        if (LoginController.usuarioAutenticado == null || !"ADMINISTRADOR".equals(LoginController.usuarioAutenticado.getRol())) {
+            new Alert(Alert.AlertType.WARNING, "Solo un ADMINISTRADOR puede desbloquear cuentas.").showAndWait();
+            return;
+        }
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Desbloquear cuenta");
+        confirm.setHeaderText(null);
+        confirm.setContentText("¿Desbloquear al usuario '" + u.getUsername() + "'? Se reseteará intentos y bloqueo.");
+        if (confirm.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK) {
+            dao.desbloquear(u.getId());
+            // log auditoría
+            logDAO.guardar("UsuarioController", "desbloquear", "Desbloqueo manual usuario " + u.getUsername() + " por admin " + LoginController.usuarioAutenticado.getUsername(), null);
+            cargarDatos();
+            new Alert(Alert.AlertType.INFORMATION, "Cuenta desbloqueada.").showAndWait();
+        }
     }
 
     private void eliminarUsuario(Usuario u) {

@@ -38,6 +38,101 @@ public class UsuarioDAO {
         return null;
     }
 
+    // --- Anti fuerza bruta ---
+
+    public Usuario buscarPorUsername(String username) {
+        String sql = "SELECT * FROM usuarios WHERE username=? FOR UPDATE";
+        // HSQLDB no soporta FOR UPDATE con todos los tipos; fallback sin lock
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, username);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapear(rs);
+            }
+        } catch (SQLException e) {
+            // fallback sin FOR UPDATE
+            try (Connection con = DatabaseConnection.getConnection();
+                 PreparedStatement ps2 = con.prepareStatement("SELECT * FROM usuarios WHERE username=?")) {
+                ps2.setString(1, username);
+                try (ResultSet rs = ps2.executeQuery()) {
+                    if (rs.next()) return mapear(rs);
+                }
+            } catch (SQLException e2) { e2.printStackTrace(); }
+        }
+        return null;
+    }
+
+    public boolean verificarPassword(Usuario u, String passwordPlano) {
+        String hash = hashPassword(passwordPlano);
+        String stored = u.getPassword();
+        if (stored == null) return false;
+        return stored.equals(hash);
+    }
+
+    public void incrementarIntentoFallido(int id) {
+        String sql = "UPDATE usuarios SET intentos_fallidos = intentos_fallidos + 1, ultimo_intento_fallido = NOW() WHERE id=?";
+        // HSQLDB: NOW() -> CURRENT_TIMESTAMP
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            try (Connection con = DatabaseConnection.getConnection();
+                 PreparedStatement ps = con.prepareStatement(
+                         "UPDATE usuarios SET intentos_fallidos = intentos_fallidos + 1, ultimo_intento_fallido = CURRENT_TIMESTAMP WHERE id=?")) {
+                ps.setInt(1, id);
+                ps.executeUpdate();
+            } catch (SQLException e2) { e2.printStackTrace(); }
+        }
+    }
+
+    public void bloquear(int id, java.time.LocalDateTime hasta) {
+        String sql = "UPDATE usuarios SET bloqueado_hasta=? WHERE id=?";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setTimestamp(1, hasta == null ? null : java.sql.Timestamp.valueOf(hasta));
+            ps.setInt(2, id);
+            ps.executeUpdate();
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
+
+    public void resetearIntentos(int id) {
+        String sql = "UPDATE usuarios SET intentos_fallidos=0, bloqueado_hasta=NULL, ultimo_intento_fallido=NULL, ultimo_login=NOW() WHERE id=?";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            try (Connection con = DatabaseConnection.getConnection();
+                 PreparedStatement ps = con.prepareStatement(
+                         "UPDATE usuarios SET intentos_fallidos=0, bloqueado_hasta=NULL, ultimo_intento_fallido=NULL, ultimo_login=CURRENT_TIMESTAMP WHERE id=?")) {
+                ps.setInt(1, id);
+                ps.executeUpdate();
+            } catch (SQLException e2) { e2.printStackTrace(); }
+        }
+    }
+
+    public void resetearSiVentanaExpirada(int id, java.time.LocalDateTime ultimoIntento, int ventanaMinutos) {
+        if (ultimoIntento == null) return;
+        if (ultimoIntento.isBefore(java.time.LocalDateTime.now().minusMinutes(ventanaMinutos))) {
+            String sql = "UPDATE usuarios SET intentos_fallidos=0, bloqueado_hasta=NULL WHERE id=?";
+            try (Connection con = DatabaseConnection.getConnection();
+                 PreparedStatement ps = con.prepareStatement(sql)) {
+                ps.setInt(1, id);
+                ps.executeUpdate();
+            } catch (SQLException e) { e.printStackTrace(); }
+        }
+    }
+
+    public void desbloquear(int id) {
+        String sql = "UPDATE usuarios SET intentos_fallidos=0, bloqueado_hasta=NULL, ultimo_intento_fallido=NULL WHERE id=?";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            ps.executeUpdate();
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
+
     public List<Usuario> listar() {
         List<Usuario> lista = new ArrayList<>();
         String sql = "SELECT * FROM usuarios ORDER BY id ASC";
@@ -150,6 +245,10 @@ public class UsuarioDAO {
         u.setUltimo_login(rs.getTimestamp("ultimo_login") != null ? rs.getTimestamp("ultimo_login").toLocalDateTime() : null);
         u.setEstado(rs.getBoolean("activo"));
         u.setPermisos(rs.getString("permisos"));
+        // columnas anti fuerza bruta (pueden no existir en instalaciones viejas)
+        try { u.setIntentosFallidos(rs.getInt("intentos_fallidos")); } catch (SQLException ignored) { u.setIntentosFallidos(0); }
+        try { java.sql.Timestamp t = rs.getTimestamp("ultimo_intento_fallido"); u.setUltimoIntentoFallido(t != null ? t.toLocalDateTime() : null); } catch (SQLException ignored) {}
+        try { java.sql.Timestamp t = rs.getTimestamp("bloqueado_hasta"); u.setBloqueadoHasta(t != null ? t.toLocalDateTime() : null); } catch (SQLException ignored) {}
         return u;
     }
 }

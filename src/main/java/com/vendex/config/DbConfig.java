@@ -15,15 +15,16 @@ import java.util.Properties;
  * PC host (192.168.1.7):  db.url=jdbc:postgresql://localhost:5432/dbVendex
  * PC cliente (192.168.1.5): db.url=jdbc:postgresql://192.168.1.7:5432/dbVendex
  *
- * <p>Mínimo privilegio (2026-09-20): rol por defecto {@code app_vendex} con grants explícitos
+ * <p>Mínimo privilegio (2026-09-20): rol recomendado {@code app_vendex} con grants explícitos
  * por tabla/sequence (ver {@code sql/migracion_minimo_privilegio_20260920.sql} y {@code docs/permisos_bd.md}).
- * Ejecutar migración como {@code postgres} superuser antes de usar {@code app_vendex}.</p>
+ * Ejecutar migración como {@code postgres} y luego configurar wizard con {@code app_vendex}.
+ * DEFAULT_USER sigue siendo {@code postgres} por compatibilidad con instalaciones legacy.</p>
  *
  * <p>Seguridad: db.password cifrado AES/GCM keyring (HKDF master key SO) via {@link SecureConfigStore}.
  * Formato: sal:iv:cifrado. Migración lazy claro/legacy→keyring. Prioridad env DB_PASSWORD &gt; -Ddb.password &gt; archivo &gt; default.</p>
  *
  * <p>Si el archivo no existe NO se autocrea con password por defecto. El wizard de primer arranque
- * ({@link com.vendex.MainApp}) se encarga de generarlo/solicitarlo con usuario {@code app_vendex}.</p>
+ * ({@link com.vendex.MainApp}) se encarga de generarlo/solicitarlo (por defecto {@code postgres}, cambiar a {@code app_vendex} tras migración).</p>
  */
 public final class DbConfig {
 
@@ -31,8 +32,10 @@ public final class DbConfig {
     private static final File ARCHIVO = new File(DIR, "db.properties");
 
     public static final String DEFAULT_URL = "jdbc:postgresql://localhost:5432/dbVendex";
-    /** Rol de aplicación con mínimo privilegio (GRANT explícito por tabla). Migración previa como postgres requerida. */
-    public static final String DEFAULT_USER = "app_vendex";
+    /** Usuario por defecto para instalaciones legacy (compatibilidad). Para mínimo privilegio ejecutar sql/migracion_minimo_privilegio_20260920.sql y luego configurar wizard con app_vendex. */
+    public static final String DEFAULT_USER = "postgres";
+    /** Rol con mínimo privilegio (GRANT explícito por tabla). Requiere migración previa como postgres. */
+    public static final String APP_VENDEX_USER = "app_vendex";
     /** Fallback superuser solo para instalaciones legacy sin migrar; rotar a app_vendex cuanto antes. */
     public static final String LEGACY_DEFAULT_USER = "postgres";
     public static final String DEFAULT_PASSWORD = "admin";

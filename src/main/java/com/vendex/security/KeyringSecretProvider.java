@@ -27,9 +27,9 @@ public class KeyringSecretProvider implements SecretProvider {
     public boolean isAvailable() {
         if (Boolean.getBoolean("vendex.keyring.disabled")) return false;
         String os = System.getProperty("os.name", "").toLowerCase();
-        // en linux headless sin DISPLAY y sin libsecret, fallback es suficiente (decisión 2)
-        // intentar de todos modos, pero con timeout
-        return true;
+        // fallback es suficiente en Linux (decisión 2); solo usar keyring en Windows/macOS donde es estable
+        if (os.contains("linux")) return false;
+        return os.contains("win") || os.contains("mac") || os.contains("darwin");
     }
 
     @Override
