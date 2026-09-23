@@ -101,6 +101,7 @@ public class RetencionService {
                                               Integer proveedorId,
                                               String ambienteSri, String rutaP12, String claveP12,
                                               File directorioEscritorio, int usuarioId) throws Exception {
+        com.vendex.util.SesionActual.exigirPermiso("RETENCION_EMITIR");
         if (docsInput == null || docsInput.isEmpty()) throw new IllegalArgumentException("Debe agregar al menos un documento sustento.");
         if (periodoFiscal == null || !periodoFiscal.matches("\\d{2}/\\d{4}")) throw new IllegalArgumentException("Periodo fiscal debe ser MM/YYYY.");
         if (identificacionSujeto == null || identificacionSujeto.trim().isEmpty()) throw new IllegalArgumentException("Identificación sujeto retenido obligatoria.");

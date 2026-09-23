@@ -201,6 +201,9 @@ public class UsuarioController implements Initializable {
     @FXML
     private void guardar() {
         try {
+            try { com.vendex.util.SesionActual.exigirPermiso("USUARIO_GESTIONAR"); } catch (com.vendex.exception.SinPermisoException e) {
+                new Alert(Alert.AlertType.ERROR, e.getMessage()).showAndWait(); return;
+            }
             if (!validarCampos()) return;
 
             Usuario u = new Usuario();
@@ -210,6 +213,11 @@ public class UsuarioController implements Initializable {
             u.setUsername(txtUsuario.getText().trim());
             u.setPassword(txtPassword.getText());
             u.setRol(cmbRol.getValue());
+            // mapear rol string → rol_id + tope
+            try {
+                com.vendex.model.Rol rolEnt = new com.vendex.dao.RolDAO().obtenerPorNombre(cmbRol.getValue());
+                if (rolEnt != null) { u.setRolId(rolEnt.getId()); u.setLimiteDescuentoPct(rolEnt.getLimiteDescuentoPct()); }
+            } catch (Exception ignored) {}
             u.setEstado("ACTIVO".equals(cmbEstado.getValue()));
 
             String permisosStr = listaPermisos.stream()
@@ -348,6 +356,9 @@ public class UsuarioController implements Initializable {
     }
 
     private void eliminarUsuario(Usuario u) {
+        try { com.vendex.util.SesionActual.exigirPermiso("USUARIO_GESTIONAR"); } catch (com.vendex.exception.SinPermisoException e) {
+            new Alert(Alert.AlertType.ERROR, e.getMessage()).showAndWait(); return;
+        }
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Confirmar eliminación");
         alert.setHeaderText(null);
@@ -355,6 +366,7 @@ public class UsuarioController implements Initializable {
 
         if (alert.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK) {
             dao.eliminar(u.getId());
+            try { new com.vendex.dao.AuditoriaAccionDAO().registrar(com.vendex.util.SesionActual.getUsuario().getId(),"USUARIO_GESTIONAR","PERMITIDO","Eliminar usuario "+u.getUsername()); } catch(Exception ignored){}
             cargarDatos();
         }
     }

@@ -72,4 +72,12 @@ public class Usuario {
 
     public LocalDateTime getBloqueadoHasta() { return bloqueadoHasta; }
     public void setBloqueadoHasta(LocalDateTime bloqueadoHasta) { this.bloqueadoHasta = bloqueadoHasta; }
+
+    // permisos granulares
+    private int rolId;
+    private java.math.BigDecimal limiteDescuentoPct;
+    public int getRolId() { return rolId; }
+    public void setRolId(int rolId) { this.rolId = rolId; }
+    public java.math.BigDecimal getLimiteDescuentoPct() { return limiteDescuentoPct; }
+    public void setLimiteDescuentoPct(java.math.BigDecimal limiteDescuentoPct) { this.limiteDescuentoPct = limiteDescuentoPct; }
 }

@@ -19,6 +19,7 @@ public class CajaService {
     private final CajaMovimientoDAO movimientoDAO = new CajaMovimientoDAO();
 
     public int abrirCaja(int usuarioId, BigDecimal montoInicial, String observaciones) {
+        com.vendex.util.SesionActual.exigirPermiso("CAJA_ABRIR");
         CajaSesion abierta = sesionDAO.obtenerAbierta();
         if (abierta != null) {
             throw new IllegalStateException("Ya existe una sesión de caja abierta (ID: " + abierta.getId() + ")");
@@ -28,6 +29,7 @@ public class CajaService {
     }
 
     public boolean cerrarCaja(int sesionId, BigDecimal montoFisico, String observaciones) {
+        com.vendex.util.SesionActual.exigirPermiso("CAJA_CERRAR");
         CajaSesion s = sesionDAO.obtenerPorId(sesionId);
         if (s == null || !"ABIERTA".equals(s.getEstado())) {
             throw new IllegalStateException("La sesión no existe o ya está cerrada");

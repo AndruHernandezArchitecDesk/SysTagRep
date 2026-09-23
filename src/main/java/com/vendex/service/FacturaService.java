@@ -49,6 +49,10 @@ public class FacturaService {
                                            String ambienteSri, String rutaP12, String claveP12,
                                            File directorioEscritorio,
                                            BigDecimal descuentoPct) throws Exception {
+        com.vendex.util.SesionActual.exigirPermiso("FACTURA_EMITIR");
+        if (descuentoPct != null && descuentoPct.compareTo(BigDecimal.ZERO) > 0) {
+            com.vendex.util.SesionActual.exigirDescuento(descuentoPct);
+        }
         if (cliente == null) {
             throw new IllegalArgumentException("Debe seleccionar un cliente.");
         }

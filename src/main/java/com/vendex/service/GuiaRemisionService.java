@@ -113,6 +113,7 @@ public class GuiaRemisionService {
                                                     LocalDate fechaIniTransporte, LocalDate fechaFinTransporte,
                                                     String ambienteSri, String rutaP12, String claveP12,
                                                     File directorioEscritorio, int usuarioId) throws Exception {
+        com.vendex.util.SesionActual.exigirPermiso("GUIA_REMISION_EMITIR");
         if (destinatariosInput == null || destinatariosInput.isEmpty()) throw new IllegalArgumentException("Debe agregar al menos un destinatario.");
         if (dirPartida == null || dirPartida.trim().isEmpty()) throw new IllegalArgumentException("Dirección de partida es obligatoria.");
         if (razonSocialTransportista == null || razonSocialTransportista.trim().isEmpty()) throw new IllegalArgumentException("Razón social del transportista es obligatoria.");

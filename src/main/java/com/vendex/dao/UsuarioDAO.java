@@ -165,8 +165,8 @@ public class UsuarioDAO {
 
     public int guardar(Usuario u) {
         String hash = hashPassword(u.getPassword());
-        String sql = "INSERT INTO usuarios (nombre, apellido, email, username, password, password_hash, rol, activo, permisos, fecha_creacion) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+        String sql = "INSERT INTO usuarios (nombre, apellido, email, username, password, password_hash, rol, activo, permisos, fecha_creacion, rol_id, limite_descuento_pct) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?)";
         try (Connection con = new DatabaseConnection().getConnection();
              PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, u.getNombre());
@@ -178,46 +178,77 @@ public class UsuarioDAO {
             ps.setString(7, u.getRol());
             ps.setBoolean(8, u.isEstado());
             ps.setString(9, u.getPermisos());
+            if (u.getRolId() != 0) ps.setInt(10, u.getRolId()); else ps.setNull(10, Types.INTEGER);
+            if (u.getLimiteDescuentoPct() != null) ps.setBigDecimal(11, u.getLimiteDescuentoPct()); else ps.setNull(11, Types.NUMERIC);
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 if (keys.next()) return keys.getInt(1);
             }
+            // fallback HSQLDB sin rol_id
         } catch (SQLException e) {
-            e.printStackTrace();
+            // fallback sin columnas nuevas (instalaciones viejas)
+            try {
+                String fallback = "INSERT INTO usuarios (nombre, apellido, email, username, password, password_hash, rol, activo, permisos, fecha_creacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                try (Connection con = DatabaseConnection.getConnection();
+                     PreparedStatement ps = con.prepareStatement(fallback, Statement.RETURN_GENERATED_KEYS)) {
+                    ps.setString(1, u.getNombre()); ps.setString(2, u.getApellido()); ps.setString(3, u.getCorreo());
+                    ps.setString(4, u.getUsername()); ps.setString(5, hash); ps.setString(6, hash);
+                    ps.setString(7, u.getRol()); ps.setBoolean(8, u.isEstado()); ps.setString(9, u.getPermisos());
+                    ps.executeUpdate();
+                    try (ResultSet keys = ps.getGeneratedKeys()) { if (keys.next()) return keys.getInt(1); }
+                }
+            } catch (SQLException e2) { e2.printStackTrace(); }
         }
         return 0;
     }
 
     public void actualizar(Usuario u) {
         String hash = u.getPassword() != null && !u.getPassword().isEmpty() ? hashPassword(u.getPassword()) : null;
-        String sql;
-        if (hash != null) {
-            sql = "UPDATE usuarios SET nombre=?, apellido=?, email=?, username=?, password=?, password_hash=?, rol=?, activo=?, permisos=? WHERE id=?";
-        } else {
-            sql = "UPDATE usuarios SET nombre=?, apellido=?, email=?, username=?, rol=?, activo=?, permisos=? WHERE id=?";
-        }
-        try (Connection con = new DatabaseConnection().getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        // intentar con rol_id / limite_descuento_pct
+        String sqlConRol = hash != null
+                ? "UPDATE usuarios SET nombre=?, apellido=?, email=?, username=?, password=?, password_hash=?, rol=?, activo=?, permisos=?, rol_id=?, limite_descuento_pct=? WHERE id=?"
+                : "UPDATE usuarios SET nombre=?, apellido=?, email=?, username=?, rol=?, activo=?, permisos=?, rol_id=?, limite_descuento_pct=? WHERE id=?";
+        String sqlLegacy = hash != null
+                ? "UPDATE usuarios SET nombre=?, apellido=?, email=?, username=?, password=?, password_hash=?, rol=?, activo=?, permisos=? WHERE id=?"
+                : "UPDATE usuarios SET nombre=?, apellido=?, email=?, username=?, rol=?, activo=?, permisos=? WHERE id=?";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sqlConRol)) {
             ps.setString(1, u.getNombre());
             ps.setString(2, u.getApellido());
             ps.setString(3, u.getCorreo());
             ps.setString(4, u.getUsername());
+            int idx = 5;
             if (hash != null) {
-                ps.setString(5, hash);
-                ps.setString(6, hash);
-                ps.setString(7, u.getRol());
-                ps.setBoolean(8, u.isEstado());
-                ps.setString(9, u.getPermisos());
-                ps.setInt(10, u.getId());
-            } else {
-                ps.setString(5, u.getRol());
-                ps.setBoolean(6, u.isEstado());
-                ps.setString(7, u.getPermisos());
-                ps.setInt(8, u.getId());
+                ps.setString(idx++, hash);
+                ps.setString(idx++, hash);
             }
+            ps.setString(idx++, u.getRol());
+            ps.setBoolean(idx++, u.isEstado());
+            ps.setString(idx++, u.getPermisos());
+            if (u.getRolId() != 0) ps.setInt(idx++, u.getRolId()); else ps.setNull(idx++, Types.INTEGER);
+            if (u.getLimiteDescuentoPct() != null) ps.setBigDecimal(idx++, u.getLimiteDescuentoPct()); else ps.setNull(idx++, Types.NUMERIC);
+            ps.setInt(idx, u.getId());
             ps.executeUpdate();
+            return;
         } catch (SQLException e) {
-            e.printStackTrace();
+            // fallback legacy sin rol_id
+            try (Connection con = DatabaseConnection.getConnection();
+                 PreparedStatement ps = con.prepareStatement(sqlLegacy)) {
+                ps.setString(1, u.getNombre());
+                ps.setString(2, u.getApellido());
+                ps.setString(3, u.getCorreo());
+                ps.setString(4, u.getUsername());
+                int idx = 5;
+                if (hash != null) {
+                    ps.setString(idx++, hash);
+                    ps.setString(idx++, hash);
+                }
+                ps.setString(idx++, u.getRol());
+                ps.setBoolean(idx++, u.isEstado());
+                ps.setString(idx++, u.getPermisos());
+                ps.setInt(idx, u.getId());
+                ps.executeUpdate();
+            } catch (SQLException e2) { e2.printStackTrace(); }
         }
     }
 
@@ -249,6 +280,8 @@ public class UsuarioDAO {
         try { u.setIntentosFallidos(rs.getInt("intentos_fallidos")); } catch (SQLException ignored) { u.setIntentosFallidos(0); }
         try { java.sql.Timestamp t = rs.getTimestamp("ultimo_intento_fallido"); u.setUltimoIntentoFallido(t != null ? t.toLocalDateTime() : null); } catch (SQLException ignored) {}
         try { java.sql.Timestamp t = rs.getTimestamp("bloqueado_hasta"); u.setBloqueadoHasta(t != null ? t.toLocalDateTime() : null); } catch (SQLException ignored) {}
+        try { u.setRolId(rs.getInt("rol_id")); if (rs.wasNull()) u.setRolId(0); } catch (SQLException ignored) {}
+        try { u.setLimiteDescuentoPct(rs.getBigDecimal("limite_descuento_pct")); } catch (SQLException ignored) {}
         return u;
     }
 }

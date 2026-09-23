@@ -98,6 +98,7 @@ public class NotaDebitoService {
     public ResultadoNotaDebito emitirNotaDebito(int facturaRegistroId, List<MotivoNDInput> motivosInput,
                                                   String formaPago, String ambienteSri, String rutaP12, String claveP12,
                                                   File directorioEscritorio, int usuarioId) throws Exception {
+        com.vendex.util.SesionActual.exigirPermiso("NOTA_DEBITO_EMITIR");
         if (motivosInput == null || motivosInput.isEmpty()) throw new IllegalArgumentException("Debe agregar al menos un motivo.");
         for (MotivoNDInput m : motivosInput) {
             if (m.valor == null || m.valor.compareTo(BigDecimal.ZERO) <= 0)

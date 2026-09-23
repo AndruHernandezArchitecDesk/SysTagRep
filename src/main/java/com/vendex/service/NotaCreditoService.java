@@ -71,6 +71,8 @@ public class NotaCreditoService {
                                                   String motivo, String tipoMotivo, boolean reingresaStock,
                                                   String ambienteSri, String rutaP12, String claveP12,
                                                   File directorioEscritorio, int usuarioId) throws Exception {
+        if ("ANULACION".equals(tipoMotivo)) com.vendex.util.SesionActual.exigirPermiso("FACTURA_ANULAR");
+        else com.vendex.util.SesionActual.exigirPermiso("NOTA_CREDITO_EMITIR");
         if (motivo == null || motivo.trim().isEmpty()) throw new IllegalArgumentException("El motivo es obligatorio (SRI).");
         if (detallesInput == null || detallesInput.isEmpty()) throw new IllegalArgumentException("Debe agregar al menos un item a acreditar.");
         if (tipoMotivo == null || !(tipoMotivo.equals("DEVOLUCION") || tipoMotivo.equals("DESCUENTO") || tipoMotivo.equals("ANULACION")))

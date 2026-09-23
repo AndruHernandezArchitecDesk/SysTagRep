@@ -337,6 +337,7 @@ public class MainController implements Initializable {
         if (confirm.showAndWait().orElse(ButtonType.NO) != ButtonType.YES) return;
 
         LoginController.usuarioAutenticado = null;
+        com.vendex.util.SesionActual.cerrar();
         try {
             Parent login = FXMLLoader.load(getClass().getResource("/view/LoginView.fxml"));
             Stage stage = (Stage) contenedor.getScene().getWindow();
@@ -440,7 +441,32 @@ public class MainController implements Initializable {
         });
     }
 
+    private boolean tienePermisoParaRuta(String ruta) {
+        // mapeo ruta → permiso (si no está mapeado, permitir por compat)
+        String perm = switch (ruta) {
+            case "/view/FacturaView.fxml" -> "FACTURA_EMITIR";
+            case "/view/NotaCreditoView.fxml" -> "NOTA_CREDITO_EMITIR";
+            case "/view/NotaDebitoView.fxml" -> "NOTA_DEBITO_EMITIR";
+            case "/view/GuiaRemisionView.fxml" -> "GUIA_REMISION_EMITIR";
+            case "/view/RetencionView.fxml" -> "RETENCION_EMITIR";
+            case "/view/CajaView.fxml" -> "CAJA_ABRIR";
+            case "/view/InventarioView.fxml", "/view/GestionStockView.fxml", "/view/UbicacionPercheroView.fxml" -> "INVENTARIO_AJUSTAR";
+            case "/view/UsuariosView.fxml", "/view/GestionRolesView.fxml" -> "USUARIO_GESTIONAR";
+            case "/view/ConfiguracionEmailView.fxml", "/view/FirmaView.fxml", "/view/NumeracionView.fxml" -> "CONFIGURACION_EMAIL_EDITAR";
+            case "/view/DashboardView.fxml", "/view/Dashboard2View.fxml" -> "REPORTE_VER";
+            default -> null;
+        };
+        if (perm == null) return true;
+        return com.vendex.util.SesionActual.tienePermiso(perm);
+    }
+
+    @FXML private void irGestionRoles() { cargarVista("/view/GestionRolesView.fxml"); }
+
     private void cargarVista(String ruta) {
+        if (!tienePermisoParaRuta(ruta)) {
+            new Alert(Alert.AlertType.ERROR, "No tienes permiso para esta acción: " + ruta + "\nSolicita a un ADMINISTRADOR que te asigne el permiso.").showAndWait();
+            return;
+        }
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(ruta));
             Parent vista = loader.load();

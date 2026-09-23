@@ -58,6 +58,7 @@
                     <Menu text="Gestión de Usuarios">
                         <MenuItem text="Clientes" onAction="#irClientes"/>
                         <MenuItem text="Usuarios" onAction="#irUsuarios"/>
+                        <MenuItem text="Roles y Permisos" onAction="#irGestionRoles"/>
                         <MenuItem text="Proveedores" onAction="#irProveedores"/>
                     </Menu>
                     <Menu text="Catálogos">

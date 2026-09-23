@@ -171,6 +171,8 @@ public class LoginController implements Initializable {
             LoginResult r = task.getValue();
             if (r.exito != null) {
                 usuarioAutenticado = r.exito;
+                // cargar permisos granulares en sesión (una sola vez, servicio enforces)
+                try { com.vendex.util.SesionActual.iniciar(r.exito); } catch (Exception ignored) {}
                 abrirMain();
             } else if (r.bloqueada) {
                 showStatus("Cuenta bloqueada temporalmente por múltiples intentos fallidos, intenta de nuevo en " + r.minutos + " minuto(s).", true);
