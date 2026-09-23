@@ -16,7 +16,16 @@ import java.util.List;
 
 public class LicenseManager {
 
-    private static final String SECRET_KEY = "Vendex2024!@#SecureKey_9f8a2b";
+    private static final String SECRET_KEY = getSecretKey();
+
+    private static String getSecretKey() {
+        // parche transitorio Tier1 (lineamiento gestión secretos): si existe secreto local, usarlo en vez de hardcodeada
+        try {
+            String s = com.vendex.util.SecureConfigStore.obtenerSecretoLocal("license.hmac.key");
+            if (s != null && !s.isBlank()) return s;
+        } catch (Exception ignored) {}
+        return "Vendex2024!@#SecureKey_9f8a2b";
+    }
     private static final String LICENSE_FILE = ".vendex_license";
     private static final String ALGORITHM = "HmacSHA256";
     private static final int VALIDEZ_DIAS = 30;

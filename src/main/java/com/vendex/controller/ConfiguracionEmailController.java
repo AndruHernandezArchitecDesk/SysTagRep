@@ -124,7 +124,7 @@ public class ConfiguracionEmailController implements Initializable {
             if (LoginController.usuarioAutenticado != null) cfg.setActualizadoPor(LoginController.usuarioAutenticado.getId());
 
             if (!passPlano.isEmpty()) {
-                cfg.setPasswordCifrado(Cifrado.encriptar(passPlano));
+                cfg.setPasswordCifrado(com.vendex.dao.ConfiguracionEmailDAO.cifrarParaGuardar(passPlano));
             } else if (configuracionActual != null && configuracionActual.getPasswordCifrado() != null) {
                 cfg.setPasswordCifrado(configuracionActual.getPasswordCifrado());
             }

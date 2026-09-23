@@ -247,7 +247,7 @@ public class DatabaseConnection {
              java.sql.ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM configuracion_email WHERE activo=true")) {
             if (rs.next() && rs.getInt(1) == 0) {
                 try {
-                    String pwdCifrado = com.vendex.util.Cifrado.encriptar("awnfnmidbtqyyclz");
+                    String pwdCifrado = com.vendex.dao.ConfiguracionEmailDAO.cifrarParaGuardar("awnfnmidbtqyyclz");
                     try (PreparedStatement ps = con.prepareStatement(
                             "INSERT INTO configuracion_email (host_smtp, puerto_smtp, usar_tls, email_remitente, nombre_remitente, usuario_smtp, password_cifrado, activo) " +
                             "VALUES (?,?,?,?,?,?,?,true)")) {
@@ -260,7 +260,7 @@ public class DatabaseConnection {
                         ps.setString(7, pwdCifrado);
                         ps.executeUpdate();
                     }
-                } catch (Exception e) { logIfPermissionDenied(new SQLException(e.getMessage()), "ensureConfiguracionEmailSchema seed"); }
+                } catch (Exception ignore) {}
             }
         } catch (SQLException e) { logIfPermissionDenied(e, "ensureConfiguracionEmailSchema seed conexión"); }
     }

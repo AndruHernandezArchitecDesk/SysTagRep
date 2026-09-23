@@ -32,6 +32,11 @@ public class DbSetupWizardController {
     @FXML private Label lblStatus;
     @FXML private Label lblInfo;
     @FXML private Label lblCopiadoAviso;
+    @FXML private TextField txtMasterKey;
+    @FXML private Button btnGenerarMaster;
+    @FXML private Button btnCopiarMaster;
+    @FXML private CheckBox chkMasterRespaldo;
+    @FXML private Label lblMasterInfo;
 
     private boolean completed = false;
     private static final String ALFABETO = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_!@#$%&*";
@@ -56,6 +61,10 @@ public class DbSetupWizardController {
 
         chkMostrarPassword.setOnAction(e -> alternarVisibilidad());
 
+        // master key handlers (misma ventana)
+        if (btnGenerarMaster != null) btnGenerarMaster.setOnAction(e -> generarMasterKey());
+        if (btnCopiarMaster != null) btnCopiarMaster.setOnAction(e -> copiarMasterKey());
+
         // defaults
         txtUrl.setText(DbConfig.DEFAULT_URL);
         txtUser.setText(DbConfig.DEFAULT_USER);
@@ -69,6 +78,16 @@ public class DbSetupWizardController {
         } catch (Exception ignored) {}
 
         generarPassword();
+        // master key: si ya existe, mostrarla; si no, generar al vuelo para nueva instalación
+        try {
+            if (com.vendex.util.SecureConfigStore.existeMasterKey()) {
+                txtMasterKey.setText(com.vendex.util.SecureConfigStore.exportarMasterKeyParaRespaldo());
+                if (lblMasterInfo != null) lblMasterInfo.setText("Clave maestra ya existe en esta PC (tier 2).");
+                if (chkMasterRespaldo != null) chkMasterRespaldo.setSelected(true);
+            } else if (rbNueva.isSelected()) {
+                generarMasterKey();
+            }
+        } catch (Exception ignored) {}
         txtPasswordExistenteVisible.setVisible(false);
         txtPasswordExistenteVisible.setManaged(false);
         if (lblCopiadoAviso != null) lblCopiadoAviso.setVisible(false);
@@ -83,6 +102,23 @@ public class DbSetupWizardController {
         txtPasswordExistenteVisible.setDisable(esNueva);
         chkMostrarPassword.setDisable(esNueva);
         String userForMsg = txtUser.getText() == null || txtUser.getText().trim().isEmpty() ? DbConfig.DEFAULT_USER : txtUser.getText().trim();
+        // master key UI por instalación (Tier 2)
+        if (txtMasterKey != null) {
+            txtMasterKey.setDisable(false);
+            if (btnGenerarMaster != null) btnGenerarMaster.setDisable(!esNueva);
+            if (chkMasterRespaldo != null) chkMasterRespaldo.setDisable(!esNueva);
+            if (esNueva) {
+                txtMasterKey.setPromptText("Se genera automáticamente (base64 44 chars)");
+                if (lblMasterInfo != null) lblMasterInfo.setText("Master key Tier 2 (SMTP/Gemini/Nvidia): se genera con 'Generar', se muestra una sola vez. Guarda fuera de PCs.");
+                if (!com.vendex.util.SecureConfigStore.existeMasterKey() && (txtMasterKey.getText()==null || txtMasterKey.getText().isBlank())) {
+                    generarMasterKey();
+                }
+            } else {
+                txtMasterKey.setPromptText("Pega la clave maestra generada en la primera PC (base64)");
+                if (lblMasterInfo != null) lblMasterInfo.setText("PC adicional: pega la misma master key de la primera PC para descifrar secretos compartidos (correo).");
+                if (chkMasterRespaldo != null) { chkMasterRespaldo.setSelected(false); chkMasterRespaldo.setDisable(true); }
+            }
+        }
         if (esNueva) {
             lblInfo.setText("Instalación nueva (" + userForMsg + " mínimo privilegio): se generará contraseña fuerte 24 chars. "
                     + "Guárdala — la usarán las demás PCs. Si es primera vez con app_vendex, ejecuta ANTES como postgres:\n"
@@ -138,6 +174,32 @@ public class DbSetupWizardController {
             lblCopiadoAviso.setText("✓ Copiado — recuerda guardar en lugar seguro");
             lblCopiadoAviso.setVisible(true);
         }
+    }
+
+    private void generarMasterKey() {
+        try {
+            if (!com.vendex.util.SecureConfigStore.existeMasterKey()) {
+                com.vendex.util.SecureConfigStore.generarNuevaMasterKey();
+            }
+            String b64 = com.vendex.util.SecureConfigStore.exportarMasterKeyParaRespaldo();
+            txtMasterKey.setText(b64);
+            lblStatus.setText("Master key generada. Cópiala y guárdala fuera de las PCs.");
+            lblStatus.setStyle("-fx-text-fill: #2e7d32;");
+            if (lblMasterInfo != null) lblMasterInfo.setText("Master key (44 chars base64) generada. Copia y guarda en gestor externo. Sin respaldo, Tier2 irrecuperable.");
+        } catch (Exception e) {
+            lblStatus.setText("Error generando master key: " + e.getMessage());
+            lblStatus.setStyle("-fx-text-fill: #c62828;");
+        }
+    }
+
+    private void copiarMasterKey() {
+        String mk = txtMasterKey.getText();
+        if (mk == null || mk.isBlank()) return;
+        ClipboardContent content = new ClipboardContent();
+        content.putString(mk.trim());
+        Clipboard.getSystemClipboard().setContent(content);
+        lblStatus.setText("Master key copiada. Guárdala fuera de las PCs.");
+        lblStatus.setStyle("-fx-text-fill: #1565c0;");
     }
 
     private void probarConexion() {
@@ -217,6 +279,39 @@ public class DbSetupWizardController {
                 return;
             }
         }
+        // manejo clave maestra por instalación (Tier 2)
+        String masterInput = txtMasterKey != null ? txtMasterKey.getText() : null;
+        boolean esNueva = rbNueva.isSelected();
+        if (esNueva) {
+            if (!com.vendex.util.SecureConfigStore.existeMasterKey()) {
+                if (masterInput == null || masterInput.isBlank()) {
+                    generarMasterKey();
+                    masterInput = txtMasterKey.getText();
+                } else {
+                    try { com.vendex.util.SecureConfigStore.importarMasterKey(masterInput.trim()); } catch (Exception e) {
+                        new Alert(Alert.AlertType.ERROR, "Master key inválida: " + e.getMessage()).showAndWait(); return;
+                    }
+                }
+            }
+            if (chkMasterRespaldo != null && !chkMasterRespaldo.isSelected()) {
+                Alert warn = new Alert(Alert.AlertType.WARNING);
+                warn.setTitle("Respaldo master key");
+                warn.setHeaderText("Confirma respaldo externo");
+                warn.setContentText("La clave maestra solo vive en el keyring local de cada PC. Si se pierden todas las PCs sin respaldo, los secretos Tier 2 (correo) quedarán irrecuperables.\n\n¿Confirmas que ya guardaste la master key fuera de las PCs?");
+                warn.getButtonTypes().setAll(ButtonType.YES, ButtonType.NO);
+                var r = warn.showAndWait();
+                if (r.isEmpty() || r.get() != ButtonType.YES) return;
+            }
+        } else {
+            // PC adicional: importar master si se pegó
+            if (masterInput != null && !masterInput.isBlank()) {
+                try { com.vendex.util.SecureConfigStore.importarMasterKey(masterInput.trim()); }
+                catch (Exception e) { new Alert(Alert.AlertType.ERROR, "Master key inválida: " + e.getMessage()).showAndWait(); return; }
+            } else if (!com.vendex.util.SecureConfigStore.existeMasterKey()) {
+                new Alert(Alert.AlertType.WARNING, "Falta master key: pega la clave generada en la primera PC para descifrar secretos compartidos.").showAndWait();
+                // no bloquea guardar db, pero advierte
+            }
+        }
         try {
             // probar conexión antes de guardar
             try (Connection con = DriverManager.getConnection(url, user, pass)) {
@@ -235,15 +330,19 @@ public class DbSetupWizardController {
             // actualizar DatabaseConnection en memoria
             DatabaseConnection.setConnectionParams(url, user, pass);
             if (rbNueva.isSelected()) {
+                String masterForShow = "";
+                try { masterForShow = com.vendex.util.SecureConfigStore.exportarMasterKeyParaRespaldo(); } catch (Exception ignored) {}
                 Alert info = new Alert(Alert.AlertType.INFORMATION);
-                info.setTitle("Contraseña generada");
-                info.setHeaderText("Guarda esta contraseña en lugar seguro");
-                info.setContentText("Contraseña para la instalación:\n" + pass
-                        + "\n\nSe ha guardado cifrada en:\n" + DbConfig.getArchivo().getAbsolutePath()
-                        + "\n\nLas demás PCs deben pegarla en su propio wizard (PC adicional).\n"
+                info.setTitle("Contraseña y master key generadas");
+                info.setHeaderText("Guarda ambas en lugar seguro (fuera de PCs)");
+                info.setContentText("DB para la instalación:\n" + pass
+                        + "\n\nMaster key instalación (Tier2):\n" + masterForShow
+                        + "\n\nDB guardada cifrada en:\n" + DbConfig.getArchivo().getAbsolutePath()
+                        + "\nMaster key guardada como Tier1 'vendex-master-key' (keyring/fallback) + backup ~/.install-master.key.bak"
+                        + "\n\nLas demás PCs deben pegar AMBAS en su wizard (PC adicional).\n"
                         + "Recuerda ejecutar en Postgres si el rol no existe:\nCREATE ROLE " + user + " WITH LOGIN PASSWORD '***';\n"
                         + "o ALTER ROLE " + user + " WITH PASSWORD '***';\n\n"
-                        + "Rotación: repite este wizard en cada PC cuando cambies la contraseña.");
+                        + "Sin respaldo master, secretos Tier2 (correo) irrecuperables si se pierden PCs.");
                 info.showAndWait();
             }
             completed = true;

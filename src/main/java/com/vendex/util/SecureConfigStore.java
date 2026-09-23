@@ -22,6 +22,7 @@ public final class SecureConfigStore {
 
     private SecureConfigStore() {}
 
+    // ===== Tier 1 por máquina (db.password, p12.password) — master por máquina via Cifrado/MasterKeyManager =====
     public static String cifrar(String plano) {
         if (plano == null || plano.isEmpty()) return "";
         try {
@@ -42,6 +43,84 @@ public final class SecureConfigStore {
             return almacenado;
         }
     }
+
+    // ===== Tier 1 directo por nombre (java-keyring) =====
+    public static void guardarSecretoLocal(String nombre, String valor) {
+        if (nombre == null || nombre.isBlank()) return;
+        boolean ok = false;
+        try {
+            Class<?>kc = Class.forName("com.github.javakeyring.Keyring");
+            Object kr = kc.getMethod("create").invoke(null);
+            com.vendex.security.KeyringSecretProvider kp = new com.vendex.security.KeyringSecretProvider();
+            if (kp.isAvailable()) {
+                kc.getMethod("setPassword", String.class, String.class, String.class).invoke(kr, "Vendex", nombre, valor == null ? "" : valor);
+                ok = true;
+            }
+        } catch (Exception ignored) {}
+        // fallback file cifrado con master por máquina (no deja en claro)
+        try {
+            java.io.File f = new java.io.File(System.getProperty("user.home"), ".vendex/secrets/" + nombre + ".enc");
+            f.getParentFile().mkdirs();
+            String toStore = (valor == null || valor.isEmpty()) ? "" : Cifrado.encriptar(valor);
+            java.nio.file.Files.writeString(f.toPath(), toStore, java.nio.charset.StandardCharsets.UTF_8);
+            try { java.nio.file.Files.setPosixFilePermissions(f.toPath(), java.util.EnumSet.of(java.nio.file.attribute.PosixFilePermission.OWNER_READ, java.nio.file.attribute.PosixFilePermission.OWNER_WRITE)); } catch (Exception ignored) { f.setReadable(false,false); f.setReadable(true,true); f.setWritable(false,false); f.setWritable(true,true); }
+        } catch (Exception e) { if (!ok) throw new RuntimeException("No se pudo guardar secreto local " + nombre, e); }
+    }
+
+    public static String obtenerSecretoLocal(String nombre) {
+        if (nombre == null || nombre.isBlank()) throw new com.vendex.exception.SecretoNoEncontradoException(nombre);
+        // keyring primero
+        try {
+            Class<?>kc = Class.forName("com.github.javakeyring.Keyring");
+            Object kr = kc.getMethod("create").invoke(null);
+            String v = (String) kc.getMethod("getPassword", String.class, String.class).invoke(kr, "Vendex", nombre);
+            if (v != null && !v.isEmpty()) return v;
+        } catch (Exception ignored) {}
+        // fallback file
+        try {
+            java.io.File f = new java.io.File(System.getProperty("user.home"), ".vendex/secrets/" + nombre + ".enc");
+            if (f.exists()) {
+                String enc = java.nio.file.Files.readString(f.toPath(), java.nio.charset.StandardCharsets.UTF_8).trim();
+                if (!enc.isEmpty()) return Cifrado.desencriptar(enc);
+            }
+        } catch (Exception ignored) {}
+        throw new com.vendex.exception.SecretoNoEncontradoException(nombre);
+    }
+
+    public static boolean existeSecretoLocal(String nombre) {
+        try { obtenerSecretoLocal(nombre); return true; } catch (Exception e) { return false; }
+    }
+
+    // ===== Tier 2 compartido (clave maestra por instalación) =====
+    public static String cifrarConMasterKey(String plano) {
+        if (plano == null || plano.isEmpty()) return "";
+        try {
+            return Cifrado.encriptarConInstallMaster(plano);
+        } catch (Exception e) {
+            throw new RuntimeException("Error cifrando con master key", e);
+        }
+    }
+
+    public static String descifrarConMasterKey(String cifrado) {
+        if (cifrado == null || cifrado.isEmpty()) return "";
+        if (!cifrado.contains(":")) return cifrado;
+        try {
+            return Cifrado.desencriptarConInstallMaster(cifrado);
+        } catch (com.vendex.exception.SecretoNoEncontradoException se) { throw se; }
+        catch (Exception e) {
+            // si falla por clave incorrecta, lanzar mensaje claro en vez de críptico
+            String m = e.getMessage() == null ? "" : e.getMessage().toLowerCase();
+            if (m.contains("tag mismatch") || m.contains("bad") || m.contains("mismatch")) {
+                throw new RuntimeException("No se pudo descifrar con la clave maestra de instalación. ¿Se importó la clave correcta en esta PC? (vendex-master-key)", e);
+            }
+            return cifrado;
+        }
+    }
+
+    public static boolean existeMasterKey() { return com.vendex.security.InstallMasterKeyManager.existeMasterKey(); }
+    public static void generarNuevaMasterKey() { com.vendex.security.InstallMasterKeyManager.generarNuevaMasterKey(); }
+    public static void importarMasterKey(String base64) { com.vendex.security.InstallMasterKeyManager.importarMasterKey(base64); }
+    public static String exportarMasterKeyParaRespaldo() { return com.vendex.security.InstallMasterKeyManager.exportarMasterKeyParaRespaldo(); }
 
     public static boolean esCifrado(String valor) {
         return valor != null && valor.contains(":") && valor.split(":", -1).length == 3;

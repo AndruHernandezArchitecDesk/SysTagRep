@@ -83,10 +83,24 @@ public class ConfiguracionEmailDAO {
 
     public String obtenerPasswordPlano(ConfiguracionEmail cfg) {
         if (cfg == null || cfg.getPasswordCifrado() == null || cfg.getPasswordCifrado().isEmpty()) return "";
+        // Tier 2 por instalación (compartido): probar master key, fallback Tier1/legacy para compat
         try {
-            return Cifrado.desencriptar(cfg.getPasswordCifrado());
+            return com.vendex.util.SecureConfigStore.descifrarConMasterKey(cfg.getPasswordCifrado());
+        } catch (com.vendex.exception.SecretoNoEncontradoException se) {
+            // sin master key en esta PC → explicar claro
+            throw new RuntimeException("Clave maestra de instalación no importada en esta PC. Importa la vendex-master-key desde la primera PC (wizard BD).", se);
         } catch (Exception e) {
-            return "";
+            try { return Cifrado.desencriptar(cfg.getPasswordCifrado()); } catch (Exception e2) { return ""; }
+        }
+    }
+
+    /** Cifra para guardar en BD con Tier2 (install master). Fallback Tier1 si master no existe (compat). */
+    public static String cifrarParaGuardar(String plano) {
+        if (plano == null || plano.isEmpty()) return "";
+        try {
+            return com.vendex.util.SecureConfigStore.cifrarConMasterKey(plano);
+        } catch (Exception e) {
+            try { return Cifrado.encriptar(plano); } catch (Exception e2) { throw new RuntimeException(e2); }
         }
     }
 

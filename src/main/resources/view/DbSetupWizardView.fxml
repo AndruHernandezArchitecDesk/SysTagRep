@@ -38,6 +38,19 @@
         </HBox>
     </GridPane>
 
+    <Separator />
+    <Label text="Clave maestra de instalación (Tier 2 — SMTP / Gemini / Nvidia compartidos)" style="-fx-text-fill: #80cbc4; -fx-font-weight: bold; -fx-font-size: 11px;"/>
+    <Label text="Se genera una vez y se copia manualmente a cada PC adicional (igual que la contraseña BD). Sin esta clave, los secretos compartidos (correo) no se pueden descifrar en otras PCs." wrapText="true" style="-fx-text-fill: #aaaaaa; -fx-font-size: 10px;"/>
+    <HBox spacing="8" alignment="CENTER_LEFT">
+        <Label text="Master:" style="-fx-text-fill: white; -fx-min-width: 90;"/>
+        <TextField fx:id="txtMasterKey" promptText="Base64 44 chars (se genera automática)" HBox.hgrow="ALWAYS" style="-fx-font-family: monospace; -fx-font-size: 11px;"/>
+        <Button fx:id="btnGenerarMaster" text="Generar"/>
+        <Button fx:id="btnCopiarMaster" text="Copiar"/>
+    </HBox>
+    <HBox spacing="8" alignment="CENTER_LEFT">
+        <CheckBox fx:id="chkMasterRespaldo" text="Ya guardé la clave maestra en un lugar seguro fuera de las PCs (gestor de contraseñas/impreso)" style="-fx-text-fill: #ffab91; -fx-font-size: 10px;"/>
+    </HBox>
+    <Label fx:id="lblMasterInfo" wrapText="true" style="-fx-text-fill: #ffcc80; -fx-font-size: 10px;"/>
     <Label fx:id="lblCopiadoAviso" text="✓ Copiado" style="-fx-text-fill: #66bb6a; -fx-font-size: 11px;" />
 
     <Label fx:id="lblStatus" wrapText="true" style="-fx-font-size: 12px;"/>

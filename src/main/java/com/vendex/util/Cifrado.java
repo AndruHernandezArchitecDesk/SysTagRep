@@ -126,4 +126,40 @@ public class Cifrado {
         // compatibilidad: delegar a master (nuevo), legacy solo via desencriptar fallback
         return derivarClaveConMaster(sal);
     }
+
+    // ===== Tier 2: install master key por instalación =====
+    public static String encriptarConInstallMaster(String textoPlano) throws Exception {
+        if (textoPlano == null) textoPlano = "";
+        SecureRandom sr = new SecureRandom();
+        byte[] sal = new byte[TAM_SAL];
+        byte[] iv = new byte[TAM_IV];
+        sr.nextBytes(sal);
+        sr.nextBytes(iv);
+        byte[] clave = derivarClaveConInstallMaster(sal);
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(clave, "AES"), new GCMParameterSpec(128, iv));
+        byte[] cifrado = cipher.doFinal(textoPlano.getBytes(StandardCharsets.UTF_8));
+        return Base64.getEncoder().encodeToString(sal) + ":" + Base64.getEncoder().encodeToString(iv) + ":" + Base64.getEncoder().encodeToString(cifrado);
+    }
+
+    public static String desencriptarConInstallMaster(String textoCifrado) throws Exception {
+        if (textoCifrado == null || !textoCifrado.contains(":")) return "";
+        String[] partes = textoCifrado.split(":", 3);
+        if (partes.length != 3) throw new IllegalArgumentException("formato invalido");
+        byte[] sal = Base64.getDecoder().decode(partes[0]);
+        byte[] iv = Base64.getDecoder().decode(partes[1]);
+        byte[] cifrado = Base64.getDecoder().decode(partes[2]);
+        byte[] clave = derivarClaveConInstallMaster(sal);
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(clave, "AES"), new GCMParameterSpec(128, iv));
+        return new String(cipher.doFinal(cifrado), StandardCharsets.UTF_8);
+    }
+
+    private static byte[] derivarClaveConInstallMaster(byte[] sal) throws Exception {
+        byte[] master = com.vendex.security.InstallMasterKeyManager.obtenerMasterKeyBytes();
+        Mac mac = Mac.getInstance("HmacSHA256");
+        mac.init(new SecretKeySpec(master, "HmacSHA256"));
+        byte[] out = mac.doFinal(sal);
+        return Arrays.copyOf(out, TAM_CLAVE_BITS / 8);
+    }
 }

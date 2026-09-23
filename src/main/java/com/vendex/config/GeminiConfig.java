@@ -23,24 +23,59 @@ public final class GeminiConfig {
 
     public static File getArchivo() { return ARCHIVO; }
 
-    /** Resuelve key con prioridad env var > archivo cifrado. */
+    /** Resuelve key con prioridad env var > archivo cifrado Tier2 (install master, compartido). */
     public static synchronized String obtenerApiKey() {
         String env = System.getenv("GEMINI_API_KEY");
         if (env != null && !env.isBlank()) return env.trim();
         String prop = System.getProperty("GEMINI_API_KEY");
         if (prop != null && !prop.isBlank()) return prop.trim();
         if (!ARCHIVO.exists()) return null;
-        // migrar si aún está en claro o legacy SECRETO → keyring (Fase 1 completa)
-        SecureConfigStore.migrarTodoSiEsNecesario(ARCHIVO, KEY_PROP);
+        // migrar: claro→Tier2 y Tier1→Tier2 (compartido por instalación)
+        migrarATier2SiEsNecesario();
         Properties p = new Properties();
         try (FileInputStream fis = new FileInputStream(ARCHIVO)) {
             p.load(fis);
         } catch (IOException ignored) { return null; }
         String raw = p.getProperty(KEY_PROP, "").trim();
         if (raw.isBlank()) return null;
-        String v = SecureConfigStore.descifrar(raw);
-        // si descifrar devolvió el mismo valor pero no era cifrado, es legacy en claro
-        return v.isBlank() ? null : v.trim();
+        // intentar Tier2 primero (install master), fallback Tier1 por máquina para compat
+        try {
+            String v = SecureConfigStore.descifrarConMasterKey(raw);
+            if (v != null && !v.isBlank() && !v.equals(raw)) return v.trim();
+            // si descifrarConMasterKey devolvió raw (no cifrado), intentar Tier1
+            v = SecureConfigStore.descifrar(raw);
+            return v.isBlank() ? null : v.trim();
+        } catch (Exception e) {
+            // si master no existe, fallback Tier1
+            try { String v2 = SecureConfigStore.descifrar(raw); return v2.isBlank()?null:v2.trim(); } catch (Exception ignored2) { return null; }
+        }
+    }
+
+    private static void migrarATier2SiEsNecesario() {
+        if (!ARCHIVO.exists()) return;
+        Properties p = new Properties();
+        try (FileInputStream fis = new FileInputStream(ARCHIVO)) { p.load(fis); } catch (IOException ignored) { return; }
+        String raw = p.getProperty(KEY_PROP, "");
+        if (raw == null || raw.isBlank()) return;
+        raw = raw.trim();
+        if (!SecureConfigStore.esCifrado(raw)) { // claro → Tier2
+            try { p.setProperty(KEY_PROP, SecureConfigStore.cifrarConMasterKey(raw)); try (FileOutputStream fos=new FileOutputStream(ARCHIVO)){p.store(fos,"Migrado a Tier2 master por instalación");} } catch (Exception ignored) {}
+            return;
+        }
+        // si es cifrado, verificar si es Tier2 o Tier1
+        try {
+            SecureConfigStore.descifrarConMasterKey(raw);
+            return; // ya Tier2
+        } catch (Exception e) {
+            // intentar descifrar Tier1
+            try {
+                String plano = SecureConfigStore.descifrar(raw);
+                if (plano != null && !plano.isBlank() && !plano.equals(raw)) {
+                    p.setProperty(KEY_PROP, SecureConfigStore.cifrarConMasterKey(plano));
+                    try (FileOutputStream fos=new FileOutputStream(ARCHIVO)){p.store(fos,"Migrado Tier1→Tier2");} catch (IOException ignored){}
+                }
+            } catch (Exception ignored) {}
+        }
     }
 
     public static synchronized void guardarApiKey(String apiKey) {
@@ -53,10 +88,16 @@ public final class GeminiConfig {
             if (apiKey == null || apiKey.isBlank()) {
                 p.remove(KEY_PROP);
             } else {
-                p.setProperty(KEY_PROP, SecureConfigStore.cifrar(apiKey.trim()));
+                // Tier2 compartido por instalación (portable si se copia archivo, requiere misma install master)
+                String cifrado;
+                try { cifrado = SecureConfigStore.cifrarConMasterKey(apiKey.trim()); }
+                catch (Exception e) { // si master no existe, fallback Tier1 por máquina
+                    cifrado = SecureConfigStore.cifrar(apiKey.trim());
+                }
+                p.setProperty(KEY_PROP, cifrado);
             }
             try (FileOutputStream fos = new FileOutputStream(ARCHIVO)) {
-                p.store(fos, "Vendex - Gemini API Key (cifrado AES/GCM). Obtén gratis en https://aistudio.google.com/apikey\nPrioridad: env GEMINI_API_KEY > este archivo");
+                p.store(fos, "Vendex - Gemini API Key (cifrado Tier2 master por instalación). Obtén gratis en https://aistudio.google.com/apikey\nPrioridad: env GEMINI_API_KEY > este archivo");
             }
         } catch (IOException ignored) {}
     }
