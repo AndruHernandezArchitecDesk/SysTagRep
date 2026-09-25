@@ -265,6 +265,11 @@ public class MainController implements Initializable {
     }
 
     @FXML
+    private void irRespaldos() {
+        cargarVista("/view/BackupView.fxml");
+    }
+
+    @FXML
     private void irAsistenteRepuestos() {
         try {
             javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/view/ChatWidget.fxml"));
@@ -452,7 +457,7 @@ public class MainController implements Initializable {
             case "/view/CajaView.fxml" -> "CAJA_ABRIR";
             case "/view/InventarioView.fxml", "/view/GestionStockView.fxml", "/view/UbicacionPercheroView.fxml" -> "INVENTARIO_AJUSTAR";
             case "/view/UsuariosView.fxml", "/view/GestionRolesView.fxml" -> "USUARIO_GESTIONAR";
-            case "/view/ConfiguracionEmailView.fxml", "/view/FirmaView.fxml", "/view/NumeracionView.fxml" -> "CONFIGURACION_EMAIL_EDITAR";
+            case "/view/ConfiguracionEmailView.fxml", "/view/FirmaView.fxml", "/view/NumeracionView.fxml", "/view/BackupView.fxml" -> "CONFIGURACION_EMAIL_EDITAR";
             case "/view/DashboardView.fxml", "/view/Dashboard2View.fxml" -> "REPORTE_VER";
             default -> null;
         };

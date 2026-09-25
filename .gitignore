@@ -33,6 +33,12 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+### Backup Vendex ###
+*.dump
+*.dump.gpg
+.vendex/
+rclone.conf
+
 ### VS Code ###
 .vscode/
 

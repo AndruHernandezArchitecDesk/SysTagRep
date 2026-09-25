@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+<?import javafx.geometry.Insets?>
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.vendex.controller.BackupController" prefHeight="700" prefWidth="1000"
+            style="-fx-padding: 12">
+    <top>
+        <VBox spacing="8">
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label text="Respaldos" styleClass="titulo">
+                    <graphic><FontIcon iconLiteral="fas-database" styleClass="titulo-icono"/></graphic>
+                </Label>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label text="Estrategia backup PostgreSQL — cierre de caja + manual. RPO 24h." style="-fx-font-size: 11px; -fx-text-fill: #666;"/>
+            </HBox>
+            <Separator/>
+        </VBox>
+    </top>
+    <center>
+        <VBox spacing="12">
+            <TitledPane text="Configuración" collapsible="false">
+                <VBox spacing="10">
+                    <GridPane hgap="10" vgap="8">
+                        <columnConstraints>
+                            <ColumnConstraints hgrow="NEVER" prefWidth="170"/>
+                            <ColumnConstraints hgrow="ALWAYS"/>
+                            <ColumnConstraints hgrow="NEVER" prefWidth="120"/>
+                        </columnConstraints>
+                        <Label text="Directorio local:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                        <TextField fx:id="txtDirLocal" promptText="C:\Vendex\backups" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                        <Label text="Ej. C:\Vendex\backups" GridPane.rowIndex="0" GridPane.columnIndex="2" style="-fx-font-size: 10px; -fx-text-fill: #888;"/>
+
+                        <Label text="Ruta offsite (otra PC):" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                        <TextField fx:id="txtOffsite" promptText="\\OTRA-PC\VendexBackups" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                        <Button text="Probar" onAction="#probarOffsite" GridPane.rowIndex="1" GridPane.columnIndex="2" styleClass="btn-orden"/>
+
+                        <Label text="Email alertas:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                        <TextField fx:id="txtEmail" promptText="andresrockfull@gmail.com" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+                        <Label text="Falla → email" GridPane.rowIndex="2" GridPane.columnIndex="2" style="-fx-font-size: 10px;"/>
+
+                        <Label text="pg_dump:" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                        <TextField fx:id="txtPgDump" promptText="pg_dump o ruta completa" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+                        <Label text="En PATH si vacío" GridPane.rowIndex="3" GridPane.columnIndex="2" style="-fx-font-size: 10px;"/>
+
+                        <Label text="gpg:" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                        <TextField fx:id="txtGpg" promptText="gpg" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+                        <CheckBox fx:id="chkCifrado" text="Cifrar AES256" GridPane.rowIndex="4" GridPane.columnIndex="2"/>
+
+                        <Label text="Retención (d/s/m):" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+                        <HBox spacing="6" GridPane.rowIndex="5" GridPane.columnIndex="1">
+                            <TextField fx:id="txtRetentionDaily" prefWidth="50" promptText="7"/>
+                            <Label text="diarios"/>
+                            <TextField fx:id="txtRetentionWeekly" prefWidth="50" promptText="4"/>
+                            <Label text="semanales"/>
+                            <TextField fx:id="txtRetentionMonthly" prefWidth="50" promptText="12"/>
+                            <Label text="mensuales"/>
+                        </HBox>
+                    </GridPane>
+                    <HBox spacing="8" alignment="CENTER_LEFT">
+                        <Button fx:id="btnGuardar" text="Guardar configuración" onAction="#guardarConfig" styleClass="btn-guardar">
+                            <graphic><FontIcon iconLiteral="fas-save" iconSize="14"/></graphic>
+                        </Button>
+                        <Button fx:id="btnGenerarPassphrase" text="Generar passphrase" onAction="#generarPassphrase" styleClass="btn-orden">
+                            <graphic><FontIcon iconLiteral="fas-key" iconSize="14"/></graphic>
+                        </Button>
+                        <Label fx:id="lblPassphraseEstado" text="..." HBox.hgrow="ALWAYS"/>
+                    </HBox>
+                    <Label text="Offsite: compartir C:\VendexBackups en otra PC → \\OTRA-PC\VendexBackups. Notificación falla → andresrockfull@gmail.com. Backup automático al cierre de caja." wrapText="true" style="-fx-font-size: 11px; -fx-text-fill: #555;"/>
+                </VBox>
+            </TitledPane>
+
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Button fx:id="btnRespaldarAhora" text="Respaldar ahora" onAction="#respaldarAhora" styleClass="btn-guardar" style="-fx-font-size: 14px; -fx-font-weight: bold;">
+                    <graphic><FontIcon iconLiteral="fas-download" iconSize="16"/></graphic>
+                </Button>
+                <Button text="Refrescar lista" onAction="#refrescarLista" styleClass="btn-orden">
+                    <graphic><FontIcon iconLiteral="fas-sync" iconSize="14"/></graphic>
+                </Button>
+                <Label fx:id="lblUltimoBackup" text="Sin respaldos" style="-fx-font-weight: bold;"/>
+                <Region HBox.hgrow="ALWAYS"/>
+            </HBox>
+
+            <SplitPane dividerPositions="0.55">
+                <VBox spacing="6">
+                    <Label text="Últimos respaldos (20)" style="-fx-font-weight: bold;"/>
+                    <TableView fx:id="tblBackups" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="colNombre" text="Archivo" prefWidth="260"/>
+                            <TableColumn fx:id="colFecha" text="Fecha" prefWidth="130"/>
+                            <TableColumn fx:id="colTam" text="Tamaño" prefWidth="90"/>
+                            <TableColumn fx:id="colEstado" text="Estado" prefWidth="110"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+                <VBox spacing="6">
+                    <Label text="Log" style="-fx-font-weight: bold;"/>
+                    <TextArea fx:id="txtLog" editable="false" wrapText="true" VBox.vgrow="ALWAYS" prefRowCount="10" style="-fx-font-family: monospace; -fx-font-size: 11px;"/>
+                </VBox>
+            </SplitPane>
+        </VBox>
+    </center>
+</BorderPane>

@@ -76,6 +76,7 @@
 
 ## Backup y recuperación (decisión 4)
 - Al generar fallback master key se crea `~/.vendex/.master.key.bak` con contenido `ENC:<cifrado legacy>` + comentario. Guardar `master.key` y `.bak` en lugar seguro. Si reinstalas OS/cambias usuario Windows (DPAPI pierde SID), restaura `.master.key` o re-ingresa password en wizard (re-cifra con nueva master key). `configuracion_email` excluida de keyring por ser compartida.
+- **Backup BD:** ver `docs/RECUPERACION_DR.md` y `scripts/backup/README.md`. `BackupService.java` ejecuta `pg_dump --format=custom` al cierre de caja (`CajaController.java`) + botón manual `BackupView.fxml` (Administración → Respaldos). Cifrado `gpg AES256` con passphrase `SecureConfigStore` Tier1 `backup.passphrase` (`~/.vendex/secrets/backup.passphrase.enc`). Copia offsite `\\OTRA-PC\VendexBackups` (`backup.offsite.path`). Retención GFS 7/4/12 (`BackupRetentionService.java`). Alertas `andresrockfull@gmail.com` (`BackupNotificationService.java`, `BackupConfig.java`).
 
 ## Fase 1 completa — completada 2026-09-20
 - `pom.xml` añade `jna 5.14.0`, `jna-platform`, `java-keyring 1.0.1`. `Cifrado.SECRETO` queda solo para `encriptarLegacy`/`desencriptarLegacy` y backup, no para nuevas escrituras.

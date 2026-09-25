@@ -344,8 +344,9 @@ public class CajaController implements Initializable {
                         boolean ok = cajaService.cerrarCaja(sesionActual.getId(), montoFisico, "Arqueo automático");
                         if (ok) {
                             logDAO.guardar("CajaController", "abrirCierreCaja", "Caja cerrada OK - Sesion #" + sesionActual.getId() + " - Esperado=" + esperado + " - Fisico=" + montoFisico + " - Diferencia=" + diferencia);
-                            new Alert(Alert.AlertType.INFORMATION, "Caja cerrada correctamente").showAndWait();
+                            new Alert(Alert.AlertType.INFORMATION, "Caja cerrada correctamente.\nSe iniciará respaldo automático en segundo plano.").showAndWait();
                             cargarEstado();
+                            dispararBackupCierreCajaAsync();
                         } else {
                             logDAO.guardar("CajaController", "abrirCierreCaja", "Fallo cerrarCaja - Sesion #" + sesionActual.getId() + " - ok=false");
                             new Alert(Alert.AlertType.ERROR, "No se pudo cerrar la caja. Ver logs.").showAndWait();
@@ -359,5 +360,39 @@ public class CajaController implements Initializable {
                 new Alert(Alert.AlertType.WARNING, "Monto inválido").showAndWait();
             }
         });
+    }
+
+    private void dispararBackupCierreCajaAsync() {
+        javafx.concurrent.Task<com.vendex.backup.BackupResult> task = new javafx.concurrent.Task<>() {
+            @Override protected com.vendex.backup.BackupResult call() {
+                try {
+                    return new com.vendex.backup.BackupService().ejecutar();
+                } catch (Exception e) {
+                    logDAO.guardar("CajaController", "backupCierreCaja", "Error backup cierre: " + e.getMessage(), e);
+                    return com.vendex.backup.BackupResult.falla(e.getMessage());
+                }
+            }
+        };
+        task.setOnSucceeded(e -> {
+            com.vendex.backup.BackupResult r = task.getValue();
+            if (r.exito) {
+                logDAO.guardar("CajaController", "backupCierreCaja", "Backup cierre OK: " + r.mensaje + " archivo=" + (r.archivoLocal != null ? r.archivoLocal.getName() : "null"));
+                // Notificar éxito solo si configurado; falla siempre notifica
+            } else {
+                logDAO.guardar("CajaController", "backupCierreCaja", "Backup cierre FALLÓ: " + r.mensaje);
+                new com.vendex.backup.BackupNotificationService().notificarFallaConResultado(r);
+                javafx.application.Platform.runLater(() ->
+                    new Alert(Alert.AlertType.WARNING, "Caja cerrada pero el respaldo falló:\n" + r.mensaje + "\nRevise Administración → Respaldos.").showAndWait()
+                );
+            }
+        });
+        task.setOnFailed(e -> {
+            Throwable ex = task.getException();
+            logDAO.guardar("CajaController", "backupCierreCaja", "Backup cierre excepción: " + (ex != null ? ex.getMessage() : "null"), ex instanceof Exception ? (Exception)ex : new Exception(ex));
+            new com.vendex.backup.BackupNotificationService().notificarFalla("Backup al cierre de caja falló", ex);
+        });
+        Thread t = new Thread(task, "vendex-backup-cierre-caja");
+        t.setDaemon(true);
+        t.start();
     }
 }
