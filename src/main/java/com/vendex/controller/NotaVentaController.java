@@ -492,10 +492,10 @@ public class NotaVentaController implements Initializable {
 
         // Numeracion atomica centralizada 001-001: reservar secuencial ANTES de insertar
         // UPDATE secuencia_documento SET siguiente_numero=siguiente_numero+1 RETURNING ... usado
-        // evita que 192.168.1.5 y 192.168.1.7 reutilicen el mismo numero
+        // evita que dos PCs reutilicen el mismo numero
         int secuencialUsado = secuenciaDAO.marcarUsado("PROFORMA");
         if (secuencialUsado == -1) {
-            new Alert(Alert.AlertType.ERROR, "No se pudo obtener el secuencial de PROFORMA (secuencia_documento). Verifique la conexion a 192.168.1.7.").showAndWait();
+            new Alert(Alert.AlertType.ERROR, "No se pudo obtener el secuencial de PROFORMA (secuencia_documento). Verifique la conexion a vendex-db.").showAndWait();
             return;
         }
         SecuenciaDocumento secInfo = secuenciaDAO.obtener("PROFORMA");

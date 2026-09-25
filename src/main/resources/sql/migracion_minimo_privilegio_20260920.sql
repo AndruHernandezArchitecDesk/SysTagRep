@@ -1,6 +1,6 @@
 -- =============================================================
 -- Migración: De GRANT ALL implícito (postgres superuser) a mínimo privilegio app_vendex
--- Ejecutar UNA VEZ como postgres/superuser en dbVendex (host 192.168.1.7)
+-- Ejecutar UNA VEZ como postgres/superuser en dbVendex (host vendex-db, IP varia por cliente)
 -- Pre-requisito: pg_dump de seguridad antes de REVOKE (ver docs/permisos_bd.md §1)
 -- Idempotente: re-ejecutable sin duplicar
 -- Tablas inventariadas: 42 (sql/*.sql + DatabaseConnection ensure*Schema + dao/*.java)
@@ -90,8 +90,9 @@ COMMIT;
 -- SELECT sequence_name, grantee, privilege_type FROM information_schema.role_usage_grants WHERE grantee='app_vendex' UNION SELECT sequence_name, grantee, privilege_type FROM information_schema.role_routine_grants WHERE grantee='app_vendex';
 -- \z factura_registro  -- debe mostrar app_vendex=arwd/ o similar sin 'a' (TRUNCATE)
 -- \du
--- Probar como app_vendex: psql -h 192.168.1.7 -U app_vendex -d dbVendex -c "INSERT INTO logs (controlador,metodo,mensaje) VALUES ('test','test','perm ok') RETURNING id;"
--- Debe fallar: psql -h 192.168.1.7 -U app_vendex -d dbVendex -c "TRUNCATE TABLE logs;"  -- permission denied esperado
+-- Probar como app_vendex: psql -h vendex-db -U app_vendex -d dbVendex -c "INSERT INTO logs (controlador,metodo,mensaje) VALUES ('test','test','perm ok') RETURNING id;"
+-- Debe fallar: psql -h vendex-db -U app_vendex -d dbVendex -c "TRUNCATE TABLE logs;"  -- permission denied esperado
+-- vendex-db resuelve via hosts a la IP del host (ej. 192.168.1.7), varia por cliente
 -- =============================================================
 -- Siguiente paso: en cada PC, wizard DbSetupWizard → cambiar usuario a app_vendex + password generada, Probar y Guardar (cifrado keyring)
 -- Cambiar DbConfig.DEFAULT_USER a app_vendex en código (ya aplicado) y rotar password en Postgres: ALTER ROLE app_vendex WITH PASSWORD '...'; + ALTER ROLE postgres WITH PASSWORD '...' (rotar superuser también)

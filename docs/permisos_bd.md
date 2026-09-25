@@ -2,10 +2,10 @@
 
 > Reemplazo de `GRANT ALL` implícito (`postgres` superuser) por grants explícitos por tabla. Basado en `LINEAMIENTO_GRANT_MINIMO_PRIVILEGIO.md`.
 
-## 1. Preparación (antes de tocar 192.168.1.7)
+## 1. Preparación (antes de tocar el host central `vendex-db`)
 
 ```bash
-# En host central 192.168.1.7 como postgres/superuser
+# En host central (vendex-db, ej. 192.168.1.7 en cliente X) como postgres/superuser
 pg_dump -h 127.0.0.1 -U postgres -d dbVendex -Fc -f /tmp/dbVendex_pre_grant_$(date +%F).dump
 # Verificar roles actuales
 psql -h 127.0.0.1 -U postgres -d dbVendex -c "\du"
@@ -95,7 +95,7 @@ psql -h 127.0.0.1 -U app_vendex -d dbVendex -c "TRUNCATE TABLE logs;" # permissi
 3. Analizar log: `grep -E "SELECT|INSERT|UPDATE|DELETE" postgresql.log | cut -d' ' -f... | sort -u` por tabla.
 4. Ajustar script §3 si algún DAO falló `permission denied for table X` — añadir grant puntual, no volver a `GRANT ALL`.
 
-## 5. Despliegue seguro en 192.168.1.7 (producción)
+## 5. Despliegue seguro en host central `vendex-db` (producción)
 
 1. **Staging**: restaurar dump en máquina pruebas, aplicar script, cambiar UNA PC a `app_vendex` vía wizard (`DbSetupWizardController` → usuario `app_vendex`, password 24 generada, Probar y Guardar cifrado keyring), checklist completo sin `permission denied`.
 2. **Producción** (ventana mantenimiento):
@@ -106,9 +106,10 @@ psql -h 127.0.0.1 -U app_vendex -d dbVendex -c "TRUNCATE TABLE logs;" # permissi
    psql -c "ALTER ROLE app_vendex WITH PASSWORD '***24***';"
    psql -c "ALTER ROLE postgres WITH PASSWORD '***nueva***';"
    ```
-3. **Cada PC** (todas comparten misma BD): wizard → usuario `app_vendex`, pegar misma password generada, Probar y Guardar (cifrado keyring por máquina, no portable). Validar `cat ~/.vendex/db.properties` solo `sal:iv:cifrado`.
+3. **Cada PC** (todas comparten misma BD via `vendex-db` en `hosts`, IP varía por cliente): wizard → `jdbc:postgresql://vendex-db:5432/dbVendex` ( `localhost` en host) → usuario `app_vendex`, pegar misma password generada, Probar y Guardar (cifrado keyring por máquina, no portable). Validar `cat ~/.vendex/db.properties` solo `sal:iv:cifrado`.
 4. **Código**: `config/DbConfig.java:34` `DEFAULT_USER` ya cambiado a `app_vendex` (esta entrega). Nuevas instalaciones usan `app_vendex` directamente.
 5. **DDL futuro**: `config/DatabaseConnection.java:88` `ensure*Schema` solo debe correr como `postgres`/`vendex_migrator` (detecta `current_user` y hace `REVOKE CREATE` skip). Si corre como `app_vendex` loguea `WARNING` sin ocultar `permission denied`.
+6. **Hosts**: si cambia IP del host, actualizar `C:\Windows\System32\drivers\etc\hosts` (`vendex-db` → nueva IP) en cada PC (admin, `scripts/setup_configurar_hosts.bat`), no `db.properties` si no rotó password.
 
 ## 6. Prevención a futuro
 

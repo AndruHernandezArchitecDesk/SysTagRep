@@ -15,12 +15,13 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
- * Servicio principal de backup: pg_dump custom + verificación + cifrado GPG + copia offsite + retención.
- * Diseñado para Windows (host 192.168.1.7) con pg_dump y gpg en PATH.
+ * Servicio principal de backup: pg_dump custom + verificacion + cifrado GPG + copia offsite + retencion.
+ * Disenado para Windows (host vendex-db, IP varia por cliente) con pg_dump y gpg en PATH.
+ * Hostname vendex-db resoluble via C:\Windows\System32\drivers\etc\hosts (ver docs/hosts_setup.md).
  * <p>
- * Flujo Recomendado (lineamiento §2): pg_dump --format=custom --compress=9, verify no vacío,
- * gpg --symmetric AES256 con passphrase en SecureConfigStore Tier1, copy a \\OTRA-PC\share,
- * notificación andresrockfull@gmail.com.
+ * Flujo Recomendado (lineamiento §2): pg_dump --format=custom --compress=9, verify no vacio,
+ * gpg --symmetric AES256 con passphrase en SecureConfigStore Tier1, copy a \\backup-pc\share,
+ * notificacion andresrockfull@gmail.com.
  */
 public class BackupService {
 
@@ -196,7 +197,7 @@ public class BackupService {
                     LOG.log(Level.WARNING, "Fallo copia offsite a " + offsitePath, e);
                 }
             } else {
-                offsiteErr = "Offsite no configurado (backup.offsite.path vacío). Configurar \\\\OTRA-PC\\VendexBackups";
+                offsiteErr = "Offsite no configurado (backup.offsite.path vacio). Configurar \\\\backup-pc\\VendexBackups (ver docs/hosts_setup.md)";
                 LOG.info(offsiteErr);
             }
 

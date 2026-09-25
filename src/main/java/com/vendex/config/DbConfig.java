@@ -12,8 +12,8 @@ import java.util.Properties;
  * Persiste la configuracion de conexion a PostgreSQL en ~/.vendex/db.properties
  * para soportar despliegue multi-PC con BD compartida.
  *
- * PC host (192.168.1.7):  db.url=jdbc:postgresql://localhost:5432/dbVendex
- * PC cliente (192.168.1.5): db.url=jdbc:postgresql://192.168.1.7:5432/dbVendex
+ * PC host:  db.url=jdbc:postgresql://localhost:5432/dbVendex
+ * PC cliente: db.url=jdbc:postgresql://vendex-db:5432/dbVendex  (vendex-db resuelve via hosts/DNS a la IP del host central, ej. 192.168.1.7 — varía por cliente; ver docs/hosts_setup.md)
  *
  * <p>Mínimo privilegio (2026-09-20): rol recomendado {@code app_vendex} con grants explícitos
  * por tabla/sequence (ver {@code sql/migracion_minimo_privilegio_20260920.sql} y {@code docs/permisos_bd.md}).
@@ -25,6 +25,9 @@ import java.util.Properties;
  *
  * <p>Si el archivo no existe NO se autocrea con password por defecto. El wizard de primer arranque
  * ({@link com.vendex.MainApp}) se encarga de generarlo/solicitarlo (por defecto {@code postgres}, cambiar a {@code app_vendex} tras migración).</p>
+ *
+ * <p>SPOF mitigado (§0 LINEAMIENTO_SPOF_SERVIDOR): en vez de IP fija por cliente, usar hostname vendex-db
+ * resoluble via C:\Windows\System32\drivers\etc\hosts (distribuido). Cambiar IP del host = editar 1 línea hosts por PC, no N db.properties.</p>
  */
 public final class DbConfig {
 
@@ -125,7 +128,7 @@ public final class DbConfig {
             if (password == null || password.isBlank()) {
                 p.remove("db.password");
                 try (FileOutputStream fos = new FileOutputStream(ARCHIVO)) {
-                    p.store(fos, "Vendex - Conexion PostgreSQL. Editar db.url para BD remota. Ej: jdbc:postgresql://192.168.1.7:5432/dbVendex");
+                    p.store(fos, "Vendex - Conexion PostgreSQL. Editar db.url para BD remota. Ej: jdbc:postgresql://vendex-db:5432/dbVendex (vendex-db via hosts, ver docs/hosts_setup.md)");
                 }
             } else {
                 // guardar url/user directos y password cifrado (SecureConfigStore maneja cifrado)
@@ -133,7 +136,7 @@ public final class DbConfig {
                 String cifrado = SecureConfigStore.cifrar(password);
                 p.setProperty("db.password", cifrado);
                 try (FileOutputStream fos = new FileOutputStream(ARCHIVO)) {
-                    p.store(fos, "Vendex - Conexion PostgreSQL. Editar db.url para BD remota. Ej: jdbc:postgresql://192.168.1.7:5432/dbVendex - db.password cifrado AES/GCM");
+                    p.store(fos, "Vendex - Conexion PostgreSQL. Editar db.url para BD remota. Ej: jdbc:postgresql://vendex-db:5432/dbVendex (vendex-db via hosts) - db.password cifrado AES/GCM");
                 }
             }
         } catch (IOException ignored) {}

@@ -7,7 +7,7 @@
     <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
 
     <Label text="Configuración de Base de Datos" style="-fx-font-weight: bold; -fx-text-fill: white;"> <font><Font size="18"/></font> </Label>
-    <Label text="Vendex necesita conectarse a PostgreSQL (host 192.168.1.7 o localhost). La contraseña se guardará cifrada (AES/GCM) en ~/.vendex/db.properties y nunca en texto plano." wrapText="true" style="-fx-text-fill: #cccccc;" />
+    <Label text="Vendex necesita conectarse a PostgreSQL (host vendex-db o localhost). En clientes use vendex-db (resuelve a la IP del servidor via hosts, ej. 192.168.1.7 — varía por cliente; ver docs/hosts_setup.md). La contraseña se guardará cifrada (AES/GCM) en ~/.vendex/db.properties." wrapText="true" style="-fx-text-fill: #cccccc;" />
 
     <Separator />
 
@@ -21,7 +21,7 @@
     <GridPane hgap="10" vgap="10">
         <columnConstraints><ColumnConstraints hgrow="NEVER" minWidth="90"/><ColumnConstraints hgrow="ALWAYS"/></columnConstraints>
         <Label text="JDBC URL:" GridPane.rowIndex="0" GridPane.columnIndex="0" style="-fx-text-fill: white;"/>
-        <TextField fx:id="txtUrl" promptText="jdbc:postgresql://192.168.1.7:5432/dbVendex" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+        <TextField fx:id="txtUrl" promptText="jdbc:postgresql://vendex-db:5432/dbVendex" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
         <Label text="Usuario:" GridPane.rowIndex="1" GridPane.columnIndex="0" style="-fx-text-fill: white;"/>
         <TextField fx:id="txtUser" promptText="postgres" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
         <Label text="Generada:" GridPane.rowIndex="2" GridPane.columnIndex="0" style="-fx-text-fill: white;"/>

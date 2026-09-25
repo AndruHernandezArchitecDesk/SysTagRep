@@ -1,7 +1,7 @@
 -- =============================================================
 -- Migración permisos granulares (Fase 5)
 -- 1 rol por usuario, matriz rol×permiso editable, tope descuento, auditoría
--- Ejecutar UNA VEZ como postgres/superuser en dbVendex (host 192.168.1.7)
+-- Ejecutar UNA VEZ como postgres/superuser en dbVendex (host vendex-db, IP varia por cliente)
 -- También aplicado lazy por DatabaseConnection.ensurePermisosGranularesSchema()
 -- Idempotente. Ver LINEAMIENTO_ROLES_PERMISOS.md
 -- =============================================================

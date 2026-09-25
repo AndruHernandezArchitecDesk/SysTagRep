@@ -1,6 +1,6 @@
 -- =============================================================
 -- Migración anti fuerza bruta (Fase 4)
--- Ejecutar UNA VEZ como postgres/superuser en dbVendex (host 192.168.1.7)
+-- Ejecutar UNA VEZ como postgres/superuser en dbVendex (host vendex-db, IP varia por cliente)
 -- También aplicado lazy por DatabaseConnection.ensureLoginBruteForceSchema()
 -- Idempotente. Ver LINEAMIENTO_ANTIFUERZA_BRUTA.md
 -- =============================================================

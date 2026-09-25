@@ -1,5 +1,5 @@
--- Fix multi-PC 192.168.1.7 (host) + 192.168.1.5 (cliente) - numeracion sin solapamiento
--- Ejecutar UNA VEZ en la BD central (dbVendex en 192.168.1.7) como postgres/app_vendex:
+-- Fix multi-PC host (vendex-db) + clientes - numeracion sin solapamiento
+-- Ejecutar UNA VEZ en la BD central (dbVendex en vendex-db, IP varia por cliente) como postgres/app_vendex:
 -- psql -h localhost -U postgres -d dbVendex -f fix_multipc_numeracion_20260831.sql
 
 -- 1. Asegurar tabla secuencia_documento existe y tiene filas 001-001 para ambas PCs compartiendo secuencia
@@ -40,7 +40,7 @@ BEGIN
     UPDATE secuencia_documento SET siguiente_numero = GREATEST(siguiente_numero, v_max_nota+1) WHERE tipo='PROFORMA';
 END $$;
 
--- 2. Evitar duplicados aunque haya race condition entre 192.168.1.7 y 192.168.1.5
+-- 2. Evitar duplicados aunque haya race condition entre host y clientes
 -- Si ya existen duplicados, primero limpiar manualmente: SELECT codigo, COUNT(*) FROM factura_registro GROUP BY codigo HAVING COUNT(*)>1;
 DO $$
 BEGIN

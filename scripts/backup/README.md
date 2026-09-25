@@ -9,7 +9,7 @@ Estrategia lineamiento `LINEAMIENTO_BACKUP_POSTGRESQL.md` adaptada a Windows + o
 - Retención GFS: 7 diarios, 4 semanales, 12 mensuales (carpeta local; offsite espejo).
 - Notificación a `andresrockfull@gmail.com` vía `ConfiguracionEmail` si falla.
 
-## Pre-requisitos en 192.168.1.7 (host BD)
+## Pre-requisitos en host central `vendex-db` (IP varía por cliente, ej. 192.168.1.7) — ver `docs/hosts_setup.md`
 1. PostgreSQL con `pg_dump` en PATH (`C:\Program Files\PostgreSQL\17\bin\pg_dump.exe`)
    ```bat
    pg_dump --version
@@ -26,13 +26,14 @@ Estrategia lineamiento `LINEAMIENTO_BACKUP_POSTGRESQL.md` adaptada a Windows + o
    Si no hay gpg, el backup se guarda sin cifrar (warning).
 
 3. Carpeta compartida en otra PC de la red:
-   - En otra PC: crear `C:\VendexBackups` → Compartir → `\\OTRA-PC\VendexBackups` con permisos escritura para usuario de 192.168.1.7.
-   - En 192.168.1.7 probar:
+   - En otra PC: crear `C:\VendexBackups` → Compartir → `\\backup-pc\VendexBackups` (o `\\OTRA-PC\VendexBackups`) con permisos escritura para usuario del host central.
+   - En el host central (`vendex-db`) probar:
      ```bat
-     dir \\OTRA-PC\VendexBackups
-     echo test > \\OTRA-PC\VendexBackups\test.txt
+     dir \\backup-pc\VendexBackups
+     echo test > \\backup-pc\VendexBackups\test.txt
      ```
-   - Configurar en Vendex: Administración → Respaldos → Ruta offsite.
+   - Configurar en Vendex: Administración → Respaldos → Ruta offsite (`\\backup-pc\VendexBackups`).
+   - Asegurar que `vendex-db` resuelve en cada PC (`docs/hosts_setup.md` / `scripts/setup_configurar_hosts.bat`).
 
 ## Uso
 - **Automático al cierre de caja:** al cerrar caja (Caja → Cerrar Caja) se dispara backup en segundo plano.
@@ -50,10 +51,12 @@ Estrategia lineamiento `LINEAMIENTO_BACKUP_POSTGRESQL.md` adaptada a Windows + o
 
 ## Verificación
 ```bat
+ping vendex-db
+psql -h vendex-db -U app_vendex -d dbVendex -c "select 1"
 dir C:\Vendex\backups
 gpg --decrypt C:\Vendex\backups\vendex_*.dump.gpg > NUL && echo OK
 pg_restore --list C:\Vendex\backups\vendex_*.dump | head
-dir \\OTRA-PC\VendexBackups
+dir \\backup-pc\VendexBackups
 ```
 
 ## Restauración rápida

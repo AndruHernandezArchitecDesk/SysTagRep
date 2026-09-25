@@ -15,7 +15,7 @@
 2. Ejecuta Vendex → wizard “Configuración de Base de Datos” aparece antes del login.
 3. Selecciona **Instalación nueva — generar contraseña fuerte** → click “Regenerar” genera 24 chars (`A-Z,a-z,0-9,-_!@#$%&*`, `SecureRandom` en `DbSetupWizardController.java:19`).
 4. Copia con “Copiar” y **guárdala en gestor de contraseñas** (se muestra una sola vez, como API keys cloud).
-5. Completa `JDBC URL` (`jdbc:postgresql://localhost:5432/dbVendex` en host `192.168.1.7`, `jdbc:postgresql://192.168.1.7:5432/dbVendex` en clientes) y usuario (`app_vendex` mínimo privilegio — `postgres` solo legacy).
+5. Completa `JDBC URL` (`jdbc:postgresql://localhost:5432/dbVendex` en host, `jdbc:postgresql://vendex-db:5432/dbVendex` en clientes — `vendex-db` resuelve via `hosts` a la IP del host, ej. `192.168.1.7`, varía por cliente; ver `docs/hosts_setup.md`) y usuario (`app_vendex` mínimo privilegio — `postgres` solo legacy).
 6. Si es primera vez con `app_vendex`, ejecuta **como postgres** el script de privilegios:
    ```bash
    psql -h 127.0.0.1 -U postgres -d dbVendex -f src/main/resources/sql/migracion_minimo_privilegio_20260920.sql
@@ -33,7 +33,7 @@
 ### PC adicional (mismo local, BD compartida)
 1. Instala Vendex en nueva PC → wizard aparece.
 2. Selecciona **PC adicional — pegar contraseña existente** → pega la que generaste en la primera PC.
-3. Ajusta `JDBC URL` a remota (`192.168.1.7`) y usuario.
+3. Ajusta `JDBC URL` a remota (`vendex-db`, ej. `jdbc:postgresql://vendex-db:5432/dbVendex`) y usuario. Asegura `vendex-db` en `hosts` (ver `docs/hosts_setup.md` + `scripts/setup_configurar_hosts.bat`, IP varía por cliente).
 4. Probar + Guardar → se cifra localmente con clave de esa máquina (archivo no portable).
 
 ## Migración instalaciones existentes con `admin` en claro
@@ -76,7 +76,8 @@
 
 ## Backup y recuperación (decisión 4)
 - Al generar fallback master key se crea `~/.vendex/.master.key.bak` con contenido `ENC:<cifrado legacy>` + comentario. Guardar `master.key` y `.bak` en lugar seguro. Si reinstalas OS/cambias usuario Windows (DPAPI pierde SID), restaura `.master.key` o re-ingresa password en wizard (re-cifra con nueva master key). `configuracion_email` excluida de keyring por ser compartida.
-- **Backup BD:** ver `docs/RECUPERACION_DR.md` y `scripts/backup/README.md`. `BackupService.java` ejecuta `pg_dump --format=custom` al cierre de caja (`CajaController.java`) + botón manual `BackupView.fxml` (Administración → Respaldos). Cifrado `gpg AES256` con passphrase `SecureConfigStore` Tier1 `backup.passphrase` (`~/.vendex/secrets/backup.passphrase.enc`). Copia offsite `\\OTRA-PC\VendexBackups` (`backup.offsite.path`). Retención GFS 7/4/12 (`BackupRetentionService.java`). Alertas `andresrockfull@gmail.com` (`BackupNotificationService.java`, `BackupConfig.java`).
+- **Backup BD:** ver `docs/RECUPERACION_DR.md` y `scripts/backup/README.md`. `BackupService.java` ejecuta `pg_dump --format=custom` al cierre de caja (`CajaController.java`) + botón manual `BackupView.fxml` (Administración → Respaldos). Cifrado `gpg AES256` con passphrase `SecureConfigStore` Tier1 `backup.passphrase` (`~/.vendex/secrets/backup.passphrase.enc`). Copia offsite `\\backup-pc\VendexBackups` (`backup.offsite.path`). Retención GFS 7/4/12 (`BackupRetentionService.java`). Alertas `andresrockfull@gmail.com` (`BackupNotificationService.java`, `BackupConfig.java`).
+- **SPOF mitigado (hosts distribuido):** clientes usan `jdbc:postgresql://vendex-db:5432/dbVendex` con `vendex-db` en `C:\Windows\System32\drivers\etc\hosts` (ver `docs/hosts_setup.md`, IP varía por cliente). Cambiar host = editar `hosts` por PC (admin, `scripts/setup_configurar_hosts.bat`), no `db.properties`. Host es PC uso diario sin standby dedicado — ver `docs/cold_standby_sin_hardware.md` (reutilizar cualquier PC).
 
 ## Fase 1 completa — completada 2026-09-20
 - `pom.xml` añade `jna 5.14.0`, `jna-platform`, `java-keyring 1.0.1`. `Cifrado.SECRETO` queda solo para `encriptarLegacy`/`desencriptarLegacy` y backup, no para nuevas escrituras.

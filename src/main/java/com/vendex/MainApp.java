@@ -20,7 +20,7 @@ public class MainApp extends Application {
     @Override
     public void start(Stage stage) throws Exception {
         cargarFuentes();
-        // Cargar ~/.vendex/db.properties antes de cualquier DAO (soporte multi-PC 192.168.1.7 host)
+        // Cargar ~/.vendex/db.properties antes de cualquier DAO (soporte multi-PC: host=localhost, clientes=vendex-db via hosts — IP varía por cliente)
         // Si no existe archivo y no hay override por env/property (headless/docker), mostrar wizard integrado
         boolean envOverride = System.getenv("DB_PASSWORD") != null && !System.getenv("DB_PASSWORD").isBlank()
                 || System.getProperty("db.password") != null && !System.getProperty("db.password").isBlank();
@@ -47,7 +47,7 @@ public class MainApp extends Application {
         DatabaseConnection.ensureConfiguracionEmailSchema();
         DatabaseConnection.ensureLoginBruteForceSchema();
         DatabaseConnection.ensurePermisosGranularesSchema();
-        // Activacion solo en host (192.168.1.7). PC cliente 192.168.1.5 con db.url remota no requiere licencia local.
+        // Activacion solo en host (localhost). PC cliente con db.url remota (vendex-db) no requiere licencia local.
         boolean esRemota = DbConfig.esRemota();
         if (!esRemota && !LicenseManager.isActivated()) {
             FXMLLoader loader = new FXMLLoader(

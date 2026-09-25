@@ -1,26 +1,42 @@
 # Runbook — Recuperación ante Desastre (PostgreSQL dbVendex)
 
-> **Guardar copia de este documento FUERA de 192.168.1.7** (repo privado, Drive, impresión). Si el host central se pierde y este runbook solo está ahí, es inútil.
+> **Guardar copia de este documento FUERA del host central** (repo privado, Drive, impresión). Si el host se pierde y este runbook solo está ahí, es inútil. La IP del host varía por cliente; usar siempre `vendex-db` (ver `docs/hosts_setup.md`).
 
-**Última revisión:** 2026-09-23 — RPO 24h (backup diario `pg_dump` custom + GPG en cierre de caja).  
-**Host central:** `192.168.1.7` — BD `dbVendex` — Rol app `app_vendex` (ver `docs/permisos_bd.md` y `sql/migracion_minimo_privilegio_20260920.sql`).  
-**Offsite:** otra PC en red `\\OTRA-PC\VendexBackups` (configurable en `~/.vendex/backup.properties` `backup.offsite.path`).  
+**Última revisión:** 2026-09-24 — RPO 24h (backup diario `pg_dump` custom + GPG en cierre de caja).  
+**Host central:** `vendex-db` → BD `dbVendex` — Rol app `app_vendex` (ver `docs/permisos_bd.md` y `sql/migracion_minimo_privilegio_20260920.sql`). IP real por cliente ej. `192.168.1.7` (configurar via `hosts` + reserva DHCP).  
+**Offsite:** otra PC en red `\\backup-pc\VendexBackups` o `\\OTRA-PC\VendexBackups` (configurable en `~/.vendex/backup.properties` `backup.offsite.path`).  
 **Notificación falla:** `andresrockfull@gmail.com` ( `~/.vendex/backup.properties` `backup.email.destino` ).  
 **Cifrado backup:** `gpg --symmetric AES256`, passphrase en `SecureConfigStore` Tier1 `backup.passphrase` (`~/.vendex/secrets/backup.passphrase.enc` + keyring DPAPI).  
 **Archivo local:** `C:\Vendex\backups\vendex_YYYYMMDD_HHMMSS.dump.gpg` — retención GFS 7 diarios / 4 semanales / 12 mensuales.
 
 ---
 
-## 1. Pérdida total de 192.168.1.7 (disco dañado / robo / borrado)
+## 0. Pre-requisito: resolución `vendex-db` (hosts distribuido)
 
-### Paso 1 — Nuevo equipo Windows
+Todas las PCs deben resolver `vendex-db` a la IP del host central via `C:\Windows\System32\drivers\etc\hosts` (ver `docs/hosts_setup.md` y `scripts/setup_configurar_hosts.bat`).
+
+```
+# C:\Windows\System32\drivers\etc\hosts (ejecutar Notepad como admin)
+192.168.1.7 vendex-db   # IP real del host en ESTE cliente
+```
+
+- Host: `jdbc:postgresql://localhost:5432/dbVendex`
+- Clientes: `jdbc:postgresql://vendex-db:5432/dbVendex`
+
+Cambiar de host = editar 1 línea `hosts` por PC (admin), no N `db.properties`.
+
+---
+
+## 1. Pérdida total del host (disco dañado / robo / borrado)
+
+### Paso 1 — Nuevo equipo Windows (puede ser cualquier PC de la red — sin comprar si no hay presupuesto)
 1. Instalar PostgreSQL **misma versión** que producción (verificar `SELECT version();` previo — si no se sabe, usar 17 LTS). Durante instalación, definir password `postgres` superuser y anotarla.
 2. Verificar `pg_dump --version` y `psql --version` en PATH. Si no están, añadir `C:\Program Files\PostgreSQL\17\bin` al PATH.
 3. Instalar Gpg4win (https://www.gpg4win.org) y verificar `gpg --version`.
 
 ### Paso 2 — Ubicar último backup
 - Local (si disco sobrevivió): `C:\Vendex\backups`
-- Offsite (otra PC): `\\OTRA-PC\VendexBackups` — elegir el más reciente `vendex_YYYYMMDD_HHMMSS.dump.gpg`. Verificar tamaño no sea 0.
+- Offsite (otra PC): `\\backup-pc\VendexBackups` — elegir el más reciente `vendex_YYYYMMDD_HHMMSS.dump.gpg`. Verificar tamaño no sea 0.
 
 ### Paso 3 — Desencriptar (si tiene .gpg)
 ```bat
@@ -57,14 +73,24 @@ psql -h localhost -U postgres -d dbVendex -f src\main\resources\sql\migracion_pe
 psql -h localhost -U postgres -d dbVendex -f src\main\resources\sql\migracion_antifuerza_bruta_20260920.sql
 ```
 
-### Paso 7 — Reconfigurar cada PC cliente
-1. En **cada PC** (incluida la nueva 192.168.1.7): borrar `~/.vendex/db.properties` o abrir Vendex → Wizard BD.
-2. Configurar:
-   - Host central: `jdbc:postgresql://192.168.1.7:5432/dbVendex` (en host usar `localhost`)
+### Paso 7 — Actualizar `hosts` y reconfigurar solo si cambia IP
+1. Asignar al nuevo host una IP fija (reserva DHCP router, ej. `192.168.1.7` u otra disponible).
+2. En **cada PC** (incluida la nueva) editar `C:\Windows\System32\drivers\etc\hosts`:
+   ```
+   192.168.1.TU_NUEVA_IP vendex-db
+   ```
+   O ejecutar como admin:
+   ```bat
+   scripts\setup_configurar_hosts.bat 192.168.1.TU_NUEVA_IP
+   ```
+   Verificar: `ping vendex-db` y `psql -h vendex-db -U app_vendex -d dbVendex -c "select 1"`
+3. Solo si hubo rotación de password, en cada PC borrar `~/.vendex/db.properties` o abrir Vendex → Wizard BD:
+   - Host: `jdbc:postgresql://localhost:5432/dbVendex` (en host) / `jdbc:postgresql://vendex-db:5432/dbVendex` (clientes)
    - Usuario: `app_vendex`
    - Password: la nueva de 24 chars (pegar misma en todas las PCs → “PC adicional — pegar existente”)
    - Probar conexión → Guardar cifrado.
-3. Si cambió IP del nuevo host, actualizar `db.url` en cada PC.
+
+> **Ventaja `hosts`:** si solo cambió IP y no password, no hace falta tocar `db.properties` en N PCs — basta actualizar `hosts`.
 
 ### Paso 8 — Restaurar otros archivos críticos (no viven en BD)
 | Archivo | Ubicación original | Respaldar aparte |
@@ -74,12 +100,14 @@ psql -h localhost -U postgres -d dbVendex -f src\main\resources\sql\migracion_an
 | `backup.passphrase` Tier1 | `~/.vendex/secrets/backup.passphrase.enc` | No portable entre PCs — regenerar si se pierde (backups viejos cifrados se pierden) |
 | `configuracion_email` fila | Dentro de BD (se restaura con dump) | — |
 | `backup.properties` | `~/.vendex/backup.properties` | Reconfigurar ruta offsite y email |
+| `db.properties` por PC | `~/.vendex/db.properties` (`vendex-db` si no rotó) | Solo si rotó password |
 
 ### Paso 9 — Verificación
-1. Login Vendex en host y en una PC cliente.
-2. Emitir Factura de prueba → SRI PRUEBAS → verificar PDF/RIDE.
-3. Caja → Abrir/Cerrar → verificar que se dispara backup nuevo en `C:\Vendex\backups` y `\\OTRA-PC\VendexBackups`.
-4. Revisar `Vendex → Administración → Respaldos` lista de últimos backups.
+1. `ping vendex-db` desde host y cliente OK.
+2. Login Vendex en host y en una PC cliente.
+3. Emitir Factura de prueba → SRI PRUEBAS → verificar PDF/RIDE.
+4. Caja → Abrir/Cerrar → verificar que se dispara backup nuevo en `C:\Vendex\backups` y `\\backup-pc\VendexBackups`.
+5. Revisar `Vendex → Administración → Respaldos` lista de últimos backups.
 
 ---
 
@@ -93,14 +121,14 @@ psql -h localhost -U postgres -d dbVendex -f src\main\resources\sql\migracion_an
   psql -h localhost -U postgres -d dbVendex_temp -c "COPY (SELECT * FROM cliente WHERE id=123) TO 'C:\temp\cliente_123.csv' CSV HEADER"
   psql -h localhost -U postgres -d dbVendex -c "COPY cliente FROM 'C:\temp\cliente_123.csv' CSV HEADER"
   ```
-- **Pérdida <24h aceptable:** RPO actual es hasta 24h (último cierre de caja). Si necesita PITR segundos, ver `docs/WAL_FASE2.md` (no implementado).
+- **Pérdida <24h aceptable:** RPO actual es hasta 24h (último cierre de caja). Cold standby sin hardware es reutilizar cualquier PC (sin comprar).
 
 ---
 
 ## 3. Procedimiento de prueba mensual (recomendado)
 
 1. Tomar último `vendex_*.dump.gpg` de offsite.
-2. En PC de prueba (no 192.168.1.7) restaurar a `dbVendex_test` (pasos 3-5).
+2. En PC de prueba (no el host central) restaurar a `dbVendex_test` (pasos 3-5).
 3. `SELECT count(*) FROM factura_registro` debe estar en rango esperado (comparar con producción `SELECT max(id) FROM factura_registro`).
 4. Registrar resultado. Si falla, alertar a `andresrockfull@gmail.com`.
 
@@ -108,16 +136,16 @@ psql -h localhost -U postgres -d dbVendex -f src\main\resources\sql\migracion_an
 
 ## 4. Contactos y accesos
 
-- **Responsable backup:** andresrockfull@gmail.com
-- **Host BD:** 192.168.1.7 — usuario `postgres` / `app_vendex` — passwords en gestor de contraseñas (NO en este repo).
-- **Offsite:** `\\OTRA-PC\VendexBackups` — credenciales red Windows (usuario con permisos escritura).
-- **Repo privado runbook:** (este archivo) — mantener sincronizado con cada cambio de IP, nueva tabla `sql/*.sql`, o rotación password.
+- **Responsable backup/hosts:** admin (andresrockfull@gmail.com) — mantiene `hosts` y reserva DHCP.
+- **Host BD:** `vendex-db` (`C:\Windows\System32\drivers\etc\hosts` → IP real por cliente) — usuario `postgres` / `app_vendex` — passwords en gestor de contraseñas (NO en este repo).
+- **Offsite:** `\\backup-pc\VendexBackups` — credenciales red Windows (usuario con permisos escritura).
+- **Repo privado runbook:** (este archivo) — mantener sincronizado con cada cambio de IP (`hosts`), nueva tabla `sql/*.sql`, o rotación password.
 
 ---
 
 ## 5. Checklist tras cualquier cambio infra
 
-- [ ] ¿Cambió IP host? → actualizar `db.properties` en cada PC y este runbook.
+- [ ] ¿Cambió IP host? → actualizar `hosts` (`vendex-db`) en cada PC y reserva DHCP (no tocar `db.properties` si no rotó password).
 - [ ] ¿Nueva tabla en `sql/*.sql`? → añadir `GRANT` en `migracion_minimo_privilegio*.sql`.
 - [ ] ¿Rotó password `app_vendex`? → actualizar en cada PC via wizard.
 - [ ] ¿Nuevo certificado `.p12`? → copiar a offsite.
@@ -125,9 +153,16 @@ psql -h localhost -U postgres -d dbVendex -f src\main\resources\sql\migracion_an
 
 ---
 
+## 6. Cold standby sin presupuesto (reutilizar cualquier PC)
+
+No se compra equipo dedicado. El “standby” es el procedimiento §1 con cualquier PC de la red que tenga PG instalado al momento de la falla. La otra PC del offsite (`\\backup-pc`) es candidata natural si tiene espacio. Ver `docs/cold_standby_sin_hardware.md`.
+
+---
+
 ## Dependencias
 
 - `pg_dump` / `pg_restore` (PostgreSQL bin)
 - `gpg` (Gpg4win)
-- Acceso a `\\OTRA-PC\VendexBackups` desde 192.168.1.7
-- `ConfiguracionEmail` activa para alertas (sino fallback no notifica)
+- Acceso a `\\backup-pc\VendexBackups` desde `vendex-db`
+- `ConfiguracionEmail` activa para alertas
+- Resolución `vendex-db` via `hosts` (o DNS router si el cliente lo tiene)

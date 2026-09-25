@@ -81,7 +81,7 @@ public class FacturaService {
         }
 
         // Leer establecimiento/punto de la BD para multi-PC (001-001 centralizado)
-        // marcarUsado es atomico (UPDATE ... RETURNING), evita que 192.168.1.5 reutilice el mismo que 192.168.1.7
+        // marcarUsado es atomico (UPDATE ... RETURNING), evita que dos PCs reutilicen el mismo numero
         int secuencialFE = secuenciaDAO.marcarUsado("FACTURA");
         if (secuencialFE == -1) throw new IllegalStateException("No se pudo obtener el secuencial de FACTURA (secuencia_documento).");
         SecuenciaDocumento secActual = secuenciaDAO.obtener("FACTURA");

@@ -3,6 +3,7 @@ REM backup_vendex.bat — Backup Vendex Windows (pg_dump custom + gpg + copia of
 REM Uso: backup_vendex.bat  (ejecuta via Vendex al cierre de caja o manual con doble-click)
 REM Requiere pg_dump y gpg en PATH o configurados en ~/.vendex/backup.properties
 REM Destino local y offsite configurables en Vendex: Administracion -> Respaldos
+REM Host BD: vendex-db (via hosts, ver docs/hosts_setup.md, IP varia por cliente) o localhost en host
 
 setlocal enabledelayedexpansion
 
@@ -104,7 +105,7 @@ if not "%OFFSITE%"=="" (
     echo ADVERTENCIA: fallo copia offsite. Verificar que %OFFSITE% sea accesible: dir "%OFFSITE%"
   )
 ) else (
-  echo Offsite no configurado (backup.offsite.path vacio) — configurar \\OTRA-PC\VendexBackups en backup.properties
+  echo Offsite no configurado (backup.offsite.path vacio) — configurar \\backup-pc\VendexBackups en Vendex Administracion - Respaldos
 )
 
 echo [%date% %time%] Backup finalizado
