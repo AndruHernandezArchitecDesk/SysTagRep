@@ -181,6 +181,17 @@
             <artifactId>java-keyring</artifactId>
             <version>1.0.1</version>
         </dependency>
+        <!-- Flyway migraciones versionadas (LINEAMIENTO_MIGRACIONES_FLYWAY) -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+            <version>10.17.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+            <version>10.17.0</version>
+        </dependency>
     </dependencies>
 
     <build>

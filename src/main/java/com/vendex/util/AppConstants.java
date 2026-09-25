@@ -31,6 +31,7 @@ public final class AppConstants {
     public static final String ESTADO_DEVUELTA = "DEVUELTA";
     public static final String ESTADO_ERROR = "ERROR";
     public static final String ESTADO_RECIBIDA = "RECIBIDA";
+    public static final String ESTADO_AGOTADA = "AGOTADA";
 
     public static final String AMBIENTE_PRUEBAS = "PRUEBAS";
     public static final String AMBIENTE_PRODUCCION = "PRODUCCION";

@@ -466,43 +466,51 @@ public class FacturaController implements Initializable {
                     obtenerDescuentoPct()
             );
 
-            String claveFinal = resultado.claveAcceso;
-            String xmlFinal = resultado.xmlFirmado;
-            String numCompFinal = resultado.numComprobante;
-            String ambienteFinal = resultado.ambienteSri;
-            boolean firmaOkFinal = resultado.firmaOk;
+            // Contingencia SRI: todo a cola — entrega inmediata sin esperar SRI (LINEAMIENTO_CONTINGENCIA_SRI §1 y §2)
+            // Generar PDF provisional PENDIENTE y encolar para reintento de fondo (ServicioReintentoSri cada 2min)
+            SRIWebService.SRIResponse provisional = new SRIWebService.SRIResponse();
+            provisional.setEstado(AppConstants.ESTADO_PENDIENTE);
+            provisional.setMensaje("Pendiente SRI - en cola contingencia (autorizacion en segundo plano)");
+            try {
+                facturaService.finalizarEnvioSRI(provisional, resultado, directorioEscritorio);
+            } catch (Exception ex) {
+                logDAO.guardar("FacturaController", "finalizarProvisional", ex.getMessage(), ex);
+            }
+            try {
+                new com.vendex.dao.ComprobantePendienteSriDAO().encolar("FACTURA", resultado.claveAcceso, resultado.numComprobante, resultado.ambienteSri);
+            } catch (Exception ex) {
+                logDAO.guardar("FacturaController", "encolar", ex.getMessage(), ex instanceof Exception ? (Exception)ex : new Exception(ex));
+            }
 
-            Task<SRIWebService.SRIResponse> tareaSRI = new Task<>() {
-                @Override
-                protected SRIWebService.SRIResponse call() {
-                    return facturaService.enviarYSolicitarAutorizacion(ambienteFinal, xmlFinal, claveFinal);
-                }
-            };
-
-            Alert progreso = new Alert(Alert.AlertType.INFORMATION);
-            progreso.setTitle("Factura Electrónica");
-            progreso.setHeaderText("Consultando al SRI...");
-            progreso.setContentText("Enviando la factura " + numCompFinal + " al SRI.\n"
-                    + "La ventana permanecerá activa; puede tardar unos segundos.");
-            progreso.getButtonTypes().setAll(new ButtonType("Minimizar", ButtonBar.ButtonData.CANCEL_CLOSE));
-
-            tareaSRI.setOnSucceeded(e -> {
-                progreso.close();
-                finalizarGuardado(tareaSRI.getValue(), resultado);
-            });
-            tareaSRI.setOnFailed(e -> {
-                progreso.close();
-                Throwable exSRI = tareaSRI.getException();
-                logDAO.guardar("FacturaController", "validarSRI", String.valueOf(exSRI));
-                daoComprobante.actualizarEstado(claveFinal, AppConstants.ESTADO_PENDIENTE, "Error de conexión", xmlFinal, null, null);
-                daoComprobante.guardarEnvio(claveFinal, numCompFinal, ambienteFinal, xmlFinal,
-                        null, null, AppConstants.ESTADO_PENDIENTE, "Error de conexión", null, null);
-                new Alert(Alert.AlertType.ERROR, "Error al consultar el SRI: "
-                        + (exSRI != null ? exSRI.getMessage() : "desconocido")).showAndWait();
-            });
-
-            new Thread(tareaSRI, "Hilo-SRI").start();
-            progreso.show();
+            // Entrega inmediata al cliente en mostrador (offline válido al firmar, sin esperar AUTORIZADO)
+            // No esperar SRI: mostrar PDF provisional y liberar mostrador; el job de fondo se encarga
+            {
+                Alert alertExito = new Alert(Alert.AlertType.INFORMATION);
+                alertExito.setTitle("Factura registrada — pendiente SRI");
+                alertExito.setHeaderText("Comprobante entregable en mostrador");
+                alertExito.setContentText("Factura " + resultado.numComprobante + " registrada.\nClave: " + resultado.claveAcceso +
+                        "\nPDF provisional guardado en: " + resultado.rutaPDF +
+                        "\n\nEl SRI autorizará en segundo plano (cola cada 2min). El PDF se actualizará y el correo se enviará al autorizar.");
+                alertExito.showAndWait();
+                try {
+                    if (Desktop.isDesktopSupported()) {
+                        final File pdfFinal = new File(resultado.rutaPDF);
+                        new Thread(() -> {
+                            try { Desktop.getDesktop().open(pdfFinal); } catch (Exception ignored) { LOGGER.log(Level.WARNING, "No se pudo abrir PDF", ignored); }
+                        }, "Abrir-PDF").start();
+                    }
+                } catch (Exception ignored) { LOGGER.log(Level.WARNING, "Desktop no soportado", ignored); }
+                new Alert(Alert.AlertType.INFORMATION, "Factura en cola SRI. Quedará AUTORIZADA automáticamente. Verifique en Seguimiento SRI o banner.").showAndWait();
+                itemsDetalle.clear();
+                tblDetalle.refresh();
+                if (txtDescuento != null) txtDescuento.setText("0.00");
+                cmbDescuento.setValue("0");
+                calcularTotales();
+                cmbCliente.getSelectionModel().clearSelection();
+                cmbCliente.getEditor().clear();
+                txtNombre.clear(); txtIdentificacion.clear(); txtDireccion.clear(); txtCorreo.clear(); txtTelefono.clear(); txtBuscarProducto.clear();
+                obtenerNumFactura();
+            }
         } catch (Exception e) {
             logDAO.guardar("FacturaController", "guardar", e.getMessage(), e);
             String mensaje = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();

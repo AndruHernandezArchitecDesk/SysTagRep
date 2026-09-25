@@ -28,6 +28,9 @@ public class MainApp extends Application {
             mostrarWizardDb(true);
         }
         DatabaseConnection.initFromConfig();
+        // Flyway migraciones versionadas con postgres migrador (solo host, si hay password)
+        // Si no hay postgres.password (clientes), se omite y se usan ensure* fallback idempotentes
+        try { DatabaseConnection.migrateWithFlywayIfAvailable(); } catch (Exception e) { System.err.println("Flyway no ejecutado: " + e.getMessage()); e.printStackTrace(); }
         // warning no bloqueante si password débil (solo log + dialog)
         if (DatabaseConnection.esPasswordDebilActual()) {
             javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.WARNING);
@@ -47,6 +50,9 @@ public class MainApp extends Application {
         DatabaseConnection.ensureConfiguracionEmailSchema();
         DatabaseConnection.ensureLoginBruteForceSchema();
         DatabaseConnection.ensurePermisosGranularesSchema();
+        DatabaseConnection.ensureComprobantePendienteSriSchema();
+        // SRI contingencia: cola persistente todo a cola (desacople mostrador)
+        try { com.vendex.service.ServicioReintentoSri.getInstance().start(); } catch (Exception e) { System.err.println("No se pudo iniciar SRI reintento: " + e.getMessage()); }
         // Activacion solo en host (localhost). PC cliente con db.url remota (vendex-db) no requiere licencia local.
         boolean esRemota = DbConfig.esRemota();
         if (!esRemota && !LicenseManager.isActivated()) {

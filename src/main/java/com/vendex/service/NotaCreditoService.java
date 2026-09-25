@@ -80,7 +80,8 @@ public class NotaCreditoService {
 
         FacturaRegistro factura = obtenerFacturaPorId(facturaRegistroId);
         if (factura == null) throw new IllegalArgumentException("Factura no encontrada id=" + facturaRegistroId);
-        if (!AppConstants.ESTADO_AUTORIZADO.equals(factura.getEstadoSri())) throw new IllegalStateException("Solo se permite NC sobre factura AUTORIZADA. Estado actual: " + factura.getEstadoSri());
+        boolean esPendiente = AppConstants.ESTADO_PENDIENTE.equals(factura.getEstadoSri()) || AppConstants.ESTADO_RECIBIDA.equals(factura.getEstadoSri()) || AppConstants.ESTADO_ERROR.equals(factura.getEstadoSri());
+        if (!AppConstants.ESTADO_AUTORIZADO.equals(factura.getEstadoSri()) && !(esPendiente && com.vendex.util.SRIContingenciaConfig.isModoContingencia())) throw new IllegalStateException("Solo se permite NC sobre factura AUTORIZADA. Estado actual: " + factura.getEstadoSri() + (esPendiente ? " (habilitar modo contingencia para permitir sobre PENDIENTE)" : ""));
 
         // Validar saldo disponible
         BigDecimal totalFactura = factura.getTotal() != null ? factura.getTotal() : BigDecimal.ZERO;

@@ -58,6 +58,12 @@ public class MainController implements Initializable {
     @FXML
     private Label lblBannerCertificado;
 
+    @FXML
+    private HBox bannerSri;
+
+    @FXML
+    private Label lblBannerSri;
+
     private final LogDAO logDAO = new LogDAO();
     private final AlertaService alertaService = new AlertaService();
 
@@ -73,6 +79,7 @@ public class MainController implements Initializable {
             ThemeManager.aplicarTemaGuardado(contenedor.getScene());
         }
         verificarCertificadoAsync();
+        iniciarBannerSriPendientes();
     }
 
     public void abrirDashboard1() {
@@ -429,6 +436,87 @@ public class MainController implements Initializable {
     @FXML
     private void cerrarBannerCertificado() {
         if (bannerCertificado != null) { bannerCertificado.setVisible(false); bannerCertificado.setManaged(false); }
+    }
+
+    @FXML
+    private void cerrarBannerSri() {
+        if (bannerSri != null) { bannerSri.setVisible(false); bannerSri.setManaged(false); }
+    }
+
+    private void iniciarBannerSriPendientes() {
+        javafx.animation.Timeline tl = new javafx.animation.Timeline(
+            new javafx.animation.KeyFrame(javafx.util.Duration.seconds(5), e -> actualizarBannerSriPendientes()),
+            new javafx.animation.KeyFrame(javafx.util.Duration.seconds(120), e -> actualizarBannerSriPendientes())
+        );
+        tl.setCycleCount(javafx.animation.Animation.INDEFINITE);
+        tl.play();
+        // también actualizar al inicio en hilo fondo
+        actualizarBannerSriPendientes();
+    }
+
+    private void actualizarBannerSriPendientes() {
+        Task<Integer> task = new Task<>() {
+            @Override protected Integer call() {
+                try { return new com.vendex.dao.ComprobantePendienteSriDAO().contarPendientes(); } catch (Exception e) { return 0; }
+            }
+        };
+        task.setOnSucceeded(e -> {
+            int c = task.getValue() != null ? task.getValue() : 0;
+            if (bannerSri == null || lblBannerSri == null) return;
+            if (c > 0) {
+                lblBannerSri.setText(c + " comprobante(s) esperando autorización del SRI — servicio con demoras, se reintenta cada 2min automáticamente");
+                bannerSri.setVisible(true);
+                bannerSri.setManaged(true);
+            } else {
+                bannerSri.setVisible(false);
+                bannerSri.setManaged(false);
+            }
+        });
+        new Thread(task, "Hilo-Banner-SRI").start();
+    }
+
+    @FXML
+    private void irConfigurarContingenciaSRI() {
+        String actual = com.vendex.util.SRIContingenciaConfig.getEmailDestino();
+        javafx.scene.control.TextInputDialog dlg = new javafx.scene.control.TextInputDialog(actual != null ? actual : "");
+        dlg.setTitle("SRI Contingencia — Email notificaciones");
+        dlg.setHeaderText("Email parametrizado por cliente (RECHAZADA / AGOTADA 24h)");
+        dlg.setContentText("Email destino:");
+        var res = dlg.showAndWait();
+        if (res.isPresent()) {
+            String email = res.get().trim();
+            if (!email.isEmpty() && !email.contains("@")) {
+                new Alert(Alert.AlertType.WARNING, "Email inválido").showAndWait();
+                return;
+            }
+            com.vendex.util.SRIContingenciaConfig.setEmailDestino(email);
+            new Alert(Alert.AlertType.INFORMATION, email.isEmpty() ? "Email de contingencia eliminado." : "Email guardado: " + email + "\n~/.vendex/contingencia.properties").showAndWait();
+        }
+    }
+
+    @FXML
+    private void irConfigurarPostgres() {
+        String actual = "";
+        // no mostrar password actual por seguridad, solo indicar si existe
+        boolean tiene = com.vendex.config.PostgresConfig.tienePassword();
+        javafx.scene.control.TextInputDialog dlg = new javafx.scene.control.TextInputDialog("");
+        dlg.setTitle("Flyway — Postgres migrador");
+        dlg.setHeaderText(tiene ? "Postgres password ya configurado (cifrado)" : "Configurar postgres superuser para Flyway");
+        dlg.setContentText("Password postgres (se guardará cifrado en ~/.vendex/postgres.properties solo en host):");
+        var res = dlg.showAndWait();
+        if (res.isPresent()) {
+            String pwd = res.get().trim();
+            if (pwd.isEmpty()) {
+                new Alert(Alert.AlertType.WARNING, "Password vacío, no se guardó.").showAndWait();
+                return;
+            }
+            try {
+                com.vendex.config.PostgresConfig.guardarPassword(pwd);
+                new Alert(Alert.AlertType.INFORMATION, "Password postgres guardado cifrado.\nArchivo: " + com.vendex.config.PostgresConfig.getArchivo().getAbsolutePath() + "\nReinicie para migrar.").showAndWait();
+            } catch (Exception e) {
+                new Alert(Alert.AlertType.ERROR, "Error guardando: " + e.getMessage()).showAndWait();
+            }
+        }
     }
 
     private void mostrarModalCertificado(com.vendex.service.CertificadoAlertaService.ResultadoAlerta res) {

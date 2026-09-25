@@ -38,6 +38,9 @@ build/
 *.dump.gpg
 .vendex/
 rclone.conf
+postgres.properties
+contingencia.properties
+backup.properties
 
 ### VS Code ###
 .vscode/

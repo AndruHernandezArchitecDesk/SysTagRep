@@ -207,53 +207,16 @@ public class GuiaRemisionController implements Initializable {
 
             GuiaRemisionService.ResultadoGuiaRemision res = grService.emitirGuiaRemision(copia, dirPartida, razonTrans, tipoIdTrans, rucTrans, placa, ini, fin, ambiente, rutaP12, claveP12, dir, usuarioId);
 
-            Task<SRIWebService.SRIResponse> tarea = new Task<>(){ protected SRIWebService.SRIResponse call(){ return grService.enviarYSolicitarAutorizacion(ambiente, res.xmlFirmado, res.claveAcceso); }};
-            Alert prog = new Alert(Alert.AlertType.INFORMATION); prog.setTitle("Guía de Remisión"); prog.setHeaderText("Consultando al SRI..."); prog.setContentText("Enviando GR "+res.numComprobante+" al SRI\nNo cierre la ventana."); prog.getButtonTypes().setAll(new ButtonType("Minimizar", ButtonBar.ButtonData.CANCEL_CLOSE));
-            tarea.setOnSucceeded(e-> {
-                SRIWebService.SRIResponse resp = tarea.getValue();
-                new Thread(() -> {
-                    try { grService.finalizarEnvioSRI(resp, res, dir); } catch (Exception ex) { logDAO.guardar("GuiaRemisionController","finalizarEnvioSRI", ex.getMessage(), ex); }
-                    javafx.application.Platform.runLater(() -> {
-                        prog.close();
-                        String estado = resp.getEstado();
-                        String msg = resp.getMensaje();
-                        if (msg != null && msg.toLowerCase().contains("no cumple") || "DEVUELTA".equals(estado) || "RECHAZADA".equals(estado) || "NO AUTORIZADO".equals(estado)) {
-                            logDAO.guardar("GuiaRemisionController","SRI-DEVUELTA", "GR "+res.numComprobante+" estado="+estado+" msg="+msg+" clave="+res.claveAcceso);
-                        }
-                        if (AppConstants.ESTADO_RECHAZADA.equals(estado) || AppConstants.ESTADO_DEVUELTA.equals(estado) || "NO AUTORIZADO".equals(estado)) {
-                            String detalle = "SRI "+estado+": "+msg+"\nClave: "+res.claveAcceso+"\nNum: "+res.numComprobante+"\nPDF: "+res.rutaPDF+"\n\nRevisa tabla logs y carpeta ~/vendex_errors\nXML volcados en ~/vendex_errors/GR_*";
-                            volcarErrorSRI(detalle, resp, res);
-                            mostrarAlertaCopiable(Alert.AlertType.ERROR, "SRI - Guía de Remisión", "SRI devuelta", detalle);
-                        } else {
-                            mostrarAlertaCopiable(Alert.AlertType.INFORMATION, "Guía de Remisión", "GR registrada", "GR "+res.numComprobante+" registrada. Estado: "+estado+(msg!=null&&!msg.isEmpty()?"\n"+msg:"")+"\nClave: "+res.claveAcceso+"\nPDF: "+res.rutaPDF);
-                        }
-                        new Thread(() -> { try { if (Desktop.isDesktopSupported()) Desktop.getDesktop().open(new File(res.rutaPDF)); } catch (Exception ignore) {} }, "Hilo-Abrir-PDF-GR").start();
-                        if (AppConstants.ESTADO_AUTORIZADO.equals(estado)) {
-                            // Intentar enviar correo al primer destinatario si tiene email registrado como cliente
-                            try {
-                                String ident = destinatarios.isEmpty() ? null : destinatarios.get(0).identificacionDestinatario;
-                                String correo = null;
-                                if (ident != null) {
-                                    for (Cliente cli : new ClienteDAO().listar()) {
-                                        if (ident.equals(cli.getIdentificacion()) && cli.getCorreo()!=null && cli.getCorreo().contains("@")) { correo = cli.getCorreo(); break; }
-                                    }
-                                }
-                                if (correo!=null && ElectronicoUtil.debeEnviarNotificacion(estado, resp.getNumeroAutorizacion(), resp.getFechaAutorizacion())) {
-                                    String c = correo;
-                                    String nombre = destinatarios.get(0).razonSocialDestinatario;
-                                    Task<String> tMail=new Task<>(){ protected String call(){ return grService.enviarCorreoAutorizacion(c.trim(), nombre, res.numComprobante, res.rutaPDF, res.rutaXML)?null:"Error correo"; }};
-                                    tMail.setOnSucceeded(ev-> { if (tMail.getValue()==null) new Alert(Alert.AlertType.INFORMATION, "Correo enviado a "+c).showAndWait(); else logDAO.guardar("GuiaRemisionController","correoGR", tMail.getValue()); });
-                                    new Thread(tMail, "Hilo-Correo-GR").start();
-                                }
-                            } catch (Exception ignore) { logDAO.guardar("GuiaRemisionController","correoGR", ignore.getMessage(), ignore instanceof Exception ? (Exception)ignore : new Exception(ignore)); }
-                        }
-                        destinatarios.clear(); detallesActual.clear(); txtRazonTransportista.clear(); txtRucTransportista.clear(); txtPlaca.clear();
-                        actualizarSecuencial();
-                    });
-                }, "Hilo-Finalizar-GR").start();
-            });
-            tarea.setOnFailed(e-> { prog.close(); Throwable ex = tarea.getException(); logDAO.guardar("GuiaRemisionController","SRI-Tarea", ex!=null?ex.getMessage():"desconocido", ex instanceof Exception ? (Exception)ex : new Exception(ex)); volcarErrorSRI("Error SRI: "+(ex!=null?ex.getMessage():"desconocido"), null, res); mostrarAlertaCopiable(Alert.AlertType.ERROR, "SRI Error", "Error al consultar SRI", "Error SRI: "+(ex!=null?ex.getMessage():"desconocido")+"\nClave: "+res.claveAcceso+"\nRevisa tabla logs y ~/vendex_errors"); });
-            new Thread(tarea, "Hilo-SRI-GR").start(); prog.show();
+            // Contingencia todo a cola
+            SRIWebService.SRIResponse provisional = new SRIWebService.SRIResponse();
+            provisional.setEstado(AppConstants.ESTADO_PENDIENTE);
+            provisional.setMensaje("Pendiente SRI - en cola");
+            try { grService.finalizarEnvioSRI(provisional, res, dir); } catch (Exception ex) { logDAO.guardar("GuiaRemisionController","provisional", ex.getMessage(), ex); }
+            try { new com.vendex.dao.ComprobantePendienteSriDAO().encolar("GUIA_REMISION", res.claveAcceso, res.numComprobante, ambiente); } catch (Exception ex) { logDAO.guardar("GuiaRemisionController","encolar", ex.getMessage(), ex instanceof Exception ? (Exception)ex : new Exception(ex)); }
+            mostrarAlertaCopiable(Alert.AlertType.INFORMATION, "Guía de Remisión", "GR registrada (pendiente SRI)", "GR " + res.numComprobante + " registrada (pendiente SRI).\nClave: " + res.claveAcceso + "\nPDF provisional: " + res.rutaPDF + "\nEn cola cada 2min.");
+            new Thread(() -> { try { if (Desktop.isDesktopSupported()) Desktop.getDesktop().open(new File(res.rutaPDF)); } catch (Exception ignore) {} }, "Hilo-Abrir-PDF-GR").start();
+            destinatarios.clear(); detallesActual.clear(); txtRazonTransportista.clear(); txtRucTransportista.clear(); txtPlaca.clear();
+            actualizarSecuencial();
         } catch (Exception ex) { logDAO.guardar("GuiaRemisionController","emitirGuiaRemision", ex.getMessage(), ex); mostrarAlertaCopiable(Alert.AlertType.ERROR, "Error", "Error al emitir", ex.getMessage()); }
     }
 

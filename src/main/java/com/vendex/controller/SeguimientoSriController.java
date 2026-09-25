@@ -170,6 +170,42 @@ public class SeguimientoSriController implements Initializable {
 
     @FXML
     private void consultarSri() {
+        // Contingencia: la cola persistente se encarga automáticamente cada 2min (ServicioReintentoSri).
+        // Este botón ahora es solo vista/manual: fuerza reintento inmediato de la cola.
+        com.vendex.dao.ComprobantePendienteSriDAO pendDao = new com.vendex.dao.ComprobantePendienteSriDAO();
+        int pendientesCola = pendDao.contarPendientes();
+        if (pendientesCola == 0) {
+            // fallback: también revisar tablas legacy por si hay pendientes no encolados (migración inicial)
+            List<FacturaRegistro> pendientesLegacy = dao.listarPendientesSri();
+            if (pendientesLegacy.isEmpty()) {
+                new Alert(Alert.AlertType.INFORMATION, "No hay comprobantes en cola SRI. La cola persistente reintenta cada 2min automáticamente.\nPendientes en cola: 0").showAndWait();
+                cargarDatos();
+                return;
+            }
+        }
+        btnConsultarSri.setDisable(true);
+        Task<String> tarea = new Task<>() {
+            @Override protected String call() {
+                // forzar proximo_intento=NOW para pendientes y ejecutar ciclo
+                try {
+                    for (com.vendex.model.ComprobantePendienteSri p : pendDao.listarParaReintentar(100)) {
+                        pendDao.forzarReintentoAhora(p.getClaveAcceso());
+                    }
+                } catch (Exception e) { LOGGER.log(Level.WARNING, "forzar reintento", e); }
+                com.vendex.service.ServicioReintentoSri.getInstance().ciclo();
+                int restantes = pendDao.contarPendientes();
+                int totalCola = pendDao.listarTodos(1000).size();
+                return "Cola SRI procesada.\nPendientes restantes: " + restantes + "\nTotal en cola (incl. RECHAZADA/AGOTADA): " + totalCola + "\n\nEl servicio reintenta automáticamente cada 2min con backoff (2/15/60min, AGOTADA 24h). Las RECHAZADAS no se reintentan.";
+            }
+        };
+        tarea.setOnSucceeded(e -> { btnConsultarSri.setDisable(false); cargarDatos(); new Alert(Alert.AlertType.INFORMATION, tarea.getValue()).showAndWait(); });
+        tarea.setOnFailed(e -> { btnConsultarSri.setDisable(false); Throwable ex = tarea.getException(); logDAO.guardar("SeguimientoSriController", "consultarSri", String.valueOf(ex)); new Alert(Alert.AlertType.ERROR, "Error al consultar SRI: " + (ex != null ? ex.getMessage() : "desconocido")).showAndWait(); });
+        new Thread(tarea, "Hilo-ConsultarSRI").start();
+        return;
+    }
+
+    @SuppressWarnings("unused")
+    private void consultarSriLegacy() {
         List<FacturaRegistro> pendientes = dao.listarPendientesSri();
         NotaCreditoRegistroDAO ncDao = new NotaCreditoRegistroDAO();
         List<NotaCreditoRegistro> pendientesNc = ncDao.listarPendientesSri();

@@ -70,6 +70,8 @@
                     <MenuItem text="Firma Electrónica" onAction="#irFirma"/>
                     <MenuItem text="Correo Electrónico" onAction="#irConfiguracionEmail"/>
                     <MenuItem text="Respaldos" onAction="#irRespaldos"/>
+                    <MenuItem text="SRI Contingencia (email)" onAction="#irConfigurarContingenciaSRI"/>
+                    <MenuItem text="Postgres migrador (Flyway)" onAction="#irConfigurarPostgres"/>
                 </Menu>
                 <Menu text="Ayuda">
                     <MenuItem text="Asistente de Repuestos" onAction="#irAsistenteRepuestos"/>
@@ -97,6 +99,12 @@
                 <Label fx:id="lblBannerCertificado" HBox.hgrow="ALWAYS" wrapText="true" style="-fx-text-fill: #856404; -fx-font-weight: bold;"/>
                 <Button text="Ver Certificado" onAction="#irFirma" styleClass="btn-orden" style="-fx-font-size: 11px;"/>
                 <Button text="✕" onAction="#cerrarBannerCertificado" style="-fx-background-color: transparent; -fx-font-weight: bold;"/>
+            </HBox>
+            <HBox fx:id="bannerSri" visible="false" managed="false" alignment="CENTER_LEFT" spacing="10" style="-fx-background-color: #fff3cd; -fx-border-color: #ffc107; -fx-border-width: 0 0 1 0; -fx-padding: 8 12;">
+                <FontIcon iconLiteral="fas-clock" iconSize="16" style="-fx-icon-color: #856404;"/>
+                <Label fx:id="lblBannerSri" HBox.hgrow="ALWAYS" wrapText="true" style="-fx-text-fill: #856404; -fx-font-weight: bold;"/>
+                <Button text="Ver Seguimiento SRI" onAction="#irSeguimientoSri" styleClass="btn-orden" style="-fx-font-size: 11px;"/>
+                <Button text="✕" onAction="#cerrarBannerSri" style="-fx-background-color: transparent; -fx-font-weight: bold;"/>
             </HBox>
         </VBox>
     </top>

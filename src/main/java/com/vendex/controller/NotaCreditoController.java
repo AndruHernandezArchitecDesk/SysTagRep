@@ -76,8 +76,10 @@ public class NotaCreditoController implements Initializable {
 
     private void cargarFacturasAutorizadas() {
         List<FacturaRegistro> facturas = new ArrayList<>();
-        // listar facturas AUTORIZADAS
-        String sql = "SELECT fr.*, c.nombre as nombre_cliente, COALESCE(ce.estado_sri, fr.estado_sri) as estado_sri_actual, ce.mensaje_sri FROM factura_registro fr LEFT JOIN cliente c ON c.id=fr.cliente_id LEFT JOIN comprobantes_electronicos ce ON ce.clave_acceso=fr.clave_acceso WHERE COALESCE(ce.estado_sri, fr.estado_sri)='AUTORIZADO' ORDER BY fr.id DESC LIMIT 200";
+        // listar facturas AUTORIZADAS (+ PENDIENTE en modo contingencia)
+        boolean modoContingencia = com.vendex.util.SRIContingenciaConfig.isModoContingencia();
+        String estadoFiltro = modoContingencia ? "COALESCE(ce.estado_sri, fr.estado_sri) IN ('AUTORIZADO','PENDIENTE','RECIBIDA','ERROR')" : "COALESCE(ce.estado_sri, fr.estado_sri)='AUTORIZADO'";
+        String sql = "SELECT fr.*, c.nombre as nombre_cliente, COALESCE(ce.estado_sri, fr.estado_sri) as estado_sri_actual, ce.mensaje_sri FROM factura_registro fr LEFT JOIN cliente c ON c.id=fr.cliente_id LEFT JOIN comprobantes_electronicos ce ON ce.clave_acceso=fr.clave_acceso WHERE " + estadoFiltro + " ORDER BY fr.id DESC LIMIT 200";
         try (java.sql.Connection con = DatabaseConnection.getConnection(); java.sql.PreparedStatement ps = con.prepareStatement(sql); java.sql.ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 FacturaRegistro fr = new FacturaRegistro();
@@ -175,28 +177,15 @@ public class NotaCreditoController implements Initializable {
             List<NotaCreditoService.DetalleNCInput> copia = new ArrayList<>(detallesNc);
             NotaCreditoService.ResultadoNotaCredito res = ncService.emitirNotaCredito(fr.getId(), copia, motivo.trim(), tipoMotivo, reingresa, ambiente, rutaP12, claveP12, dir, usuarioId);
 
-            Task<SRIWebService.SRIResponse> tarea = new Task<>(){ protected SRIWebService.SRIResponse call(){ return ncService.enviarYSolicitarAutorizacion(ambiente, res.xmlFirmado, res.claveAcceso); }};
-            Alert prog = new Alert(Alert.AlertType.INFORMATION); prog.setTitle("Nota de Credito"); prog.setHeaderText("Consultando al SRI..."); prog.setContentText("Enviando NC "+res.numComprobante+" al SRI"); prog.getButtonTypes().setAll(new ButtonType("Minimizar", ButtonBar.ButtonData.CANCEL_CLOSE));
-            tarea.setOnSucceeded(e-> {
-                prog.close();
-                ncService.finalizarEnvioSRI(tarea.getValue(), res, dir);
-                String estado = tarea.getValue().getEstado();
-                if (AppConstants.ESTADO_RECHAZADA.equals(estado) || AppConstants.ESTADO_DEVUELTA.equals(estado)) new Alert(Alert.AlertType.ERROR, "SRI "+estado+": "+tarea.getValue().getMensaje()).showAndWait();
-                else new Alert(Alert.AlertType.INFORMATION, "NC "+res.numComprobante+" registrada. Estado: "+estado+"\nClave: "+res.claveAcceso+"\nPDF: "+res.rutaPDF).showAndWait();
-                try { if (Desktop.isDesktopSupported()) Desktop.getDesktop().open(new File(res.rutaPDF)); } catch (Exception ignore) {}
-                // envio correo si autorizado
-                if (AppConstants.ESTADO_AUTORIZADO.equals(estado)) {
-                    String correo = res.cliente.getCorreo();
-                    if (correo!=null && !correo.trim().isEmpty() && ElectronicoUtil.debeEnviarNotificacion(estado, tarea.getValue().getNumeroAutorizacion(), tarea.getValue().getFechaAutorizacion())) {
-                        Task<String> tMail=new Task<>(){ protected String call(){ return ncService.enviarCorreoAutorizacion(correo.trim(), res.cliente.getNombre(), res.numComprobante, res.rutaPDF, res.rutaXML)?null:"Error correo"; }};
-                        tMail.setOnSucceeded(ev-> { if (tMail.getValue()==null) new Alert(Alert.AlertType.INFORMATION, "Correo enviado a "+correo).showAndWait(); });
-                        new Thread(tMail, "Hilo-Correo-NC").start();
-                    }
-                }
-                detallesNc.clear(); txtMotivo.clear(); cargarFacturasAutorizadas(); actualizarSecuencial(); calcularTotales();
-            });
-            tarea.setOnFailed(e-> { prog.close(); new Alert(Alert.AlertType.ERROR, "Error SRI: "+ (tarea.getException()!=null?tarea.getException().getMessage():"desconocido")).showAndWait(); });
-            new Thread(tarea, "Hilo-SRI-NC").start(); prog.show();
+            // Contingencia todo a cola: provisional PENDIENTE + encolar
+            SRIWebService.SRIResponse provisional = new SRIWebService.SRIResponse();
+            provisional.setEstado(AppConstants.ESTADO_PENDIENTE);
+            provisional.setMensaje("Pendiente SRI - en cola contingencia");
+            try { ncService.finalizarEnvioSRI(provisional, res, dir); } catch (Exception ex) { logDAO.guardar("NotaCreditoController","provisional", ex.getMessage(), ex); }
+            try { new com.vendex.dao.ComprobantePendienteSriDAO().encolar("NOTA_CREDITO", res.claveAcceso, res.numComprobante, ambiente); } catch (Exception ex) { logDAO.guardar("NotaCreditoController","encolar", ex.getMessage(), ex instanceof Exception ? (Exception)ex : new Exception(ex)); }
+            new Alert(Alert.AlertType.INFORMATION, "NC " + res.numComprobante + " registrada (pendiente SRI).\nClave: " + res.claveAcceso + "\nPDF provisional: " + res.rutaPDF + "\nEn cola cada 2min. Banner mostrara pendientes.").showAndWait();
+            try { if (Desktop.isDesktopSupported()) Desktop.getDesktop().open(new File(res.rutaPDF)); } catch (Exception ignore) {}
+            detallesNc.clear(); txtMotivo.clear(); cargarFacturasAutorizadas(); actualizarSecuencial(); calcularTotales();
         } catch (Exception ex) { logDAO.guardar("NotaCreditoController","emitirNotaCredito", ex.getMessage(), ex); new Alert(Alert.AlertType.ERROR, "Error: "+ex.getMessage()).showAndWait(); }
     }
 

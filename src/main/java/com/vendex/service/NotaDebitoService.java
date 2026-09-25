@@ -107,8 +107,9 @@ public class NotaDebitoService {
 
         FacturaRegistro factura = facturaRegistroDAO.obtenerPorId(facturaRegistroId);
         if (factura == null) throw new IllegalArgumentException("Factura no encontrada id=" + facturaRegistroId);
-        if (!AppConstants.ESTADO_AUTORIZADO.equals(factura.getEstadoSri()))
-            throw new IllegalStateException("Solo se permite ND sobre factura AUTORIZADA. Estado actual: " + factura.getEstadoSri());
+        boolean esPendienteND = AppConstants.ESTADO_PENDIENTE.equals(factura.getEstadoSri()) || AppConstants.ESTADO_RECIBIDA.equals(factura.getEstadoSri()) || AppConstants.ESTADO_ERROR.equals(factura.getEstadoSri());
+        if (!AppConstants.ESTADO_AUTORIZADO.equals(factura.getEstadoSri()) && !(esPendienteND && com.vendex.util.SRIContingenciaConfig.isModoContingencia()))
+            throw new IllegalStateException("Solo se permite ND sobre factura AUTORIZADA. Estado actual: " + factura.getEstadoSri() + (esPendienteND ? " (habilitar modo contingencia para PENDIENTE)" : ""));
 
         Empresa empresa = empresaDAO.listar().isEmpty() ? null : empresaDAO.listar().get(0);
         if (empresa == null) throw new IllegalStateException("No se encontraron datos de la empresa.");

@@ -236,47 +236,15 @@ public class RetencionController implements Initializable {
 
             RetencionService.ResultadoRetencion res = retService.emitirRetencion(copia, periodo, tipoId, razon, ident, provId, ambiente, rutaP12, claveP12, dir, usuarioId);
 
-            Task<SRIWebService.SRIResponse> tarea = new Task<>(){ protected SRIWebService.SRIResponse call(){ return retService.enviarYSolicitarAutorizacion(ambiente, res.xmlFirmado, res.claveAcceso); }};
-            Alert prog = new Alert(Alert.AlertType.INFORMATION); prog.setTitle("Retención"); prog.setHeaderText("Consultando al SRI..."); prog.setContentText("Enviando RET "+res.numComprobante+" al SRI\nNo cierre la ventana."); prog.getButtonTypes().setAll(new ButtonType("Minimizar", ButtonBar.ButtonData.CANCEL_CLOSE));
-            tarea.setOnSucceeded(e-> {
-                SRIWebService.SRIResponse resp = tarea.getValue();
-                new Thread(() -> {
-                    try { retService.finalizarEnvioSRI(resp, res, dir); } catch (Exception ex) { logDAO.guardar("RetencionController","finalizarEnvioSRI", ex.getMessage(), ex); }
-                    javafx.application.Platform.runLater(() -> {
-                        prog.close();
-                        String estado = resp.getEstado();
-                        String msg = resp.getMensaje();
-                        if (AppConstants.ESTADO_RECHAZADA.equals(estado) || AppConstants.ESTADO_DEVUELTA.equals(estado) || "NO AUTORIZADO".equals(estado)) {
-                            String detalle = "SRI "+estado+": "+msg+"\nClave: "+res.claveAcceso+"\nNum: "+res.numComprobante;
-                            volcarErrorSRI(detalle, resp, res);
-                            mostrarAlertaCopiable(Alert.AlertType.ERROR, "SRI - Retención", "SRI devuelta", detalle+"\nRevisa tabla logs y ~/vendex_errors");
-                        } else {
-                            mostrarAlertaCopiable(Alert.AlertType.INFORMATION, "Retención", "RET registrada", "RET "+res.numComprobante+" registrada. Estado: "+estado+(msg!=null&&!msg.isEmpty()?"\n"+msg:"")+"\nClave: "+res.claveAcceso+"\nPDF: "+res.rutaPDF);
-                        }
-                        new Thread(() -> { try { if (Desktop.isDesktopSupported()) Desktop.getDesktop().open(new File(res.rutaPDF)); } catch (Exception ignore) {} }, "Hilo-Abrir-PDF-RET").start();
-                        if (AppConstants.ESTADO_AUTORIZADO.equals(estado) && ident != null) {
-                            try {
-                                String correo = null;
-                                if (provId != null) {
-                                    for (Proveedor prov : proveedorDAO.listar()) if (prov.getId() == provId) { correo = prov.getCorreo(); break; }
-                                }
-                                if (correo == null) {
-                                    for (Proveedor p : proveedorDAO.listar()) if (ident.equals(p.getIdentificacion())) { correo = p.getCorreo(); break; }
-                                }
-                                if (correo!=null && correo.contains("@") && ElectronicoUtil.debeEnviarNotificacion(estado, resp.getNumeroAutorizacion(), resp.getFechaAutorizacion())) {
-                                    String c = correo;
-                                    Task<String> tMail=new Task<>(){ protected String call(){ return retService.enviarCorreoAutorizacion(c.trim(), razon, res.numComprobante, res.rutaPDF, res.rutaXML)?null:"Error correo"; }};
-                                    tMail.setOnSucceeded(ev-> { if (tMail.getValue()==null) new Alert(Alert.AlertType.INFORMATION, "Correo enviado a "+c).showAndWait(); });
-                                    new Thread(tMail, "Hilo-Correo-RET").start();
-                                }
-                            } catch (Exception ignore) {}
-                        }
-                        docs.clear(); retsActual.clear(); actualizarSecuencial();
-                    });
-                }, "Hilo-Finalizar-RET").start();
-            });
-            tarea.setOnFailed(ev-> { prog.close(); Throwable ex = tarea.getException(); logDAO.guardar("RetencionController","SRI-Tarea", ex!=null?ex.getMessage():"desconocido", ex instanceof Exception ? (Exception)ex : new Exception(ex)); mostrarAlertaCopiable(Alert.AlertType.ERROR, "SRI Error", "Error al consultar SRI", "Error SRI: "+(ex!=null?ex.getMessage():"desconocido")); });
-            new Thread(tarea, "Hilo-SRI-RET").start(); prog.show();
+            // Contingencia todo a cola
+            SRIWebService.SRIResponse provisional = new SRIWebService.SRIResponse();
+            provisional.setEstado(AppConstants.ESTADO_PENDIENTE);
+            provisional.setMensaje("Pendiente SRI - en cola");
+            try { retService.finalizarEnvioSRI(provisional, res, dir); } catch (Exception ex) { logDAO.guardar("RetencionController","provisional", ex.getMessage(), ex); }
+            try { new com.vendex.dao.ComprobantePendienteSriDAO().encolar("RETENCION", res.claveAcceso, res.numComprobante, ambiente); } catch (Exception ex) { logDAO.guardar("RetencionController","encolar", ex.getMessage(), ex instanceof Exception ? (Exception)ex : new Exception(ex)); }
+            mostrarAlertaCopiable(Alert.AlertType.INFORMATION, "Retención", "RET registrada (pendiente SRI)", "RET " + res.numComprobante + " registrada (pendiente SRI).\nClave: " + res.claveAcceso + "\nPDF provisional: " + res.rutaPDF + "\nEn cola cada 2min.");
+            new Thread(() -> { try { if (Desktop.isDesktopSupported()) Desktop.getDesktop().open(new File(res.rutaPDF)); } catch (Exception ignore) {} }, "Hilo-Abrir-PDF-RET").start();
+            docs.clear(); retsActual.clear(); actualizarSecuencial();
         } catch (Exception ex) { logDAO.guardar("RetencionController","emitirRetencion", ex.getMessage(), ex); mostrarAlertaCopiable(Alert.AlertType.ERROR, "Error", "Error al emitir", ex.getMessage()); }
     }
 

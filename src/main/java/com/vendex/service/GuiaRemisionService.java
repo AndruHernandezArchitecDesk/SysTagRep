@@ -137,7 +137,8 @@ public class GuiaRemisionService {
             if (d.facturaRegistroId != null) {
                 FacturaRegistro fac = facturaRegistroDAO.obtenerPorId(d.facturaRegistroId);
                 if (fac == null) throw new IllegalArgumentException("Factura sustento no encontrada id=" + d.facturaRegistroId);
-                if (!AppConstants.ESTADO_AUTORIZADO.equals(fac.getEstadoSri())) throw new IllegalStateException("Factura sustento debe estar AUTORIZADA. Estado: " + fac.getEstadoSri());
+                boolean esPendienteGR = AppConstants.ESTADO_PENDIENTE.equals(fac.getEstadoSri()) || AppConstants.ESTADO_RECIBIDA.equals(fac.getEstadoSri()) || AppConstants.ESTADO_ERROR.equals(fac.getEstadoSri());
+                if (!AppConstants.ESTADO_AUTORIZADO.equals(fac.getEstadoSri()) && !(esPendienteGR && com.vendex.util.SRIContingenciaConfig.isModoContingencia())) throw new IllegalStateException("Factura sustento debe estar AUTORIZADA. Estado: " + fac.getEstadoSri() + (esPendienteGR ? " (modo contingencia permite PENDIENTE)" : ""));
             }
         }
 
