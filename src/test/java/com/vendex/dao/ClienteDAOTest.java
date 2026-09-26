@@ -9,6 +9,7 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
+import com.vendex.dao.ClienteDAOPostgres;
 
 class ClienteDAOTest {
 
@@ -29,7 +30,7 @@ class ClienteDAOTest {
         try (Connection con = DriverManager.getConnection("jdbc:hsqldb:mem:" + dbName, "sa", "")) {
             DatabaseConnection.setConnectionParams("jdbc:hsqldb:mem:" + dbName, "sa", "");
             crearTabla(con);
-            ClienteDAO dao = new ClienteDAO();
+            ClienteDAO dao = new ClienteDAOPostgres();
             Cliente c = new Cliente();
             c.setNombre("Juan Perez");
             c.setIdentificacion("1790000000001");
@@ -53,7 +54,7 @@ class ClienteDAOTest {
         try (Connection con = DriverManager.getConnection("jdbc:hsqldb:mem:" + dbName, "sa", "")) {
             DatabaseConnection.setConnectionParams("jdbc:hsqldb:mem:" + dbName, "sa", "");
             crearTabla(con);
-            ClienteDAO dao = new ClienteDAO();
+            ClienteDAO dao = new ClienteDAOPostgres();
             List<Cliente> lista = dao.listar();
             assertTrue(lista.isEmpty());
         } finally {
@@ -67,7 +68,7 @@ class ClienteDAOTest {
         try (Connection con = DriverManager.getConnection("jdbc:hsqldb:mem:" + dbName, "sa", "")) {
             DatabaseConnection.setConnectionParams("jdbc:hsqldb:mem:" + dbName, "sa", "");
             crearTabla(con);
-            ClienteDAO dao = new ClienteDAO();
+            ClienteDAO dao = new ClienteDAOPostgres();
             Cliente c = new Cliente();
             c.setNombre("Juan Perez");
             c.setIdentificacion("1790000000001");
@@ -94,7 +95,7 @@ class ClienteDAOTest {
         try (Connection con = DriverManager.getConnection("jdbc:hsqldb:mem:" + dbName, "sa", "")) {
             DatabaseConnection.setConnectionParams("jdbc:hsqldb:mem:" + dbName, "sa", "");
             crearTabla(con);
-            ClienteDAO dao = new ClienteDAO();
+            ClienteDAO dao = new ClienteDAOPostgres();
             Cliente c = new Cliente();
             c.setNombre("Juan Perez");
             c.setIdentificacion("1790000000001");

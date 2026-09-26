@@ -31,6 +31,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.ResourceBundle;
+import com.vendex.dao.CuentaPorCobrarDAOPostgres;
 
 public class PorCobrarController implements Initializable {
 
@@ -44,7 +45,7 @@ public class PorCobrarController implements Initializable {
     @FXML private TableColumn<Object[], BigDecimal> colDetTotal, colDetAdelanto, colDetPendiente;
     @FXML private TableColumn<Object[], Void> colDetAccion;
 
-    private final CuentaPorCobrarDAO dao = new CuentaPorCobrarDAO();
+    private final CuentaPorCobrarDAO dao = new CuentaPorCobrarDAOPostgres();
     private ObservableList<Object[]> listaCreditos = FXCollections.observableArrayList();
     private ObservableList<Object[]> listaDetalle = FXCollections.observableArrayList();
 

@@ -10,6 +10,7 @@ import javafx.scene.control.TextField;
 
 import java.net.URL;
 import java.util.ResourceBundle;
+import com.vendex.dao.SecuenciaDocumentoDAOPostgres;
 
 public class NumeracionController implements Initializable {
 
@@ -28,7 +29,7 @@ public class NumeracionController implements Initializable {
     @FXML private TextField txtPtoNotaCredito;
     @FXML private TextField txtInicioNotaCredito;
 
-    private final SecuenciaDocumentoDAO secuenciaDAO = new SecuenciaDocumentoDAO();
+    private final SecuenciaDocumentoDAO secuenciaDAO = new SecuenciaDocumentoDAOPostgres();
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {

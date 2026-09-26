@@ -16,10 +16,11 @@ import java.net.URL;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import com.vendex.dao.EmpresaDAOPostgres;
 
 public class EmpresaController implements Initializable {
 
-    private final EmpresaDAO empresaDAO = new EmpresaDAO();
+    private final EmpresaDAO empresaDAO = new EmpresaDAOPostgres();
     private Empresa empresaActual;
 
     @FXML private TextField txtRazonSocial;

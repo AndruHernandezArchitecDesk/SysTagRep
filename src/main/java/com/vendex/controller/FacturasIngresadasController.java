@@ -37,6 +37,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
+import com.vendex.dao.FacturaDetalleDAOPostgres;
+import com.vendex.dao.InventarioDAOPostgres;
+import com.vendex.dao.HistorialProductoDAOPostgres;
 
 public class FacturasIngresadasController implements Initializable {
 
@@ -58,10 +61,10 @@ public class FacturasIngresadasController implements Initializable {
     @FXML private Label lblTotal;
 
     private final FacturaProveedorDAO dao = new FacturaProveedorDAO();
-    private final InventarioDAO inventarioDAO = new InventarioDAO();
+    private final InventarioDAO inventarioDAO = new InventarioDAOPostgres();
     private final CuentaPorPagarDAO cuentaPorPagarDAO = new CuentaPorPagarDAO();
-    private final FacturaDetalleDAO facturaDetalleDAO = new FacturaDetalleDAO();
-    private final HistorialProductoDAO historialProductoDAO = new HistorialProductoDAO();
+    private final FacturaDetalleDAO facturaDetalleDAO = new FacturaDetalleDAOPostgres();
+    private final HistorialProductoDAO historialProductoDAO = new HistorialProductoDAOPostgres();
     private final UbicacionDetalleDAO ubicacionDAO = new UbicacionDetalleDAO();
     private ObservableList<FacturaProveedor> facturas = FXCollections.observableArrayList();
     private final ObservableList<FacturaProveedor> detalle = FXCollections.observableArrayList();

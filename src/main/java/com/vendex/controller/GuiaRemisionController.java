@@ -42,8 +42,8 @@ public class GuiaRemisionController implements Initializable {
     @FXML private TableColumn<GuiaRemisionService.DetalleGRInput, String> colDetCodigo, colDetDesc, colDetCant;
 
     private final GuiaRemisionService grService = new GuiaRemisionService();
-    private final SecuenciaDocumentoDAO secDAO = new SecuenciaDocumentoDAO();
-    private final EmpresaDAO empresaDAO = new EmpresaDAO();
+    private final SecuenciaDocumentoDAO secDAO = new SecuenciaDocumentoDAOPostgres();
+    private final EmpresaDAO empresaDAO = new EmpresaDAOPostgres();
     private final LogDAO logDAO = new LogDAO();
 
     private final ObservableList<GuiaRemisionService.DestinatarioGRInput> destinatarios = FXCollections.observableArrayList();

@@ -10,14 +10,16 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import com.vendex.dao.InventarioDAOPostgres;
+import com.vendex.dao.CuentaPorCobrarDAOPostgres;
 
 public class AlertaService {
 
     private static final int UMBRAL_STOCK_BAJO = 5;
 
     private final AlertaDAO alertaDAO = new AlertaDAO();
-    private final InventarioDAO inventarioDAO = new InventarioDAO();
-    private final CuentaPorCobrarDAO cuentaPorCobrarDAO = new CuentaPorCobrarDAO();
+    private final InventarioDAO inventarioDAO = new InventarioDAOPostgres();
+    private final CuentaPorCobrarDAO cuentaPorCobrarDAO = new CuentaPorCobrarDAOPostgres();
 
     public void regenerarAlertas() {
         alertaDAO.limpiar();

@@ -12,11 +12,13 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.vendex.dao.CajaSesionDAOPostgres;
+import com.vendex.dao.CajaMovimientoDAOPostgres;
 
 public class CajaService {
 
-    private final CajaSesionDAO sesionDAO = new CajaSesionDAO();
-    private final CajaMovimientoDAO movimientoDAO = new CajaMovimientoDAO();
+    private final CajaSesionDAO sesionDAO = new CajaSesionDAOPostgres();
+    private final CajaMovimientoDAO movimientoDAO = new CajaMovimientoDAOPostgres();
 
     public int abrirCaja(int usuarioId, BigDecimal montoInicial, String observaciones) {
         com.vendex.util.SesionActual.exigirPermiso("CAJA_ABRIR");

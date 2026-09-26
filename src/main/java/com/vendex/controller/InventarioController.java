@@ -33,6 +33,8 @@ import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.ResourceBundle;
+import com.vendex.dao.InventarioDAOPostgres;
+import com.vendex.dao.EmpresaDAOPostgres;
 
 /**
  * Pantalla de Inventario: tabla con todo el inventario, búsqueda, paginación,
@@ -67,9 +69,9 @@ public class InventarioController implements Initializable {
     private int pageSize = 25;
     private int totalPages = 1;
     private int totalCount = 0;
-    private final InventarioDAO dao = new InventarioDAO();
+    private final InventarioDAO dao = new InventarioDAOPostgres();
     private final com.vendex.dao.LogDAO logDAO = new com.vendex.dao.LogDAO();
-    private final EmpresaDAO daoEmpresa = new EmpresaDAO();
+    private final EmpresaDAO daoEmpresa = new EmpresaDAOPostgres();
     private final UbicacionDetalleDAO daoUbicacion = new UbicacionDetalleDAO();
     private final ObservableList<Inventario> listaInventario = FXCollections.observableArrayList();
 

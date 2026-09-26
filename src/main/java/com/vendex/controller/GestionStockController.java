@@ -20,13 +20,14 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
+import com.vendex.dao.InventarioDAOPostgres;
 
 public class GestionStockController implements Initializable {
 
     @FXML private TextField txtBuscar;
     @FXML private Accordion accordionProductos;
 
-    private final InventarioDAO dao = new InventarioDAO();
+    private final InventarioDAO dao = new InventarioDAOPostgres();
     private List<Inventario> todos;
     private Map<String, List<Inventario>> agrupados;
     private final DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");

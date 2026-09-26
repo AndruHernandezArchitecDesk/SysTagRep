@@ -48,6 +48,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
+import com.vendex.dao.SecuenciaDocumentoDAOPostgres;
+import com.vendex.dao.InventarioDAOPostgres;
+import com.vendex.dao.HistorialProductoDAOPostgres;
+import com.vendex.dao.CuentaPorCobrarDAOPostgres;
+import com.vendex.dao.ClienteDAOPostgres;
+import com.vendex.dao.EmpresaDAOPostgres;
 
 public class NotaVentaController implements Initializable {
 
@@ -86,16 +92,16 @@ public class NotaVentaController implements Initializable {
     @FXML private ComboBox<Integer> cmbMesesPlazo;
     @FXML private ComboBox<String> cmbInteres;
 
-    private final EmpresaDAO daoEmpresa = new EmpresaDAO();
-    private final ClienteDAO daoCliente = new ClienteDAO();
-    private final InventarioDAO daoInventario = new InventarioDAO();
+    private final EmpresaDAO daoEmpresa = new EmpresaDAOPostgres();
+    private final ClienteDAO daoCliente = new ClienteDAOPostgres();
+    private final InventarioDAO daoInventario = new InventarioDAOPostgres();
     private final NotaVentaRegistroDAO daoNotaVentaRegistro = new NotaVentaRegistroDAO();
-    private final SecuenciaDocumentoDAO secuenciaDAO = new SecuenciaDocumentoDAO();
+    private final SecuenciaDocumentoDAO secuenciaDAO = new SecuenciaDocumentoDAOPostgres();
     private final NotaVentaDetalleDAO daoNotaVentaDetalle = new NotaVentaDetalleDAO();
     private final ComprobanteTempDAO daoComprobanteTemp = new ComprobanteTempDAO();
-    private final CuentaPorCobrarDAO daoCuentaPorCobrar = new CuentaPorCobrarDAO();
+    private final CuentaPorCobrarDAO daoCuentaPorCobrar = new CuentaPorCobrarDAOPostgres();
     private final LogDAO logDAO = new LogDAO();
-    private final HistorialProductoDAO historialProductoDAO = new HistorialProductoDAO();
+    private final HistorialProductoDAO historialProductoDAO = new HistorialProductoDAOPostgres();
 
     private Empresa empresaActual;
 

@@ -26,6 +26,7 @@ import java.net.URL;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import com.vendex.dao.InventarioDAOPostgres;
 
 public class UbicacionPercheroController implements Initializable {
 
@@ -40,7 +41,7 @@ public class UbicacionPercheroController implements Initializable {
 
     private final PercheroDAO percheroDAO = new PercheroDAO();
     private final UbicacionDetalleDAO ubicacionDAO = new UbicacionDetalleDAO();
-    private final InventarioDAO inventarioDAO = new InventarioDAO();
+    private final InventarioDAO inventarioDAO = new InventarioDAOPostgres();
     private final LogDAO logDAO = new LogDAO();
     private final ObservableList<String> listaNombresPerchero = FXCollections.observableArrayList();
     private UbicacionDetalle ubicacionSeleccionada;

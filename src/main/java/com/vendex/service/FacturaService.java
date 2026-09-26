@@ -31,20 +31,31 @@ public class FacturaService {
     private final ComprobanteDAO comprobanteDAO;
     private final CuentaPorCobrarDAO cuentaPorCobrarDAO;
     private final HistorialProductoDAO historialProductoDAO;
-    private final LogDAO logDAO;
+    private final LogDAO logDAO = new LogDAO();
 
     public FacturaService() {
-        this.empresaDAO = new EmpresaDAO();
-        this.clienteDAO = new ClienteDAO();
-        this.inventarioDAO = new InventarioDAO();
-        this.facturaRegistroDAO = new FacturaRegistroDAO();
-        this.facturaDetalleDAO = new FacturaDetalleDAO();
-        this.secuenciaDAO = new SecuenciaDocumentoDAO();
-        this.comprobanteDAO = new ComprobanteDAO();
-        this.cuentaPorCobrarDAO = new CuentaPorCobrarDAO();
-        this.historialProductoDAO = new HistorialProductoDAO();
-        this.logDAO = new LogDAO();
+        this.empresaDAO = new EmpresaDAOPostgres();
+        this.clienteDAO = new ClienteDAOPostgres();
+        this.inventarioDAO = new InventarioDAOPostgres();
+        this.facturaRegistroDAO = new FacturaRegistroDAOPostgres();
+        this.facturaDetalleDAO = new FacturaDetalleDAOPostgres();
+        this.secuenciaDAO = new SecuenciaDocumentoDAOPostgres();
+        this.comprobanteDAO = new ComprobanteDAOPostgres();
+        this.cuentaPorCobrarDAO = new CuentaPorCobrarDAOPostgres();
+        this.historialProductoDAO = new HistorialProductoDAOPostgres();
     }
+    public FacturaService(EmpresaDAO empresaDAO, ClienteDAO clienteDAO, InventarioDAO inventarioDAO, FacturaRegistroDAO facturaRegistroDAO, FacturaDetalleDAO facturaDetalleDAO, SecuenciaDocumentoDAO secuenciaDAO, ComprobanteDAO comprobanteDAO, CuentaPorCobrarDAO cuentaPorCobrarDAO, HistorialProductoDAO historialProductoDAO) {
+        this.empresaDAO = empresaDAO;
+        this.clienteDAO = clienteDAO;
+        this.inventarioDAO = inventarioDAO;
+        this.facturaRegistroDAO = facturaRegistroDAO;
+        this.facturaDetalleDAO = facturaDetalleDAO;
+        this.secuenciaDAO = secuenciaDAO;
+        this.comprobanteDAO = comprobanteDAO;
+        this.cuentaPorCobrarDAO = cuentaPorCobrarDAO;
+        this.historialProductoDAO = historialProductoDAO;
+    }
+
 
     public ResultadoFactura guardarFactura(Cliente cliente, Empresa empresa, String codigo,
                                            List<FacturaDetalle> itemsDetalle,

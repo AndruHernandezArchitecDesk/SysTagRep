@@ -28,6 +28,7 @@ import java.math.RoundingMode;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.ResourceBundle;
+import com.vendex.dao.InventarioDAOPostgres;
 
 /**
  * Ingreso por producto: ligero, sin factura.
@@ -44,7 +45,7 @@ public class IngresoProductoController implements Initializable {
     @FXML private Spinner<Integer> spCantidad;
     @FXML private TextField txtPrecioVenta;
 
-    private final InventarioDAO dao = new InventarioDAO();
+    private final InventarioDAO dao = new InventarioDAOPostgres();
     private final GrupoDAO grupoDAO = new GrupoDAO();
     private final MarcaDAO marcaDAO = new MarcaDAO();
     private final CodigoDAO codigoDAO = new CodigoDAO();

@@ -29,6 +29,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
+import com.vendex.dao.InventarioDAOPostgres;
 
 public class DashboardController implements Initializable {
 
@@ -61,7 +62,7 @@ public class DashboardController implements Initializable {
     private MainController mainController;
 
     private final DashboardDAO dashboardDAO = new DashboardDAO();
-    private final InventarioDAO inventarioDAO = new InventarioDAO();
+    private final InventarioDAO inventarioDAO = new InventarioDAOPostgres();
     private final LogDAO logDAO = new LogDAO();
 
     public void setMainController(MainController mainController) {

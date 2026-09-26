@@ -30,20 +30,31 @@ public class NotaDebitoService {
     private final NotaDebitoMotivoDAO notaDebitoMotivoDAO;
     private final CajaSesionDAO cajaSesionDAO;
     private final CajaMovimientoDAO cajaMovimientoDAO;
-    private final LogDAO logDAO;
+    private final LogDAO logDAO = new LogDAO();
 
     public NotaDebitoService() {
-        this.empresaDAO = new EmpresaDAO();
-        this.clienteDAO = new ClienteDAO();
-        this.facturaRegistroDAO = new FacturaRegistroDAO();
-        this.secuenciaDAO = new SecuenciaDocumentoDAO();
-        this.comprobanteDAO = new ComprobanteDAO();
-        this.notaDebitoDAO = new NotaDebitoRegistroDAO();
-        this.notaDebitoMotivoDAO = new NotaDebitoMotivoDAO();
-        this.cajaSesionDAO = new CajaSesionDAO();
-        this.cajaMovimientoDAO = new CajaMovimientoDAO();
-        this.logDAO = new LogDAO();
+        this.empresaDAO = new EmpresaDAOPostgres();
+        this.clienteDAO = new ClienteDAOPostgres();
+        this.facturaRegistroDAO = new FacturaRegistroDAOPostgres();
+        this.secuenciaDAO = new SecuenciaDocumentoDAOPostgres();
+        this.comprobanteDAO = new ComprobanteDAOPostgres();
+        this.notaDebitoDAO = new NotaDebitoRegistroDAOPostgres();
+        this.notaDebitoMotivoDAO = new NotaDebitoMotivoDAOPostgres();
+        this.cajaSesionDAO = new CajaSesionDAOPostgres();
+        this.cajaMovimientoDAO = new CajaMovimientoDAOPostgres();
     }
+    public NotaDebitoService(EmpresaDAO empresaDAO, ClienteDAO clienteDAO, FacturaRegistroDAO facturaRegistroDAO, SecuenciaDocumentoDAO secuenciaDAO, ComprobanteDAO comprobanteDAO, NotaDebitoRegistroDAO notaDebitoDAO, NotaDebitoMotivoDAO notaDebitoMotivoDAO, CajaSesionDAO cajaSesionDAO, CajaMovimientoDAO cajaMovimientoDAO) {
+        this.empresaDAO = empresaDAO;
+        this.clienteDAO = clienteDAO;
+        this.facturaRegistroDAO = facturaRegistroDAO;
+        this.secuenciaDAO = secuenciaDAO;
+        this.comprobanteDAO = comprobanteDAO;
+        this.notaDebitoDAO = notaDebitoDAO;
+        this.notaDebitoMotivoDAO = notaDebitoMotivoDAO;
+        this.cajaSesionDAO = cajaSesionDAO;
+        this.cajaMovimientoDAO = cajaMovimientoDAO;
+    }
+
 
     public static class MotivoNDInput {
         public String razon;

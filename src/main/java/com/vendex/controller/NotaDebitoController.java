@@ -37,10 +37,10 @@ public class NotaDebitoController implements Initializable {
     @FXML private ComboBox<String> cmbFormaPago, cmbAmbiente;
     @FXML private Label lblSubtotal, lblIva, lblTotal, lblSecuencial;
 
-    private final FacturaRegistroDAO facturaDAO = new FacturaRegistroDAO();
+    private final FacturaRegistroDAO facturaDAO = new FacturaRegistroDAOPostgres();
     private final NotaDebitoService ndService = new NotaDebitoService();
-    private final SecuenciaDocumentoDAO secDAO = new SecuenciaDocumentoDAO();
-    private final EmpresaDAO empresaDAO = new EmpresaDAO();
+    private final SecuenciaDocumentoDAO secDAO = new SecuenciaDocumentoDAOPostgres();
+    private final EmpresaDAO empresaDAO = new EmpresaDAOPostgres();
     private final LogDAO logDAO = new LogDAO();
 
     private final ObservableList<NotaDebitoService.MotivoNDInput> motivos = FXCollections.observableArrayList();
@@ -89,7 +89,7 @@ public class NotaDebitoController implements Initializable {
 
     private void onFacturaSeleccionada(FacturaRegistro fr) {
         if (fr==null) { lblCliente.setText(""); lblNumFactura.setText(""); lblFechaFactura.setText(""); lblTotalFactura.setText(""); calcularTotales(); return; }
-        Cliente cli = new ClienteDAO().obtenerPorId(fr.getClienteId());
+        Cliente cli = new ClienteDAOPostgres().obtenerPorId(fr.getClienteId());
         lblCliente.setText(cli!=null? cli.getNombre()+" ("+cli.getIdentificacion()+")":"");
         lblNumFactura.setText(fr.getNumComprobante());
         lblFechaFactura.setText(fr.getFecha()!=null? fr.getFecha().toLocalDate().toString():"");

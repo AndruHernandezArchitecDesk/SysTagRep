@@ -38,9 +38,9 @@ public class RetencionController implements Initializable {
     @FXML private TableColumn<RetencionService.RetencionLineaInput, String> colRetCodigo, colRetCodigoRet, colRetBase, colRetPorc, colRetValor;
 
     private final RetencionService retService = new RetencionService();
-    private final SecuenciaDocumentoDAO secDAO = new SecuenciaDocumentoDAO();
+    private final SecuenciaDocumentoDAO secDAO = new SecuenciaDocumentoDAOPostgres();
     private final ProveedorDAO proveedorDAO = new ProveedorDAO();
-    private final EmpresaDAO empresaDAO = new EmpresaDAO();
+    private final EmpresaDAO empresaDAO = new EmpresaDAOPostgres();
     private final LogDAO logDAO = new LogDAO();
     private final TablaRetencionDAO tablaDAO = new TablaRetencionDAO();
 

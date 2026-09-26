@@ -49,12 +49,12 @@ public class NotaCreditoController implements Initializable {
     @FXML private ComboBox<String> cmbAmbiente;
     @FXML private Label lblSecuencial;
 
-    private final FacturaRegistroDAO facturaDAO = new FacturaRegistroDAO();
-    private final FacturaDetalleDAO facturaDetalleDAO = new FacturaDetalleDAO();
-    private final NotaCreditoRegistroDAO ncDAO = new NotaCreditoRegistroDAO();
-    private final SecuenciaDocumentoDAO secDAO = new SecuenciaDocumentoDAO();
-    private final EmpresaDAO empresaDAO = new EmpresaDAO();
-    private final ClienteDAO clienteDAO = new ClienteDAO();
+    private final FacturaRegistroDAO facturaDAO = new FacturaRegistroDAOPostgres();
+    private final FacturaDetalleDAO facturaDetalleDAO = new FacturaDetalleDAOPostgres();
+    private final NotaCreditoRegistroDAO ncDAO = new NotaCreditoRegistroDAOPostgres();
+    private final SecuenciaDocumentoDAO secDAO = new SecuenciaDocumentoDAOPostgres();
+    private final EmpresaDAO empresaDAO = new EmpresaDAOPostgres();
+    private final ClienteDAO clienteDAO = new ClienteDAOPostgres();
     private final NotaCreditoService ncService = new NotaCreditoService();
     private final LogDAO logDAO = new LogDAO();
 

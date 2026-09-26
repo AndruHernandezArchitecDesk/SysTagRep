@@ -54,6 +54,11 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import com.vendex.dao.SecuenciaDocumentoDAOPostgres;
+import com.vendex.dao.ComprobanteDAOPostgres;
+import com.vendex.dao.InventarioDAOPostgres;
+import com.vendex.dao.ClienteDAOPostgres;
+import com.vendex.dao.EmpresaDAOPostgres;
 
 public class FacturaController implements Initializable {
 
@@ -90,12 +95,12 @@ public class FacturaController implements Initializable {
     @FXML private ComboBox<String> cmbInteres;
     @FXML private ComboBox<String> cmbAmbiente;
 
-    private final EmpresaDAO daoEmpresa = new EmpresaDAO();
-    private final ClienteDAO daoCliente = new ClienteDAO();
-    private final InventarioDAO daoInventario = new InventarioDAO();
-    private final ComprobanteDAO daoComprobante = new ComprobanteDAO();
+    private final EmpresaDAO daoEmpresa = new EmpresaDAOPostgres();
+    private final ClienteDAO daoCliente = new ClienteDAOPostgres();
+    private final InventarioDAO daoInventario = new InventarioDAOPostgres();
+    private final ComprobanteDAO daoComprobante = new ComprobanteDAOPostgres();
     private final LogDAO logDAO = new LogDAO();
-    private final SecuenciaDocumentoDAO secuenciaDAO = new SecuenciaDocumentoDAO();
+    private final SecuenciaDocumentoDAO secuenciaDAO = new SecuenciaDocumentoDAOPostgres();
     private final FacturaService facturaService = new FacturaService();
 
     private Empresa empresaActual;

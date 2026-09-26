@@ -20,6 +20,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import com.vendex.dao.FacturaRegistroDAOPostgres;
+import com.vendex.dao.ComprobanteDAOPostgres;
+import com.vendex.dao.NotaCreditoRegistroDAOPostgres;
+import com.vendex.dao.NotaDebitoRegistroDAOPostgres;
+import com.vendex.dao.GuiaRemisionRegistroDAOPostgres;
+import com.vendex.dao.RetencionRegistroDAOPostgres;
 
 /**
  * Job de fondo SRI contingencia: revisa comprobante_pendiente_sri cada 2 min,
@@ -35,14 +41,14 @@ public class ServicioReintentoSri {
     private volatile boolean running = false;
 
     private final ComprobantePendienteSriDAO pendienteDAO = new ComprobantePendienteSriDAO();
-    private final ComprobanteDAO comprobanteDAO = new ComprobanteDAO();
+    private final ComprobanteDAO comprobanteDAO = new ComprobanteDAOPostgres();
 
     // DAOs para actualizar estado por tipo
-    private final FacturaRegistroDAO facturaDAO = new FacturaRegistroDAO();
-    private final NotaCreditoRegistroDAO ncDAO = new NotaCreditoRegistroDAO();
-    private final NotaDebitoRegistroDAO ndDAO = new NotaDebitoRegistroDAO();
-    private final GuiaRemisionRegistroDAO grDAO = new GuiaRemisionRegistroDAO();
-    private final RetencionRegistroDAO retDAO = new RetencionRegistroDAO();
+    private final FacturaRegistroDAO facturaDAO = new FacturaRegistroDAOPostgres();
+    private final NotaCreditoRegistroDAO ncDAO = new NotaCreditoRegistroDAOPostgres();
+    private final NotaDebitoRegistroDAO ndDAO = new NotaDebitoRegistroDAOPostgres();
+    private final GuiaRemisionRegistroDAO grDAO = new GuiaRemisionRegistroDAOPostgres();
+    private final RetencionRegistroDAO retDAO = new RetencionRegistroDAOPostgres();
 
     public static synchronized ServicioReintentoSri getInstance() {
         if (INSTANCE == null) INSTANCE = new ServicioReintentoSri();

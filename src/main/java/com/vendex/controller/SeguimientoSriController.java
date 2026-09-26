@@ -49,6 +49,13 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import com.vendex.dao.FacturaRegistroDAOPostgres;
+import com.vendex.dao.ComprobanteDAOPostgres;
+import com.vendex.dao.NotaCreditoRegistroDAOPostgres;
+import com.vendex.dao.NotaDebitoRegistroDAOPostgres;
+import com.vendex.dao.GuiaRemisionRegistroDAOPostgres;
+import com.vendex.dao.RetencionRegistroDAOPostgres;
+import com.vendex.dao.ClienteDAOPostgres;
 
 public class SeguimientoSriController implements Initializable {
 
@@ -77,9 +84,9 @@ public class SeguimientoSriController implements Initializable {
     private int pageSize = 25;
     private int totalPages = 1;
     private int totalCount = 0;
-    private final FacturaRegistroDAO dao = new FacturaRegistroDAO();
+    private final FacturaRegistroDAO dao = new FacturaRegistroDAOPostgres();
     private final LogDAO logDAO = new LogDAO();
-    private final ClienteDAO clienteDAO = new ClienteDAO();
+    private final ClienteDAO clienteDAO = new ClienteDAOPostgres();
     private final FacturaService facturaService = new FacturaService();
     private final ObservableList<FacturaRegistro> listaFacturas = FXCollections.observableArrayList();
 
@@ -207,11 +214,11 @@ public class SeguimientoSriController implements Initializable {
     @SuppressWarnings("unused")
     private void consultarSriLegacy() {
         List<FacturaRegistro> pendientes = dao.listarPendientesSri();
-        NotaCreditoRegistroDAO ncDao = new NotaCreditoRegistroDAO();
+        NotaCreditoRegistroDAO ncDao = new NotaCreditoRegistroDAOPostgres();
         List<NotaCreditoRegistro> pendientesNc = ncDao.listarPendientesSri();
-        final List<NotaDebitoRegistro> pendientesNd = new NotaDebitoRegistroDAO().listarPendientesSri();
-        final List<GuiaRemisionRegistro> pendientesGr = new GuiaRemisionRegistroDAO().listarPendientesSri();
-        final List<RetencionRegistro> pendientesRet = new RetencionRegistroDAO().listarPendientesSri();
+        final List<NotaDebitoRegistro> pendientesNd = new NotaDebitoRegistroDAOPostgres().listarPendientesSri();
+        final List<GuiaRemisionRegistro> pendientesGr = new GuiaRemisionRegistroDAOPostgres().listarPendientesSri();
+        final List<RetencionRegistro> pendientesRet = new RetencionRegistroDAOPostgres().listarPendientesSri();
         if (pendientes.isEmpty() && pendientesNc.isEmpty() && pendientesNd.isEmpty() && pendientesGr.isEmpty() && pendientesRet.isEmpty()) {
             new Alert(Alert.AlertType.INFORMATION, "No hay facturas/notas de crédito/débito/guía de remisión/retención pendientes por consultar con el SRI.").showAndWait();
             return;
@@ -222,7 +229,7 @@ public class SeguimientoSriController implements Initializable {
             protected String call() {
                 int autorizadas = 0, rechazadas = 0, pendientesN = 0, errores = 0;
                 StringBuilder emailsEnviados = new StringBuilder();
-                ComprobanteDAO ceDAO = new ComprobanteDAO();
+                ComprobanteDAO ceDAO = new ComprobanteDAOPostgres();
                 for (FacturaRegistro f : pendientes) {
                     String clave = f.getClaveAcceso();
                     if (clave == null || clave.trim().isEmpty()) continue;
@@ -320,7 +327,7 @@ public class SeguimientoSriController implements Initializable {
                     } catch (Exception e) { errores++; logDAO.guardar("SeguimientoSriController","consultarSri NC","Error NC "+clave+": "+e.getMessage(), e); }
                 }
                 // Procesar ND pendientes
-                NotaDebitoRegistroDAO ndDao = new NotaDebitoRegistroDAO();
+                NotaDebitoRegistroDAO ndDao = new NotaDebitoRegistroDAOPostgres();
                 NotaDebitoService ndService = new NotaDebitoService();
                 for (NotaDebitoRegistro nd : pendientesNd) {
                     String clave = nd.getClaveAcceso();
@@ -352,7 +359,7 @@ public class SeguimientoSriController implements Initializable {
                     } catch (Exception e) { errores++; logDAO.guardar("SeguimientoSriController","consultarSri ND","Error ND "+clave+": "+e.getMessage(), e); }
                 }
                 // Procesar GR pendientes
-                GuiaRemisionRegistroDAO grDao = new GuiaRemisionRegistroDAO();
+                GuiaRemisionRegistroDAO grDao = new GuiaRemisionRegistroDAOPostgres();
                 GuiaRemisionService grService = new GuiaRemisionService();
                 for (GuiaRemisionRegistro gr : pendientesGr) {
                     String clave = gr.getClaveAcceso();
@@ -376,7 +383,7 @@ public class SeguimientoSriController implements Initializable {
                                         String rutaXML = System.getProperty("user.home")+File.separator+AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT+File.separator+AppConstants.PREFIJO_PDF_GUIA_REMISION+grFull.getNumComprobante().replace("-","")+AppConstants.EXTENSION_XML;
                                         // correo opcional: buscar primer destinatario que coincida con cliente
                                         try {
-                                            java.util.List<com.vendex.model.GuiaRemisionDestinatario> dests = new com.vendex.dao.GuiaRemisionDestinatarioDAO().listarPorGuiaId(grFull.getId());
+                                            java.util.List<com.vendex.model.GuiaRemisionDestinatario> dests = new com.vendex.dao.GuiaRemisionDestinatarioDAOPostgres().listarPorGuiaId(grFull.getId());
                                             if (!dests.isEmpty()) {
                                                 String ident = dests.get(0).getIdentificacionDestinatario();
                                                 String correo = null; String nombre = dests.get(0).getRazonSocialDestinatario();
@@ -395,7 +402,7 @@ public class SeguimientoSriController implements Initializable {
                     } catch (Exception e) { errores++; logDAO.guardar("SeguimientoSriController","consultarSri GR","Error GR "+clave+": "+e.getMessage(), e); }
                 }
                 // Procesar Retenciones pendientes
-                RetencionRegistroDAO retDao = new RetencionRegistroDAO();
+                RetencionRegistroDAO retDao = new RetencionRegistroDAOPostgres();
                 RetencionService retService = new RetencionService();
                 for (RetencionRegistro ret : pendientesRet) {
                     String clave = ret.getClaveAcceso();

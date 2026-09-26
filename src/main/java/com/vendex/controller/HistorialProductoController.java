@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
+import com.vendex.dao.HistorialProductoDAOPostgres;
 
 public class HistorialProductoController implements Initializable {
 
@@ -38,7 +39,7 @@ public class HistorialProductoController implements Initializable {
     @FXML private TableColumn<HistorialProducto, LocalDateTime> colFecha;
     @FXML private PieChart pieProductos;
 
-    private final HistorialProductoDAO dao = new HistorialProductoDAO();
+    private final HistorialProductoDAO dao = new HistorialProductoDAOPostgres();
     private ObservableList<HistorialProducto> lista = FXCollections.observableArrayList();
 
     @Override

@@ -29,18 +29,27 @@ public class RetencionService {
     private final RetencionRegistroDAO retencionDAO;
     private final RetencionDocumentoSustentoDAO docDAO;
     private final RetencionDetalleDAO detalleDAO;
-    private final LogDAO logDAO;
+    private final LogDAO logDAO = new LogDAO();
 
     public RetencionService() {
-        this.empresaDAO = new EmpresaDAO();
+        this.empresaDAO = new EmpresaDAOPostgres();
         this.proveedorDAO = new ProveedorDAO();
-        this.secuenciaDAO = new SecuenciaDocumentoDAO();
-        this.comprobanteDAO = new ComprobanteDAO();
-        this.retencionDAO = new RetencionRegistroDAO();
-        this.docDAO = new RetencionDocumentoSustentoDAO();
-        this.detalleDAO = new RetencionDetalleDAO();
-        this.logDAO = new LogDAO();
+        this.secuenciaDAO = new SecuenciaDocumentoDAOPostgres();
+        this.comprobanteDAO = new ComprobanteDAOPostgres();
+        this.retencionDAO = new RetencionRegistroDAOPostgres();
+        this.docDAO = new RetencionDocumentoSustentoDAOPostgres();
+        this.detalleDAO = new RetencionDetalleDAOPostgres();
     }
+    public RetencionService(EmpresaDAO empresaDAO, ProveedorDAO proveedorDAO, SecuenciaDocumentoDAO secuenciaDAO, ComprobanteDAO comprobanteDAO, RetencionRegistroDAO retencionDAO, RetencionDocumentoSustentoDAO docDAO, RetencionDetalleDAO detalleDAO) {
+        this.empresaDAO = empresaDAO;
+        this.proveedorDAO = proveedorDAO;
+        this.secuenciaDAO = secuenciaDAO;
+        this.comprobanteDAO = comprobanteDAO;
+        this.retencionDAO = retencionDAO;
+        this.docDAO = docDAO;
+        this.detalleDAO = detalleDAO;
+    }
+
 
     public static class RetencionLineaInput {
         public String codigo; // 1 Renta, 2 IVA

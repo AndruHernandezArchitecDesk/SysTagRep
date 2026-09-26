@@ -1,7 +1,9 @@
 package com.vendex;
 
+import com.vendex.config.AppContext;
 import com.vendex.config.DatabaseConnection;
 import com.vendex.config.DbConfig;
+import com.vendex.config.VendexControllerFactory;
 import com.vendex.controller.LicenseActivatorController;
 import com.vendex.util.LicenseManager;
 import com.vendex.util.ThemeManager;
@@ -55,9 +57,12 @@ public class MainApp extends Application {
         try { com.vendex.service.ServicioReintentoSri.getInstance().start(); } catch (Exception e) { System.err.println("No se pudo iniciar SRI reintento: " + e.getMessage()); }
         // Activacion solo en host (localhost). PC cliente con db.url remota (vendex-db) no requiere licencia local.
         boolean esRemota = DbConfig.esRemota();
+        AppContext appContext = AppContext.getInstance();
+        VendexControllerFactory controllerFactory = new VendexControllerFactory(appContext);
         if (!esRemota && !LicenseManager.isActivated()) {
             FXMLLoader loader = new FXMLLoader(
                     getClass().getResource("/view/LicenseActivatorView.fxml"));
+            loader.setControllerFactory(controllerFactory);
             Parent root = loader.load();
             LicenseActivatorController ctrl = loader.getController();
             aplicarMayusculas(root);
@@ -76,9 +81,9 @@ public class MainApp extends Application {
             }
         }
 
-        Parent root = FXMLLoader.load(
-                getClass().getResource("/view/LoginView.fxml")
-        );
+        FXMLLoader loginLoader = new FXMLLoader(getClass().getResource("/view/LoginView.fxml"));
+        loginLoader.setControllerFactory(controllerFactory);
+        Parent root = loginLoader.load();
         aplicarMayusculas(root);
 
         stage.setTitle("Vendex - Inicio de Sesión");

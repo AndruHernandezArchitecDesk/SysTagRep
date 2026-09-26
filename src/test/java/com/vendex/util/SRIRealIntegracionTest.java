@@ -14,6 +14,8 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import com.vendex.dao.SecuenciaDocumentoDAOPostgres;
+import com.vendex.dao.EmpresaDAOPostgres;
 
 /**
  * Prueba de integración REAL contra el Web Service del SRI en ambiente PRUEBAS
@@ -34,12 +36,12 @@ class SRIRealIntegracionTest {
         assumeTrue(firma[0] != null && !firma[0].isEmpty() && !firma[1].isEmpty(),
                 "No hay firma electrónica configurada; se omite la prueba real");
 
-        EmpresaDAO empresaDAO = new EmpresaDAO();
+        EmpresaDAO empresaDAO = new EmpresaDAOPostgres();
         List<Empresa> empresas = empresaDAO.listar();
         assumeTrue(!empresas.isEmpty(), "No hay empresa cargada en la BD; se omite la prueba real");
         Empresa empresa = empresas.get(0);
 
-        SecuenciaDocumentoDAO secuenciaDAO = new SecuenciaDocumentoDAO();
+        SecuenciaDocumentoDAO secuenciaDAO = new SecuenciaDocumentoDAOPostgres();
         SecuenciaDocumento sec = secuenciaDAO.obtener("FACTURA");
         String codEstab = sec.getEstablecimiento();
         String codPtoEmi = sec.getPuntoEmision();

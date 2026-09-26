@@ -11,6 +11,7 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import com.vendex.dao.EmpresaDAOPostgres;
 
 public class CertificadoAlertaService {
 
@@ -106,7 +107,7 @@ public class CertificadoAlertaService {
 
     private String obtenerEmailAdmin() {
         try {
-            Empresa emp = new EmpresaDAO().listar().stream().findFirst().orElse(null);
+            Empresa emp = new EmpresaDAOPostgres().listar().stream().findFirst().orElse(null);
             if (emp != null && emp.getCorreo() != null && !emp.getCorreo().trim().isEmpty()) return emp.getCorreo().trim();
         } catch (Exception ignore) {}
         return "tagrepuestosvick@gmail.com";

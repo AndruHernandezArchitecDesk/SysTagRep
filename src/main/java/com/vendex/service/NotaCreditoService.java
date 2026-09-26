@@ -33,23 +33,37 @@ public class NotaCreditoService {
     private final HistorialProductoDAO historialProductoDAO;
     private final CajaSesionDAO cajaSesionDAO;
     private final CajaMovimientoDAO cajaMovimientoDAO;
-    private final LogDAO logDAO;
+    private final LogDAO logDAO = new LogDAO();
 
     public NotaCreditoService() {
-        this.empresaDAO = new EmpresaDAO();
-        this.clienteDAO = new ClienteDAO();
-        this.inventarioDAO = new InventarioDAO();
-        this.facturaRegistroDAO = new FacturaRegistroDAO();
-        this.facturaDetalleDAO = new FacturaDetalleDAO();
-        this.secuenciaDAO = new SecuenciaDocumentoDAO();
-        this.comprobanteDAO = new ComprobanteDAO();
-        this.notaCreditoDAO = new NotaCreditoRegistroDAO();
-        this.notaCreditoDetalleDAO = new NotaCreditoDetalleDAO();
-        this.historialProductoDAO = new HistorialProductoDAO();
-        this.cajaSesionDAO = new CajaSesionDAO();
-        this.cajaMovimientoDAO = new CajaMovimientoDAO();
-        this.logDAO = new LogDAO();
+        this.empresaDAO = new EmpresaDAOPostgres();
+        this.clienteDAO = new ClienteDAOPostgres();
+        this.inventarioDAO = new InventarioDAOPostgres();
+        this.facturaRegistroDAO = new FacturaRegistroDAOPostgres();
+        this.facturaDetalleDAO = new FacturaDetalleDAOPostgres();
+        this.secuenciaDAO = new SecuenciaDocumentoDAOPostgres();
+        this.comprobanteDAO = new ComprobanteDAOPostgres();
+        this.notaCreditoDAO = new NotaCreditoRegistroDAOPostgres();
+        this.notaCreditoDetalleDAO = new NotaCreditoDetalleDAOPostgres();
+        this.historialProductoDAO = new HistorialProductoDAOPostgres();
+        this.cajaSesionDAO = new CajaSesionDAOPostgres();
+        this.cajaMovimientoDAO = new CajaMovimientoDAOPostgres();
     }
+    public NotaCreditoService(EmpresaDAO empresaDAO, ClienteDAO clienteDAO, InventarioDAO inventarioDAO, FacturaRegistroDAO facturaRegistroDAO, FacturaDetalleDAO facturaDetalleDAO, SecuenciaDocumentoDAO secuenciaDAO, ComprobanteDAO comprobanteDAO, NotaCreditoRegistroDAO notaCreditoDAO, NotaCreditoDetalleDAO notaCreditoDetalleDAO, HistorialProductoDAO historialProductoDAO, CajaSesionDAO cajaSesionDAO, CajaMovimientoDAO cajaMovimientoDAO) {
+        this.empresaDAO = empresaDAO;
+        this.clienteDAO = clienteDAO;
+        this.inventarioDAO = inventarioDAO;
+        this.facturaRegistroDAO = facturaRegistroDAO;
+        this.facturaDetalleDAO = facturaDetalleDAO;
+        this.secuenciaDAO = secuenciaDAO;
+        this.comprobanteDAO = comprobanteDAO;
+        this.notaCreditoDAO = notaCreditoDAO;
+        this.notaCreditoDetalleDAO = notaCreditoDetalleDAO;
+        this.historialProductoDAO = historialProductoDAO;
+        this.cajaSesionDAO = cajaSesionDAO;
+        this.cajaMovimientoDAO = cajaMovimientoDAO;
+    }
+
 
     public static class DetalleNCInput {
         public Integer inventarioId;

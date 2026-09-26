@@ -29,19 +29,29 @@ public class GuiaRemisionService {
     private final GuiaRemisionRegistroDAO guiaDAO;
     private final GuiaRemisionDestinatarioDAO destDAO;
     private final GuiaRemisionDetalleDAO detalleDAO;
-    private final LogDAO logDAO;
+    private final LogDAO logDAO = new LogDAO();
 
     public GuiaRemisionService() {
-        this.empresaDAO = new EmpresaDAO();
-        this.clienteDAO = new ClienteDAO();
-        this.facturaRegistroDAO = new FacturaRegistroDAO();
-        this.secuenciaDAO = new SecuenciaDocumentoDAO();
-        this.comprobanteDAO = new ComprobanteDAO();
-        this.guiaDAO = new GuiaRemisionRegistroDAO();
-        this.destDAO = new GuiaRemisionDestinatarioDAO();
-        this.detalleDAO = new GuiaRemisionDetalleDAO();
-        this.logDAO = new LogDAO();
+        this.empresaDAO = new EmpresaDAOPostgres();
+        this.clienteDAO = new ClienteDAOPostgres();
+        this.facturaRegistroDAO = new FacturaRegistroDAOPostgres();
+        this.secuenciaDAO = new SecuenciaDocumentoDAOPostgres();
+        this.comprobanteDAO = new ComprobanteDAOPostgres();
+        this.guiaDAO = new GuiaRemisionRegistroDAOPostgres();
+        this.destDAO = new GuiaRemisionDestinatarioDAOPostgres();
+        this.detalleDAO = new GuiaRemisionDetalleDAOPostgres();
     }
+    public GuiaRemisionService(EmpresaDAO empresaDAO, ClienteDAO clienteDAO, FacturaRegistroDAO facturaRegistroDAO, SecuenciaDocumentoDAO secuenciaDAO, ComprobanteDAO comprobanteDAO, GuiaRemisionRegistroDAO guiaDAO, GuiaRemisionDestinatarioDAO destDAO, GuiaRemisionDetalleDAO detalleDAO) {
+        this.empresaDAO = empresaDAO;
+        this.clienteDAO = clienteDAO;
+        this.facturaRegistroDAO = facturaRegistroDAO;
+        this.secuenciaDAO = secuenciaDAO;
+        this.comprobanteDAO = comprobanteDAO;
+        this.guiaDAO = guiaDAO;
+        this.destDAO = destDAO;
+        this.detalleDAO = detalleDAO;
+    }
+
 
     public static class DetalleGRInput {
         public String codigoInterno;
