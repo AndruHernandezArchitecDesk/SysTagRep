@@ -23,12 +23,20 @@ import com.vendex.dao.LogDAOPostgres;
 
 public class FirmaController implements Initializable {
 
+    public FirmaController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public FirmaController(com.vendex.config.AppContext ctx) {
+        this.logDAO = ctx.logDAO;
+    }
+
     @FXML private Label lblEstado;
     @FXML private TextField txtRutaP12;
     @FXML private PasswordField txtClaveP12;
     @FXML private CheckBox chkTerminos;
 
-    private final LogDAO logDAO = new LogDAOPostgres();
+    private final LogDAO logDAO;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -82,6 +90,7 @@ public class FirmaController implements Initializable {
     private void abrirTerminos() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/TerminosView.fxml"));
+            com.vendex.config.VendexControllerFactory.aplicar(loader);
             Parent vista = loader.load();
             Stage modal = new Stage();
             modal.initModality(Modality.APPLICATION_MODAL);

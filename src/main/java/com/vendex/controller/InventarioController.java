@@ -44,6 +44,19 @@ import com.vendex.dao.UbicacionDetalleDAOPostgres;
  */
 public class InventarioController implements Initializable {
 
+    public InventarioController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public InventarioController(com.vendex.config.AppContext ctx) {
+        this.dao = ctx.inventarioDAO;
+        this.logDAO = ctx.logDAO;
+        this.daoEmpresa = ctx.empresaDAO;
+        this.daoUbicacion = ctx.ubicacionDetalleDAO;
+        this.vehiculoDAO = ctx.vehiculoDAO;
+        this.inventarioVehiculoDAO = ctx.inventarioVehiculoDAO;
+    }
+
     @FXML private TableView<Inventario> tblInventario;
     @FXML private TableColumn<Inventario, String> colDescripcion;
     @FXML private TableColumn<Inventario, String> colGrupo;
@@ -75,12 +88,12 @@ public class InventarioController implements Initializable {
     private int pageSize = 25;
     private int totalPages = 1;
     private int totalCount = 0;
-    private final InventarioDAO dao = new InventarioDAOPostgres();
-    private final com.vendex.dao.LogDAO logDAO = new com.vendex.dao.LogDAOPostgres();
-    private final EmpresaDAO daoEmpresa = new EmpresaDAOPostgres();
-    private final UbicacionDetalleDAO daoUbicacion = new UbicacionDetalleDAOPostgres();
-    private final com.vendex.dao.VehiculoDAO vehiculoDAO = new com.vendex.dao.VehiculoDAOPostgres();
-    private final com.vendex.dao.InventarioVehiculoDAO inventarioVehiculoDAO = new com.vendex.dao.InventarioVehiculoDAOPostgres();
+    private final InventarioDAO dao;
+    private final com.vendex.dao.LogDAO logDAO;
+    private final EmpresaDAO daoEmpresa;
+    private final UbicacionDetalleDAO daoUbicacion;
+    private final com.vendex.dao.VehiculoDAO vehiculoDAO;
+    private final com.vendex.dao.InventarioVehiculoDAO inventarioVehiculoDAO;
     private final ObservableList<Inventario> listaInventario = FXCollections.observableArrayList();
 
     private static final String TODAS = "Todas";
@@ -303,6 +316,7 @@ public class InventarioController implements Initializable {
     private void nuevoIngresoPorProducto() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/IngresoProductoView.fxml"));
+            com.vendex.config.VendexControllerFactory.aplicar(loader);
             Parent vista = loader.load();
             Stage modal = new Stage();
             modal.initModality(Modality.APPLICATION_MODAL);
@@ -319,6 +333,7 @@ public class InventarioController implements Initializable {
     private void abrirModalEdicion(Inventario i) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/IngresoMercaderiaView.fxml"));
+            com.vendex.config.VendexControllerFactory.aplicar(loader);
             Parent vista = loader.load();
             IngresoMercaderiaController controller = loader.getController();
             controller.setCerrarAlGuardar(true);

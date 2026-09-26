@@ -17,7 +17,17 @@ import com.vendex.dao.CertificadoEstadoDAOPostgres;
 public class CertificadoAlertaService {
 
     private static final Logger LOGGER = Logger.getLogger(CertificadoAlertaService.class.getName());
-    private final CertificadoEstadoDAO dao = new CertificadoEstadoDAOPostgres();
+    private final CertificadoEstadoDAO dao;
+    private final EmpresaDAO empresaDAO;
+
+    public CertificadoAlertaService() {
+        this(new CertificadoEstadoDAOPostgres(), new EmpresaDAOPostgres());
+    }
+
+    public CertificadoAlertaService(CertificadoEstadoDAO dao, EmpresaDAO empresaDAO) {
+        this.dao = dao;
+        this.empresaDAO = empresaDAO;
+    }
 
     public static class ResultadoAlerta {
         public final CertificadoDigitalInfo info;
@@ -113,7 +123,7 @@ public class CertificadoAlertaService {
 
     private String obtenerEmailAdmin() {
         try {
-            Empresa emp = new EmpresaDAOPostgres().listar().stream().findFirst().orElse(null);
+            Empresa emp = empresaDAO.listar().stream().findFirst().orElse(null);
             if (emp != null && emp.getCorreo() != null && !emp.getCorreo().trim().isEmpty()) return emp.getCorreo().trim();
         } catch (Exception ignore) {}
         return "tagrepuestosvick@gmail.com";

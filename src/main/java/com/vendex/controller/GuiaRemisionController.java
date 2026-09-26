@@ -1,5 +1,6 @@
 package com.vendex.controller;
 
+import com.vendex.config.AppContext;
 import com.vendex.config.DatabaseConnection;
 import com.vendex.dao.*;
 import com.vendex.model.*;
@@ -29,6 +30,17 @@ import java.util.ResourceBundle;
 
 public class GuiaRemisionController implements Initializable {
 
+    public GuiaRemisionController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public GuiaRemisionController(com.vendex.config.AppContext ctx) {
+        this.grService = ctx.guiaRemisionService;
+        this.secDAO = ctx.secuenciaDAO;
+        this.empresaDAO = ctx.empresaDAO;
+        this.logDAO = ctx.logDAO;
+    }
+
     @FXML private TextField txtDirPartida, txtRazonTransportista, txtRucTransportista, txtPlaca;
     @FXML private ComboBox<String> cmbTipoIdTransportista, cmbAmbiente;
     @FXML private DatePicker dpFechaIni, dpFechaFin;
@@ -41,10 +53,10 @@ public class GuiaRemisionController implements Initializable {
     @FXML private TableView<GuiaRemisionService.DetalleGRInput> tblDetalles;
     @FXML private TableColumn<GuiaRemisionService.DetalleGRInput, String> colDetCodigo, colDetDesc, colDetCant;
 
-    private final GuiaRemisionService grService = new GuiaRemisionService();
-    private final SecuenciaDocumentoDAO secDAO = new SecuenciaDocumentoDAOPostgres();
-    private final EmpresaDAO empresaDAO = new EmpresaDAOPostgres();
-    private final LogDAO logDAO = new LogDAOPostgres();
+    private final GuiaRemisionService grService;
+    private final SecuenciaDocumentoDAO secDAO;
+    private final EmpresaDAO empresaDAO;
+    private final LogDAO logDAO;
 
     private final ObservableList<GuiaRemisionService.DestinatarioGRInput> destinatarios = FXCollections.observableArrayList();
     private final ObservableList<GuiaRemisionService.DetalleGRInput> detallesActual = FXCollections.observableArrayList();
@@ -212,7 +224,7 @@ public class GuiaRemisionController implements Initializable {
             provisional.setEstado(AppConstants.ESTADO_PENDIENTE);
             provisional.setMensaje("Pendiente SRI - en cola");
             try { grService.finalizarEnvioSRI(provisional, res, dir); } catch (Exception ex) { logDAO.guardar("GuiaRemisionController","provisional", ex.getMessage(), ex); }
-            try { new com.vendex.dao.ComprobantePendienteSriDAOPostgres().encolar("GUIA_REMISION", res.claveAcceso, res.numComprobante, ambiente); } catch (Exception ex) { logDAO.guardar("GuiaRemisionController","encolar", ex.getMessage(), ex instanceof Exception ? (Exception)ex : new Exception(ex)); }
+            try { AppContext.getInstance().comprobantePendienteSriDAO.encolar("GUIA_REMISION", res.claveAcceso, res.numComprobante, ambiente); } catch (Exception ex) { logDAO.guardar("GuiaRemisionController","encolar", ex.getMessage(), ex instanceof Exception ? (Exception)ex : new Exception(ex)); }
             mostrarAlertaCopiable(Alert.AlertType.INFORMATION, "Guía de Remisión", "GR registrada (pendiente SRI)", "GR " + res.numComprobante + " registrada (pendiente SRI).\nClave: " + res.claveAcceso + "\nPDF provisional: " + res.rutaPDF + "\nEn cola cada 2min.");
             new Thread(() -> { try { if (Desktop.isDesktopSupported()) Desktop.getDesktop().open(new File(res.rutaPDF)); } catch (Exception ignore) {} }, "Hilo-Abrir-PDF-GR").start();
             destinatarios.clear(); detallesActual.clear(); txtRazonTransportista.clear(); txtRucTransportista.clear(); txtPlaca.clear();

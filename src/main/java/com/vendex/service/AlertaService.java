@@ -18,9 +18,19 @@ public class AlertaService {
 
     private static final int UMBRAL_STOCK_BAJO = 5;
 
-    private final AlertaDAO alertaDAO = new AlertaDAOPostgres();
-    private final InventarioDAO inventarioDAO = new InventarioDAOPostgres();
-    private final CuentaPorCobrarDAO cuentaPorCobrarDAO = new CuentaPorCobrarDAOPostgres();
+    private final AlertaDAO alertaDAO;
+    private final InventarioDAO inventarioDAO;
+    private final CuentaPorCobrarDAO cuentaPorCobrarDAO;
+
+    public AlertaService() {
+        this(new AlertaDAOPostgres(), new InventarioDAOPostgres(), new CuentaPorCobrarDAOPostgres());
+    }
+
+    public AlertaService(AlertaDAO alertaDAO, InventarioDAO inventarioDAO, CuentaPorCobrarDAO cuentaPorCobrarDAO) {
+        this.alertaDAO = alertaDAO;
+        this.inventarioDAO = inventarioDAO;
+        this.cuentaPorCobrarDAO = cuentaPorCobrarDAO;
+    }
 
     public void regenerarAlertas() {
         alertaDAO.limpiar();

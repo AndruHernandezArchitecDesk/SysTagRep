@@ -24,6 +24,14 @@ import com.vendex.dao.HistorialProductoDAOPostgres;
 
 public class HistorialProductoController implements Initializable {
 
+    public HistorialProductoController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public HistorialProductoController(com.vendex.config.AppContext ctx) {
+        this.dao = ctx.historialProductoDAO;
+    }
+
     @FXML private DatePicker dpFecha;
     @FXML private TextField txtBuscar;
     @FXML private TableView<HistorialProducto> tblHistorial;
@@ -39,7 +47,7 @@ public class HistorialProductoController implements Initializable {
     @FXML private TableColumn<HistorialProducto, LocalDateTime> colFecha;
     @FXML private PieChart pieProductos;
 
-    private final HistorialProductoDAO dao = new HistorialProductoDAOPostgres();
+    private final HistorialProductoDAO dao;
     private ObservableList<HistorialProducto> lista = FXCollections.observableArrayList();
 
     @Override

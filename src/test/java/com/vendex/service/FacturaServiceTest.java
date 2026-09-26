@@ -33,7 +33,7 @@ public class FacturaServiceTest {
         CuentaPorCobrarDAO cpcDAO = mock(CuentaPorCobrarDAO.class);
         HistorialProductoDAO histDAO = mock(HistorialProductoDAO.class);
 
-        service = new FacturaService(empresaDAO, clienteDAO, inventarioDAO, facturaDAO, detalleDAO, secDAO, comprobanteDAO, cpcDAO, histDAO);
+        service = new FacturaService(empresaDAO, clienteDAO, inventarioDAO, facturaDAO, detalleDAO, secDAO, comprobanteDAO, cpcDAO, histDAO, mock(com.vendex.dao.LogDAO.class));
 
         Usuario u = new Usuario();
         u.setId(1);

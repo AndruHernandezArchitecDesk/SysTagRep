@@ -1,5 +1,6 @@
 package com.vendex.controller;
 
+import com.vendex.config.AppContext;
 import com.vendex.dao.ClienteDAO;
 import com.vendex.dao.ComprobanteDAO;
 import com.vendex.dao.FacturaRegistroDAO;
@@ -60,6 +61,17 @@ import com.vendex.dao.LogDAOPostgres;
 
 public class SeguimientoSriController implements Initializable {
 
+    public SeguimientoSriController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public SeguimientoSriController(com.vendex.config.AppContext ctx) {
+        this.dao = ctx.facturaRegistroDAO;
+        this.logDAO = ctx.logDAO;
+        this.clienteDAO = ctx.clienteDAO;
+        this.facturaService = ctx.facturaService;
+    }
+
     private static final Logger LOGGER = Logger.getLogger(SeguimientoSriController.class.getName());
 
     @FXML private TextField txtBuscar;
@@ -85,10 +97,10 @@ public class SeguimientoSriController implements Initializable {
     private int pageSize = 25;
     private int totalPages = 1;
     private int totalCount = 0;
-    private final FacturaRegistroDAO dao = new FacturaRegistroDAOPostgres();
-    private final LogDAO logDAO = new LogDAOPostgres();
-    private final ClienteDAO clienteDAO = new ClienteDAOPostgres();
-    private final FacturaService facturaService = new FacturaService();
+    private final FacturaRegistroDAO dao;
+    private final LogDAO logDAO;
+    private final ClienteDAO clienteDAO;
+    private final FacturaService facturaService;
     private final ObservableList<FacturaRegistro> listaFacturas = FXCollections.observableArrayList();
 
     @Override
@@ -180,7 +192,7 @@ public class SeguimientoSriController implements Initializable {
     private void consultarSri() {
         // Contingencia: la cola persistente se encarga automáticamente cada 2min (ServicioReintentoSri).
         // Este botón ahora es solo vista/manual: fuerza reintento inmediato de la cola.
-        com.vendex.dao.ComprobantePendienteSriDAO pendDao = new com.vendex.dao.ComprobantePendienteSriDAOPostgres();
+        com.vendex.dao.ComprobantePendienteSriDAO pendDao = AppContext.getInstance().comprobantePendienteSriDAO;
         int pendientesCola = pendDao.contarPendientes();
         if (pendientesCola == 0) {
             // fallback: también revisar tablas legacy por si hay pendientes no encolados (migración inicial)
@@ -215,11 +227,11 @@ public class SeguimientoSriController implements Initializable {
     @SuppressWarnings("unused")
     private void consultarSriLegacy() {
         List<FacturaRegistro> pendientes = dao.listarPendientesSri();
-        NotaCreditoRegistroDAO ncDao = new NotaCreditoRegistroDAOPostgres();
+        NotaCreditoRegistroDAO ncDao = AppContext.getInstance().notaCreditoRegistroDAO;
         List<NotaCreditoRegistro> pendientesNc = ncDao.listarPendientesSri();
-        final List<NotaDebitoRegistro> pendientesNd = new NotaDebitoRegistroDAOPostgres().listarPendientesSri();
-        final List<GuiaRemisionRegistro> pendientesGr = new GuiaRemisionRegistroDAOPostgres().listarPendientesSri();
-        final List<RetencionRegistro> pendientesRet = new RetencionRegistroDAOPostgres().listarPendientesSri();
+        final List<NotaDebitoRegistro> pendientesNd = AppContext.getInstance().notaDebitoRegistroDAO.listarPendientesSri();
+        final List<GuiaRemisionRegistro> pendientesGr = AppContext.getInstance().guiaRemisionRegistroDAO.listarPendientesSri();
+        final List<RetencionRegistro> pendientesRet = AppContext.getInstance().retencionRegistroDAO.listarPendientesSri();
         if (pendientes.isEmpty() && pendientesNc.isEmpty() && pendientesNd.isEmpty() && pendientesGr.isEmpty() && pendientesRet.isEmpty()) {
             new Alert(Alert.AlertType.INFORMATION, "No hay facturas/notas de crédito/débito/guía de remisión/retención pendientes por consultar con el SRI.").showAndWait();
             return;
@@ -230,7 +242,7 @@ public class SeguimientoSriController implements Initializable {
             protected String call() {
                 int autorizadas = 0, rechazadas = 0, pendientesN = 0, errores = 0;
                 StringBuilder emailsEnviados = new StringBuilder();
-                ComprobanteDAO ceDAO = new ComprobanteDAOPostgres();
+                ComprobanteDAO ceDAO = AppContext.getInstance().comprobanteDAO;
                 for (FacturaRegistro f : pendientes) {
                     String clave = f.getClaveAcceso();
                     if (clave == null || clave.trim().isEmpty()) continue;
@@ -295,7 +307,7 @@ public class SeguimientoSriController implements Initializable {
                     }
                 }
                 // Procesar NC pendientes
-                NotaCreditoService ncService = new NotaCreditoService();
+                NotaCreditoService ncService = AppContext.getInstance().notaCreditoService;
                 File dirEsc = obtenerDirectorioEscritorio();
                 for (NotaCreditoRegistro nc : pendientesNc) {
                     String clave = nc.getClaveAcceso();
@@ -328,8 +340,8 @@ public class SeguimientoSriController implements Initializable {
                     } catch (Exception e) { errores++; logDAO.guardar("SeguimientoSriController","consultarSri NC","Error NC "+clave+": "+e.getMessage(), e); }
                 }
                 // Procesar ND pendientes
-                NotaDebitoRegistroDAO ndDao = new NotaDebitoRegistroDAOPostgres();
-                NotaDebitoService ndService = new NotaDebitoService();
+                NotaDebitoRegistroDAO ndDao = AppContext.getInstance().notaDebitoRegistroDAO;
+                NotaDebitoService ndService = AppContext.getInstance().notaDebitoService;
                 for (NotaDebitoRegistro nd : pendientesNd) {
                     String clave = nd.getClaveAcceso();
                     if (clave == null || clave.trim().isEmpty()) continue;
@@ -360,8 +372,8 @@ public class SeguimientoSriController implements Initializable {
                     } catch (Exception e) { errores++; logDAO.guardar("SeguimientoSriController","consultarSri ND","Error ND "+clave+": "+e.getMessage(), e); }
                 }
                 // Procesar GR pendientes
-                GuiaRemisionRegistroDAO grDao = new GuiaRemisionRegistroDAOPostgres();
-                GuiaRemisionService grService = new GuiaRemisionService();
+                GuiaRemisionRegistroDAO grDao = AppContext.getInstance().guiaRemisionRegistroDAO;
+                GuiaRemisionService grService = AppContext.getInstance().guiaRemisionService;
                 for (GuiaRemisionRegistro gr : pendientesGr) {
                     String clave = gr.getClaveAcceso();
                     if (clave == null || clave.trim().isEmpty()) continue;
@@ -384,7 +396,7 @@ public class SeguimientoSriController implements Initializable {
                                         String rutaXML = System.getProperty("user.home")+File.separator+AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT+File.separator+AppConstants.PREFIJO_PDF_GUIA_REMISION+grFull.getNumComprobante().replace("-","")+AppConstants.EXTENSION_XML;
                                         // correo opcional: buscar primer destinatario que coincida con cliente
                                         try {
-                                            java.util.List<com.vendex.model.GuiaRemisionDestinatario> dests = new com.vendex.dao.GuiaRemisionDestinatarioDAOPostgres().listarPorGuiaId(grFull.getId());
+                                            java.util.List<com.vendex.model.GuiaRemisionDestinatario> dests = AppContext.getInstance().guiaRemisionDestinatarioDAO.listarPorGuiaId(grFull.getId());
                                             if (!dests.isEmpty()) {
                                                 String ident = dests.get(0).getIdentificacionDestinatario();
                                                 String correo = null; String nombre = dests.get(0).getRazonSocialDestinatario();
@@ -403,8 +415,8 @@ public class SeguimientoSriController implements Initializable {
                     } catch (Exception e) { errores++; logDAO.guardar("SeguimientoSriController","consultarSri GR","Error GR "+clave+": "+e.getMessage(), e); }
                 }
                 // Procesar Retenciones pendientes
-                RetencionRegistroDAO retDao = new RetencionRegistroDAOPostgres();
-                RetencionService retService = new RetencionService();
+                RetencionRegistroDAO retDao = AppContext.getInstance().retencionRegistroDAO;
+                RetencionService retService = AppContext.getInstance().retencionService;
                 for (RetencionRegistro ret : pendientesRet) {
                     String clave = ret.getClaveAcceso();
                     if (clave == null || clave.trim().isEmpty()) continue;
@@ -427,9 +439,9 @@ public class SeguimientoSriController implements Initializable {
                                         // correo a proveedor
                                         String correo = null; String nombre = retFull.getRazonSocialSujeto();
                                         if (retFull.getProveedorId()!=null) {
-                                            for (com.vendex.model.Proveedor p : new com.vendex.dao.ProveedorDAOPostgres().listar()) if (p.getId()==retFull.getProveedorId()) { correo = p.getCorreo(); nombre = p.getNombre(); break; }
+                                            for (com.vendex.model.Proveedor p : AppContext.getInstance().proveedorDAO.listar()) if (p.getId()==retFull.getProveedorId()) { correo = p.getCorreo(); nombre = p.getNombre(); break; }
                                         }
-                                        if (correo==null) for (com.vendex.model.Proveedor p : new com.vendex.dao.ProveedorDAOPostgres().listar()) if (retFull.getIdentificacionSujeto().equals(p.getIdentificacion())) { correo = p.getCorreo(); break; }
+                                        if (correo==null) for (com.vendex.model.Proveedor p : AppContext.getInstance().proveedorDAO.listar()) if (retFull.getIdentificacionSujeto().equals(p.getIdentificacion())) { correo = p.getCorreo(); break; }
                                         if (correo != null && !correo.trim().isEmpty()) {
                                             EmailService es = new EmailService();
                                             boolean enviado = es.enviarCorreoConArchivos(correo.trim(), nombre, retFull.getNumComprobante(), AppConstants.TIPO_DOCUMENTO_RETENCION, new File(pdfRegenerado), new File(rutaXML));

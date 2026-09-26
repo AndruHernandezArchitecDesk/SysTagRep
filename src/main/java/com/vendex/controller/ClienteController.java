@@ -24,6 +24,15 @@ import com.vendex.dao.ClienteDAOPostgres;
 import com.vendex.dao.LogDAOPostgres;
 
 public class ClienteController implements Initializable {
+    public ClienteController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public ClienteController(com.vendex.config.AppContext ctx) {
+        this.dao = ctx.clienteDAO;
+        this.logDAO = ctx.logDAO;
+    }
+
     private boolean formularioVisible = true;
 
     @FXML private SplitPane splitPane;
@@ -52,8 +61,8 @@ public class ClienteController implements Initializable {
     @FXML private TableColumn<Cliente, String> colFechaRegistro;
     @FXML private TableColumn<Cliente, Void> colAcciones;
 
-    private final ClienteDAO dao = new ClienteDAOPostgres();
-    private final LogDAO logDAO = new LogDAOPostgres();
+    private final ClienteDAO dao;
+    private final LogDAO logDAO;
     private ObservableList<Cliente> listaClientes = FXCollections.observableArrayList();
 
     @Override

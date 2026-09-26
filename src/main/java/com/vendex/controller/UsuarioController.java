@@ -1,5 +1,6 @@
 package com.vendex.controller;
 
+import com.vendex.config.AppContext;
 import com.vendex.dao.LogDAO;
 import com.vendex.dao.UsuarioDAO;
 import com.vendex.model.Usuario;
@@ -28,6 +29,15 @@ import com.vendex.dao.UsuarioDAOPostgres;
 import com.vendex.dao.LogDAOPostgres;
 
 public class UsuarioController implements Initializable {
+    public UsuarioController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public UsuarioController(com.vendex.config.AppContext ctx) {
+        this.dao = ctx.usuarioDAO;
+        this.logDAO = ctx.logDAO;
+    }
+
     private boolean formularioVisible = true;
 
     @FXML private SplitPane splitPane;
@@ -58,8 +68,8 @@ public class UsuarioController implements Initializable {
     @FXML private TableColumn<Usuario, Boolean> colEstado;
     @FXML private TableColumn<Usuario, Void> colAcciones;
 
-    private final UsuarioDAO dao = new UsuarioDAOPostgres();
-    private final LogDAO logDAO = new LogDAOPostgres();
+    private final UsuarioDAO dao;
+    private final LogDAO logDAO;
     private ObservableList<Usuario> listaUsuarios = FXCollections.observableArrayList();
     private ObservableList<VistaPermiso> listaPermisos = FXCollections.observableArrayList();
 
@@ -217,7 +227,7 @@ public class UsuarioController implements Initializable {
             u.setRol(cmbRol.getValue());
             // mapear rol string → rol_id + tope
             try {
-                com.vendex.model.Rol rolEnt = new com.vendex.dao.RolDAOPostgres().obtenerPorNombre(cmbRol.getValue());
+                com.vendex.model.Rol rolEnt = AppContext.getInstance().rolDAO.obtenerPorNombre(cmbRol.getValue());
                 if (rolEnt != null) { u.setRolId(rolEnt.getId()); u.setLimiteDescuentoPct(rolEnt.getLimiteDescuentoPct()); }
             } catch (Exception ignored) {}
             u.setEstado("ACTIVO".equals(cmbEstado.getValue()));
@@ -368,7 +378,7 @@ public class UsuarioController implements Initializable {
 
         if (alert.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK) {
             dao.eliminar(u.getId());
-            try { new com.vendex.dao.AuditoriaAccionDAOPostgres().registrar(com.vendex.util.SesionActual.getUsuario().getId(),"USUARIO_GESTIONAR","PERMITIDO","Eliminar usuario "+u.getUsername()); } catch(Exception ignored){}
+            try { AppContext.getInstance().auditoriaAccionDAO.registrar(com.vendex.util.SesionActual.getUsuario().getId(),"USUARIO_GESTIONAR","PERMITIDO","Eliminar usuario "+u.getUsername()); } catch(Exception ignored){}
             cargarDatos();
         }
     }

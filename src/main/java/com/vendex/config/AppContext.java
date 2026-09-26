@@ -74,6 +74,10 @@ public class AppContext {
     public final GuiaRemisionService guiaRemisionService;
     public final RetencionService retencionService;
     public final TransferenciaInventarioService transferenciaInventarioService;
+    public final AlertaService alertaService;
+    public final CajaService cajaService;
+    public final CertificadoAlertaService certificadoAlertaService;
+    public final ServicioReintentoSri servicioReintentoSri;
 
     private AppContext() {
         // DAOs Postgres
@@ -133,27 +137,34 @@ public class AppContext {
         // Servicios con inyección por constructor
         this.facturaService = new FacturaService(
                 empresaDAO, clienteDAO, inventarioDAO, facturaRegistroDAO, facturaDetalleDAO,
-                secuenciaDAO, comprobanteDAO, cuentaPorCobrarDAO, historialProductoDAO
+                secuenciaDAO, comprobanteDAO, cuentaPorCobrarDAO, historialProductoDAO, logDAO
         );
         this.notaCreditoService = new NotaCreditoService(
                 empresaDAO, clienteDAO, inventarioDAO, facturaRegistroDAO, facturaDetalleDAO,
                 secuenciaDAO, comprobanteDAO, notaCreditoRegistroDAO, notaCreditoDetalleDAO,
-                historialProductoDAO, cajaSesionDAO, cajaMovimientoDAO
+                historialProductoDAO, cajaSesionDAO, cajaMovimientoDAO, logDAO
         );
         this.notaDebitoService = new NotaDebitoService(
                 empresaDAO, clienteDAO, facturaRegistroDAO, secuenciaDAO, comprobanteDAO,
-                notaDebitoRegistroDAO, notaDebitoMotivoDAO, cajaSesionDAO, cajaMovimientoDAO
+                notaDebitoRegistroDAO, notaDebitoMotivoDAO, cajaSesionDAO, cajaMovimientoDAO, logDAO
         );
         this.guiaRemisionService = new GuiaRemisionService(
                 empresaDAO, clienteDAO, facturaRegistroDAO, secuenciaDAO, comprobanteDAO,
-                guiaRemisionRegistroDAO, guiaRemisionDestinatarioDAO, guiaRemisionDetalleDAO
+                guiaRemisionRegistroDAO, guiaRemisionDestinatarioDAO, guiaRemisionDetalleDAO, logDAO
         );
         this.retencionService = new RetencionService(
                 empresaDAO, proveedorDAO, secuenciaDAO, comprobanteDAO,
-                retencionRegistroDAO, retencionDocumentoSustentoDAO, retencionDetalleDAO
+                retencionRegistroDAO, retencionDocumentoSustentoDAO, retencionDetalleDAO, logDAO
         );
         this.transferenciaInventarioService = new TransferenciaInventarioService(
                 inventarioDAO, sucursalDAO, transferenciaInventarioDAO, logDAO
+        );
+        this.alertaService = new AlertaService(alertaDAO, inventarioDAO, cuentaPorCobrarDAO);
+        this.cajaService = new CajaService(cajaSesionDAO, cajaMovimientoDAO);
+        this.certificadoAlertaService = new CertificadoAlertaService(certificadoEstadoDAO, empresaDAO);
+        this.servicioReintentoSri = new ServicioReintentoSri(
+                comprobantePendienteSriDAO, comprobanteDAO, facturaRegistroDAO,
+                notaCreditoRegistroDAO, notaDebitoRegistroDAO, guiaRemisionRegistroDAO, retencionRegistroDAO
         );
     }
 

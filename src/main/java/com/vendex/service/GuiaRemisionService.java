@@ -29,9 +29,10 @@ public class GuiaRemisionService {
     private final GuiaRemisionRegistroDAO guiaDAO;
     private final GuiaRemisionDestinatarioDAO destDAO;
     private final GuiaRemisionDetalleDAO detalleDAO;
-    private final LogDAO logDAO = new LogDAOPostgres();
+    private final LogDAO logDAO;
 
     public GuiaRemisionService() {
+        this.logDAO = new LogDAOPostgres();
         this.empresaDAO = new EmpresaDAOPostgres();
         this.clienteDAO = new ClienteDAOPostgres();
         this.facturaRegistroDAO = new FacturaRegistroDAOPostgres();
@@ -41,7 +42,8 @@ public class GuiaRemisionService {
         this.destDAO = new GuiaRemisionDestinatarioDAOPostgres();
         this.detalleDAO = new GuiaRemisionDetalleDAOPostgres();
     }
-    public GuiaRemisionService(EmpresaDAO empresaDAO, ClienteDAO clienteDAO, FacturaRegistroDAO facturaRegistroDAO, SecuenciaDocumentoDAO secuenciaDAO, ComprobanteDAO comprobanteDAO, GuiaRemisionRegistroDAO guiaDAO, GuiaRemisionDestinatarioDAO destDAO, GuiaRemisionDetalleDAO detalleDAO) {
+    public GuiaRemisionService(EmpresaDAO empresaDAO, ClienteDAO clienteDAO, FacturaRegistroDAO facturaRegistroDAO, SecuenciaDocumentoDAO secuenciaDAO, ComprobanteDAO comprobanteDAO, GuiaRemisionRegistroDAO guiaDAO, GuiaRemisionDestinatarioDAO destDAO, GuiaRemisionDetalleDAO detalleDAO, LogDAO logDAO) {
+        this.logDAO = logDAO;
         this.empresaDAO = empresaDAO;
         this.clienteDAO = clienteDAO;
         this.facturaRegistroDAO = facturaRegistroDAO;

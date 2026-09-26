@@ -2,6 +2,7 @@ package com.vendex.controller;
 
 import com.vendex.config.AppContext;
 import com.vendex.config.GeminiConfig;
+import com.vendex.config.VendexControllerFactory;
 import com.vendex.dao.LogDAO;
 import com.vendex.dao.SucursalDAO;
 import com.vendex.model.Sucursal;
@@ -40,6 +41,15 @@ import com.vendex.dao.LogDAOPostgres;
 
 public class MainController implements Initializable {
 
+    public MainController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public MainController(com.vendex.config.AppContext ctx) {
+        this.logDAO = ctx.logDAO;
+        this.alertaService = ctx.alertaService;
+    }
+
     @FXML
     private StackPane contenedor;
 
@@ -73,8 +83,8 @@ public class MainController implements Initializable {
     @FXML
     private Label lblBannerSri;
 
-    private final LogDAO logDAO = new LogDAOPostgres();
-    private final AlertaService alertaService = new AlertaService();
+    private final LogDAO logDAO;
+    private final AlertaService alertaService;
 
     private boolean mostrandoDashboard2 = false;
 
@@ -326,6 +336,7 @@ public class MainController implements Initializable {
     private void irAsistenteRepuestos() {
         try {
             javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/view/ChatWidget.fxml"));
+            VendexControllerFactory.aplicar(loader);
             Parent root = loader.load();
             Object ctrl = loader.getController();
             if (ctrl instanceof ChatWidgetController cwc) {
@@ -397,7 +408,9 @@ public class MainController implements Initializable {
         LoginController.usuarioAutenticado = null;
         com.vendex.util.SesionActual.cerrar();
         try {
-            Parent login = FXMLLoader.load(getClass().getResource("/view/LoginView.fxml"));
+            FXMLLoader loginLoader = new FXMLLoader(getClass().getResource("/view/LoginView.fxml"));
+            VendexControllerFactory.aplicar(loginLoader);
+            Parent login = loginLoader.load();
             Stage stage = (Stage) contenedor.getScene().getWindow();
             stage.setTitle("Vendex - Inicio de Sesión");
             stage.getIcons().add(new Image(getClass().getResourceAsStream("/img/inventario.png")));
@@ -425,7 +438,9 @@ public class MainController implements Initializable {
     @FXML
     private void irHome() {
         try {
-            Parent home = FXMLLoader.load(getClass().getResource("/view/MainView.fxml"));
+            FXMLLoader homeLoader = new FXMLLoader(getClass().getResource("/view/MainView.fxml"));
+            VendexControllerFactory.aplicar(homeLoader);
+            Parent home = homeLoader.load();
             Stage stage = (Stage) contenedor.getScene().getWindow();
             stage.setScene(new Scene(home));
             ThemeManager.aplicarTemaGuardado(stage.getScene());
@@ -503,7 +518,7 @@ public class MainController implements Initializable {
     private void actualizarBannerSriPendientes() {
         Task<Integer> task = new Task<>() {
             @Override protected Integer call() {
-                try { return new com.vendex.dao.ComprobantePendienteSriDAOPostgres().contarPendientes(); } catch (Exception e) { return 0; }
+                try { return AppContext.getInstance().comprobantePendienteSriDAO.contarPendientes(); } catch (Exception e) { return 0; }
             }
         };
         task.setOnSucceeded(e -> {
@@ -608,6 +623,7 @@ public class MainController implements Initializable {
         }
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(ruta));
+            VendexControllerFactory.aplicar(loader);
             Parent vista = loader.load();
             if (loader.getController() instanceof DashboardController dashboardController) {
                 dashboardController.setMainController(this);

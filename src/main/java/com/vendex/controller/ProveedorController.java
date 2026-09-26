@@ -24,6 +24,15 @@ import com.vendex.dao.ProveedorDAOPostgres;
 import com.vendex.dao.LogDAOPostgres;
 
 public class ProveedorController implements Initializable {
+    public ProveedorController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public ProveedorController(com.vendex.config.AppContext ctx) {
+        this.dao = ctx.proveedorDAO;
+        this.logDAO = ctx.logDAO;
+    }
+
     private boolean formularioVisible = true;
 
     @FXML private SplitPane splitPane;
@@ -51,8 +60,8 @@ public class ProveedorController implements Initializable {
     @FXML private TableColumn<Proveedor, String> colFechaRegistro;
     @FXML private TableColumn<Proveedor, Void> colAcciones;
 
-    private final ProveedorDAO dao = new ProveedorDAOPostgres();
-    private final LogDAO logDAO = new LogDAOPostgres();
+    private final ProveedorDAO dao;
+    private final LogDAO logDAO;
     private ObservableList<Proveedor> listaProveedores = FXCollections.observableArrayList();
 
     @Override

@@ -36,6 +36,18 @@ import com.vendex.dao.LogDAOPostgres;
 
 public class CajaController implements Initializable {
 
+    public CajaController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public CajaController(com.vendex.config.AppContext ctx) {
+        this.cajaService = ctx.cajaService;
+        this.sesionDAO = ctx.cajaSesionDAO;
+        this.movimientoDAO = ctx.cajaMovimientoDAO;
+        this.usuarioDAO = ctx.usuarioDAO;
+        this.logDAO = ctx.logDAO;
+    }
+
     @FXML private Label lblEstado;
     @FXML private VBox pnlApertura;
     @FXML private VBox pnlCajaAbierta;
@@ -73,11 +85,11 @@ public class CajaController implements Initializable {
     @FXML private DatePicker dpDesde;
     @FXML private DatePicker dpHasta;
 
-    private final CajaService cajaService = new CajaService();
-    private final CajaSesionDAO sesionDAO = new CajaSesionDAOPostgres();
-    private final CajaMovimientoDAO movimientoDAO = new CajaMovimientoDAOPostgres();
-    private final UsuarioDAO usuarioDAO = new UsuarioDAOPostgres();
-    private final LogDAO logDAO = new LogDAOPostgres();
+    private final CajaService cajaService;
+    private final CajaSesionDAO sesionDAO;
+    private final CajaMovimientoDAO movimientoDAO;
+    private final UsuarioDAO usuarioDAO;
+    private final LogDAO logDAO;
     private final ObservableList<CajaMovimiento> listaMovimientos = FXCollections.observableArrayList();
     private final ObservableList<CajaSesion> listaHistorial = FXCollections.observableArrayList();
     private CajaSesion sesionActual;

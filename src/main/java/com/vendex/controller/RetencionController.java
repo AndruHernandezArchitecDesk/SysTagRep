@@ -1,5 +1,6 @@
 package com.vendex.controller;
 
+import com.vendex.config.AppContext;
 import com.vendex.dao.*;
 import com.vendex.model.Empresa;
 import com.vendex.model.Proveedor;
@@ -27,6 +28,19 @@ import java.util.ResourceBundle;
 
 public class RetencionController implements Initializable {
 
+    public RetencionController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public RetencionController(com.vendex.config.AppContext ctx) {
+        this.retService = ctx.retencionService;
+        this.secDAO = ctx.secuenciaDAO;
+        this.proveedorDAO = ctx.proveedorDAO;
+        this.empresaDAO = ctx.empresaDAO;
+        this.logDAO = ctx.logDAO;
+        this.tablaDAO = ctx.tablaRetencionDAO;
+    }
+
     @FXML private TextField txtRazonSujeto, txtIdentSujeto, txtPeriodoFiscal, txtNumDocSustento, txtTotalSinImpuestos, txtBase, txtPorcentaje, txtValor;
     @FXML private ComboBox<String> cmbTipoIdSujeto, cmbAmbiente, cmbCodSustento, cmbCodDocSustento, cmbCodigo, cmbCodigoRetencion;
     @FXML private DatePicker dpFechaDocSustento;
@@ -37,12 +51,12 @@ public class RetencionController implements Initializable {
     @FXML private TableView<RetencionService.RetencionLineaInput> tblRetenciones;
     @FXML private TableColumn<RetencionService.RetencionLineaInput, String> colRetCodigo, colRetCodigoRet, colRetBase, colRetPorc, colRetValor;
 
-    private final RetencionService retService = new RetencionService();
-    private final SecuenciaDocumentoDAO secDAO = new SecuenciaDocumentoDAOPostgres();
-    private final ProveedorDAO proveedorDAO = new ProveedorDAOPostgres();
-    private final EmpresaDAO empresaDAO = new EmpresaDAOPostgres();
-    private final LogDAO logDAO = new LogDAOPostgres();
-    private final TablaRetencionDAO tablaDAO = new TablaRetencionDAOPostgres();
+    private final RetencionService retService;
+    private final SecuenciaDocumentoDAO secDAO;
+    private final ProveedorDAO proveedorDAO;
+    private final EmpresaDAO empresaDAO;
+    private final LogDAO logDAO;
+    private final TablaRetencionDAO tablaDAO;
 
     private final ObservableList<RetencionService.DocSustentoInput> docs = FXCollections.observableArrayList();
     private final ObservableList<RetencionService.RetencionLineaInput> retsActual = FXCollections.observableArrayList();
@@ -241,7 +255,7 @@ public class RetencionController implements Initializable {
             provisional.setEstado(AppConstants.ESTADO_PENDIENTE);
             provisional.setMensaje("Pendiente SRI - en cola");
             try { retService.finalizarEnvioSRI(provisional, res, dir); } catch (Exception ex) { logDAO.guardar("RetencionController","provisional", ex.getMessage(), ex); }
-            try { new com.vendex.dao.ComprobantePendienteSriDAOPostgres().encolar("RETENCION", res.claveAcceso, res.numComprobante, ambiente); } catch (Exception ex) { logDAO.guardar("RetencionController","encolar", ex.getMessage(), ex instanceof Exception ? (Exception)ex : new Exception(ex)); }
+            try { AppContext.getInstance().comprobantePendienteSriDAO.encolar("RETENCION", res.claveAcceso, res.numComprobante, ambiente); } catch (Exception ex) { logDAO.guardar("RetencionController","encolar", ex.getMessage(), ex instanceof Exception ? (Exception)ex : new Exception(ex)); }
             mostrarAlertaCopiable(Alert.AlertType.INFORMATION, "Retención", "RET registrada (pendiente SRI)", "RET " + res.numComprobante + " registrada (pendiente SRI).\nClave: " + res.claveAcceso + "\nPDF provisional: " + res.rutaPDF + "\nEn cola cada 2min.");
             new Thread(() -> { try { if (Desktop.isDesktopSupported()) Desktop.getDesktop().open(new File(res.rutaPDF)); } catch (Exception ignore) {} }, "Hilo-Abrir-PDF-RET").start();
             docs.clear(); retsActual.clear(); actualizarSecuencial();

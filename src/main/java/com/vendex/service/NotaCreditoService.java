@@ -33,9 +33,10 @@ public class NotaCreditoService {
     private final HistorialProductoDAO historialProductoDAO;
     private final CajaSesionDAO cajaSesionDAO;
     private final CajaMovimientoDAO cajaMovimientoDAO;
-    private final LogDAO logDAO = new LogDAOPostgres();
+    private final LogDAO logDAO;
 
     public NotaCreditoService() {
+        this.logDAO = new LogDAOPostgres();
         this.empresaDAO = new EmpresaDAOPostgres();
         this.clienteDAO = new ClienteDAOPostgres();
         this.inventarioDAO = new InventarioDAOPostgres();
@@ -49,7 +50,8 @@ public class NotaCreditoService {
         this.cajaSesionDAO = new CajaSesionDAOPostgres();
         this.cajaMovimientoDAO = new CajaMovimientoDAOPostgres();
     }
-    public NotaCreditoService(EmpresaDAO empresaDAO, ClienteDAO clienteDAO, InventarioDAO inventarioDAO, FacturaRegistroDAO facturaRegistroDAO, FacturaDetalleDAO facturaDetalleDAO, SecuenciaDocumentoDAO secuenciaDAO, ComprobanteDAO comprobanteDAO, NotaCreditoRegistroDAO notaCreditoDAO, NotaCreditoDetalleDAO notaCreditoDetalleDAO, HistorialProductoDAO historialProductoDAO, CajaSesionDAO cajaSesionDAO, CajaMovimientoDAO cajaMovimientoDAO) {
+    public NotaCreditoService(EmpresaDAO empresaDAO, ClienteDAO clienteDAO, InventarioDAO inventarioDAO, FacturaRegistroDAO facturaRegistroDAO, FacturaDetalleDAO facturaDetalleDAO, SecuenciaDocumentoDAO secuenciaDAO, ComprobanteDAO comprobanteDAO, NotaCreditoRegistroDAO notaCreditoDAO, NotaCreditoDetalleDAO notaCreditoDetalleDAO, HistorialProductoDAO historialProductoDAO, CajaSesionDAO cajaSesionDAO, CajaMovimientoDAO cajaMovimientoDAO, LogDAO logDAO) {
+        this.logDAO = logDAO;
         this.empresaDAO = empresaDAO;
         this.clienteDAO = clienteDAO;
         this.inventarioDAO = inventarioDAO;

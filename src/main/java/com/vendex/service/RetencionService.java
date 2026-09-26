@@ -29,9 +29,10 @@ public class RetencionService {
     private final RetencionRegistroDAO retencionDAO;
     private final RetencionDocumentoSustentoDAO docDAO;
     private final RetencionDetalleDAO detalleDAO;
-    private final LogDAO logDAO = new LogDAOPostgres();
+    private final LogDAO logDAO;
 
     public RetencionService() {
+        this.logDAO = new LogDAOPostgres();
         this.empresaDAO = new EmpresaDAOPostgres();
         this.proveedorDAO = new ProveedorDAOPostgres();
         this.secuenciaDAO = new SecuenciaDocumentoDAOPostgres();
@@ -40,7 +41,8 @@ public class RetencionService {
         this.docDAO = new RetencionDocumentoSustentoDAOPostgres();
         this.detalleDAO = new RetencionDetalleDAOPostgres();
     }
-    public RetencionService(EmpresaDAO empresaDAO, ProveedorDAO proveedorDAO, SecuenciaDocumentoDAO secuenciaDAO, ComprobanteDAO comprobanteDAO, RetencionRegistroDAO retencionDAO, RetencionDocumentoSustentoDAO docDAO, RetencionDetalleDAO detalleDAO) {
+    public RetencionService(EmpresaDAO empresaDAO, ProveedorDAO proveedorDAO, SecuenciaDocumentoDAO secuenciaDAO, ComprobanteDAO comprobanteDAO, RetencionRegistroDAO retencionDAO, RetencionDocumentoSustentoDAO docDAO, RetencionDetalleDAO detalleDAO, LogDAO logDAO) {
+        this.logDAO = logDAO;
         this.empresaDAO = empresaDAO;
         this.proveedorDAO = proveedorDAO;
         this.secuenciaDAO = secuenciaDAO;

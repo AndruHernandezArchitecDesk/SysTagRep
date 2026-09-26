@@ -20,7 +20,15 @@ import com.vendex.dao.EmpresaDAOPostgres;
 
 public class EmpresaController implements Initializable {
 
-    private final EmpresaDAO empresaDAO = new EmpresaDAOPostgres();
+    public EmpresaController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public EmpresaController(com.vendex.config.AppContext ctx) {
+        this.empresaDAO = ctx.empresaDAO;
+    }
+
+    private final EmpresaDAO empresaDAO;
     private Empresa empresaActual;
 
     @FXML private TextField txtRazonSocial;

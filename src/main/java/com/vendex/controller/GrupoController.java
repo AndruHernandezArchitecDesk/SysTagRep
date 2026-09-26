@@ -26,6 +26,15 @@ import com.vendex.dao.GrupoDAOPostgres;
 
 public class GrupoController implements Initializable {
 
+    public GrupoController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public GrupoController(com.vendex.config.AppContext ctx) {
+        this.dao = ctx.grupoDAO;
+        this.logDAO = ctx.logDAO;
+    }
+
     @FXML private TextField txtId;
     @FXML private TextField txtNombre;
     @FXML private ComboBox<String> cmbEstado;
@@ -38,8 +47,8 @@ public class GrupoController implements Initializable {
 
     @FXML private TextField txtBuscar;
 
-    private final GrupoDAO dao = new GrupoDAOPostgres();
-    private final LogDAO logDAO = new LogDAOPostgres();
+    private final GrupoDAO dao;
+    private final LogDAO logDAO;
     private ObservableList<Grupo> listaGrupo = FXCollections.observableArrayList();
 
     @Override

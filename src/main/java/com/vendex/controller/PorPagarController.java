@@ -34,6 +34,14 @@ import com.vendex.dao.CuentaPorPagarDAOPostgres;
 
 public class PorPagarController implements Initializable {
 
+    public PorPagarController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public PorPagarController(com.vendex.config.AppContext ctx) {
+        this.dao = ctx.cuentaPorPagarDAO;
+    }
+
     @FXML private TableView<Object[]> tblCreditosActivos;
     @FXML private TableColumn<Object[], String> colProveedor, colCodigo, colDescripcion;
     @FXML private TableColumn<Object[], Void> colProgreso, colVerDetalle;
@@ -44,7 +52,7 @@ public class PorPagarController implements Initializable {
     @FXML private TableColumn<Object[], BigDecimal> colDetTotal, colDetAdelanto, colDetPendiente;
     @FXML private TableColumn<Object[], Void> colDetAccion;
 
-    private final CuentaPorPagarDAO dao = new CuentaPorPagarDAOPostgres();
+    private final CuentaPorPagarDAO dao;
     private ObservableList<Object[]> listaCreditos = FXCollections.observableArrayList();
     private ObservableList<Object[]> listaDetalle = FXCollections.observableArrayList();
 

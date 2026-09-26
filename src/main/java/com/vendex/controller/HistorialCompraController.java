@@ -27,6 +27,14 @@ import com.vendex.dao.FacturaProveedorDAOPostgres;
 
 public class HistorialCompraController implements Initializable {
 
+    public HistorialCompraController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public HistorialCompraController(com.vendex.config.AppContext ctx) {
+        this.dao = ctx.facturaProveedorDAO;
+    }
+
     @FXML private TextField txtBuscar;
     @FXML private DatePicker dpFecha;
     @FXML private TableView<CompraResumen> tblCompras;
@@ -37,7 +45,7 @@ public class HistorialCompraController implements Initializable {
     @FXML private TableColumn<CompraResumen, Integer> colItems;
     @FXML private TableColumn<CompraResumen, BigDecimal> colTotal;
 
-    private final FacturaProveedorDAO dao = new FacturaProveedorDAOPostgres();
+    private final FacturaProveedorDAO dao;
     private ObservableList<CompraResumen> lista = FXCollections.observableArrayList();
 
     @Override

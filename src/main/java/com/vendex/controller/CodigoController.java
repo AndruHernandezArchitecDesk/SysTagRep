@@ -26,6 +26,15 @@ import com.vendex.dao.CodigoDAOPostgres;
 
 public class CodigoController implements Initializable {
 
+    public CodigoController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public CodigoController(com.vendex.config.AppContext ctx) {
+        this.dao = ctx.codigoDAO;
+        this.logDAO = ctx.logDAO;
+    }
+
     @FXML private TextField txtId;
     @FXML private TextField txtNombre;
     @FXML private ComboBox<String> cmbEstado;
@@ -38,8 +47,8 @@ public class CodigoController implements Initializable {
 
     @FXML private TextField txtBuscar;
 
-    private final CodigoDAO dao = new CodigoDAOPostgres();
-    private final LogDAO logDAO = new LogDAOPostgres();
+    private final CodigoDAO dao;
+    private final LogDAO logDAO;
     private ObservableList<Codigo> listaCodigo = FXCollections.observableArrayList();
 
     @Override

@@ -49,7 +49,7 @@ public class NotaCreditoServiceTest {
         service = new NotaCreditoService(
                 empresaDAO, clienteDAO, inventarioDAO, facturaDAO, mock(FacturaDetalleDAO.class),
                 secuenciaDAO, comprobanteDAO, notaCreditoDAO, detalleDAO,
-                historialDAO, cajaSesionDAO, cajaMovimientoDAO
+                historialDAO, cajaSesionDAO, cajaMovimientoDAO, mock(com.vendex.dao.LogDAO.class)
         );
 
         Usuario u = new Usuario();

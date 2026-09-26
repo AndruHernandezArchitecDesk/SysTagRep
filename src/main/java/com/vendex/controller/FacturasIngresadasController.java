@@ -46,6 +46,19 @@ import com.vendex.dao.UbicacionDetalleDAOPostgres;
 
 public class FacturasIngresadasController implements Initializable {
 
+    public FacturasIngresadasController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public FacturasIngresadasController(com.vendex.config.AppContext ctx) {
+        this.dao = ctx.facturaProveedorDAO;
+        this.inventarioDAO = ctx.inventarioDAO;
+        this.cuentaPorPagarDAO = ctx.cuentaPorPagarDAO;
+        this.facturaDetalleDAO = ctx.facturaDetalleDAO;
+        this.historialProductoDAO = ctx.historialProductoDAO;
+        this.ubicacionDAO = ctx.ubicacionDetalleDAO;
+    }
+
     @FXML private DatePicker dpDesde;
     @FXML private DatePicker dpHasta;
     @FXML private TextField txtBuscar;
@@ -63,12 +76,12 @@ public class FacturasIngresadasController implements Initializable {
     @FXML private TableColumn<FacturaProveedor, BigDecimal> colDetTotal;
     @FXML private Label lblTotal;
 
-    private final FacturaProveedorDAO dao = new FacturaProveedorDAOPostgres();
-    private final InventarioDAO inventarioDAO = new InventarioDAOPostgres();
-    private final CuentaPorPagarDAO cuentaPorPagarDAO = new CuentaPorPagarDAOPostgres();
-    private final FacturaDetalleDAO facturaDetalleDAO = new FacturaDetalleDAOPostgres();
-    private final HistorialProductoDAO historialProductoDAO = new HistorialProductoDAOPostgres();
-    private final UbicacionDetalleDAO ubicacionDAO = new UbicacionDetalleDAOPostgres();
+    private final FacturaProveedorDAO dao;
+    private final InventarioDAO inventarioDAO;
+    private final CuentaPorPagarDAO cuentaPorPagarDAO;
+    private final FacturaDetalleDAO facturaDetalleDAO;
+    private final HistorialProductoDAO historialProductoDAO;
+    private final UbicacionDetalleDAO ubicacionDAO;
     private ObservableList<FacturaProveedor> facturas = FXCollections.observableArrayList();
     private final ObservableList<FacturaProveedor> detalle = FXCollections.observableArrayList();
 
@@ -270,6 +283,7 @@ public class FacturasIngresadasController implements Initializable {
         }
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/IngresoMercaderiaView.fxml"));
+            com.vendex.config.VendexControllerFactory.aplicar(loader);
             Parent vista = loader.load();
             IngresoMercaderiaController controller = loader.getController();
             controller.setCerrarAlGuardar(true);

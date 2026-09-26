@@ -27,6 +27,16 @@ import com.vendex.dao.AlertaDAOPostgres;
 
 public class AlertaController implements Initializable {
 
+    public AlertaController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public AlertaController(com.vendex.config.AppContext ctx) {
+        this.alertaService = ctx.alertaService;
+        this.alertaDAO = ctx.alertaDAO;
+        this.logDAO = ctx.logDAO;
+    }
+
     @FXML private TableView<Alerta> tblAlertas;
     @FXML private TableColumn<Alerta, String> colTipo;
     @FXML private TableColumn<Alerta, String> colMensaje;
@@ -38,9 +48,9 @@ public class AlertaController implements Initializable {
     @FXML private ComboBox<String> cmbFiltro;
     @FXML private Label lblResumen;
 
-    private final AlertaService alertaService = new AlertaService();
-    private final AlertaDAO alertaDAO = new AlertaDAOPostgres();
-    private final LogDAO logDAO = new LogDAOPostgres();
+    private final AlertaService alertaService;
+    private final AlertaDAO alertaDAO;
+    private final LogDAO logDAO;
     private final ObservableList<Alerta> listaAlertas = FXCollections.observableArrayList();
 
     @Override

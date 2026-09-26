@@ -26,6 +26,15 @@ import com.vendex.dao.UbicacionPerchaDAOPostgres;
 
 public class UbicacionController implements Initializable {
 
+    public UbicacionController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public UbicacionController(com.vendex.config.AppContext ctx) {
+        this.dao = ctx.ubicacionPerchaDAO;
+        this.logDAO = ctx.logDAO;
+    }
+
     @FXML private TextField txtId;
     @FXML private TextField txtNombre;
     @FXML private ComboBox<String> cmbEstado;
@@ -38,8 +47,8 @@ public class UbicacionController implements Initializable {
 
     @FXML private TextField txtBuscar;
 
-    private final UbicacionPerchaDAO dao = new UbicacionPerchaDAOPostgres();
-    private final LogDAO logDAO = new LogDAOPostgres();
+    private final UbicacionPerchaDAO dao;
+    private final LogDAO logDAO;
     private ObservableList<UbicacionPercha> listaUbicacion = FXCollections.observableArrayList();
 
     @Override

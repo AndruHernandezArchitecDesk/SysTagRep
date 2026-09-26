@@ -106,6 +106,7 @@ public class MainApp extends Application {
 
     private void mostrarWizardDb(boolean obligatorio) throws Exception {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/DbSetupWizardView.fxml"));
+        com.vendex.config.VendexControllerFactory.aplicar(loader);
         Parent root = loader.load();
         Stage wizard = new Stage();
         wizard.setTitle("Vendex - Configuración de Base de Datos");

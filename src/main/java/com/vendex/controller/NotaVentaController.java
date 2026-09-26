@@ -61,6 +61,25 @@ import com.vendex.dao.NotaVentaDetalleDAOPostgres;
 
 public class NotaVentaController implements Initializable {
 
+    public NotaVentaController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public NotaVentaController(com.vendex.config.AppContext ctx) {
+        this.daoEmpresa = ctx.empresaDAO;
+        this.daoCliente = ctx.clienteDAO;
+        this.daoInventario = ctx.inventarioDAO;
+        this.daoNotaVentaRegistro = ctx.notaVentaRegistroDAO;
+        this.secuenciaDAO = ctx.secuenciaDAO;
+        this.daoNotaVentaDetalle = ctx.notaVentaDetalleDAO;
+        this.daoComprobanteTemp = ctx.comprobanteTempDAO;
+        this.daoCuentaPorCobrar = ctx.cuentaPorCobrarDAO;
+        this.logDAO = ctx.logDAO;
+        this.historialProductoDAO = ctx.historialProductoDAO;
+        this.vehiculoDAO = ctx.vehiculoDAO;
+        this.inventarioVehiculoDAO = ctx.inventarioVehiculoDAO;
+    }
+
     @FXML private ImageView imgLogo;
     @FXML private Label lblRazonSocial, lblRuc, lblDireccion, lblCorreo, lblTelefono, lblNumNotaVenta;
     
@@ -100,18 +119,18 @@ public class NotaVentaController implements Initializable {
     @FXML private ComboBox<Integer> cmbMesesPlazo;
     @FXML private ComboBox<String> cmbInteres;
 
-    private final EmpresaDAO daoEmpresa = new EmpresaDAOPostgres();
-    private final ClienteDAO daoCliente = new ClienteDAOPostgres();
-    private final InventarioDAO daoInventario = new InventarioDAOPostgres();
-    private final NotaVentaRegistroDAO daoNotaVentaRegistro = new NotaVentaRegistroDAOPostgres();
-    private final SecuenciaDocumentoDAO secuenciaDAO = new SecuenciaDocumentoDAOPostgres();
-    private final NotaVentaDetalleDAO daoNotaVentaDetalle = new NotaVentaDetalleDAOPostgres();
-    private final ComprobanteTempDAO daoComprobanteTemp = new ComprobanteTempDAOPostgres();
-    private final CuentaPorCobrarDAO daoCuentaPorCobrar = new CuentaPorCobrarDAOPostgres();
-    private final LogDAO logDAO = new LogDAOPostgres();
-    private final HistorialProductoDAO historialProductoDAO = new HistorialProductoDAOPostgres();
-    private final com.vendex.dao.VehiculoDAO vehiculoDAO = new com.vendex.dao.VehiculoDAOPostgres();
-    private final com.vendex.dao.InventarioVehiculoDAO inventarioVehiculoDAO = new com.vendex.dao.InventarioVehiculoDAOPostgres();
+    private final EmpresaDAO daoEmpresa;
+    private final ClienteDAO daoCliente;
+    private final InventarioDAO daoInventario;
+    private final NotaVentaRegistroDAO daoNotaVentaRegistro;
+    private final SecuenciaDocumentoDAO secuenciaDAO;
+    private final NotaVentaDetalleDAO daoNotaVentaDetalle;
+    private final ComprobanteTempDAO daoComprobanteTemp;
+    private final CuentaPorCobrarDAO daoCuentaPorCobrar;
+    private final LogDAO logDAO;
+    private final HistorialProductoDAO historialProductoDAO;
+    private final com.vendex.dao.VehiculoDAO vehiculoDAO;
+    private final com.vendex.dao.InventarioVehiculoDAO inventarioVehiculoDAO;
 
     private Empresa empresaActual;
 
@@ -209,6 +228,7 @@ public class NotaVentaController implements Initializable {
     private void abrirCRUDClientes() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/ClienteView.fxml"));
+            com.vendex.config.VendexControllerFactory.aplicar(loader);
             Parent vista = loader.load();
             Stage stage = new Stage();
             stage.setTitle("Administración de Clientes");

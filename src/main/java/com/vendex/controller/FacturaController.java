@@ -1,5 +1,6 @@
 package com.vendex.controller;
 
+import com.vendex.config.AppContext;
 import com.vendex.dao.EmpresaDAO;
 import com.vendex.dao.ClienteDAO;
 import com.vendex.dao.InventarioDAO;
@@ -63,6 +64,20 @@ import com.vendex.dao.LogDAOPostgres;
 
 public class FacturaController implements Initializable {
 
+    public FacturaController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public FacturaController(com.vendex.config.AppContext ctx) {
+        this.daoEmpresa = ctx.empresaDAO;
+        this.daoCliente = ctx.clienteDAO;
+        this.daoInventario = ctx.inventarioDAO;
+        this.daoComprobante = ctx.comprobanteDAO;
+        this.logDAO = ctx.logDAO;
+        this.secuenciaDAO = ctx.secuenciaDAO;
+        this.facturaService = ctx.facturaService;
+    }
+
     private static final Logger LOGGER = Logger.getLogger(FacturaController.class.getName());
 
     @FXML private ImageView imgLogo;
@@ -96,13 +111,13 @@ public class FacturaController implements Initializable {
     @FXML private ComboBox<String> cmbInteres;
     @FXML private ComboBox<String> cmbAmbiente;
 
-    private final EmpresaDAO daoEmpresa = new EmpresaDAOPostgres();
-    private final ClienteDAO daoCliente = new ClienteDAOPostgres();
-    private final InventarioDAO daoInventario = new InventarioDAOPostgres();
-    private final ComprobanteDAO daoComprobante = new ComprobanteDAOPostgres();
-    private final LogDAO logDAO = new LogDAOPostgres();
-    private final SecuenciaDocumentoDAO secuenciaDAO = new SecuenciaDocumentoDAOPostgres();
-    private final FacturaService facturaService = new FacturaService();
+    private final EmpresaDAO daoEmpresa;
+    private final ClienteDAO daoCliente;
+    private final InventarioDAO daoInventario;
+    private final ComprobanteDAO daoComprobante;
+    private final LogDAO logDAO;
+    private final SecuenciaDocumentoDAO secuenciaDAO;
+    private final FacturaService facturaService;
 
     private Empresa empresaActual;
 
@@ -295,6 +310,7 @@ public class FacturaController implements Initializable {
     private void abrirCRUDClientes() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/ClienteView.fxml"));
+            com.vendex.config.VendexControllerFactory.aplicar(loader);
             Parent vista = loader.load();
             Stage stage = new Stage();
             stage.setTitle("Administración de Clientes");
@@ -483,7 +499,7 @@ public class FacturaController implements Initializable {
                 logDAO.guardar("FacturaController", "finalizarProvisional", ex.getMessage(), ex);
             }
             try {
-                new com.vendex.dao.ComprobantePendienteSriDAOPostgres().encolar("FACTURA", resultado.claveAcceso, resultado.numComprobante, resultado.ambienteSri);
+                AppContext.getInstance().comprobantePendienteSriDAO.encolar("FACTURA", resultado.claveAcceso, resultado.numComprobante, resultado.ambienteSri);
             } catch (Exception ex) {
                 logDAO.guardar("FacturaController", "encolar", ex.getMessage(), ex instanceof Exception ? (Exception)ex : new Exception(ex));
             }

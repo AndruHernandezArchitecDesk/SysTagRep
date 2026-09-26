@@ -1,5 +1,6 @@
 package com.vendex.controller;
 
+import com.vendex.config.AppContext;
 import com.vendex.config.DatabaseConnection;
 import com.vendex.dao.*;
 import com.vendex.model.*;
@@ -29,6 +30,18 @@ import java.util.logging.Logger;
 
 public class NotaDebitoController implements Initializable {
 
+    public NotaDebitoController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public NotaDebitoController(com.vendex.config.AppContext ctx) {
+        this.facturaDAO = ctx.facturaRegistroDAO;
+        this.ndService = ctx.notaDebitoService;
+        this.secDAO = ctx.secuenciaDAO;
+        this.empresaDAO = ctx.empresaDAO;
+        this.logDAO = ctx.logDAO;
+    }
+
     @FXML private ComboBox<FacturaRegistro> cmbFactura;
     @FXML private Label lblCliente, lblNumFactura, lblFechaFactura, lblTotalFactura;
     @FXML private TableView<NotaDebitoService.MotivoNDInput> tblMotivos;
@@ -37,11 +50,11 @@ public class NotaDebitoController implements Initializable {
     @FXML private ComboBox<String> cmbFormaPago, cmbAmbiente;
     @FXML private Label lblSubtotal, lblIva, lblTotal, lblSecuencial;
 
-    private final FacturaRegistroDAO facturaDAO = new FacturaRegistroDAOPostgres();
-    private final NotaDebitoService ndService = new NotaDebitoService();
-    private final SecuenciaDocumentoDAO secDAO = new SecuenciaDocumentoDAOPostgres();
-    private final EmpresaDAO empresaDAO = new EmpresaDAOPostgres();
-    private final LogDAO logDAO = new LogDAOPostgres();
+    private final FacturaRegistroDAO facturaDAO;
+    private final NotaDebitoService ndService;
+    private final SecuenciaDocumentoDAO secDAO;
+    private final EmpresaDAO empresaDAO;
+    private final LogDAO logDAO;
 
     private final ObservableList<NotaDebitoService.MotivoNDInput> motivos = FXCollections.observableArrayList();
     private String rutaP12 = ""; private String claveP12 = "";
@@ -89,7 +102,7 @@ public class NotaDebitoController implements Initializable {
 
     private void onFacturaSeleccionada(FacturaRegistro fr) {
         if (fr==null) { lblCliente.setText(""); lblNumFactura.setText(""); lblFechaFactura.setText(""); lblTotalFactura.setText(""); calcularTotales(); return; }
-        Cliente cli = new ClienteDAOPostgres().obtenerPorId(fr.getClienteId());
+        Cliente cli = AppContext.getInstance().clienteDAO.obtenerPorId(fr.getClienteId());
         lblCliente.setText(cli!=null? cli.getNombre()+" ("+cli.getIdentificacion()+")":"");
         lblNumFactura.setText(fr.getNumComprobante());
         lblFechaFactura.setText(fr.getFecha()!=null? fr.getFecha().toLocalDate().toString():"");
@@ -153,7 +166,7 @@ public class NotaDebitoController implements Initializable {
             provisional.setEstado(AppConstants.ESTADO_PENDIENTE);
             provisional.setMensaje("Pendiente SRI - en cola");
             try { ndService.finalizarEnvioSRI(provisional, res, dir); } catch (Exception ex) { logDAO.guardar("NotaDebitoController","provisional", ex.getMessage(), ex); }
-            try { new com.vendex.dao.ComprobantePendienteSriDAOPostgres().encolar("NOTA_DEBITO", res.claveAcceso, res.numComprobante, ambiente); } catch (Exception ex) { logDAO.guardar("NotaDebitoController","encolar", ex.getMessage(), ex instanceof Exception ? (Exception)ex : new Exception(ex)); }
+            try { AppContext.getInstance().comprobantePendienteSriDAO.encolar("NOTA_DEBITO", res.claveAcceso, res.numComprobante, ambiente); } catch (Exception ex) { logDAO.guardar("NotaDebitoController","encolar", ex.getMessage(), ex instanceof Exception ? (Exception)ex : new Exception(ex)); }
             new Alert(Alert.AlertType.INFORMATION, "ND " + res.numComprobante + " registrada (pendiente SRI).\nClave: " + res.claveAcceso + "\nPDF provisional: " + res.rutaPDF).showAndWait();
             try { if (Desktop.isDesktopSupported()) Desktop.getDesktop().open(new File(res.rutaPDF)); } catch (Exception ignore) {}
             motivos.clear(); txtRazon.clear(); txtValor.clear(); cargarFacturasAutorizadas(); actualizarSecuencial(); calcularTotales();

@@ -30,9 +30,10 @@ public class NotaDebitoService {
     private final NotaDebitoMotivoDAO notaDebitoMotivoDAO;
     private final CajaSesionDAO cajaSesionDAO;
     private final CajaMovimientoDAO cajaMovimientoDAO;
-    private final LogDAO logDAO = new LogDAOPostgres();
+    private final LogDAO logDAO;
 
     public NotaDebitoService() {
+        this.logDAO = new LogDAOPostgres();
         this.empresaDAO = new EmpresaDAOPostgres();
         this.clienteDAO = new ClienteDAOPostgres();
         this.facturaRegistroDAO = new FacturaRegistroDAOPostgres();
@@ -43,7 +44,8 @@ public class NotaDebitoService {
         this.cajaSesionDAO = new CajaSesionDAOPostgres();
         this.cajaMovimientoDAO = new CajaMovimientoDAOPostgres();
     }
-    public NotaDebitoService(EmpresaDAO empresaDAO, ClienteDAO clienteDAO, FacturaRegistroDAO facturaRegistroDAO, SecuenciaDocumentoDAO secuenciaDAO, ComprobanteDAO comprobanteDAO, NotaDebitoRegistroDAO notaDebitoDAO, NotaDebitoMotivoDAO notaDebitoMotivoDAO, CajaSesionDAO cajaSesionDAO, CajaMovimientoDAO cajaMovimientoDAO) {
+    public NotaDebitoService(EmpresaDAO empresaDAO, ClienteDAO clienteDAO, FacturaRegistroDAO facturaRegistroDAO, SecuenciaDocumentoDAO secuenciaDAO, ComprobanteDAO comprobanteDAO, NotaDebitoRegistroDAO notaDebitoDAO, NotaDebitoMotivoDAO notaDebitoMotivoDAO, CajaSesionDAO cajaSesionDAO, CajaMovimientoDAO cajaMovimientoDAO, LogDAO logDAO) {
+        this.logDAO = logDAO;
         this.empresaDAO = empresaDAO;
         this.clienteDAO = clienteDAO;
         this.facturaRegistroDAO = facturaRegistroDAO;

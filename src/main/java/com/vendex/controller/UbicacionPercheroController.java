@@ -33,6 +33,17 @@ import com.vendex.dao.PercheroDAOPostgres;
 
 public class UbicacionPercheroController implements Initializable {
 
+    public UbicacionPercheroController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public UbicacionPercheroController(com.vendex.config.AppContext ctx) {
+        this.percheroDAO = ctx.percheroDAO;
+        this.ubicacionDAO = ctx.ubicacionDetalleDAO;
+        this.inventarioDAO = ctx.inventarioDAO;
+        this.logDAO = ctx.logDAO;
+    }
+
     @FXML private ComboBox<String> cmbPerchero;
     @FXML private VBox contenedorSecciones;
     @FXML private TextField txtUbicacionSeleccionada;
@@ -42,10 +53,10 @@ public class UbicacionPercheroController implements Initializable {
     @FXML private Button btnNuevoPerchero;
     @FXML private Button btnEliminarPerchero;
 
-    private final PercheroDAO percheroDAO = new PercheroDAOPostgres();
-    private final UbicacionDetalleDAO ubicacionDAO = new UbicacionDetalleDAOPostgres();
-    private final InventarioDAO inventarioDAO = new InventarioDAOPostgres();
-    private final LogDAO logDAO = new LogDAOPostgres();
+    private final PercheroDAO percheroDAO;
+    private final UbicacionDetalleDAO ubicacionDAO;
+    private final InventarioDAO inventarioDAO;
+    private final LogDAO logDAO;
     private final ObservableList<String> listaNombresPerchero = FXCollections.observableArrayList();
     private UbicacionDetalle ubicacionSeleccionada;
     private VBox bloqueSeleccionado;

@@ -74,6 +74,24 @@ import com.vendex.dao.CodigoDAOPostgres;
  */
 public class IngresoMercaderiaController implements Initializable {
 
+    public IngresoMercaderiaController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public IngresoMercaderiaController(com.vendex.config.AppContext ctx) {
+        this.dao = ctx.inventarioDAO;
+        this.proveedorDAO = ctx.proveedorDAO;
+        this.grupoDAO = ctx.grupoDAO;
+        this.marcaDAO = ctx.marcaDAO;
+        this.cuentaPorPagarDAO = ctx.cuentaPorPagarDAO;
+        this.facturaProveedorDAO = ctx.facturaProveedorDAO;
+        this.codigoDAO = ctx.codigoDAO;
+        this.facturaDetalleDAO = ctx.facturaDetalleDAO;
+        this.historialProductoDAO = ctx.historialProductoDAO;
+        this.ubicacionDAO = ctx.ubicacionDetalleDAO;
+        this.logDAO = ctx.logDAO;
+    }
+
     @FXML private TextField txtId;
     @FXML private ComboBox<String> cmbDescripcion;
     @FXML private ComboBox<Grupo> cmbGrupo;
@@ -115,17 +133,17 @@ public class IngresoMercaderiaController implements Initializable {
     private String facturaEditadaNumero;
     private int facturaEditadaProveedorId;
     private boolean servicioLogistico = false;
-    private final InventarioDAO dao = new InventarioDAOPostgres();
-    private final ProveedorDAO proveedorDAO = new ProveedorDAOPostgres();
-    private final GrupoDAO grupoDAO = new GrupoDAOPostgres();
-    private final MarcaDAO marcaDAO = new MarcaDAOPostgres();
-    private final CuentaPorPagarDAO cuentaPorPagarDAO = new CuentaPorPagarDAOPostgres();
-    private final FacturaProveedorDAO facturaProveedorDAO = new FacturaProveedorDAOPostgres();
-    private final CodigoDAO codigoDAO = new CodigoDAOPostgres();
-    private final FacturaDetalleDAO facturaDetalleDAO = new FacturaDetalleDAOPostgres();
-    private final HistorialProductoDAO historialProductoDAO = new HistorialProductoDAOPostgres();
-    private final UbicacionDetalleDAO ubicacionDAO = new UbicacionDetalleDAOPostgres();
-    private final LogDAO logDAO = new LogDAOPostgres();
+    private final InventarioDAO dao;
+    private final ProveedorDAO proveedorDAO;
+    private final GrupoDAO grupoDAO;
+    private final MarcaDAO marcaDAO;
+    private final CuentaPorPagarDAO cuentaPorPagarDAO;
+    private final FacturaProveedorDAO facturaProveedorDAO;
+    private final CodigoDAO codigoDAO;
+    private final FacturaDetalleDAO facturaDetalleDAO;
+    private final HistorialProductoDAO historialProductoDAO;
+    private final UbicacionDetalleDAO ubicacionDAO;
+    private final LogDAO logDAO;
 
     private ObservableList<Proveedor> listaProveedores = FXCollections.observableArrayList();
     private ObservableList<Grupo> listaGrupos = FXCollections.observableArrayList();
@@ -1081,6 +1099,7 @@ public class IngresoMercaderiaController implements Initializable {
     private void abrirModal(String fxml, String titulo, double ancho, double alto) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxml));
+            com.vendex.config.VendexControllerFactory.aplicar(loader);
             Parent vista = loader.load();
             Stage modal = new Stage();
             modal.initModality(Modality.APPLICATION_MODAL);

@@ -29,6 +29,14 @@ import com.vendex.dao.VentaResumenDAOPostgres;
 
 public class ComprobanteVentaReporteController implements Initializable {
 
+    public ComprobanteVentaReporteController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public ComprobanteVentaReporteController(com.vendex.config.AppContext ctx) {
+        this.dao = ctx.ventaResumenDAO;
+    }
+
     @FXML private DatePicker dpDesde;
     @FXML private DatePicker dpHasta;
     @FXML private TextField txtBuscar;
@@ -49,7 +57,7 @@ public class ComprobanteVentaReporteController implements Initializable {
     @FXML private TableColumn<DetalleVentaReporte, BigDecimal> colDetTotal;
     @FXML private Label lblTotal;
 
-    private final VentaResumenDAO dao = new VentaResumenDAOPostgres();
+    private final VentaResumenDAO dao;
     private ObservableList<VentaResumen> lista = FXCollections.observableArrayList();
     private final ObservableList<DetalleVentaReporte> detalle = FXCollections.observableArrayList();
 

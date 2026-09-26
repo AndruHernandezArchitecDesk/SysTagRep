@@ -18,6 +18,15 @@ import com.vendex.dao.ConfiguracionEmailDAOPostgres;
 
 public class ConfiguracionEmailController implements Initializable {
 
+    public ConfiguracionEmailController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public ConfiguracionEmailController(com.vendex.config.AppContext ctx) {
+        this.dao = ctx.configuracionEmailDAO;
+        this.logDAO = ctx.logDAO;
+    }
+
     @FXML private TextField txtHost;
     @FXML private TextField txtPuerto;
     @FXML private CheckBox chkTls;
@@ -32,8 +41,8 @@ public class ConfiguracionEmailController implements Initializable {
     @FXML private Button btnProbarConexion;
     @FXML private Button btnEnviarPrueba;
 
-    private final ConfiguracionEmailDAO dao = new ConfiguracionEmailDAOPostgres();
-    private final LogDAO logDAO = new LogDAOPostgres();
+    private final ConfiguracionEmailDAO dao;
+    private final LogDAO logDAO;
     private ConfiguracionEmail configuracionActual;
 
     @Override

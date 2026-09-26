@@ -42,6 +42,18 @@ import com.vendex.dao.CodigoDAOPostgres;
  */
 public class IngresoProductoController implements Initializable {
 
+    public IngresoProductoController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public IngresoProductoController(com.vendex.config.AppContext ctx) {
+        this.dao = ctx.inventarioDAO;
+        this.grupoDAO = ctx.grupoDAO;
+        this.marcaDAO = ctx.marcaDAO;
+        this.codigoDAO = ctx.codigoDAO;
+        this.logDAO = ctx.logDAO;
+    }
+
     @FXML private TextField txtDescripcion;
     @FXML private ComboBox<Grupo> cmbGrupo;
     @FXML private ComboBox<Marca> cmbMarca;
@@ -49,11 +61,11 @@ public class IngresoProductoController implements Initializable {
     @FXML private Spinner<Integer> spCantidad;
     @FXML private TextField txtPrecioVenta;
 
-    private final InventarioDAO dao = new InventarioDAOPostgres();
-    private final GrupoDAO grupoDAO = new GrupoDAOPostgres();
-    private final MarcaDAO marcaDAO = new MarcaDAOPostgres();
-    private final CodigoDAO codigoDAO = new CodigoDAOPostgres();
-    private final LogDAO logDAO = new LogDAOPostgres();
+    private final InventarioDAO dao;
+    private final GrupoDAO grupoDAO;
+    private final MarcaDAO marcaDAO;
+    private final CodigoDAO codigoDAO;
+    private final LogDAO logDAO;
 
     private ObservableList<Grupo> listaGrupos = FXCollections.observableArrayList();
     private ObservableList<Marca> listaMarcas = FXCollections.observableArrayList();
@@ -131,6 +143,7 @@ public class IngresoProductoController implements Initializable {
     private void abrirModal(String fxml, String titulo, double w, double h) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxml));
+            com.vendex.config.VendexControllerFactory.aplicar(loader);
             Parent vista = loader.load();
             Stage modal = new Stage();
             modal.initModality(Modality.APPLICATION_MODAL);

@@ -30,7 +30,6 @@ public class VehiculoImportService {
     private final ObjectMapper mapper = new ObjectMapper();
     private final VehiculoDAO dao;
 
-    public VehiculoImportService() { this.dao = new VehiculoDAOPostgres(); }
     public VehiculoImportService(VehiculoDAO dao) { this.dao = dao; }
 
     public int importarMakes(int limitMakes, boolean soloComunes) {

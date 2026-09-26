@@ -26,6 +26,14 @@ import com.vendex.dao.LogDAOPostgres;
 
 public class BackupController implements Initializable {
 
+    public BackupController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public BackupController(com.vendex.config.AppContext ctx) {
+        this.logDAO = ctx.logDAO;
+    }
+
     @FXML private TextField txtDirLocal;
     @FXML private TextField txtOffsite;
     @FXML private TextField txtEmail;
@@ -49,7 +57,7 @@ public class BackupController implements Initializable {
     @FXML private TableColumn<FileRow, String> colTam;
     @FXML private TableColumn<FileRow, String> colEstado;
 
-    private final LogDAO logDAO = new LogDAOPostgres();
+    private final LogDAO logDAO;
     private final DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     public static class FileRow {

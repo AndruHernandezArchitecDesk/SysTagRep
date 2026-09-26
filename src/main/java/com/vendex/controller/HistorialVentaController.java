@@ -27,6 +27,14 @@ import com.vendex.dao.VentaResumenDAOPostgres;
 
 public class HistorialVentaController implements Initializable {
 
+    public HistorialVentaController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public HistorialVentaController(com.vendex.config.AppContext ctx) {
+        this.dao = ctx.ventaResumenDAO;
+    }
+
     @FXML private TextField txtBuscar;
     @FXML private DatePicker dpFecha;
     @FXML private TableView<VentaResumen> tblVentas;
@@ -39,7 +47,7 @@ public class HistorialVentaController implements Initializable {
     @FXML private TableColumn<VentaResumen, Integer> colItems;
     @FXML private TableColumn<VentaResumen, BigDecimal> colTotal;
 
-    private final VentaResumenDAO dao = new VentaResumenDAOPostgres();
+    private final VentaResumenDAO dao;
     private ObservableList<VentaResumen> lista = FXCollections.observableArrayList();
 
     @Override

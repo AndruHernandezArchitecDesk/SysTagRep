@@ -17,8 +17,17 @@ import com.vendex.dao.CajaMovimientoDAOPostgres;
 
 public class CajaService {
 
-    private final CajaSesionDAO sesionDAO = new CajaSesionDAOPostgres();
-    private final CajaMovimientoDAO movimientoDAO = new CajaMovimientoDAOPostgres();
+    private final CajaSesionDAO sesionDAO;
+    private final CajaMovimientoDAO movimientoDAO;
+
+    public CajaService() {
+        this(new CajaSesionDAOPostgres(), new CajaMovimientoDAOPostgres());
+    }
+
+    public CajaService(CajaSesionDAO sesionDAO, CajaMovimientoDAO movimientoDAO) {
+        this.sesionDAO = sesionDAO;
+        this.movimientoDAO = movimientoDAO;
+    }
 
     public int abrirCaja(int usuarioId, BigDecimal montoInicial, String observaciones) {
         com.vendex.util.SesionActual.exigirPermiso("CAJA_ABRIR");

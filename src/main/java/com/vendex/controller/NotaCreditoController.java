@@ -1,5 +1,6 @@
 package com.vendex.controller;
 
+import com.vendex.config.AppContext;
 import com.vendex.config.DatabaseConnection;
 import com.vendex.dao.*;
 import com.vendex.model.*;
@@ -29,6 +30,21 @@ import java.util.logging.Logger;
 
 public class NotaCreditoController implements Initializable {
 
+    public NotaCreditoController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public NotaCreditoController(com.vendex.config.AppContext ctx) {
+        this.facturaDAO = ctx.facturaRegistroDAO;
+        this.facturaDetalleDAO = ctx.facturaDetalleDAO;
+        this.ncDAO = ctx.notaCreditoRegistroDAO;
+        this.secDAO = ctx.secuenciaDAO;
+        this.empresaDAO = ctx.empresaDAO;
+        this.clienteDAO = ctx.clienteDAO;
+        this.ncService = ctx.notaCreditoService;
+        this.logDAO = ctx.logDAO;
+    }
+
     @FXML private ComboBox<FacturaRegistro> cmbFactura;
     @FXML private Label lblCliente, lblNumFactura, lblFechaFactura, lblTotalFactura, lblSaldoDisponible;
     @FXML private TableView<FacturaDetalle> tblDetallesOrigen;
@@ -49,14 +65,14 @@ public class NotaCreditoController implements Initializable {
     @FXML private ComboBox<String> cmbAmbiente;
     @FXML private Label lblSecuencial;
 
-    private final FacturaRegistroDAO facturaDAO = new FacturaRegistroDAOPostgres();
-    private final FacturaDetalleDAO facturaDetalleDAO = new FacturaDetalleDAOPostgres();
-    private final NotaCreditoRegistroDAO ncDAO = new NotaCreditoRegistroDAOPostgres();
-    private final SecuenciaDocumentoDAO secDAO = new SecuenciaDocumentoDAOPostgres();
-    private final EmpresaDAO empresaDAO = new EmpresaDAOPostgres();
-    private final ClienteDAO clienteDAO = new ClienteDAOPostgres();
-    private final NotaCreditoService ncService = new NotaCreditoService();
-    private final LogDAO logDAO = new LogDAOPostgres();
+    private final FacturaRegistroDAO facturaDAO;
+    private final FacturaDetalleDAO facturaDetalleDAO;
+    private final NotaCreditoRegistroDAO ncDAO;
+    private final SecuenciaDocumentoDAO secDAO;
+    private final EmpresaDAO empresaDAO;
+    private final ClienteDAO clienteDAO;
+    private final NotaCreditoService ncService;
+    private final LogDAO logDAO;
 
     private final ObservableList<NotaCreditoService.DetalleNCInput> detallesNc = FXCollections.observableArrayList();
     private String rutaP12 = ""; private String claveP12 = "";
@@ -182,7 +198,7 @@ public class NotaCreditoController implements Initializable {
             provisional.setEstado(AppConstants.ESTADO_PENDIENTE);
             provisional.setMensaje("Pendiente SRI - en cola contingencia");
             try { ncService.finalizarEnvioSRI(provisional, res, dir); } catch (Exception ex) { logDAO.guardar("NotaCreditoController","provisional", ex.getMessage(), ex); }
-            try { new com.vendex.dao.ComprobantePendienteSriDAOPostgres().encolar("NOTA_CREDITO", res.claveAcceso, res.numComprobante, ambiente); } catch (Exception ex) { logDAO.guardar("NotaCreditoController","encolar", ex.getMessage(), ex instanceof Exception ? (Exception)ex : new Exception(ex)); }
+            try { AppContext.getInstance().comprobantePendienteSriDAO.encolar("NOTA_CREDITO", res.claveAcceso, res.numComprobante, ambiente); } catch (Exception ex) { logDAO.guardar("NotaCreditoController","encolar", ex.getMessage(), ex instanceof Exception ? (Exception)ex : new Exception(ex)); }
             new Alert(Alert.AlertType.INFORMATION, "NC " + res.numComprobante + " registrada (pendiente SRI).\nClave: " + res.claveAcceso + "\nPDF provisional: " + res.rutaPDF + "\nEn cola cada 2min. Banner mostrara pendientes.").showAndWait();
             try { if (Desktop.isDesktopSupported()) Desktop.getDesktop().open(new File(res.rutaPDF)); } catch (Exception ignore) {}
             detallesNc.clear(); txtMotivo.clear(); cargarFacturasAutorizadas(); actualizarSecuencial(); calcularTotales();

@@ -24,10 +24,18 @@ import com.vendex.dao.InventarioDAOPostgres;
 
 public class GestionStockController implements Initializable {
 
+    public GestionStockController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public GestionStockController(com.vendex.config.AppContext ctx) {
+        this.dao = ctx.inventarioDAO;
+    }
+
     @FXML private TextField txtBuscar;
     @FXML private Accordion accordionProductos;
 
-    private final InventarioDAO dao = new InventarioDAOPostgres();
+    private final InventarioDAO dao;
     private List<Inventario> todos;
     private Map<String, List<Inventario>> agrupados;
     private final DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");

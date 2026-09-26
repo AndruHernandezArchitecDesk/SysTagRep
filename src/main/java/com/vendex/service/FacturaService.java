@@ -31,9 +31,10 @@ public class FacturaService {
     private final ComprobanteDAO comprobanteDAO;
     private final CuentaPorCobrarDAO cuentaPorCobrarDAO;
     private final HistorialProductoDAO historialProductoDAO;
-    private final LogDAO logDAO = new LogDAOPostgres();
+    private final LogDAO logDAO;
 
     public FacturaService() {
+        this.logDAO = new LogDAOPostgres();
         this.empresaDAO = new EmpresaDAOPostgres();
         this.clienteDAO = new ClienteDAOPostgres();
         this.inventarioDAO = new InventarioDAOPostgres();
@@ -44,7 +45,8 @@ public class FacturaService {
         this.cuentaPorCobrarDAO = new CuentaPorCobrarDAOPostgres();
         this.historialProductoDAO = new HistorialProductoDAOPostgres();
     }
-    public FacturaService(EmpresaDAO empresaDAO, ClienteDAO clienteDAO, InventarioDAO inventarioDAO, FacturaRegistroDAO facturaRegistroDAO, FacturaDetalleDAO facturaDetalleDAO, SecuenciaDocumentoDAO secuenciaDAO, ComprobanteDAO comprobanteDAO, CuentaPorCobrarDAO cuentaPorCobrarDAO, HistorialProductoDAO historialProductoDAO) {
+    public FacturaService(EmpresaDAO empresaDAO, ClienteDAO clienteDAO, InventarioDAO inventarioDAO, FacturaRegistroDAO facturaRegistroDAO, FacturaDetalleDAO facturaDetalleDAO, SecuenciaDocumentoDAO secuenciaDAO, ComprobanteDAO comprobanteDAO, CuentaPorCobrarDAO cuentaPorCobrarDAO, HistorialProductoDAO historialProductoDAO, LogDAO logDAO) {
+        this.logDAO = logDAO;
         this.empresaDAO = empresaDAO;
         this.clienteDAO = clienteDAO;
         this.inventarioDAO = inventarioDAO;

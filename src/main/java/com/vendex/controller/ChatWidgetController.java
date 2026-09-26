@@ -22,6 +22,15 @@ import com.vendex.dao.RepuestoChatbotDAOPostgres;
 
 public class ChatWidgetController {
 
+    public ChatWidgetController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public ChatWidgetController(com.vendex.config.AppContext ctx) {
+        this.chatbotService = new com.vendex.chatbot.GeminiChatbotService(ctx.repuestoChatbotDAO);
+        this.vehiculoDAO = ctx.vehiculoDAO;
+    }
+
     @FXML private StackPane rootStack;
     @FXML private VBox chatPanel;
     @FXML private VBox mensajesBox;
@@ -34,8 +43,8 @@ public class ChatWidgetController {
     @FXML private javafx.scene.control.ComboBox<String> cmbModelo;
     @FXML private javafx.scene.control.ComboBox<Integer> cmbAnio;
 
-    private final GeminiChatbotService chatbotService = new GeminiChatbotService(new RepuestoChatbotDAOPostgres());
-    private final com.vendex.dao.VehiculoDAO vehiculoDAO = new com.vendex.dao.VehiculoDAOPostgres();
+    private final GeminiChatbotService chatbotService;
+    private final com.vendex.dao.VehiculoDAO vehiculoDAO;
     private static final String TODAS = "Todas";
     private static final String TODOS = "Todos";
 

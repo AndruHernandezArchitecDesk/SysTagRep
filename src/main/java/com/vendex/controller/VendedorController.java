@@ -26,6 +26,15 @@ import com.vendex.dao.LogDAOPostgres;
 
 public class VendedorController implements Initializable{
 
+    public VendedorController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public VendedorController(com.vendex.config.AppContext ctx) {
+        this.dao = ctx.vendedorDAO;
+        this.logDAO = ctx.logDAO;
+    }
+
     @FXML private TextField txtId;
     @FXML private TextField txtNombre;
     @FXML private TextField txtIdentificacion;
@@ -46,8 +55,8 @@ public class VendedorController implements Initializable{
     @FXML private Button btnToggleForm;
     @FXML private TextField txtBuscar;
 
-    private final VendedorDAO dao = new VendedorDAOPostgres();
-    private final LogDAO logDAO = new LogDAOPostgres();
+    private final VendedorDAO dao;
+    private final LogDAO logDAO;
     private ObservableList<Vendedor> listaVendedores = FXCollections.observableArrayList();
 
     @Override

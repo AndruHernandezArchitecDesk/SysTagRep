@@ -29,7 +29,7 @@ public class NotaDebitoServiceTest {
         CajaSesionDAO cajaSesionDAO = mock(CajaSesionDAO.class);
         CajaMovimientoDAO cajaMovimientoDAO = mock(CajaMovimientoDAO.class);
 
-        service = new NotaDebitoService(empresaDAO, clienteDAO, facturaDAO, secDAO, comprobanteDAO, ndDAO, motivoDAO, cajaSesionDAO, cajaMovimientoDAO);
+        service = new NotaDebitoService(empresaDAO, clienteDAO, facturaDAO, secDAO, comprobanteDAO, ndDAO, motivoDAO, cajaSesionDAO, cajaMovimientoDAO, mock(com.vendex.dao.LogDAO.class));
 
         Usuario u = new Usuario();
         u.setId(1);

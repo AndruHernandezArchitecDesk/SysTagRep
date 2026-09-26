@@ -1,5 +1,6 @@
 package com.vendex.controller;
 
+import com.vendex.config.AppContext;
 import com.vendex.dao.PermisoDAO;
 import com.vendex.dao.RolDAO;
 import com.vendex.exception.SinPermisoException;
@@ -24,6 +25,15 @@ import com.vendex.dao.PermisoDAOPostgres;
 
 public class GestionRolesController implements Initializable {
 
+    public GestionRolesController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public GestionRolesController(com.vendex.config.AppContext ctx) {
+        this.rolDAO = ctx.rolDAO;
+        this.permisoDAO = ctx.permisoDAO;
+    }
+
     @FXML private ComboBox<Rol> cmbRol;
     @FXML private TableView<FilaPermiso> tblMatriz;
     @FXML private TableColumn<FilaPermiso, String> colCategoria;
@@ -34,8 +44,8 @@ public class GestionRolesController implements Initializable {
     @FXML private Label lblInfo;
     @FXML private Button btnGuardar;
 
-    private final RolDAO rolDAO = new RolDAOPostgres();
-    private final PermisoDAO permisoDAO = new PermisoDAOPostgres();
+    private final RolDAO rolDAO;
+    private final PermisoDAO permisoDAO;
     private final ObservableList<FilaPermiso> filas = FXCollections.observableArrayList();
 
     @Override
@@ -102,7 +112,7 @@ public class GestionRolesController implements Initializable {
         permisoDAO.actualizarPermisosDeRol(rol.getId(), codigos);
         rolDAO.actualizarLimiteDescuento(rol.getId(), limite);
         // auditoría
-        try { new com.vendex.dao.AuditoriaAccionDAOPostgres().registrar(com.vendex.util.SesionActual.getUsuario().getId(),"USUARIO_GESTIONAR","PERMITIDO","Actualizar rol "+rol.getNombre()+" permisos="+codigos.size()+" tope="+limite); } catch(Exception ignored){}
+        try { AppContext.getInstance().auditoriaAccionDAO.registrar(com.vendex.util.SesionActual.getUsuario().getId(),"USUARIO_GESTIONAR","PERMITIDO","Actualizar rol "+rol.getNombre()+" permisos="+codigos.size()+" tope="+limite); } catch(Exception ignored){}
         new Alert(Alert.AlertType.INFORMATION,"Rol actualizado. Los cambios aplican en el siguiente login de usuarios de ese rol.").showAndWait();
         cargarMatriz(rolDAO.obtenerPorId(rol.getId()));
     }

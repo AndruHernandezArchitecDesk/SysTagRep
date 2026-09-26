@@ -29,7 +29,7 @@ public class RetencionServiceTest {
         RetencionDocumentoSustentoDAO docDAO = mock(RetencionDocumentoSustentoDAO.class);
         RetencionDetalleDAO detalleDAO = mock(RetencionDetalleDAO.class);
 
-        service = new RetencionService(empresaDAO, proveedorDAO, secDAO, comprobanteDAO, retDAO, docDAO, detalleDAO);
+        service = new RetencionService(empresaDAO, proveedorDAO, secDAO, comprobanteDAO, retDAO, docDAO, detalleDAO, mock(com.vendex.dao.LogDAO.class));
 
         Usuario u = new Usuario();
         u.setId(1);

@@ -14,6 +14,14 @@ import com.vendex.dao.SecuenciaDocumentoDAOPostgres;
 
 public class NumeracionController implements Initializable {
 
+    public NumeracionController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public NumeracionController(com.vendex.config.AppContext ctx) {
+        this.secuenciaDAO = ctx.secuenciaDAO;
+    }
+
     @FXML private Label lblSiguienteProforma;
     @FXML private TextField txtEstabProforma;
     @FXML private TextField txtPtoProforma;
@@ -29,7 +37,7 @@ public class NumeracionController implements Initializable {
     @FXML private TextField txtPtoNotaCredito;
     @FXML private TextField txtInicioNotaCredito;
 
-    private final SecuenciaDocumentoDAO secuenciaDAO = new SecuenciaDocumentoDAOPostgres();
+    private final SecuenciaDocumentoDAO secuenciaDAO;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {

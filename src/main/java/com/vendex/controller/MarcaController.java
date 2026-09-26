@@ -26,6 +26,15 @@ import com.vendex.dao.LogDAOPostgres;
 
 public class MarcaController implements Initializable {
 
+    public MarcaController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public MarcaController(com.vendex.config.AppContext ctx) {
+        this.dao = ctx.marcaDAO;
+        this.logDAO = ctx.logDAO;
+    }
+
     @FXML private TextField txtId;
     @FXML private TextField txtNombre;
     @FXML private ComboBox<String> cmbEstado;
@@ -38,8 +47,8 @@ public class MarcaController implements Initializable {
 
     @FXML private TextField txtBuscar;
 
-    private final MarcaDAO dao = new MarcaDAOPostgres();
-    private final LogDAO logDAO = new LogDAOPostgres();
+    private final MarcaDAO dao;
+    private final LogDAO logDAO;
     private ObservableList<Marca> listaMarca = FXCollections.observableArrayList();
 
     @Override

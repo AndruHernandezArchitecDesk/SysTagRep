@@ -37,23 +37,45 @@ import com.vendex.dao.ComprobantePendienteSriDAOPostgres;
 public class ServicioReintentoSri {
 
     private static final Logger LOG = Logger.getLogger(ServicioReintentoSri.class.getName());
-    private static ServicioReintentoSri INSTANCE;
     private ScheduledExecutorService scheduler;
     private volatile boolean running = false;
 
-    private final ComprobantePendienteSriDAO pendienteDAO = new ComprobantePendienteSriDAOPostgres();
-    private final ComprobanteDAO comprobanteDAO = new ComprobanteDAOPostgres();
+    private final ComprobantePendienteSriDAO pendienteDAO;
+    private final ComprobanteDAO comprobanteDAO;
 
     // DAOs para actualizar estado por tipo
-    private final FacturaRegistroDAO facturaDAO = new FacturaRegistroDAOPostgres();
-    private final NotaCreditoRegistroDAO ncDAO = new NotaCreditoRegistroDAOPostgres();
-    private final NotaDebitoRegistroDAO ndDAO = new NotaDebitoRegistroDAOPostgres();
-    private final GuiaRemisionRegistroDAO grDAO = new GuiaRemisionRegistroDAOPostgres();
-    private final RetencionRegistroDAO retDAO = new RetencionRegistroDAOPostgres();
+    private final FacturaRegistroDAO facturaDAO;
+    private final NotaCreditoRegistroDAO ncDAO;
+    private final NotaDebitoRegistroDAO ndDAO;
+    private final GuiaRemisionRegistroDAO grDAO;
+    private final RetencionRegistroDAO retDAO;
 
-    public static synchronized ServicioReintentoSri getInstance() {
-        if (INSTANCE == null) INSTANCE = new ServicioReintentoSri();
-        return INSTANCE;
+    public ServicioReintentoSri() {
+        this(new ComprobantePendienteSriDAOPostgres(), new ComprobanteDAOPostgres(),
+                new FacturaRegistroDAOPostgres(), new NotaCreditoRegistroDAOPostgres(),
+                new NotaDebitoRegistroDAOPostgres(), new GuiaRemisionRegistroDAOPostgres(),
+                new RetencionRegistroDAOPostgres());
+    }
+
+    public ServicioReintentoSri(ComprobantePendienteSriDAO pendienteDAO, ComprobanteDAO comprobanteDAO,
+                                FacturaRegistroDAO facturaDAO, NotaCreditoRegistroDAO ncDAO,
+                                NotaDebitoRegistroDAO ndDAO, GuiaRemisionRegistroDAO grDAO,
+                                RetencionRegistroDAO retDAO) {
+        this.pendienteDAO = pendienteDAO;
+        this.comprobanteDAO = comprobanteDAO;
+        this.facturaDAO = facturaDAO;
+        this.ncDAO = ncDAO;
+        this.ndDAO = ndDAO;
+        this.grDAO = grDAO;
+        this.retDAO = retDAO;
+    }
+
+    /**
+     * Composition root: la única instancia vive en {@link com.vendex.config.AppContext}
+     * (lineamiento §3 — todo el cableo en un solo lugar).
+     */
+    public static ServicioReintentoSri getInstance() {
+        return com.vendex.config.AppContext.getInstance().servicioReintentoSri;
     }
 
     public synchronized void start() {

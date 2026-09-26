@@ -29,7 +29,7 @@ public class GuiaRemisionServiceTest {
         GuiaRemisionDestinatarioDAO destDAO = mock(GuiaRemisionDestinatarioDAO.class);
         GuiaRemisionDetalleDAO detalleDAO = mock(GuiaRemisionDetalleDAO.class);
 
-        service = new GuiaRemisionService(empresaDAO, clienteDAO, facturaDAO, secDAO, comprobanteDAO, guiaDAO, destDAO, detalleDAO);
+        service = new GuiaRemisionService(empresaDAO, clienteDAO, facturaDAO, secDAO, comprobanteDAO, guiaDAO, destDAO, detalleDAO, mock(com.vendex.dao.LogDAO.class));
 
         Usuario u = new Usuario();
         u.setId(1);

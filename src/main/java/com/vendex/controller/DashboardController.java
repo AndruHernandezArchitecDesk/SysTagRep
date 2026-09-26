@@ -35,6 +35,16 @@ import com.vendex.dao.DashboardDAOPostgres;
 
 public class DashboardController implements Initializable {
 
+    public DashboardController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public DashboardController(com.vendex.config.AppContext ctx) {
+        this.dashboardDAO = ctx.dashboardDAO;
+        this.inventarioDAO = ctx.inventarioDAO;
+        this.logDAO = ctx.logDAO;
+    }
+
     private static final int UMBRAL_STOCK_BAJO = 5;
 
     @FXML
@@ -63,9 +73,9 @@ public class DashboardController implements Initializable {
 
     private MainController mainController;
 
-    private final DashboardDAO dashboardDAO = new DashboardDAOPostgres();
-    private final InventarioDAO inventarioDAO = new InventarioDAOPostgres();
-    private final LogDAO logDAO = new LogDAOPostgres();
+    private final DashboardDAO dashboardDAO;
+    private final InventarioDAO inventarioDAO;
+    private final LogDAO logDAO;
 
     public void setMainController(MainController mainController) {
         this.mainController = mainController;

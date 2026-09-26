@@ -37,6 +37,16 @@ import com.vendex.dao.DashboardDAOPostgres;
 
 public class Dashboard2Controller implements Initializable {
 
+    public Dashboard2Controller() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public Dashboard2Controller(com.vendex.config.AppContext ctx) {
+        this.dashboardDAO = ctx.dashboardDAO;
+        this.logDAO = ctx.logDAO;
+        this.alertaService = ctx.alertaService;
+    }
+
     @FXML
     private BarChart<String, Number> chartVentas;
 
@@ -60,9 +70,9 @@ public class Dashboard2Controller implements Initializable {
 
     private MainController mainController;
 
-    private final DashboardDAO dashboardDAO = new DashboardDAOPostgres();
-    private final LogDAO logDAO = new LogDAOPostgres();
-    private final AlertaService alertaService = new AlertaService();
+    private final DashboardDAO dashboardDAO;
+    private final LogDAO logDAO;
+    private final AlertaService alertaService;
 
     public void setMainController(MainController mainController) {
         this.mainController = mainController;

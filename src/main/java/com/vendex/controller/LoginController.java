@@ -27,6 +27,15 @@ import com.vendex.dao.LoginIntentoLogDAOPostgres;
 
 public class LoginController implements Initializable {
 
+    public LoginController() {
+        this(com.vendex.config.AppContext.getInstance());
+    }
+
+    public LoginController(com.vendex.config.AppContext ctx) {
+        this.dao = ctx.usuarioDAO;
+        this.logDao = ctx.loginIntentoLogDAO;
+    }
+
     @FXML private TextField txtUsuario;
     @FXML private PasswordField txtPassword;
     @FXML private ImageView imgLogo;
@@ -36,8 +45,8 @@ public class LoginController implements Initializable {
 
     public static Usuario usuarioAutenticado;
 
-    private final UsuarioDAO dao = new UsuarioDAOPostgres();
-    private final LoginIntentoLogDAO logDao = new LoginIntentoLogDAOPostgres();
+    private final UsuarioDAO dao;
+    private final LoginIntentoLogDAO logDao;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -234,7 +243,9 @@ public class LoginController implements Initializable {
 
     private void abrirMain() {
         try {
-            Parent root = FXMLLoader.load(getClass().getResource("/view/MainView.fxml"));
+            FXMLLoader homeLoader = new FXMLLoader(getClass().getResource("/view/MainView.fxml"));
+            com.vendex.config.VendexControllerFactory.aplicar(homeLoader);
+            Parent root = homeLoader.load();
             Stage stage = (Stage) txtUsuario.getScene().getWindow();
             stage.setTitle("Tag Repuestos Automotrices");
             stage.getIcons().add(new Image(getClass().getResourceAsStream("/img/inventario.png")));
