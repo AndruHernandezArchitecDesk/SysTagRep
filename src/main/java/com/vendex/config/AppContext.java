@@ -64,6 +64,8 @@ public class AppContext {
     public final DashboardDAO dashboardDAO;
     public final SucursalDAO sucursalDAO;
     public final TransferenciaInventarioDAO transferenciaInventarioDAO;
+    public final VehiculoDAO vehiculoDAO;
+    public final InventarioVehiculoDAO inventarioVehiculoDAO;
 
     // Servicios
     public final FacturaService facturaService;
@@ -125,6 +127,8 @@ public class AppContext {
         this.dashboardDAO = new DashboardDAOPostgres();
         this.sucursalDAO = new SucursalDAOPostgres();
         this.transferenciaInventarioDAO = new TransferenciaInventarioDAOPostgres();
+        this.vehiculoDAO = new VehiculoDAOPostgres();
+        this.inventarioVehiculoDAO = new InventarioVehiculoDAOPostgres();
 
         // Servicios con inyección por constructor
         this.facturaService = new FacturaService(

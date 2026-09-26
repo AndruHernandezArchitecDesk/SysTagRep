@@ -62,6 +62,10 @@ public class InventarioController implements Initializable {
 
     @FXML private TextField txtBuscar;
     @FXML private TextField txtBuscarFactura;
+    @FXML private ComboBox<String> cmbVehMarca;
+    @FXML private ComboBox<String> cmbVehModelo;
+    @FXML private ComboBox<Integer> cmbVehAnio;
+    @FXML private Label lblFiltroVeh;
     @FXML private Label lblPaginaInfo;
     @FXML private Button btnAnterior;
     @FXML private Button btnSiguiente;
@@ -75,54 +79,180 @@ public class InventarioController implements Initializable {
     private final com.vendex.dao.LogDAO logDAO = new com.vendex.dao.LogDAOPostgres();
     private final EmpresaDAO daoEmpresa = new EmpresaDAOPostgres();
     private final UbicacionDetalleDAO daoUbicacion = new UbicacionDetalleDAOPostgres();
+    private final com.vendex.dao.VehiculoDAO vehiculoDAO = new com.vendex.dao.VehiculoDAOPostgres();
+    private final com.vendex.dao.InventarioVehiculoDAO inventarioVehiculoDAO = new com.vendex.dao.InventarioVehiculoDAOPostgres();
     private final ObservableList<Inventario> listaInventario = FXCollections.observableArrayList();
+
+    private static final String TODAS = "Todas";
+    private static final String TODOS = "Todos";
+    private boolean filtrosVehCargados = false;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         iniciarTablaContenido();
         cargarAcciones();
         iniciarPageSize();
+        iniciarFiltrosVehiculo();
         cargarDatos();
         txtBuscar.textProperty().addListener((obs, old, val) -> { currentPage = 1; cargarDatos(); });
         txtBuscarFactura.textProperty().addListener((obs, old, val) -> { currentPage = 1; cargarDatos(); });
+    }
+
+    private void iniciarFiltrosVehiculo() {
+        try {
+            List<String> marcas = new java.util.ArrayList<>();
+            marcas.add(TODAS);
+            marcas.addAll(vehiculoDAO.listarMarcas());
+            cmbVehMarca.setItems(FXCollections.observableArrayList(marcas));
+            cmbVehMarca.setValue(TODAS);
+            cmbVehModelo.getItems().clear();
+            cmbVehAnio.getItems().clear();
+            cmbVehMarca.setOnAction(e -> onMarcaVehiculo());
+            cmbVehModelo.setOnAction(e -> onModeloVehiculo());
+            cmbVehAnio.setOnAction(e -> { currentPage = 1; cargarDatos(); });
+            filtrosVehCargados = true;
+        } catch (Exception e) {
+            // tabla vehiculo aún no existe (cliente sin migrar): combos quedan vacíos
+            filtrosVehCargados = false;
+            if (cmbVehMarca != null) { cmbVehMarca.setDisable(true); }
+            if (cmbVehModelo != null) { cmbVehModelo.setDisable(true); }
+            if (cmbVehAnio != null) { cmbVehAnio.setDisable(true); }
+            logDAO.guardar("InventarioController", "iniciarFiltrosVehiculo", e.getMessage(), e);
+        }
+    }
+
+    private void onMarcaVehiculo() {
+        String marca = seleccionVeh(cmbVehMarca != null ? cmbVehMarca.getValue() : null);
+        try {
+            List<String> modelos = new java.util.ArrayList<>();
+            modelos.add(TODOS);
+            if (marca != null) modelos.addAll(vehiculoDAO.listarModelosPorMarca(marca));
+            cmbVehModelo.setItems(FXCollections.observableArrayList(modelos));
+            cmbVehModelo.setValue(TODOS);
+        } catch (Exception e) {
+            cmbVehModelo.setItems(FXCollections.observableArrayList(TODOS));
+            cmbVehModelo.setValue(TODOS);
+        }
+        cmbVehAnio.getItems().clear();
+        currentPage = 1;
+        cargarDatos();
+    }
+
+    private void onModeloVehiculo() {
+        String marca = seleccionVeh(cmbVehMarca != null ? cmbVehMarca.getValue() : null);
+        String modelo = seleccionVeh(cmbVehModelo != null ? cmbVehModelo.getValue() : null);
+        try {
+            List<Integer> anios = new java.util.ArrayList<>();
+            if (marca != null && modelo != null) anios = vehiculoDAO.listarAniosPorModelo(marca, modelo);
+            List<Integer> items = new java.util.ArrayList<>();
+            items.add(null);
+            items.addAll(anios);
+            cmbVehAnio.setItems(FXCollections.observableArrayList(items));
+            cmbVehAnio.setConverter(new javafx.util.StringConverter<Integer>() {
+                @Override public String toString(Integer v) { return v == null ? "Todos" : String.valueOf(v); }
+                @Override public Integer fromString(String s) { return null; }
+            });
+            cmbVehAnio.setValue(null);
+        } catch (Exception e) {
+            cmbVehAnio.getItems().clear();
+        }
+        currentPage = 1;
+        cargarDatos();
+    }
+
+    /** Devuelve el valor seleccionado o null si es "Todas"/"Todos"/vacío. */
+    private String seleccionVeh(String v) {
+        if (v == null || v.isBlank()) return null;
+        String t = v.trim();
+        if (TODAS.equalsIgnoreCase(t) || TODOS.equalsIgnoreCase(t)) return null;
+        return t;
+    }
+
+    /**
+     * IDs de inventario asociados al filtro de vehículo activo (marca/modelo/año).
+     * Devuelve null si no hay filtro activo; set vacío si el filtro no matchea nada.
+     */
+    private java.util.Set<Integer> idsFiltroVehiculo() {
+        if (!filtrosVehCargados || cmbVehMarca == null) return null;
+        String marca = seleccionVeh(cmbVehMarca.getValue());
+        String modelo = cmbVehModelo != null ? seleccionVeh(cmbVehModelo.getValue()) : null;
+        Integer anio = cmbVehAnio != null ? cmbVehAnio.getValue() : null;
+        if (marca == null && modelo == null && anio == null) return null;
+        try {
+            List<com.vendex.model.Vehiculo> vehs = vehiculoDAO.buscar(marca, modelo, anio);
+            java.util.Set<Integer> ids = new java.util.HashSet<>();
+            for (com.vendex.model.Vehiculo v : vehs) ids.addAll(inventarioVehiculoDAO.listarInventarioIdsPorVehiculo(v.getId()));
+            return ids;
+        } catch (Exception e) {
+            logDAO.guardar("InventarioController", "idsFiltroVehiculo", e.getMessage(), e);
+            return new java.util.HashSet<>();
+        }
+    }
+
+    @FXML
+    private void limpiarFiltrosVehiculo() {
+        if (cmbVehMarca != null) { cmbVehMarca.setValue(TODAS); }
+        if (cmbVehModelo != null) { cmbVehModelo.getItems().clear(); }
+        if (cmbVehAnio != null) { cmbVehAnio.getItems().clear(); }
+        if (lblFiltroVeh != null) lblFiltroVeh.setText("");
+        currentPage = 1;
+        cargarDatos();
     }
 
     private void cargarDatos() {
         String filtro = txtBuscar.getText();
         String numeroFactura = txtBuscarFactura.getText();
         int sucursalId = SucursalActual.getId();
-        // Si hay sucursal seleccionada y DAO soporta por sucursal, filtrar por sucursal
-        List<Inventario> base;
-        if (sucursalId > 0) {
-            // Intentar listar por sucursal y paginar en memoria (mantiene compatibilidad con filtro)
-            try {
-                base = dao.listarPorSucursal(sucursalId);
-                // Filtro en memoria si hay filtro texto
-                if (filtro != null && !filtro.trim().isEmpty()) {
-                    String f = filtro.toLowerCase();
-                    base = base.stream().filter(i ->
-                            (i.getDescripcion()!=null && i.getDescripcion().toLowerCase().contains(f)) ||
-                            (i.getCodigo()!=null && i.getCodigo().toLowerCase().contains(f))
-                    ).toList();
-                }
-                if (numeroFactura != null && !numeroFactura.trim().isEmpty()) {
-                    String nf = numeroFactura.toLowerCase();
-                    base = base.stream().filter(i -> i.getNumeroFactura()!=null && i.getNumeroFactura().toLowerCase().contains(nf)).toList();
-                }
-                totalCount = base.size();
-                totalPages = Math.max(1, (int) Math.ceil((double) totalCount / pageSize));
-                if (currentPage > totalPages) currentPage = totalPages;
-                if (currentPage < 1) currentPage = 1;
-                int from = (currentPage - 1) * pageSize;
-                int to = Math.min(from + pageSize, base.size());
-                if (from < base.size()) listaInventario.setAll(base.subList(from, to));
-                else listaInventario.clear();
-                tblInventario.setItems(listaInventario);
-                actualizarPaginaInfo();
-                return;
-            } catch (Exception e) {
-                // fallback a paginado global si falla (ej. columna sucursal_id no existe en HSQLDB tests)
+        java.util.Set<Integer> idsVeh = idsFiltroVehiculo();
+        if (lblFiltroVeh != null) {
+            String marca = seleccionVeh(cmbVehMarca != null ? cmbVehMarca.getValue() : null);
+            String modelo = cmbVehModelo != null ? seleccionVeh(cmbVehModelo.getValue()) : null;
+            Integer anio = cmbVehAnio != null ? cmbVehAnio.getValue() : null;
+            String resumen = (marca != null ? marca : "") + (modelo != null ? " " + modelo : "") + (anio != null ? " " + anio : "");
+            lblFiltroVeh.setText(resumen.isBlank() ? "" : "Filtro: " + resumen.trim());
+        }
+        List<Inventario> base = null;
+        // Si hay filtro de vehículo, trabajar sobre listado completo (con o sin sucursal)
+        if (idsVeh != null) {
+            if (sucursalId > 0) {
+                try { base = dao.listarPorSucursal(sucursalId); } catch (Exception e) { base = null; }
             }
+            if (base == null) {
+                try { base = dao.listar(); } catch (Exception e) { base = null; }
+            }
+        } else if (sucursalId > 0) {
+            // Intentar listar por sucursal y paginar en memoria (mantiene compatibilidad con filtro)
+            try { base = dao.listarPorSucursal(sucursalId); } catch (Exception e) { base = null; }
+        }
+        if (base != null) {
+            List<Inventario> result = base;
+            // Filtro en memoria si hay filtro texto
+            if (filtro != null && !filtro.trim().isEmpty()) {
+                String f = filtro.toLowerCase();
+                result = result.stream().filter(i ->
+                        (i.getDescripcion()!=null && i.getDescripcion().toLowerCase().contains(f)) ||
+                        (i.getCodigo()!=null && i.getCodigo().toLowerCase().contains(f))
+                ).toList();
+            }
+            if (numeroFactura != null && !numeroFactura.trim().isEmpty()) {
+                String nf = numeroFactura.toLowerCase();
+                result = result.stream().filter(i -> i.getNumeroFactura()!=null && i.getNumeroFactura().toLowerCase().contains(nf)).toList();
+            }
+            if (idsVeh != null) {
+                result = result.stream().filter(i -> idsVeh.contains(i.getId())).toList();
+            }
+            List<Inventario> filtrado = result;
+            totalCount = filtrado.size();
+            totalPages = Math.max(1, (int) Math.ceil((double) totalCount / pageSize));
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+            int from = (currentPage - 1) * pageSize;
+            int to = Math.min(from + pageSize, filtrado.size());
+            if (from < filtrado.size()) listaInventario.setAll(filtrado.subList(from, to));
+            else listaInventario.clear();
+            tblInventario.setItems(listaInventario);
+            actualizarPaginaInfo();
+            return;
         }
         totalCount = dao.contar(filtro, numeroFactura);
         totalPages = Math.max(1, (int) Math.ceil((double) totalCount / pageSize));

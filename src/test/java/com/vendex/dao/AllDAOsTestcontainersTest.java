@@ -109,6 +109,8 @@ public class AllDAOsTestcontainersTest {
         assertDoesNotThrow(() -> ctx.codigoDAO.listar(), "CodigoDAO.listar");
         assertDoesNotThrow(() -> ctx.repuestoChatbotDAO.buscar("tapa radiador", null, null, null), "RepuestoChatbotDAO.buscar");
         assertDoesNotThrow(() -> ctx.ubicacionDetalleDAO.listarOcupados(), "UbicacionDetalleDAO.listarOcupados");
+        assertDoesNotThrow(() -> ctx.vehiculoDAO.listar(), "VehiculoDAO.listar");
+        assertDoesNotThrow(() -> ctx.inventarioVehiculoDAO.listarVehiculosPorInventario(1), "InventarioVehiculoDAO.listarVehiculosPorInventario");
     }
 
     @Test
@@ -135,5 +137,7 @@ public class AllDAOsTestcontainersTest {
         assertNotNull(ctx.facturaProveedorDAO);
         assertNotNull(ctx.cuentaPorPagarDAO);
         assertNotNull(ctx.cuentaPorCobrarDAO);
+        assertNotNull(ctx.vehiculoDAO);
+        assertNotNull(ctx.inventarioVehiculoDAO);
     }
 }

@@ -121,6 +121,18 @@
     -fx-border-radius: 12 12 12 2;
 }
 .input-bar { -fx-padding: 8 0 0 0; }
+.veh-filter-bar {
+    -fx-background-color: #f7f8fa;
+    -fx-border-color: transparent transparent #e5e7eb transparent;
+}
+.veh-filter-bar .combo-box {
+    -fx-background-color: white;
+    -fx-border-color: #d1d5db;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-font-size: 11px;
+}
+.veh-filter-bar .ikonli-font-icon { -fx-icon-color: #6B8E6B; }
 .btn-enviar {
     -fx-background-color: #2f6fed;
     -fx-text-fill: white;

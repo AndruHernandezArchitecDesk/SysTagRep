@@ -2,6 +2,7 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextField?>
@@ -36,6 +37,14 @@
                 <padding><Insets top="8" right="8" bottom="8" left="8"/></padding>
             </VBox>
         </ScrollPane>
+
+        <HBox spacing="6" styleClass="veh-filter-bar" alignment="CENTER_LEFT" visible="false" managed="false">
+            <padding><Insets top="6" left="6" right="6"/></padding>
+            <FontIcon iconLiteral="fas-car" iconSize="12"/>
+            <ComboBox fx:id="cmbMarca" promptText="Marca" prefWidth="82" HBox.hgrow="ALWAYS"/>
+            <ComboBox fx:id="cmbModelo" promptText="Modelo" prefWidth="82" HBox.hgrow="ALWAYS"/>
+            <ComboBox fx:id="cmbAnio" promptText="Año" prefWidth="58"/>
+        </HBox>
 
         <HBox spacing="6" styleClass="input-bar">
             <padding><Insets top="8"/></padding>

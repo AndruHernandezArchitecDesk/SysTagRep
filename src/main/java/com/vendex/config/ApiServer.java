@@ -3,6 +3,7 @@ package com.vendex.config;
 import com.vendex.controller.api.InventarioApiController;
 import com.vendex.controller.api.SucursalApiController;
 import com.vendex.controller.api.TransferenciaApiController;
+import com.vendex.controller.api.VehiculoApiController;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 
@@ -41,8 +42,9 @@ public class ApiServer {
         }
         AppContext ctx = AppContext.getInstance();
         SucursalApiController sucursalCtrl = new SucursalApiController(ctx.sucursalDAO);
-        InventarioApiController inventarioCtrl = new InventarioApiController(ctx.inventarioDAO);
+        InventarioApiController inventarioCtrl = new InventarioApiController(ctx.inventarioDAO, ctx.vehiculoDAO, ctx.inventarioVehiculoDAO);
         TransferenciaApiController transfCtrl = new TransferenciaApiController(ctx.transferenciaInventarioService, ctx.transferenciaInventarioDAO);
+        VehiculoApiController vehiculoCtrl = new VehiculoApiController(ctx.vehiculoDAO, ctx.inventarioVehiculoDAO);
 
         app = Javalin.create(cfg -> {
             cfg.http.defaultContentType = "application/json";
@@ -64,6 +66,15 @@ public class ApiServer {
         // Transferencias
         app.post("/api/transferencias", transfCtrl::transferir);
         app.get("/api/transferencias", transfCtrl::listar);
+
+        // Vehículos / Compatibilidad (API pública NHTSA)
+        app.get("/api/vehiculos", vehiculoCtrl::listar);
+        app.get("/api/vehiculos/{id}", vehiculoCtrl::obtenerPorId);
+        app.post("/api/vehiculos", vehiculoCtrl::crear);
+        app.get("/api/vehiculos/vin/{vin}", vehiculoCtrl::buscarPorVin);
+        app.post("/api/vehiculos/import", vehiculoCtrl::importar);
+        app.get("/api/inventario/{id}/compatibilidades", vehiculoCtrl::listarCompatibilidades);
+        app.post("/api/inventario/{id}/compatibilidades", vehiculoCtrl::asociarCompatibilidades);
 
         // Error handler
         app.exception(Exception.class, (e, ctx2) -> {

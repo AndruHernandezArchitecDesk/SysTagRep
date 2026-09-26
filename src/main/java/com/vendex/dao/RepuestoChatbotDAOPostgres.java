@@ -27,14 +27,52 @@ public class RepuestoChatbotDAOPostgres implements RepuestoChatbotDAO {
         if (descripcion == null || descripcion.isBlank()) {
             return GeminiChatbotService.ResultadoBusqueda.noEncontrado();
         }
+        // Intentar búsqueda por compatibilidad normalizada (vehiculo) primero, si hay marca/modelo/anio
+        if ((marca != null && !marca.isBlank()) || (modelo != null && !modelo.isBlank()) || anio != null) {
+            try {
+                var vehs = new VehiculoDAOPostgres().buscar(marca, modelo, anio);
+                if (!vehs.isEmpty()) {
+                    String placeholders = vehs.stream().map(v -> "?").collect(java.util.stream.Collectors.joining(","));
+                    StringBuilder sqlVeh = new StringBuilder(
+                            "SELECT i.codigo, i.descripcion AS nombre, i.precio_venta AS precio, i.cantidad AS stock " +
+                            "FROM inventario i JOIN inventario_vehiculo iv ON iv.inventario_id=i.id " +
+                            "WHERE iv.vehiculo_id IN (" + placeholders + ") AND i.estado=true ");
+                    List<Object> paramsVeh = new ArrayList<>();
+                    for (var v : vehs) paramsVeh.add(v.getId());
+                    // Keywords de la descripcion (excluyendo marca/modelo) para acotar dentro del vehículo
+                    for (String kw : tokenizar(descripcion)) {
+                        if (kw.equalsIgnoreCase(marca) || kw.equalsIgnoreCase(modelo)) continue;
+                        sqlVeh.append(" AND LOWER(i.descripcion) LIKE ? ");
+                        paramsVeh.add("%" + kw.toLowerCase() + "%");
+                    }
+                    sqlVeh.append(" ORDER BY i.cantidad DESC, i.descripcion LIMIT 5");
+                    try (Connection con = DatabaseConnection.getConnection();
+                         PreparedStatement ps = con.prepareStatement(sqlVeh.toString())) {
+                        for (int i = 0; i < paramsVeh.size(); i++) ps.setObject(i + 1, paramsVeh.get(i));
+                        try (ResultSet rs = ps.executeQuery()) {
+                            if (rs.next()) return mapearResultado(rs);
+                        }
+                    }
+                    // vehículos matchean pero ningún repuesto asociado: probar sin keywords de desc
+                    String sqlVehSinDesc = "SELECT i.codigo, i.descripcion AS nombre, i.precio_venta AS precio, i.cantidad AS stock " +
+                            "FROM inventario i JOIN inventario_vehiculo iv ON iv.inventario_id=i.id " +
+                            "WHERE iv.vehiculo_id IN (" + placeholders + ") AND i.estado=true " +
+                            "ORDER BY i.cantidad DESC, i.descripcion LIMIT 5";
+                    try (Connection con = DatabaseConnection.getConnection();
+                         PreparedStatement ps = con.prepareStatement(sqlVehSinDesc)) {
+                        for (int i = 0; i < vehs.size(); i++) ps.setInt(i + 1, vehs.get(i).getId());
+                        try (ResultSet rs = ps.executeQuery()) {
+                            if (rs.next()) return mapearResultado(rs);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                LOGGER.log(Level.FINE, "Vehiculo compat search fallback to LIKE", e);
+            }
+        }
 
         // Tokenizar descripcion enriquecida (ej: "tapa radiador CHEV AVEO" -> cada token debe estar en descripcion/codigo/marca)
-        String[] tokens = descripcion.trim().split("\\s+");
-        List<String> keywords = new ArrayList<>();
-        for (String t : tokens) {
-            String clean = t.replaceAll("[^\\p{L}\\p{N}]", "").trim();
-            if (clean.length() >= 2) keywords.add(clean.toLowerCase());
-        }
+        List<String> keywords = tokenizar(descripcion);
         if (keywords.isEmpty()) keywords.add(descripcion.toLowerCase());
 
         // Construir WHERE dinámico: cada keyword debe aparecer en descripcion o codigo o marca
@@ -86,6 +124,28 @@ public class RepuestoChatbotDAOPostgres implements RepuestoChatbotDAO {
             }
         }
         return GeminiChatbotService.ResultadoBusqueda.noEncontrado();
+    }
+
+    private List<String> tokenizar(String texto) {
+        List<String> keywords = new ArrayList<>();
+        if (texto == null) return keywords;
+        for (String t : texto.trim().split("\\s+")) {
+            String clean = t.replaceAll("[^\\p{L}\\p{N}]", "").trim();
+            if (clean.length() >= 2) keywords.add(clean.toLowerCase());
+        }
+        return keywords;
+    }
+
+    private GeminiChatbotService.ResultadoBusqueda mapearResultado(ResultSet rs) throws SQLException {
+        String codigo = rs.getString("codigo");
+        String nombre = rs.getString("nombre");
+        int stock = rs.getInt("stock");
+        Double precio = null;
+        try {
+            var bd = rs.getBigDecimal("precio");
+            if (bd != null) precio = bd.doubleValue();
+        } catch (SQLException ignored) {}
+        return new GeminiChatbotService.ResultadoBusqueda(true, codigo, nombre, stock, precio);
     }
 
     private GeminiChatbotService.ResultadoBusqueda ejecutar(String sql, List<String> params, boolean useIlike) throws SQLException {

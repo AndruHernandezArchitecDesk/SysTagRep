@@ -30,14 +30,78 @@ public class ChatWidgetController {
     @FXML private Button bubbleButton;
     @FXML private Label badgeIA;
     @FXML private Circle pulseCircle;
+    @FXML private javafx.scene.control.ComboBox<String> cmbMarca;
+    @FXML private javafx.scene.control.ComboBox<String> cmbModelo;
+    @FXML private javafx.scene.control.ComboBox<Integer> cmbAnio;
 
     private final GeminiChatbotService chatbotService = new GeminiChatbotService(new RepuestoChatbotDAOPostgres());
+    private final com.vendex.dao.VehiculoDAO vehiculoDAO = new com.vendex.dao.VehiculoDAOPostgres();
+    private static final String TODAS = "Todas";
+    private static final String TODOS = "Todos";
 
     @FXML
     public void initialize() {
         actualizarBadge();
         iniciarPulso();
+        iniciarFiltrosVehiculo();
     }
+
+    private void iniciarFiltrosVehiculo() {
+        if (cmbMarca == null) return;
+        try {
+            java.util.List<String> marcas = new java.util.ArrayList<>();
+            marcas.add(TODAS);
+            marcas.addAll(vehiculoDAO.listarMarcas());
+            cmbMarca.setItems(javafx.collections.FXCollections.observableArrayList(marcas));
+            cmbMarca.setValue(TODAS);
+        } catch (Exception e) {
+            cmbMarca.setDisable(true);
+            if (cmbModelo != null) cmbModelo.setDisable(true);
+            if (cmbAnio != null) cmbAnio.setDisable(true);
+            return;
+        }
+        cmbMarca.setOnAction(e -> onMarcaSeleccionada());
+        cmbModelo.setOnAction(e -> onModeloSeleccionado());
+    }
+
+    private void onMarcaSeleccionada() {
+        String marca = valorSeleccionado(cmbMarca.getValue());
+        java.util.List<String> modelos = new java.util.ArrayList<>();
+        modelos.add(TODOS);
+        if (marca != null) {
+            try { modelos.addAll(vehiculoDAO.listarModelosPorMarca(marca)); } catch (Exception ignore) {}
+        }
+        cmbModelo.setItems(javafx.collections.FXCollections.observableArrayList(modelos));
+        cmbModelo.setValue(TODOS);
+        cmbAnio.getItems().clear();
+    }
+
+    private void onModeloSeleccionado() {
+        String marca = valorSeleccionado(cmbMarca != null ? cmbMarca.getValue() : null);
+        String modelo = valorSeleccionado(cmbModelo != null ? cmbModelo.getValue() : null);
+        java.util.List<Integer> anios = new java.util.ArrayList<>();
+        if (marca != null && modelo != null) {
+            try { anios.addAll(vehiculoDAO.listarAniosPorModelo(marca, modelo)); } catch (Exception ignore) {}
+        }
+        anios.add(0, null);
+        cmbAnio.setItems(javafx.collections.FXCollections.observableArrayList(anios));
+        cmbAnio.setConverter(new javafx.util.StringConverter<Integer>() {
+            @Override public String toString(Integer v) { return v == null ? "Año" : String.valueOf(v); }
+            @Override public Integer fromString(String s) { return null; }
+        });
+        cmbAnio.setValue(null);
+    }
+
+    private String valorSeleccionado(String v) {
+        if (v == null || v.isBlank()) return null;
+        String t = v.trim();
+        if (TODAS.equalsIgnoreCase(t) || TODOS.equalsIgnoreCase(t) || "Año".equalsIgnoreCase(t)) return null;
+        return t;
+    }
+
+    private String filtroMarca() { return cmbMarca != null ? valorSeleccionado(cmbMarca.getValue()) : null; }
+    private String filtroModelo() { return cmbModelo != null ? valorSeleccionado(cmbModelo.getValue()) : null; }
+    private Integer filtroAnio() { return cmbAnio != null ? cmbAnio.getValue() : null; }
 
     private void iniciarPulso() {
         if (pulseCircle == null) return;
@@ -58,7 +122,7 @@ public class ChatWidgetController {
         chatPanel.setManaged(mostrar);
         actualizarBadge();
         if (mostrar && mensajesBox.getChildren().isEmpty()) {
-            agregarMensaje("¡Hola! Pregúntame por cualquier repuesto y verifico stock.\nEj: \"tapa radiador CHEV AVEO\"\nSíntoma: \"ruido al frenar\" → te sugiero repuesto", false, false);
+            agregarMensaje("¡Hola! Pregúntame por cualquier repuesto y verifico stock.\nEj: \"tapa radiador CHEV AVEO\"\nSíntoma: \"ruido al frenar\" → te sugiero repuesto\nUsa los filtros Marca/Modelo/Año para buscar por compatibilidad de vehículo.", false, false);
             inputField.requestFocus();
         } else if (mostrar) {
             inputField.requestFocus();
@@ -74,7 +138,16 @@ public class ChatWidgetController {
         String texto = inputField.getText();
         if (texto == null || texto.isBlank()) return;
 
-        agregarMensaje(texto, true, false);
+        String vehMarca = filtroMarca();
+        String vehModelo = filtroModelo();
+        Integer vehAnio = filtroAnio();
+        String textoMostrar = texto;
+        if (vehMarca != null || vehModelo != null || vehAnio != null) {
+            StringBuilder sb = new StringBuilder(texto);
+            sb.append(" [").append(vehMarca != null ? vehMarca : "").append(vehModelo != null ? " " + vehModelo : "").append(vehAnio != null ? " " + vehAnio : "").append("]");
+            textoMostrar = sb.toString();
+        }
+        agregarMensaje(textoMostrar, true, false);
         inputField.clear();
         inputField.setDisable(true);
         badgeIA.setText("⏳ consultando...");
@@ -82,7 +155,7 @@ public class ChatWidgetController {
         Thread hilo = new Thread(() -> {
             GeminiChatbotService.RespuestaChat rc;
             try {
-                rc = chatbotService.preguntarConEstado(texto);
+                rc = chatbotService.preguntarConEstado(texto, vehMarca, vehModelo, vehAnio);
             } catch (Exception e) {
                 rc = new GeminiChatbotService.RespuestaChat("Ocurrió un error. Intenta de nuevo.", GeminiChatbotService.EstadoIA.SIN_IA_CONEXION, true);
             }

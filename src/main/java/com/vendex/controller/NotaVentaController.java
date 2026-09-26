@@ -72,6 +72,10 @@ public class NotaVentaController implements Initializable {
     
     // Tabla Busqueda Inventario
     @FXML private TextField txtBuscarProducto;
+    @FXML private ComboBox<String> cmbProdVehMarca;
+    @FXML private ComboBox<String> cmbProdVehModelo;
+    @FXML private ComboBox<Integer> cmbProdVehAnio;
+    @FXML private Label lblProdFiltroVeh;
     @FXML private TableView<Inventario> tblInventarioBusqueda;
     @FXML private TableColumn<Inventario, String> colInvCodigo, colInvDescripcion;
     @FXML private TableColumn<Inventario, String> colInvMarca;
@@ -106,12 +110,19 @@ public class NotaVentaController implements Initializable {
     private final CuentaPorCobrarDAO daoCuentaPorCobrar = new CuentaPorCobrarDAOPostgres();
     private final LogDAO logDAO = new LogDAOPostgres();
     private final HistorialProductoDAO historialProductoDAO = new HistorialProductoDAOPostgres();
+    private final com.vendex.dao.VehiculoDAO vehiculoDAO = new com.vendex.dao.VehiculoDAOPostgres();
+    private final com.vendex.dao.InventarioVehiculoDAO inventarioVehiculoDAO = new com.vendex.dao.InventarioVehiculoDAOPostgres();
 
     private Empresa empresaActual;
 
     private ObservableList<Cliente> clientes;
     private ObservableList<Inventario> listaInventario = FXCollections.observableArrayList();
     private ObservableList<DetalleVenta> itemsDetalle = FXCollections.observableArrayList();
+
+    private FilteredList<Inventario> filtradosProd;
+    private java.util.Set<Integer> idsVehProd;
+    private static final String TODAS = "Todas";
+    private static final String TODOS = "Todos";
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -219,21 +230,109 @@ public class NotaVentaController implements Initializable {
         colInvUbicacion.setCellValueFactory(new PropertyValueFactory<>("ubicacionPercha"));
 
         listaInventario.setAll(daoInventario.listar());
-        FilteredList<Inventario> filtradosProd = new FilteredList<>(listaInventario, p -> true);
-        
-        txtBuscarProducto.textProperty().addListener((obs, old, val) -> {
-            if (val == null || val.trim().isEmpty()) {
-                filtradosProd.setPredicate(p -> true);
-            } else {
-                String texto = val.toLowerCase();
-                filtradosProd.setPredicate(inv -> {
-                    String searchStr = (inv.getCodigo() + " " + inv.getDescripcion() + " " + inv.getGrupo() + " " + inv.getMarca()).toLowerCase();
-                    return searchStr.contains(texto);
-                });
-            }
-        });
-        
+        filtradosProd = new FilteredList<>(listaInventario, p -> true);
+
+        txtBuscarProducto.textProperty().addListener((obs, old, val) -> aplicarFiltroProductos());
+        iniciarFiltrosVehiculoProducto();
+
         tblInventarioBusqueda.setItems(filtradosProd);
+    }
+
+    private void iniciarFiltrosVehiculoProducto() {
+        if (cmbProdVehMarca == null) return;
+        try {
+            List<String> marcas = new ArrayList<>();
+            marcas.add(TODAS);
+            marcas.addAll(vehiculoDAO.listarMarcas());
+            cmbProdVehMarca.setItems(FXCollections.observableArrayList(marcas));
+            cmbProdVehMarca.setValue(TODAS);
+        } catch (Exception e) {
+            cmbProdVehMarca.setDisable(true);
+            if (cmbProdVehModelo != null) cmbProdVehModelo.setDisable(true);
+            if (cmbProdVehAnio != null) cmbProdVehAnio.setDisable(true);
+            return;
+        }
+        cmbProdVehMarca.setOnAction(e -> {
+            String marca = valorVeh(cmbProdVehMarca.getValue());
+            List<String> modelos = new ArrayList<>();
+            modelos.add(TODOS);
+            if (marca != null) {
+                try { modelos.addAll(vehiculoDAO.listarModelosPorMarca(marca)); } catch (Exception ignore) {}
+            }
+            cmbProdVehModelo.setItems(FXCollections.observableArrayList(modelos));
+            cmbProdVehModelo.setValue(TODOS);
+            cmbProdVehAnio.getItems().clear();
+            aplicarFiltroProductos();
+        });
+        cmbProdVehModelo.setOnAction(e -> {
+            String marca = valorVeh(cmbProdVehMarca.getValue());
+            String modelo = valorVeh(cmbProdVehModelo.getValue());
+            List<Integer> anios = new ArrayList<>();
+            if (marca != null && modelo != null) {
+                try { anios.addAll(vehiculoDAO.listarAniosPorModelo(marca, modelo)); } catch (Exception ignore) {}
+            }
+            anios.add(0, null);
+            cmbProdVehAnio.setItems(FXCollections.observableArrayList(anios));
+            cmbProdVehAnio.setConverter(new StringConverter<Integer>() {
+                @Override public String toString(Integer v) { return v == null ? "Todos" : String.valueOf(v); }
+                @Override public Integer fromString(String s) { return null; }
+            });
+            cmbProdVehAnio.setValue(null);
+            aplicarFiltroProductos();
+        });
+        cmbProdVehAnio.setOnAction(e -> aplicarFiltroProductos());
+    }
+
+    private String valorVeh(String v) {
+        if (v == null || v.isBlank()) return null;
+        String t = v.trim();
+        if (TODAS.equalsIgnoreCase(t) || TODOS.equalsIgnoreCase(t)) return null;
+        return t;
+    }
+
+    @FXML
+    private void limpiarFiltroVehiculo() {
+        if (cmbProdVehMarca != null) cmbProdVehMarca.setValue(TODAS);
+        if (cmbProdVehModelo != null) cmbProdVehModelo.getItems().clear();
+        if (cmbProdVehAnio != null) cmbProdVehAnio.getItems().clear();
+        idsVehProd = null;
+        if (lblProdFiltroVeh != null) lblProdFiltroVeh.setText("");
+        aplicarFiltroProductos();
+    }
+
+    private java.util.Set<Integer> calcularIdsVehiculo() {
+        String marca = cmbProdVehMarca != null ? valorVeh(cmbProdVehMarca.getValue()) : null;
+        String modelo = cmbProdVehModelo != null ? valorVeh(cmbProdVehModelo.getValue()) : null;
+        Integer anio = cmbProdVehAnio != null ? cmbProdVehAnio.getValue() : null;
+        if (lblProdFiltroVeh != null) {
+            String resumen = (marca != null ? marca : "") + (modelo != null ? " " + modelo : "") + (anio != null ? " " + anio : "");
+            lblProdFiltroVeh.setText(resumen.isBlank() ? "" : "Filtro: " + resumen.trim());
+        }
+        if (marca == null && modelo == null && anio == null) return null;
+        try {
+            java.util.Set<Integer> ids = new java.util.HashSet<>();
+            for (Vehiculo v : vehiculoDAO.buscar(marca, modelo, anio)) {
+                ids.addAll(inventarioVehiculoDAO.listarInventarioIdsPorVehiculo(v.getId()));
+            }
+            return ids;
+        } catch (Exception e) {
+            logDAO.guardar("NotaVentaController", "calcularIdsVehiculo", e.getMessage(), e);
+            return new java.util.HashSet<>();
+        }
+    }
+
+    private void aplicarFiltroProductos() {
+        if (filtradosProd == null) return;
+        idsVehProd = calcularIdsVehiculo();
+        String texto = txtBuscarProducto.getText();
+        java.util.Set<Integer> ids = idsVehProd;
+        filtradosProd.setPredicate(p -> {
+            if (ids != null && !ids.contains(p.getId())) return false;
+            if (texto == null || texto.trim().isEmpty()) return true;
+            String t = texto.toLowerCase();
+            String searchStr = (p.getCodigo() + " " + p.getDescripcion() + " " + p.getGrupo() + " " + p.getMarca()).toLowerCase();
+            return searchStr.contains(t);
+        });
     }
 
     private void iniciarTablaDetalle() {

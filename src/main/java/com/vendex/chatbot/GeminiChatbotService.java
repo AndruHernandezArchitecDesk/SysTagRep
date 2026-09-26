@@ -95,7 +95,15 @@ public class GeminiChatbotService {
     }
 
     public RespuestaChat preguntarConEstado(String textoUsuario) {
-        String r = preguntar(textoUsuario);
+        return preguntarConEstado(textoUsuario, null, null, null);
+    }
+
+    /**
+     * @param vehMarca/modelo/anio filtros explícitos elegidos en la UI (tienen prioridad
+     *                             sobre lo que extraiga Gemini del texto).
+     */
+    public RespuestaChat preguntarConEstado(String textoUsuario, String vehMarca, String vehModelo, Integer vehAnio) {
+        String r = preguntar(textoUsuario, vehMarca, vehModelo, vehAnio);
         boolean sinIA = estado != EstadoIA.IA_ACTIVA;
         // si no había key, sinIA=true; si había key pero falló, también sinIA
         // si key existe y no falló, es IA activa
@@ -103,6 +111,10 @@ public class GeminiChatbotService {
     }
 
     public String preguntar(String textoUsuario) {
+        return preguntar(textoUsuario, null, null, null);
+    }
+
+    public String preguntar(String textoUsuario, String vehMarca, String vehModelo, Integer vehAnio) {
         if (textoUsuario == null || textoUsuario.isBlank()) {
             return "Escribe el nombre del repuesto que buscas, ej: 'tapa radiador aveo'.";
         }
@@ -111,10 +123,10 @@ public class GeminiChatbotService {
         if (!tieneGemini) {
             estado = EstadoIA.SIN_API_KEY;
             ultimoError = "Sin API key: configura en Ayuda > Configurar IA o env GEMINI_API_KEY";
-            return prefijoSinIA(EstadoIA.SIN_API_KEY) + preguntarSoloLocal(textoUsuario);
+            return prefijoSinIA(EstadoIA.SIN_API_KEY) + preguntarSoloLocal(textoUsuario, vehMarca, vehModelo, vehAnio);
         }
         try {
-            String r = preguntarConGemini(textoUsuario, apiKey);
+            String r = preguntarConGemini(textoUsuario, apiKey, vehMarca, vehModelo, vehAnio);
             estado = EstadoIA.IA_ACTIVA;
             ultimoError = "";
             return r;
@@ -122,13 +134,13 @@ public class GeminiChatbotService {
             estado = ge.estado;
             ultimoError = ge.getMessage();
             LOGGER.log(Level.WARNING, "Gemini falló (" + ge.estado + "): " + ge.getMessage());
-            String local = preguntarSoloLocal(textoUsuario);
+            String local = preguntarSoloLocal(textoUsuario, vehMarca, vehModelo, vehAnio);
             return prefijoSinIA(ge.estado) + local + "\n\n(" + ge.mensajeUsuario() + ")";
         } catch (Exception e) {
             estado = EstadoIA.SIN_IA_CONEXION;
             ultimoError = e.getMessage();
             LOGGER.log(Level.WARNING, "Error chatbot fallback local", e);
-            return prefijoSinIA(EstadoIA.SIN_IA_CONEXION) + preguntarSoloLocal(textoUsuario);
+            return prefijoSinIA(EstadoIA.SIN_IA_CONEXION) + preguntarSoloLocal(textoUsuario, vehMarca, vehModelo, vehAnio);
         }
     }
 
@@ -146,12 +158,15 @@ public class GeminiChatbotService {
         };
     }
 
-    private String preguntarSoloLocal(String texto) {
-        ResultadoBusqueda r = repuestoDao.buscar(texto.trim(), null, null, null);
+    private String preguntarSoloLocal(String texto, String vehMarca, String vehModelo, Integer vehAnio) {
+        ResultadoBusqueda r = repuestoDao.buscar(texto.trim(), vehMarca, vehModelo, vehAnio);
+        if (!r.isEncontrado() && (vehMarca != null || vehModelo != null || vehAnio != null)) {
+            r = repuestoDao.buscar(texto.trim(), null, null, null);
+        }
         return formatearRespuesta(r, texto);
     }
 
-    private String preguntarConGemini(String texto, String apiKey) throws Exception {
+    private String preguntarConGemini(String texto, String apiKey, String vehMarca, String vehModelo, Integer vehAnio) throws Exception {
         // Prompt único: extracción + sugerencia por síntoma
         String prompt = """
                 Eres asesor experto de repuestos automotrices para ERP Vendex.
@@ -201,11 +216,16 @@ public class GeminiChatbotService {
         }
 
         String descripcionBusqueda = descripcion;
+        // Filtros explícitos de la UI tienen prioridad sobre lo extraído por Gemini
+        if (vehMarca != null && !vehMarca.isBlank()) marca = vehMarca;
+        if (vehModelo != null && !vehModelo.isBlank()) modelo = vehModelo;
+        if (vehAnio != null) anio = vehAnio;
         if (marca != null) descripcionBusqueda += " " + marca;
         if (modelo != null) descripcionBusqueda += " " + modelo;
+        if (anio != null) descripcionBusqueda += " " + anio;
 
         ResultadoBusqueda r = repuestoDao.buscar(descripcionBusqueda, marca, modelo, anio);
-        if (!r.isEncontrado() && !descripcionBusqueda.equals(descripcion)) r = repuestoDao.buscar(descripcion, null, null, null);
+        if (!r.isEncontrado() && !descripcionBusqueda.equals(descripcion)) r = repuestoDao.buscar(descripcion, marca, modelo, anio);
         if (!r.isEncontrado() && !descripcion.equals(texto)) r = repuestoDao.buscar(texto, null, null, null);
 
         String respuestaLocal = formatearRespuesta(r, descripcionBusqueda);
