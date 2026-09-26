@@ -44,8 +44,8 @@ public class FacturaRegistroDAOPostgres implements FacturaRegistroDAO {
 
     public int insertar(Connection con, FacturaRegistro fr) throws SQLException {
         String sql = "INSERT INTO factura_registro(empresa_id, cliente_id, fecha, codigo, forma_pago, " +
-                     "subtotal, iva, descuento, total, clave_acceso, num_comprobante, ambiente_sri, estado_sri, fecha_registro) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id";
+                     "subtotal, iva, descuento, total, clave_acceso, num_comprobante, ambiente_sri, estado_sri, fecha_registro, sucursal_id) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, fr.getEmpresaId());
             ps.setInt(2, fr.getClienteId());
@@ -61,6 +61,7 @@ public class FacturaRegistroDAOPostgres implements FacturaRegistroDAO {
             ps.setString(12, fr.getAmbienteSri());
             ps.setString(13, fr.getEstadoSri());
             ps.setObject(14, fr.getFechaRegistro());
+            ps.setInt(15, fr.getSucursalId() > 0 ? fr.getSucursalId() : 1);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) return rs.getInt("id");
         }
@@ -228,5 +229,6 @@ public class FacturaRegistroDAOPostgres implements FacturaRegistroDAO {
         f.setEstadoSri(rs.getString("estado_sri_actual"));
         f.setMensajeSri(rs.getString("mensaje_sri"));
         f.setFechaRegistro(rs.getObject("fecha_registro", LocalDateTime.class));
+        try { f.setSucursalId(rs.getInt("sucursal_id")); if (rs.wasNull()) f.setSucursalId(1); } catch (Exception ignore) { f.setSucursalId(1); }
     }
 }

@@ -14,6 +14,7 @@ public class CajaSesion {
     private String estado;
     private String observaciones;
 
+    private int sucursalId = 1;
     public CajaSesion() {}
 
     public CajaSesion(int usuarioId, BigDecimal montoInicial, String observaciones) {
@@ -49,4 +50,7 @@ public class CajaSesion {
 
     public String getObservaciones() { return observaciones; }
     public void setObservaciones(String observaciones) { this.observaciones = observaciones; }
+
+    public int getSucursalId() { return sucursalId; }
+    public void setSucursalId(int sucursalId) { this.sucursalId = sucursalId; }
 }

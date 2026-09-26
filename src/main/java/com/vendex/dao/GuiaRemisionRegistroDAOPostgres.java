@@ -19,7 +19,7 @@ public class GuiaRemisionRegistroDAOPostgres implements GuiaRemisionRegistroDAO 
     public int insertar(GuiaRemisionRegistro r) {
         try (Connection con = DatabaseConnection.getConnection()) { return insertar(con, r); } catch (SQLException e) { if (e.getMessage() != null && e.getMessage().contains("does not exist")) { DatabaseConnection.ensureGuiaRemisionSchema(); return insertar(r); } LOGGER.log(Level.SEVERE, "insertar GR", e); } return -1; }
     public int insertar(Connection con, GuiaRemisionRegistro r) throws SQLException {
-        String sql = "INSERT INTO guia_remision_registro(clave_acceso, establecimiento, punto_emision, secuencial, fecha_emision, dir_partida, razon_social_transportista, tipo_identificacion_transportista, ruc_transportista, placa, fecha_ini_transporte, fecha_fin_transporte, estado_sri, xml_firmado, usuario_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id";
+        String sql = "INSERT INTO guia_remision_registro(clave_acceso, establecimiento, punto_emision, secuencial, fecha_emision, dir_partida, razon_social_transportista, tipo_identificacion_transportista, ruc_transportista, placa, fecha_ini_transporte, fecha_fin_transporte, estado_sri, xml_firmado, usuario_id, sucursal_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, r.getClaveAcceso());
             ps.setString(2, r.getEstablecimiento());
@@ -36,6 +36,7 @@ public class GuiaRemisionRegistroDAOPostgres implements GuiaRemisionRegistroDAO 
             ps.setString(13, r.getEstadoSri());
             ps.setString(14, r.getXmlFirmado());
             ps.setInt(15, r.getUsuarioId());
+            ps.setInt(16, r.getSucursalId() > 0 ? r.getSucursalId() : 1);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) return rs.getInt(1);
         }
@@ -114,6 +115,7 @@ public class GuiaRemisionRegistroDAOPostgres implements GuiaRemisionRegistroDAO 
         try { r.setFechaAutorizacion(rs.getObject("fecha_autorizacion", LocalDateTime.class)); } catch (Exception e) { Timestamp t = rs.getTimestamp("fecha_autorizacion"); r.setFechaAutorizacion(t != null ? t.toLocalDateTime() : null); }
         r.setXmlFirmado(rs.getString("xml_firmado"));
         r.setUsuarioId(rs.getInt("usuario_id"));
+        try { r.setSucursalId(rs.getInt("sucursal_id")); if (rs.wasNull()) r.setSucursalId(1); } catch (Exception ignore) { r.setSucursalId(1); }
         return r;
     }
 }

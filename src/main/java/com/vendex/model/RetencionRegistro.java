@@ -22,6 +22,7 @@ public class RetencionRegistro {
     private String xmlFirmado;
     private int usuarioId;
 
+    private int sucursalId = 1;
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
     public String getClaveAcceso() { return claveAcceso; }
@@ -58,4 +59,7 @@ public class RetencionRegistro {
     public void setXmlFirmado(String v) { this.xmlFirmado = v; }
     public int getUsuarioId() { return usuarioId; }
     public void setUsuarioId(int v) { this.usuarioId = v; }
+
+    public int getSucursalId() { return sucursalId; }
+    public void setSucursalId(int sucursalId) { this.sucursalId = sucursalId; }
 }

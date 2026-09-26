@@ -28,6 +28,7 @@ public class NotaCreditoRegistro {
     private String nombreCliente;
     private String numComprobante;
 
+    private int sucursalId = 1;
     public NotaCreditoRegistro() {}
 
     public int getId() { return id; }
@@ -81,4 +82,7 @@ public class NotaCreditoRegistro {
     public void setCreadoEn(LocalDateTime creadoEn) { this.creadoEn = creadoEn; }
     public String getNombreCliente() { return nombreCliente; }
     public void setNombreCliente(String nombreCliente) { this.nombreCliente = nombreCliente; }
+
+    public int getSucursalId() { return sucursalId; }
+    public void setSucursalId(int sucursalId) { this.sucursalId = sucursalId; }
 }

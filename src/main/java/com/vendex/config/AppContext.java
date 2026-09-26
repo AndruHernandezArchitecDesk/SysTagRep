@@ -62,6 +62,8 @@ public class AppContext {
     public final AlertaDAO alertaDAO;
     public final LoginIntentoLogDAO loginIntentoLogDAO;
     public final DashboardDAO dashboardDAO;
+    public final SucursalDAO sucursalDAO;
+    public final TransferenciaInventarioDAO transferenciaInventarioDAO;
 
     // Servicios
     public final FacturaService facturaService;
@@ -69,6 +71,7 @@ public class AppContext {
     public final NotaDebitoService notaDebitoService;
     public final GuiaRemisionService guiaRemisionService;
     public final RetencionService retencionService;
+    public final TransferenciaInventarioService transferenciaInventarioService;
 
     private AppContext() {
         // DAOs Postgres
@@ -120,6 +123,8 @@ public class AppContext {
         this.alertaDAO = new AlertaDAOPostgres();
         this.loginIntentoLogDAO = new LoginIntentoLogDAOPostgres();
         this.dashboardDAO = new DashboardDAOPostgres();
+        this.sucursalDAO = new SucursalDAOPostgres();
+        this.transferenciaInventarioDAO = new TransferenciaInventarioDAOPostgres();
 
         // Servicios con inyección por constructor
         this.facturaService = new FacturaService(
@@ -142,6 +147,9 @@ public class AppContext {
         this.retencionService = new RetencionService(
                 empresaDAO, proveedorDAO, secuenciaDAO, comprobanteDAO,
                 retencionRegistroDAO, retencionDocumentoSustentoDAO, retencionDetalleDAO
+        );
+        this.transferenciaInventarioService = new TransferenciaInventarioService(
+                inventarioDAO, sucursalDAO, transferenciaInventarioDAO, logDAO
         );
     }
 

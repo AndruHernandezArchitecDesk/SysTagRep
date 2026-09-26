@@ -90,6 +90,11 @@ public class CertificadoAlertaService {
 
             return new ResultadoAlerta(info, banner, modal, correo, msgBanner, msgModal, msgCorreo);
         } catch (Exception e) {
+            String msg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
+            if (msg.contains("contraseña del .p12 incorrecta") || msg.contains("keystore password was incorrect") || msg.contains("badpaddingexception")) {
+                LOGGER.log(Level.INFO, "verificar certificado: contraseña .p12 incorrecta (reconfigure en Firma Electrónica) - ruta: " + ruta);
+                return null;
+            }
             LOGGER.log(Level.WARNING, "verificar certificado", e);
             // persistir como error para que quede rastro
             try { dao.guardarEstado(ruta, e.getMessage(), null, LocalDate.now().plusDays(999), 999, "VIGENTE"); } catch (Exception ignore) {}

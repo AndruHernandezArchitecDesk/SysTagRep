@@ -60,6 +60,14 @@ public interface InventarioDAO {
 
     Inventario obtenerPorId(int id);
 
+    Inventario obtenerPorId(Connection con, int id) throws SQLException;
+
+    Inventario obtenerPorCodigoYSucursal(String codigo, int sucursalId);
+
+    Inventario obtenerPorCodigoYSucursal(Connection con, String codigo, int sucursalId) throws SQLException;
+
+    List<Inventario> listarPorSucursal(int sucursalId);
+
     List<String> buscarDescripciones(String filtro, int limit);
 
 }

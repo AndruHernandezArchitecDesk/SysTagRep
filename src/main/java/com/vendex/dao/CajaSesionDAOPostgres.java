@@ -15,13 +15,14 @@ public class CajaSesionDAOPostgres implements CajaSesionDAO {
     private static final Logger LOGGER = Logger.getLogger(CajaSesionDAO.class.getName());
 
     public int abrir(CajaSesion s) {
-        String sql = "INSERT INTO caja_sesion(usuario_id, monto_inicial, observaciones, estado) VALUES (?, ?, ?, ?) RETURNING id";
+        String sql = "INSERT INTO caja_sesion(usuario_id, monto_inicial, observaciones, estado, sucursal_id) VALUES (?, ?, ?, ?, ?) RETURNING id";
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, s.getUsuarioId());
             ps.setBigDecimal(2, s.getMontoInicial());
             ps.setString(3, s.getObservaciones());
             ps.setString(4, s.getEstado());
+            ps.setInt(5, s.getSucursalId() > 0 ? s.getSucursalId() : 1);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return rs.getInt(1);
             }
@@ -32,13 +33,27 @@ public class CajaSesionDAOPostgres implements CajaSesionDAO {
     }
 
     public CajaSesion obtenerAbierta() {
-        String sql = "SELECT * FROM caja_sesion WHERE estado = 'ABIERTA' ORDER BY fecha_apertura DESC LIMIT 1";
+        String sql = "SELECT * FROM caja_sesion WHERE estado = 'ABIERTA' AND sucursal_id = ? ORDER BY fecha_apertura DESC LIMIT 1";
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            if (rs.next()) return mapear(rs);
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, com.vendex.util.SucursalActual.getId());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapear(rs);
+            }
         } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Error en CajaSesionDAO.obtenerAbierta", e);
+            // Fallback sin sucursal_id (HSQLDB tests sin V24)
+            if (e.getMessage() != null && e.getMessage().toLowerCase().contains("sucursal_id")) {
+                String fallback = "SELECT * FROM caja_sesion WHERE estado = 'ABIERTA' ORDER BY fecha_apertura DESC LIMIT 1";
+                try (Connection con2 = DatabaseConnection.getConnection();
+                     PreparedStatement ps2 = con2.prepareStatement(fallback);
+                     ResultSet rs2 = ps2.executeQuery()) {
+                    if (rs2.next()) return mapear(rs2);
+                } catch (SQLException ex) {
+                    LOGGER.log(Level.SEVERE, "Error en CajaSesionDAO.obtenerAbierta fallback", ex);
+                }
+            } else {
+                LOGGER.log(Level.SEVERE, "Error en CajaSesionDAO.obtenerAbierta", e);
+            }
         }
         return null;
     }
@@ -114,6 +129,7 @@ public class CajaSesionDAOPostgres implements CajaSesionDAO {
         s.setMontoFisico(rs.getBigDecimal("monto_fisico"));
         s.setDiferencia(rs.getBigDecimal("diferencia"));
         s.setEstado(rs.getString("estado"));
+        try { s.setSucursalId(rs.getInt("sucursal_id")); if (rs.wasNull()) s.setSucursalId(1); } catch (Exception ignore) { s.setSucursalId(1); }
         s.setObservaciones(rs.getString("observaciones"));
         return s;
     }

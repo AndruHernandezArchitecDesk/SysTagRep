@@ -254,6 +254,7 @@ public class GuiaRemisionService {
         gr.setEstadoSri(AppConstants.ESTADO_PENDIENTE);
         gr.setXmlFirmado(xmlFirmado);
         gr.setUsuarioId(usuarioId);
+        gr.setSucursalId(com.vendex.util.SucursalActual.getId());
         int guiaId;
         try (Connection con = DatabaseConnection.getConnection()) {
             con.setAutoCommit(false);

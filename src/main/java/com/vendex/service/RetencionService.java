@@ -207,6 +207,7 @@ public class RetencionService {
         reg.setEstadoSri(AppConstants.ESTADO_PENDIENTE);
         reg.setXmlFirmado(xmlFirmado);
         reg.setUsuarioId(usuarioId);
+        reg.setSucursalId(com.vendex.util.SucursalActual.getId());
         int retId;
         try (Connection con = DatabaseConnection.getConnection()) {
             con.setAutoCommit(false);

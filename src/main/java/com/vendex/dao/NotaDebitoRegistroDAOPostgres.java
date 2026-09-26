@@ -31,8 +31,8 @@ public class NotaDebitoRegistroDAOPostgres implements NotaDebitoRegistroDAO {
     public int insertar(Connection con, NotaDebitoRegistro nd) throws SQLException {
         String sql = "INSERT INTO nota_debito_registro(clave_acceso, factura_registro_id, establecimiento, punto_emision, secuencial, " +
                 "fecha_emision, cliente_id, forma_pago, total_sin_impuestos, valor_iva, valor_total, " +
-                "estado_sri, mensaje_sri, numero_autorizacion, fecha_autorizacion, xml_firmado, usuario_id) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id";
+                "estado_sri, mensaje_sri, numero_autorizacion, fecha_autorizacion, xml_firmado, usuario_id, sucursal_id) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, nd.getClaveAcceso());
             ps.setInt(2, nd.getFacturaRegistroId());
@@ -51,6 +51,7 @@ public class NotaDebitoRegistroDAOPostgres implements NotaDebitoRegistroDAO {
             ps.setObject(15, nd.getFechaAutorizacion());
             ps.setString(16, nd.getXmlFirmado());
             ps.setInt(17, nd.getUsuarioId());
+            ps.setInt(18, nd.getSucursalId() > 0 ? nd.getSucursalId() : 1);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) return rs.getInt(1);
         }
@@ -177,6 +178,7 @@ public class NotaDebitoRegistroDAOPostgres implements NotaDebitoRegistroDAO {
         if (fa != null) n.setFechaAutorizacion(fa.toLocalDateTime());
         n.setXmlFirmado(rs.getString("xml_firmado"));
         n.setUsuarioId(rs.getInt("usuario_id"));
+        try { n.setSucursalId(rs.getInt("sucursal_id")); if (rs.wasNull()) n.setSucursalId(1); } catch (Exception ignore) { n.setSucursalId(1); }
         Timestamp ce = rs.getTimestamp("creado_en");
         if (ce != null) n.setCreadoEn(ce.toLocalDateTime());
         try { n.setNombreCliente(rs.getString("nombre_cliente")); } catch (SQLException ignore) {}

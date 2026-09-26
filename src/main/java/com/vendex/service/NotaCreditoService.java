@@ -198,6 +198,7 @@ public class NotaCreditoService {
         nc.setEstadoSri(AppConstants.ESTADO_PENDIENTE);
         nc.setXmlFirmado(xmlFirmado);
         nc.setUsuarioId(usuarioId);
+        nc.setSucursalId(com.vendex.util.SucursalActual.getId());
         int ncId;
         try (Connection con = DatabaseConnection.getConnection()) {
             con.setAutoCommit(false);

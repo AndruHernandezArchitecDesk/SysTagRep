@@ -215,6 +215,7 @@ public class NotaDebitoService {
         nd.setEstadoSri(AppConstants.ESTADO_PENDIENTE);
         nd.setXmlFirmado(xmlFirmado);
         nd.setUsuarioId(usuarioId);
+        nd.setSucursalId(com.vendex.util.SucursalActual.getId());
         int ndId;
         try (Connection con = DatabaseConnection.getConnection()) {
             con.setAutoCommit(false);

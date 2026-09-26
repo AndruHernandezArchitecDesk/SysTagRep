@@ -53,11 +53,14 @@ public class MainApp extends Application {
         DatabaseConnection.ensureLoginBruteForceSchema();
         DatabaseConnection.ensurePermisosGranularesSchema();
         DatabaseConnection.ensureComprobantePendienteSriSchema();
+        DatabaseConnection.ensureSucursalSchema();
         // SRI contingencia: cola persistente todo a cola (desacople mostrador)
         try { com.vendex.service.ServicioReintentoSri.getInstance().start(); } catch (Exception e) { System.err.println("No se pudo iniciar SRI reintento: " + e.getMessage()); }
         // Activacion solo en host (localhost). PC cliente con db.url remota (vendex-db) no requiere licencia local.
         boolean esRemota = DbConfig.esRemota();
         AppContext appContext = AppContext.getInstance();
+        // API REST multi-sucursal (opcional, -Dapi.enabled=true -Dapi.port=7070)
+        try { com.vendex.config.ApiServer.startIfEnabled(); } catch (Exception e) { System.err.println("API no iniciada: " + e.getMessage()); }
         VendexControllerFactory controllerFactory = new VendexControllerFactory(appContext);
         if (!esRemota && !LicenseManager.isActivated()) {
             FXMLLoader loader = new FXMLLoader(

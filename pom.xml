@@ -203,6 +203,11 @@
             <artifactId>slf4j-api</artifactId>
             <version>1.7.36</version>
         </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>1.7.36</version>
+        </dependency>
         <!-- Testcontainers Postgres para tests de integración (reemplaza HSQLDB) -->
         <dependency>
             <groupId>org.testcontainers</groupId>
@@ -215,6 +220,12 @@
             <artifactId>junit-jupiter</artifactId>
             <version>1.19.8</version>
             <scope>test</scope>
+        </dependency>
+        <!-- Javalin API REST (IDEAS_PENDIENTES multi-sucursal / tienda web) -->
+        <dependency>
+            <groupId>io.javalin</groupId>
+            <artifactId>javalin</artifactId>
+            <version>6.3.0</version>
         </dependency>
     </dependencies>
 
@@ -229,6 +240,7 @@
                     <options>
                         <option>-Xmx1024m</option>
                         <option>-Xms128m</option>
+                        <option>--enable-native-access=ALL-UNNAMED</option>
                     </options>
                 </configuration>
             </plugin>
@@ -274,6 +286,7 @@
                         <include>**/*TestCase.java</include>
                     </includes>
                     <useModulePath>false</useModulePath>
+                    <argLine>--enable-native-access=ALL-UNNAMED</argLine>
                 </configuration>
             </plugin>
         </plugins>

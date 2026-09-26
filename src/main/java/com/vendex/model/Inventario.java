@@ -26,6 +26,7 @@ public class Inventario {
     private BigDecimal interes;
     private String numeroFactura;
 
+    private int sucursalId = 1;
     public Inventario() {}
 
     // Getters y Setters
@@ -91,4 +92,7 @@ public class Inventario {
 
     public String getNumeroFactura() { return numeroFactura; }
     public void setNumeroFactura(String numeroFactura) { this.numeroFactura = numeroFactura; }
+
+    public int getSucursalId() { return sucursalId; }
+    public void setSucursalId(int sucursalId) { this.sucursalId = sucursalId; }
 }

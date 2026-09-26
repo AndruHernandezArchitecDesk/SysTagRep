@@ -22,6 +22,7 @@ public class FacturaRegistro {
     private LocalDateTime fechaRegistro;
     private String nombreCliente;
 
+    private int sucursalId = 1;
     public FacturaRegistro() {}
 
     public FacturaRegistro(int empresaId, int clienteId, LocalDateTime fecha, String codigo,
@@ -92,4 +93,7 @@ public class FacturaRegistro {
 
     public String getNombreCliente() { return nombreCliente; }
     public void setNombreCliente(String nombreCliente) { this.nombreCliente = nombreCliente; }
+
+    public int getSucursalId() { return sucursalId; }
+    public void setSucursalId(int sucursalId) { this.sucursalId = sucursalId; }
 }

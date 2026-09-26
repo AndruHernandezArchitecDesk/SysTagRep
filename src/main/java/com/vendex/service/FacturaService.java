@@ -134,6 +134,7 @@ public class FacturaService {
 
                 FacturaRegistro fr = new FacturaRegistro(empresaId, clienteId, ahora, codigo, formaPago, sub, ivaCalc, descCalc, totCalc, claveAcceso, numComprobante, ambienteSri);
                 fr.setEstadoSri(AppConstants.ESTADO_PENDIENTE);
+                fr.setSucursalId(com.vendex.util.SucursalActual.getId());
                 facturaId = facturaRegistroDAO.insertar(con, fr);
                 if (facturaId == -1) throw new IllegalStateException("Error al registrar la factura.");
 

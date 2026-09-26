@@ -27,6 +27,7 @@ public class CajaService {
             throw new IllegalStateException("Ya existe una sesión de caja abierta (ID: " + abierta.getId() + ")");
         }
         CajaSesion s = new CajaSesion(usuarioId, montoInicial, observaciones);
+        s.setSucursalId(com.vendex.util.SucursalActual.getId());
         return sesionDAO.abrir(s);
     }
 

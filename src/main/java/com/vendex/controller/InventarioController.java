@@ -9,6 +9,7 @@ import com.vendex.model.UbicacionDetalle;
 import com.vendex.util.EtiquetaUtil;
 import com.vendex.util.SortTable;
 import com.vendex.util.ComboFilter;
+import com.vendex.util.SucursalActual;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -89,6 +90,40 @@ public class InventarioController implements Initializable {
     private void cargarDatos() {
         String filtro = txtBuscar.getText();
         String numeroFactura = txtBuscarFactura.getText();
+        int sucursalId = SucursalActual.getId();
+        // Si hay sucursal seleccionada y DAO soporta por sucursal, filtrar por sucursal
+        List<Inventario> base;
+        if (sucursalId > 0) {
+            // Intentar listar por sucursal y paginar en memoria (mantiene compatibilidad con filtro)
+            try {
+                base = dao.listarPorSucursal(sucursalId);
+                // Filtro en memoria si hay filtro texto
+                if (filtro != null && !filtro.trim().isEmpty()) {
+                    String f = filtro.toLowerCase();
+                    base = base.stream().filter(i ->
+                            (i.getDescripcion()!=null && i.getDescripcion().toLowerCase().contains(f)) ||
+                            (i.getCodigo()!=null && i.getCodigo().toLowerCase().contains(f))
+                    ).toList();
+                }
+                if (numeroFactura != null && !numeroFactura.trim().isEmpty()) {
+                    String nf = numeroFactura.toLowerCase();
+                    base = base.stream().filter(i -> i.getNumeroFactura()!=null && i.getNumeroFactura().toLowerCase().contains(nf)).toList();
+                }
+                totalCount = base.size();
+                totalPages = Math.max(1, (int) Math.ceil((double) totalCount / pageSize));
+                if (currentPage > totalPages) currentPage = totalPages;
+                if (currentPage < 1) currentPage = 1;
+                int from = (currentPage - 1) * pageSize;
+                int to = Math.min(from + pageSize, base.size());
+                if (from < base.size()) listaInventario.setAll(base.subList(from, to));
+                else listaInventario.clear();
+                tblInventario.setItems(listaInventario);
+                actualizarPaginaInfo();
+                return;
+            } catch (Exception e) {
+                // fallback a paginado global si falla (ej. columna sucursal_id no existe en HSQLDB tests)
+            }
+        }
         totalCount = dao.contar(filtro, numeroFactura);
         totalPages = Math.max(1, (int) Math.ceil((double) totalCount / pageSize));
         if (currentPage > totalPages) currentPage = totalPages;

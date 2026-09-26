@@ -26,6 +26,7 @@ public class NotaDebitoRegistro {
     private String nombreCliente;
     private String numComprobante;
 
+    private int sucursalId = 1;
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
     public String getClaveAcceso() { return claveAcceso; }
@@ -68,4 +69,7 @@ public class NotaDebitoRegistro {
     public void setNombreCliente(String nombreCliente) { this.nombreCliente = nombreCliente; }
     public String getNumComprobante() { return numComprobante; }
     public void setNumComprobante(String numComprobante) { this.numComprobante = numComprobante; }
+
+    public int getSucursalId() { return sucursalId; }
+    public void setSucursalId(int sucursalId) { this.sucursalId = sucursalId; }
 }

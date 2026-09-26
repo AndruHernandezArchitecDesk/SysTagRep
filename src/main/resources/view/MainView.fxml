@@ -88,6 +88,10 @@
                     <MenuItem fx:id="menuModoTema" text="Modo Dark" onAction="#cambiarTema"/>
                 </Menu>
             </MenuBar>
+            <HBox alignment="CENTER_LEFT" spacing="6" style="-fx-padding: 0 8 0 8;">
+                <Label text="Sucursal:" style="-fx-font-weight: bold; -fx-font-size: 11px;"/>
+                <ComboBox fx:id="cmbSucursal" prefWidth="160" style="-fx-font-size: 11px;"/>
+            </HBox>
             <Button fx:id="btnToggleTema" onAction="#cambiarTema" styleClass="btn-orden" prefHeight="28" prefWidth="42">
                 <graphic>
                     <FontIcon fx:id="iconToggleTema" iconLiteral="fas-moon" iconSize="16"/>

@@ -41,7 +41,17 @@ public class CertificadoDigitalInfo {
         if (clave == null) clave = "";
         KeyStore ks = KeyStore.getInstance("PKCS12");
         try (FileInputStream fis = new FileInputStream(rutaP12)) {
-            ks.load(fis, clave.toCharArray());
+            try {
+                ks.load(fis, clave.toCharArray());
+            } catch (java.io.IOException e) {
+                String msg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
+                Throwable cause = e.getCause();
+                String causeMsg = cause != null && cause.getMessage() != null ? cause.getMessage().toLowerCase() : "";
+                if (msg.contains("keystore password was incorrect") || msg.contains("badpaddingexception") || causeMsg.contains("badpaddingexception") || msg.contains("failed to decrypt")) {
+                    throw new IllegalArgumentException("Contraseña del .p12 incorrecta: reconfigure en Firma Electrónica (Archivo > Firma).", e);
+                }
+                throw e;
+            }
         }
         Enumeration<String> aliases = ks.aliases();
         X509Certificate cert = null;

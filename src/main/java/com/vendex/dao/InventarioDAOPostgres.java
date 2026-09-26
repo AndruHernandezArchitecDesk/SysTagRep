@@ -157,8 +157,8 @@ public class InventarioDAOPostgres implements InventarioDAO {
     }
 
     public int guardar(Inventario inv) {
-        String sql = "INSERT INTO inventario(descripcion, grupo_id, marca_id, costo_sin_iva, cantidad, ubicacion_percha_id, precio_venta, fecha_ingreso, estado, tag_codigo, codigo, proveedor_id, forma_pago, meses_plazo, interes, numero_factura) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO inventario(descripcion, grupo_id, marca_id, costo_sin_iva, cantidad, ubicacion_percha_id, precio_venta, fecha_ingreso, estado, tag_codigo, codigo, proveedor_id, forma_pago, meses_plazo, interes, numero_factura, sucursal_id) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql, java.sql.Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, inv.getDescripcion());
@@ -178,6 +178,7 @@ public class InventarioDAOPostgres implements InventarioDAO {
             if (inv.getMesesPlazo() > 0) ps.setInt(14, inv.getMesesPlazo()); else ps.setNull(14, java.sql.Types.INTEGER);
             if (inv.getInteres() != null && inv.getInteres().compareTo(BigDecimal.ZERO) > 0) ps.setBigDecimal(15, inv.getInteres()); else ps.setNull(15, java.sql.Types.DECIMAL);
             ps.setString(16, inv.getNumeroFactura());
+            ps.setInt(17, inv.getSucursalId() > 0 ? inv.getSucursalId() : 1);
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 if (keys.next()) return keys.getInt(1);
@@ -189,7 +190,7 @@ public class InventarioDAOPostgres implements InventarioDAO {
     }
 
     public void actualizar(Inventario inv) {
-        String sql = "UPDATE inventario SET descripcion=?, grupo_id=?, marca_id=?, costo_sin_iva=?, cantidad=?, ubicacion_percha_id=?, precio_venta=?, fecha_ingreso=?, tag_codigo=?, codigo=?, proveedor_id=?, forma_pago=?, meses_plazo=?, interes=?, numero_factura=? WHERE id=?";
+        String sql = "UPDATE inventario SET descripcion=?, grupo_id=?, marca_id=?, costo_sin_iva=?, cantidad=?, ubicacion_percha_id=?, precio_venta=?, fecha_ingreso=?, tag_codigo=?, codigo=?, proveedor_id=?, forma_pago=?, meses_plazo=?, interes=?, numero_factura=?, sucursal_id=? WHERE id=?";
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, inv.getDescripcion());
@@ -208,7 +209,8 @@ public class InventarioDAOPostgres implements InventarioDAO {
             if (inv.getMesesPlazo() > 0) ps.setInt(13, inv.getMesesPlazo()); else ps.setNull(13, java.sql.Types.INTEGER);
             if (inv.getInteres() != null && inv.getInteres().compareTo(BigDecimal.ZERO) > 0) ps.setBigDecimal(14, inv.getInteres()); else ps.setNull(14, java.sql.Types.DECIMAL);
             ps.setString(15, inv.getNumeroFactura());
-            ps.setInt(16, inv.getId());
+            ps.setInt(16, inv.getSucursalId() > 0 ? inv.getSucursalId() : 1);
+            ps.setInt(17, inv.getId());
             ps.executeUpdate();
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Error en operacion de InventarioDAO", e);
@@ -503,6 +505,76 @@ public class InventarioDAOPostgres implements InventarioDAO {
         return lista;
     }
 
+    public Inventario obtenerPorId(Connection con, int id) throws SQLException {
+        String sql = "SELECT i.*, p.nombre as nombre_proveedor, g.nombre as nombre_grupo, m.nombre as nombre_marca, COALESCE(ub.codigo_ubicacion, u.nombre) as nombre_ubicacion FROM inventario i LEFT JOIN proveedor p ON p.id = i.proveedor_id LEFT JOIN grupo g ON g.id = i.grupo_id LEFT JOIN marca m ON m.id = i.marca_id LEFT JOIN ubicacion_percha u ON u.id = i.ubicacion_percha_id LEFT JOIN (SELECT id_producto, STRING_AGG(codigo_ubicacion, ', ' ORDER BY codigo_ubicacion) AS codigo_ubicacion FROM ubicacion WHERE id_producto IS NOT NULL GROUP BY id_producto) ub ON ub.id_producto = i.id WHERE i.id=?";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Inventario v = new Inventario();
+                    mapearInventario(rs, v);
+                    return v;
+                }
+            }
+        }
+        return null;
+    }
+
+    public Inventario obtenerPorCodigoYSucursal(String codigo, int sucursalId) {
+        try (Connection con = DatabaseConnection.getConnection()) {
+            return obtenerPorCodigoYSucursal(con, codigo, sucursalId);
+        } catch (SQLException e) {
+            java.util.logging.Logger.getLogger(InventarioDAO.class.getName()).log(java.util.logging.Level.SEVERE, "InventarioDAO.obtenerPorCodigoYSucursal", e);
+        }
+        return null;
+    }
+
+    public Inventario obtenerPorCodigoYSucursal(Connection con, String codigo, int sucursalId) throws SQLException {
+        String sql = "SELECT i.*, p.nombre as nombre_proveedor, g.nombre as nombre_grupo, m.nombre as nombre_marca, COALESCE(ub.codigo_ubicacion, u.nombre) as nombre_ubicacion FROM inventario i LEFT JOIN proveedor p ON p.id = i.proveedor_id LEFT JOIN grupo g ON g.id = i.grupo_id LEFT JOIN marca m ON m.id = i.marca_id LEFT JOIN ubicacion_percha u ON u.id = i.ubicacion_percha_id LEFT JOIN (SELECT id_producto, STRING_AGG(codigo_ubicacion, ', ' ORDER BY codigo_ubicacion) AS codigo_ubicacion FROM ubicacion WHERE id_producto IS NOT NULL GROUP BY id_producto) ub ON ub.id_producto = i.id WHERE i.codigo=? AND i.sucursal_id=?";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, codigo);
+            ps.setInt(2, sucursalId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Inventario v = new Inventario();
+                    mapearInventario(rs, v);
+                    return v;
+                }
+            }
+        }
+        return null;
+    }
+
+    public java.util.List<Inventario> listarPorSucursal(int sucursalId) {
+        java.util.List<Inventario> lista = new java.util.ArrayList<>();
+        String sql = "SELECT i.*, p.nombre as nombre_proveedor, g.nombre as nombre_grupo, m.nombre as nombre_marca, COALESCE(ub.codigo_ubicacion, u.nombre) as nombre_ubicacion FROM inventario i LEFT JOIN proveedor p ON p.id = i.proveedor_id LEFT JOIN grupo g ON g.id = i.grupo_id LEFT JOIN marca m ON m.id = i.marca_id LEFT JOIN ubicacion_percha u ON u.id = i.ubicacion_percha_id LEFT JOIN (SELECT id_producto, STRING_AGG(codigo_ubicacion, ', ' ORDER BY codigo_ubicacion) AS codigo_ubicacion FROM ubicacion WHERE id_producto IS NOT NULL GROUP BY id_producto) ub ON ub.id_producto = i.id WHERE i.estado=true AND i.sucursal_id=? ORDER BY i.descripcion";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, sucursalId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Inventario v = new Inventario();
+                    mapearInventario(rs, v);
+                    lista.add(v);
+                }
+            }
+        } catch (SQLException e) {
+            String msg = e.getMessage() == null ? "" : e.getMessage().toLowerCase();
+            if (msg.contains("does not exist") || msg.contains("no existe") || msg.contains("sucursal_id")) {
+                try { DatabaseConnection.ensureSucursalSchema(); } catch (Exception ignore) {}
+                // Fallback sin filtro sucursal (compatibilidad HSQLDB o DB sin V24)
+                try {
+                    return listar();
+                } catch (Exception ex) {
+                    java.util.logging.Logger.getLogger(InventarioDAO.class.getName()).log(Level.WARNING, "InventarioDAO.listarPorSucursal fallback listar: " + e.getMessage());
+                }
+            } else {
+                java.util.logging.Logger.getLogger(InventarioDAO.class.getName()).log(Level.WARNING, "InventarioDAO.listarPorSucursal: " + e.getMessage());
+            }
+        }
+        return lista;
+    }
+
     private void mapearInventario(ResultSet rs, Inventario v) throws SQLException {
         v.setId(rs.getInt("id"));
         v.setDescripcion(rs.getString("descripcion"));
@@ -525,5 +597,6 @@ public class InventarioDAOPostgres implements InventarioDAO {
         v.setMesesPlazo(rs.getInt("meses_plazo"));
         v.setInteres(rs.getBigDecimal("interes"));
         v.setNumeroFactura(rs.getString("numero_factura"));
+        try { v.setSucursalId(rs.getInt("sucursal_id")); if (rs.wasNull()) v.setSucursalId(1); } catch (SQLException ignore) { v.setSucursalId(1); }
     }
 }
