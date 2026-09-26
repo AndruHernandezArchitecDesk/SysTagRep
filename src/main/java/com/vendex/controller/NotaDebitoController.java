@@ -41,7 +41,7 @@ public class NotaDebitoController implements Initializable {
     private final NotaDebitoService ndService = new NotaDebitoService();
     private final SecuenciaDocumentoDAO secDAO = new SecuenciaDocumentoDAOPostgres();
     private final EmpresaDAO empresaDAO = new EmpresaDAOPostgres();
-    private final LogDAO logDAO = new LogDAO();
+    private final LogDAO logDAO = new LogDAOPostgres();
 
     private final ObservableList<NotaDebitoService.MotivoNDInput> motivos = FXCollections.observableArrayList();
     private String rutaP12 = ""; private String claveP12 = "";
@@ -153,7 +153,7 @@ public class NotaDebitoController implements Initializable {
             provisional.setEstado(AppConstants.ESTADO_PENDIENTE);
             provisional.setMensaje("Pendiente SRI - en cola");
             try { ndService.finalizarEnvioSRI(provisional, res, dir); } catch (Exception ex) { logDAO.guardar("NotaDebitoController","provisional", ex.getMessage(), ex); }
-            try { new com.vendex.dao.ComprobantePendienteSriDAO().encolar("NOTA_DEBITO", res.claveAcceso, res.numComprobante, ambiente); } catch (Exception ex) { logDAO.guardar("NotaDebitoController","encolar", ex.getMessage(), ex instanceof Exception ? (Exception)ex : new Exception(ex)); }
+            try { new com.vendex.dao.ComprobantePendienteSriDAOPostgres().encolar("NOTA_DEBITO", res.claveAcceso, res.numComprobante, ambiente); } catch (Exception ex) { logDAO.guardar("NotaDebitoController","encolar", ex.getMessage(), ex instanceof Exception ? (Exception)ex : new Exception(ex)); }
             new Alert(Alert.AlertType.INFORMATION, "ND " + res.numComprobante + " registrada (pendiente SRI).\nClave: " + res.claveAcceso + "\nPDF provisional: " + res.rutaPDF).showAndWait();
             try { if (Desktop.isDesktopSupported()) Desktop.getDesktop().open(new File(res.rutaPDF)); } catch (Exception ignore) {}
             motivos.clear(); txtRazon.clear(); txtValor.clear(); cargarFacturasAutorizadas(); actualizarSecuencial(); calcularTotales();

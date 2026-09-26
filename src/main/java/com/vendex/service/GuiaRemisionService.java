@@ -29,7 +29,7 @@ public class GuiaRemisionService {
     private final GuiaRemisionRegistroDAO guiaDAO;
     private final GuiaRemisionDestinatarioDAO destDAO;
     private final GuiaRemisionDetalleDAO detalleDAO;
-    private final LogDAO logDAO = new LogDAO();
+    private final LogDAO logDAO = new LogDAOPostgres();
 
     public GuiaRemisionService() {
         this.empresaDAO = new EmpresaDAOPostgres();

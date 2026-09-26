@@ -42,6 +42,7 @@ import com.vendex.dao.InventarioDAOPostgres;
 import com.vendex.dao.HistorialProductoDAOPostgres;
 import com.vendex.dao.CuentaPorPagarDAOPostgres;
 import com.vendex.dao.FacturaProveedorDAOPostgres;
+import com.vendex.dao.UbicacionDetalleDAOPostgres;
 
 public class FacturasIngresadasController implements Initializable {
 
@@ -67,7 +68,7 @@ public class FacturasIngresadasController implements Initializable {
     private final CuentaPorPagarDAO cuentaPorPagarDAO = new CuentaPorPagarDAOPostgres();
     private final FacturaDetalleDAO facturaDetalleDAO = new FacturaDetalleDAOPostgres();
     private final HistorialProductoDAO historialProductoDAO = new HistorialProductoDAOPostgres();
-    private final UbicacionDetalleDAO ubicacionDAO = new UbicacionDetalleDAO();
+    private final UbicacionDetalleDAO ubicacionDAO = new UbicacionDetalleDAOPostgres();
     private ObservableList<FacturaProveedor> facturas = FXCollections.observableArrayList();
     private final ObservableList<FacturaProveedor> detalle = FXCollections.observableArrayList();
 

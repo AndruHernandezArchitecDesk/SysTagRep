@@ -21,6 +21,8 @@ import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.net.URL;
 import java.util.ResourceBundle;
+import com.vendex.dao.MarcaDAOPostgres;
+import com.vendex.dao.LogDAOPostgres;
 
 public class MarcaController implements Initializable {
 
@@ -36,8 +38,8 @@ public class MarcaController implements Initializable {
 
     @FXML private TextField txtBuscar;
 
-    private final MarcaDAO dao = new MarcaDAO();
-    private final LogDAO logDAO = new LogDAO();
+    private final MarcaDAO dao = new MarcaDAOPostgres();
+    private final LogDAO logDAO = new LogDAOPostgres();
     private ObservableList<Marca> listaMarca = FXCollections.observableArrayList();
 
     @Override

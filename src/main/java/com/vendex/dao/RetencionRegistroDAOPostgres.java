@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 public class RetencionRegistroDAOPostgres implements RetencionRegistroDAO {
 
     private static final Logger LOGGER = Logger.getLogger(RetencionRegistroDAO.class.getName());
-    private final LogDAO logDAO = new LogDAO();
+    private final LogDAO logDAO = new LogDAOPostgres();
 
     public int insertar(RetencionRegistro r) {
         try (Connection con = DatabaseConnection.getConnection()) { return insertar(con, r); } catch (SQLException e) { if (e.getMessage() != null && e.getMessage().contains("does not exist")) { DatabaseConnection.ensureRetencionSchema(); return insertar(r); } LOGGER.log(Level.SEVERE, "insertar Retencion", e); } return -1; }

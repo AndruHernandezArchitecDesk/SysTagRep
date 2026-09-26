@@ -13,6 +13,8 @@ import javafx.scene.control.*;
 import java.net.URL;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import com.vendex.dao.LogDAOPostgres;
+import com.vendex.dao.ConfiguracionEmailDAOPostgres;
 
 public class ConfiguracionEmailController implements Initializable {
 
@@ -30,8 +32,8 @@ public class ConfiguracionEmailController implements Initializable {
     @FXML private Button btnProbarConexion;
     @FXML private Button btnEnviarPrueba;
 
-    private final ConfiguracionEmailDAO dao = new ConfiguracionEmailDAO();
-    private final LogDAO logDAO = new LogDAO();
+    private final ConfiguracionEmailDAO dao = new ConfiguracionEmailDAOPostgres();
+    private final LogDAO logDAO = new LogDAOPostgres();
     private ConfiguracionEmail configuracionActual;
 
     @Override
@@ -124,7 +126,7 @@ public class ConfiguracionEmailController implements Initializable {
             if (LoginController.usuarioAutenticado != null) cfg.setActualizadoPor(LoginController.usuarioAutenticado.getId());
 
             if (!passPlano.isEmpty()) {
-                cfg.setPasswordCifrado(com.vendex.dao.ConfiguracionEmailDAO.cifrarParaGuardar(passPlano));
+                cfg.setPasswordCifrado(com.vendex.dao.ConfiguracionEmailDAOPostgres.cifrarParaGuardar(passPlano));
             } else if (configuracionActual != null && configuracionActual.getPasswordCifrado() != null) {
                 cfg.setPasswordCifrado(configuracionActual.getPasswordCifrado());
             }

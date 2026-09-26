@@ -22,6 +22,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Properties;
 import java.util.ResourceBundle;
+import com.vendex.dao.LogDAOPostgres;
 
 public class BackupController implements Initializable {
 
@@ -48,7 +49,7 @@ public class BackupController implements Initializable {
     @FXML private TableColumn<FileRow, String> colTam;
     @FXML private TableColumn<FileRow, String> colEstado;
 
-    private final LogDAO logDAO = new LogDAO();
+    private final LogDAO logDAO = new LogDAOPostgres();
     private final DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     public static class FileRow {

@@ -54,6 +54,10 @@ import com.vendex.dao.HistorialProductoDAOPostgres;
 import com.vendex.dao.CuentaPorCobrarDAOPostgres;
 import com.vendex.dao.ClienteDAOPostgres;
 import com.vendex.dao.EmpresaDAOPostgres;
+import com.vendex.dao.ComprobanteTempDAOPostgres;
+import com.vendex.dao.NotaVentaRegistroDAOPostgres;
+import com.vendex.dao.LogDAOPostgres;
+import com.vendex.dao.NotaVentaDetalleDAOPostgres;
 
 public class NotaVentaController implements Initializable {
 
@@ -95,12 +99,12 @@ public class NotaVentaController implements Initializable {
     private final EmpresaDAO daoEmpresa = new EmpresaDAOPostgres();
     private final ClienteDAO daoCliente = new ClienteDAOPostgres();
     private final InventarioDAO daoInventario = new InventarioDAOPostgres();
-    private final NotaVentaRegistroDAO daoNotaVentaRegistro = new NotaVentaRegistroDAO();
+    private final NotaVentaRegistroDAO daoNotaVentaRegistro = new NotaVentaRegistroDAOPostgres();
     private final SecuenciaDocumentoDAO secuenciaDAO = new SecuenciaDocumentoDAOPostgres();
-    private final NotaVentaDetalleDAO daoNotaVentaDetalle = new NotaVentaDetalleDAO();
-    private final ComprobanteTempDAO daoComprobanteTemp = new ComprobanteTempDAO();
+    private final NotaVentaDetalleDAO daoNotaVentaDetalle = new NotaVentaDetalleDAOPostgres();
+    private final ComprobanteTempDAO daoComprobanteTemp = new ComprobanteTempDAOPostgres();
     private final CuentaPorCobrarDAO daoCuentaPorCobrar = new CuentaPorCobrarDAOPostgres();
-    private final LogDAO logDAO = new LogDAO();
+    private final LogDAO logDAO = new LogDAOPostgres();
     private final HistorialProductoDAO historialProductoDAO = new HistorialProductoDAOPostgres();
 
     private Empresa empresaActual;

@@ -32,6 +32,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
+import com.vendex.dao.LogDAOPostgres;
+import com.vendex.dao.DashboardDAOPostgres;
 
 public class Dashboard2Controller implements Initializable {
 
@@ -58,8 +60,8 @@ public class Dashboard2Controller implements Initializable {
 
     private MainController mainController;
 
-    private final DashboardDAO dashboardDAO = new DashboardDAO();
-    private final LogDAO logDAO = new LogDAO();
+    private final DashboardDAO dashboardDAO = new DashboardDAOPostgres();
+    private final LogDAO logDAO = new LogDAOPostgres();
     private final AlertaService alertaService = new AlertaService();
 
     public void setMainController(MainController mainController) {

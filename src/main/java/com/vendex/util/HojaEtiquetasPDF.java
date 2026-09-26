@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import javax.imageio.ImageIO;
+import com.vendex.dao.UbicacionDetalleDAOPostgres;
 
 /**
  * Genera una hoja A4 con todas las etiquetas de una factura agrupadas.
@@ -33,7 +34,7 @@ public class HojaEtiquetasPDF {
     public static File generarHojaA4(List<Inventario> productos, String numeroFactura) throws Exception {
         if (productos == null || productos.isEmpty()) throw new IllegalArgumentException("Lista de productos vacía");
 
-        UbicacionDetalleDAO ubicDAO = new UbicacionDetalleDAO();
+        UbicacionDetalleDAO ubicDAO = new UbicacionDetalleDAOPostgres();
 
         // Directorio etiquetas VENDEX
         Path dir = EtiquetaUtil.getEtiquetasDirPublic();

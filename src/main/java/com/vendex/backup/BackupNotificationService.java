@@ -90,7 +90,7 @@ public class BackupNotificationService {
     public boolean enviarCorreoSimple(String destino, String subject, String body) {
         if (destino == null || destino.isBlank()) return false;
         try {
-            var dao = new com.vendex.dao.ConfiguracionEmailDAO();
+            var dao = new com.vendex.dao.ConfiguracionEmailDAOPostgres();
             var opt = dao.obtenerActiva();
             String host; int puerto; boolean tls; String remitente; String nombreRemitente; String usuario; String pass;
             if (opt.isPresent()) {

@@ -56,7 +56,7 @@ public class NotaCreditoController implements Initializable {
     private final EmpresaDAO empresaDAO = new EmpresaDAOPostgres();
     private final ClienteDAO clienteDAO = new ClienteDAOPostgres();
     private final NotaCreditoService ncService = new NotaCreditoService();
-    private final LogDAO logDAO = new LogDAO();
+    private final LogDAO logDAO = new LogDAOPostgres();
 
     private final ObservableList<NotaCreditoService.DetalleNCInput> detallesNc = FXCollections.observableArrayList();
     private String rutaP12 = ""; private String claveP12 = "";
@@ -182,7 +182,7 @@ public class NotaCreditoController implements Initializable {
             provisional.setEstado(AppConstants.ESTADO_PENDIENTE);
             provisional.setMensaje("Pendiente SRI - en cola contingencia");
             try { ncService.finalizarEnvioSRI(provisional, res, dir); } catch (Exception ex) { logDAO.guardar("NotaCreditoController","provisional", ex.getMessage(), ex); }
-            try { new com.vendex.dao.ComprobantePendienteSriDAO().encolar("NOTA_CREDITO", res.claveAcceso, res.numComprobante, ambiente); } catch (Exception ex) { logDAO.guardar("NotaCreditoController","encolar", ex.getMessage(), ex instanceof Exception ? (Exception)ex : new Exception(ex)); }
+            try { new com.vendex.dao.ComprobantePendienteSriDAOPostgres().encolar("NOTA_CREDITO", res.claveAcceso, res.numComprobante, ambiente); } catch (Exception ex) { logDAO.guardar("NotaCreditoController","encolar", ex.getMessage(), ex instanceof Exception ? (Exception)ex : new Exception(ex)); }
             new Alert(Alert.AlertType.INFORMATION, "NC " + res.numComprobante + " registrada (pendiente SRI).\nClave: " + res.claveAcceso + "\nPDF provisional: " + res.rutaPDF + "\nEn cola cada 2min. Banner mostrara pendientes.").showAndWait();
             try { if (Desktop.isDesktopSupported()) Desktop.getDesktop().open(new File(res.rutaPDF)); } catch (Exception ignore) {}
             detallesNc.clear(); txtMotivo.clear(); cargarFacturasAutorizadas(); actualizarSecuencial(); calcularTotales();

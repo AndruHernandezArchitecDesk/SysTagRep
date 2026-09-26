@@ -29,6 +29,10 @@ import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.ResourceBundle;
 import com.vendex.dao.InventarioDAOPostgres;
+import com.vendex.dao.MarcaDAOPostgres;
+import com.vendex.dao.LogDAOPostgres;
+import com.vendex.dao.GrupoDAOPostgres;
+import com.vendex.dao.CodigoDAOPostgres;
 
 /**
  * Ingreso por producto: ligero, sin factura.
@@ -46,10 +50,10 @@ public class IngresoProductoController implements Initializable {
     @FXML private TextField txtPrecioVenta;
 
     private final InventarioDAO dao = new InventarioDAOPostgres();
-    private final GrupoDAO grupoDAO = new GrupoDAO();
-    private final MarcaDAO marcaDAO = new MarcaDAO();
-    private final CodigoDAO codigoDAO = new CodigoDAO();
-    private final LogDAO logDAO = new LogDAO();
+    private final GrupoDAO grupoDAO = new GrupoDAOPostgres();
+    private final MarcaDAO marcaDAO = new MarcaDAOPostgres();
+    private final CodigoDAO codigoDAO = new CodigoDAOPostgres();
+    private final LogDAO logDAO = new LogDAOPostgres();
 
     private ObservableList<Grupo> listaGrupos = FXCollections.observableArrayList();
     private ObservableList<Marca> listaMarcas = FXCollections.observableArrayList();

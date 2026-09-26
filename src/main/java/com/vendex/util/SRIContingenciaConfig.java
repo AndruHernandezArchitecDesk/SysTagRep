@@ -58,7 +58,7 @@ public final class SRIContingenciaConfig {
         if (!v.isBlank()) return v;
         // fallback a configuracion_email si existe
         try {
-            var dao = new com.vendex.dao.ConfiguracionEmailDAO();
+            var dao = new com.vendex.dao.ConfiguracionEmailDAOPostgres();
             var opt = dao.obtenerActiva();
             if (opt.isPresent()) return opt.get().getEmailRemitente();
         } catch (Exception ignored) {}

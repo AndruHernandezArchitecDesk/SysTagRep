@@ -21,6 +21,8 @@ import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.net.URL;
 import java.util.ResourceBundle;
+import com.vendex.dao.LogDAOPostgres;
+import com.vendex.dao.GrupoDAOPostgres;
 
 public class GrupoController implements Initializable {
 
@@ -36,8 +38,8 @@ public class GrupoController implements Initializable {
 
     @FXML private TextField txtBuscar;
 
-    private final GrupoDAO dao = new GrupoDAO();
-    private final LogDAO logDAO = new LogDAO();
+    private final GrupoDAO dao = new GrupoDAOPostgres();
+    private final LogDAO logDAO = new LogDAOPostgres();
     private ObservableList<Grupo> listaGrupo = FXCollections.observableArrayList();
 
     @Override

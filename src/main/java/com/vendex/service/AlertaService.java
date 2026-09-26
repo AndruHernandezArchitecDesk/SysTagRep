@@ -12,12 +12,13 @@ import java.util.ArrayList;
 import java.util.List;
 import com.vendex.dao.InventarioDAOPostgres;
 import com.vendex.dao.CuentaPorCobrarDAOPostgres;
+import com.vendex.dao.AlertaDAOPostgres;
 
 public class AlertaService {
 
     private static final int UMBRAL_STOCK_BAJO = 5;
 
-    private final AlertaDAO alertaDAO = new AlertaDAO();
+    private final AlertaDAO alertaDAO = new AlertaDAOPostgres();
     private final InventarioDAO inventarioDAO = new InventarioDAOPostgres();
     private final CuentaPorCobrarDAO cuentaPorCobrarDAO = new CuentaPorCobrarDAOPostgres();
 

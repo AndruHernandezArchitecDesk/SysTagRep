@@ -31,7 +31,7 @@ public class FacturaService {
     private final ComprobanteDAO comprobanteDAO;
     private final CuentaPorCobrarDAO cuentaPorCobrarDAO;
     private final HistorialProductoDAO historialProductoDAO;
-    private final LogDAO logDAO = new LogDAO();
+    private final LogDAO logDAO = new LogDAOPostgres();
 
     public FacturaService() {
         this.empresaDAO = new EmpresaDAOPostgres();

@@ -25,6 +25,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import com.vendex.dao.UsuarioDAOPostgres;
+import com.vendex.dao.LogDAOPostgres;
 
 public class UsuarioController implements Initializable {
     private boolean formularioVisible = true;
@@ -58,7 +59,7 @@ public class UsuarioController implements Initializable {
     @FXML private TableColumn<Usuario, Void> colAcciones;
 
     private final UsuarioDAO dao = new UsuarioDAOPostgres();
-    private final LogDAO logDAO = new LogDAO();
+    private final LogDAO logDAO = new LogDAOPostgres();
     private ObservableList<Usuario> listaUsuarios = FXCollections.observableArrayList();
     private ObservableList<VistaPermiso> listaPermisos = FXCollections.observableArrayList();
 

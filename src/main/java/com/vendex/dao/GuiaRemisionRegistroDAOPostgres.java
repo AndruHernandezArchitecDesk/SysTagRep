@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 public class GuiaRemisionRegistroDAOPostgres implements GuiaRemisionRegistroDAO {
 
     private static final Logger LOGGER = Logger.getLogger(GuiaRemisionRegistroDAO.class.getName());
-    private final LogDAO logDAO = new LogDAO();
+    private final LogDAO logDAO = new LogDAOPostgres();
 
     public int insertar(GuiaRemisionRegistro r) {
         try (Connection con = DatabaseConnection.getConnection()) { return insertar(con, r); } catch (SQLException e) { if (e.getMessage() != null && e.getMessage().contains("does not exist")) { DatabaseConnection.ensureGuiaRemisionSchema(); return insertar(r); } LOGGER.log(Level.SEVERE, "insertar GR", e); } return -1; }

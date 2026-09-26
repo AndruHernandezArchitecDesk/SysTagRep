@@ -43,6 +43,25 @@ public class AppContext {
     public final RolDAO rolDAO;
     public final PermisoDAO permisoDAO;
     public final AuditoriaAccionDAO auditoriaAccionDAO;
+    public final VentaResumenDAO ventaResumenDAO;
+    public final CertificadoEstadoDAO certificadoEstadoDAO;
+    public final ComprobantePendienteSriDAO comprobantePendienteSriDAO;
+    public final ComprobanteTempDAO comprobanteTempDAO;
+    public final MarcaDAO marcaDAO;
+    public final NotaVentaRegistroDAO notaVentaRegistroDAO;
+    public final UbicacionDetalleDAO ubicacionDetalleDAO;
+    public final LogDAO logDAO;
+    public final GrupoDAO grupoDAO;
+    public final TablaRetencionDAO tablaRetencionDAO;
+    public final ConfiguracionEmailDAO configuracionEmailDAO;
+    public final PercheroDAO percheroDAO;
+    public final NotaVentaDetalleDAO notaVentaDetalleDAO;
+    public final UbicacionPerchaDAO ubicacionPerchaDAO;
+    public final CodigoDAO codigoDAO;
+    public final RepuestoChatbotDAO repuestoChatbotDAO;
+    public final AlertaDAO alertaDAO;
+    public final LoginIntentoLogDAO loginIntentoLogDAO;
+    public final DashboardDAO dashboardDAO;
 
     // Servicios
     public final FacturaService facturaService;
@@ -82,6 +101,25 @@ public class AppContext {
         this.rolDAO = new RolDAOPostgres();
         this.permisoDAO = new PermisoDAOPostgres();
         this.auditoriaAccionDAO = new AuditoriaAccionDAOPostgres();
+        this.ventaResumenDAO = new VentaResumenDAOPostgres();
+        this.certificadoEstadoDAO = new CertificadoEstadoDAOPostgres();
+        this.comprobantePendienteSriDAO = new ComprobantePendienteSriDAOPostgres();
+        this.comprobanteTempDAO = new ComprobanteTempDAOPostgres();
+        this.marcaDAO = new MarcaDAOPostgres();
+        this.notaVentaRegistroDAO = new NotaVentaRegistroDAOPostgres();
+        this.ubicacionDetalleDAO = new UbicacionDetalleDAOPostgres();
+        this.logDAO = new LogDAOPostgres();
+        this.grupoDAO = new GrupoDAOPostgres();
+        this.tablaRetencionDAO = new TablaRetencionDAOPostgres();
+        this.configuracionEmailDAO = new ConfiguracionEmailDAOPostgres();
+        this.percheroDAO = new PercheroDAOPostgres();
+        this.notaVentaDetalleDAO = new NotaVentaDetalleDAOPostgres();
+        this.ubicacionPerchaDAO = new UbicacionPerchaDAOPostgres();
+        this.codigoDAO = new CodigoDAOPostgres();
+        this.repuestoChatbotDAO = new RepuestoChatbotDAOPostgres();
+        this.alertaDAO = new AlertaDAOPostgres();
+        this.loginIntentoLogDAO = new LoginIntentoLogDAOPostgres();
+        this.dashboardDAO = new DashboardDAOPostgres();
 
         // Servicios con inyección por constructor
         this.facturaService = new FacturaService(

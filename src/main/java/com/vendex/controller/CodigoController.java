@@ -21,6 +21,8 @@ import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.net.URL;
 import java.util.ResourceBundle;
+import com.vendex.dao.LogDAOPostgres;
+import com.vendex.dao.CodigoDAOPostgres;
 
 public class CodigoController implements Initializable {
 
@@ -36,8 +38,8 @@ public class CodigoController implements Initializable {
 
     @FXML private TextField txtBuscar;
 
-    private final CodigoDAO dao = new CodigoDAO();
-    private final LogDAO logDAO = new LogDAO();
+    private final CodigoDAO dao = new CodigoDAOPostgres();
+    private final LogDAO logDAO = new LogDAOPostgres();
     private ObservableList<Codigo> listaCodigo = FXCollections.observableArrayList();
 
     @Override

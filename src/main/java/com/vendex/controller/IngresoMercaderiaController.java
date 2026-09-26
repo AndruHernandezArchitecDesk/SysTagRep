@@ -60,6 +60,11 @@ import com.vendex.dao.HistorialProductoDAOPostgres;
 import com.vendex.dao.ProveedorDAOPostgres;
 import com.vendex.dao.CuentaPorPagarDAOPostgres;
 import com.vendex.dao.FacturaProveedorDAOPostgres;
+import com.vendex.dao.MarcaDAOPostgres;
+import com.vendex.dao.UbicacionDetalleDAOPostgres;
+import com.vendex.dao.LogDAOPostgres;
+import com.vendex.dao.GrupoDAOPostgres;
+import com.vendex.dao.CodigoDAOPostgres;
 
 /**
  * Formulario de ingreso de factura de mercadería. Permite registrar varios
@@ -112,15 +117,15 @@ public class IngresoMercaderiaController implements Initializable {
     private boolean servicioLogistico = false;
     private final InventarioDAO dao = new InventarioDAOPostgres();
     private final ProveedorDAO proveedorDAO = new ProveedorDAOPostgres();
-    private final GrupoDAO grupoDAO = new GrupoDAO();
-    private final MarcaDAO marcaDAO = new MarcaDAO();
+    private final GrupoDAO grupoDAO = new GrupoDAOPostgres();
+    private final MarcaDAO marcaDAO = new MarcaDAOPostgres();
     private final CuentaPorPagarDAO cuentaPorPagarDAO = new CuentaPorPagarDAOPostgres();
     private final FacturaProveedorDAO facturaProveedorDAO = new FacturaProveedorDAOPostgres();
-    private final CodigoDAO codigoDAO = new CodigoDAO();
+    private final CodigoDAO codigoDAO = new CodigoDAOPostgres();
     private final FacturaDetalleDAO facturaDetalleDAO = new FacturaDetalleDAOPostgres();
     private final HistorialProductoDAO historialProductoDAO = new HistorialProductoDAOPostgres();
-    private final UbicacionDetalleDAO ubicacionDAO = new UbicacionDetalleDAO();
-    private final LogDAO logDAO = new LogDAO();
+    private final UbicacionDetalleDAO ubicacionDAO = new UbicacionDetalleDAOPostgres();
+    private final LogDAO logDAO = new LogDAOPostgres();
 
     private ObservableList<Proveedor> listaProveedores = FXCollections.observableArrayList();
     private ObservableList<Grupo> listaGrupos = FXCollections.observableArrayList();

@@ -21,6 +21,8 @@ import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.net.URL;
 import java.util.ResourceBundle;
+import com.vendex.dao.LogDAOPostgres;
+import com.vendex.dao.UbicacionPerchaDAOPostgres;
 
 public class UbicacionController implements Initializable {
 
@@ -36,8 +38,8 @@ public class UbicacionController implements Initializable {
 
     @FXML private TextField txtBuscar;
 
-    private final UbicacionPerchaDAO dao = new UbicacionPerchaDAO();
-    private final LogDAO logDAO = new LogDAO();
+    private final UbicacionPerchaDAO dao = new UbicacionPerchaDAOPostgres();
+    private final LogDAO logDAO = new LogDAOPostgres();
     private ObservableList<UbicacionPercha> listaUbicacion = FXCollections.observableArrayList();
 
     @Override

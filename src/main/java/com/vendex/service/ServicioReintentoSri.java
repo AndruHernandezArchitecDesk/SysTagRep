@@ -26,6 +26,7 @@ import com.vendex.dao.NotaCreditoRegistroDAOPostgres;
 import com.vendex.dao.NotaDebitoRegistroDAOPostgres;
 import com.vendex.dao.GuiaRemisionRegistroDAOPostgres;
 import com.vendex.dao.RetencionRegistroDAOPostgres;
+import com.vendex.dao.ComprobantePendienteSriDAOPostgres;
 
 /**
  * Job de fondo SRI contingencia: revisa comprobante_pendiente_sri cada 2 min,
@@ -40,7 +41,7 @@ public class ServicioReintentoSri {
     private ScheduledExecutorService scheduler;
     private volatile boolean running = false;
 
-    private final ComprobantePendienteSriDAO pendienteDAO = new ComprobantePendienteSriDAO();
+    private final ComprobantePendienteSriDAO pendienteDAO = new ComprobantePendienteSriDAOPostgres();
     private final ComprobanteDAO comprobanteDAO = new ComprobanteDAOPostgres();
 
     // DAOs para actualizar estado por tipo
@@ -272,7 +273,7 @@ public class ServicioReintentoSri {
 
     private void enviarEmailSimple(String destino, String subject, String body) {
         try {
-            var dao = new com.vendex.dao.ConfiguracionEmailDAO();
+            var dao = new com.vendex.dao.ConfiguracionEmailDAOPostgres();
             var opt = dao.obtenerActiva();
             if (opt.isEmpty()) { LOG.warning("Sin configuracion_email para notificar SRI"); return; }
             var cfg = opt.get();

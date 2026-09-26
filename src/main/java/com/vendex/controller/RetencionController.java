@@ -41,8 +41,8 @@ public class RetencionController implements Initializable {
     private final SecuenciaDocumentoDAO secDAO = new SecuenciaDocumentoDAOPostgres();
     private final ProveedorDAO proveedorDAO = new ProveedorDAOPostgres();
     private final EmpresaDAO empresaDAO = new EmpresaDAOPostgres();
-    private final LogDAO logDAO = new LogDAO();
-    private final TablaRetencionDAO tablaDAO = new TablaRetencionDAO();
+    private final LogDAO logDAO = new LogDAOPostgres();
+    private final TablaRetencionDAO tablaDAO = new TablaRetencionDAOPostgres();
 
     private final ObservableList<RetencionService.DocSustentoInput> docs = FXCollections.observableArrayList();
     private final ObservableList<RetencionService.RetencionLineaInput> retsActual = FXCollections.observableArrayList();
@@ -241,7 +241,7 @@ public class RetencionController implements Initializable {
             provisional.setEstado(AppConstants.ESTADO_PENDIENTE);
             provisional.setMensaje("Pendiente SRI - en cola");
             try { retService.finalizarEnvioSRI(provisional, res, dir); } catch (Exception ex) { logDAO.guardar("RetencionController","provisional", ex.getMessage(), ex); }
-            try { new com.vendex.dao.ComprobantePendienteSriDAO().encolar("RETENCION", res.claveAcceso, res.numComprobante, ambiente); } catch (Exception ex) { logDAO.guardar("RetencionController","encolar", ex.getMessage(), ex instanceof Exception ? (Exception)ex : new Exception(ex)); }
+            try { new com.vendex.dao.ComprobantePendienteSriDAOPostgres().encolar("RETENCION", res.claveAcceso, res.numComprobante, ambiente); } catch (Exception ex) { logDAO.guardar("RetencionController","encolar", ex.getMessage(), ex instanceof Exception ? (Exception)ex : new Exception(ex)); }
             mostrarAlertaCopiable(Alert.AlertType.INFORMATION, "Retención", "RET registrada (pendiente SRI)", "RET " + res.numComprobante + " registrada (pendiente SRI).\nClave: " + res.claveAcceso + "\nPDF provisional: " + res.rutaPDF + "\nEn cola cada 2min.");
             new Thread(() -> { try { if (Desktop.isDesktopSupported()) Desktop.getDesktop().open(new File(res.rutaPDF)); } catch (Exception ignore) {} }, "Hilo-Abrir-PDF-RET").start();
             docs.clear(); retsActual.clear(); actualizarSecuencial();

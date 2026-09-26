@@ -19,6 +19,7 @@ import javafx.stage.Stage;
 import java.io.File;
 import java.net.URL;
 import java.util.ResourceBundle;
+import com.vendex.dao.LogDAOPostgres;
 
 public class FirmaController implements Initializable {
 
@@ -27,7 +28,7 @@ public class FirmaController implements Initializable {
     @FXML private PasswordField txtClaveP12;
     @FXML private CheckBox chkTerminos;
 
-    private final LogDAO logDAO = new LogDAO();
+    private final LogDAO logDAO = new LogDAOPostgres();
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {

@@ -21,6 +21,7 @@ import org.kordamp.ikonli.javafx.FontIcon;
 import java.net.URL;
 import java.util.ResourceBundle;
 import com.vendex.dao.ClienteDAOPostgres;
+import com.vendex.dao.LogDAOPostgres;
 
 public class ClienteController implements Initializable {
     private boolean formularioVisible = true;
@@ -52,7 +53,7 @@ public class ClienteController implements Initializable {
     @FXML private TableColumn<Cliente, Void> colAcciones;
 
     private final ClienteDAO dao = new ClienteDAOPostgres();
-    private final LogDAO logDAO = new LogDAO();
+    private final LogDAO logDAO = new LogDAOPostgres();
     private ObservableList<Cliente> listaClientes = FXCollections.observableArrayList();
 
     @Override

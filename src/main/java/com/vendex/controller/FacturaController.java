@@ -59,6 +59,7 @@ import com.vendex.dao.ComprobanteDAOPostgres;
 import com.vendex.dao.InventarioDAOPostgres;
 import com.vendex.dao.ClienteDAOPostgres;
 import com.vendex.dao.EmpresaDAOPostgres;
+import com.vendex.dao.LogDAOPostgres;
 
 public class FacturaController implements Initializable {
 
@@ -99,7 +100,7 @@ public class FacturaController implements Initializable {
     private final ClienteDAO daoCliente = new ClienteDAOPostgres();
     private final InventarioDAO daoInventario = new InventarioDAOPostgres();
     private final ComprobanteDAO daoComprobante = new ComprobanteDAOPostgres();
-    private final LogDAO logDAO = new LogDAO();
+    private final LogDAO logDAO = new LogDAOPostgres();
     private final SecuenciaDocumentoDAO secuenciaDAO = new SecuenciaDocumentoDAOPostgres();
     private final FacturaService facturaService = new FacturaService();
 
@@ -482,7 +483,7 @@ public class FacturaController implements Initializable {
                 logDAO.guardar("FacturaController", "finalizarProvisional", ex.getMessage(), ex);
             }
             try {
-                new com.vendex.dao.ComprobantePendienteSriDAO().encolar("FACTURA", resultado.claveAcceso, resultado.numComprobante, resultado.ambienteSri);
+                new com.vendex.dao.ComprobantePendienteSriDAOPostgres().encolar("FACTURA", resultado.claveAcceso, resultado.numComprobante, resultado.ambienteSri);
             } catch (Exception ex) {
                 logDAO.guardar("FacturaController", "encolar", ex.getMessage(), ex instanceof Exception ? (Exception)ex : new Exception(ex));
             }

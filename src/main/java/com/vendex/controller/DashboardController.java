@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 import com.vendex.dao.InventarioDAOPostgres;
+import com.vendex.dao.LogDAOPostgres;
+import com.vendex.dao.DashboardDAOPostgres;
 
 public class DashboardController implements Initializable {
 
@@ -61,9 +63,9 @@ public class DashboardController implements Initializable {
 
     private MainController mainController;
 
-    private final DashboardDAO dashboardDAO = new DashboardDAO();
+    private final DashboardDAO dashboardDAO = new DashboardDAOPostgres();
     private final InventarioDAO inventarioDAO = new InventarioDAOPostgres();
-    private final LogDAO logDAO = new LogDAO();
+    private final LogDAO logDAO = new LogDAOPostgres();
 
     public void setMainController(MainController mainController) {
         this.mainController = mainController;

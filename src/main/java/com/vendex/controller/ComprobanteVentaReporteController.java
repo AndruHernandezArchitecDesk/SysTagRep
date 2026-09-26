@@ -25,6 +25,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.ResourceBundle;
+import com.vendex.dao.VentaResumenDAOPostgres;
 
 public class ComprobanteVentaReporteController implements Initializable {
 
@@ -48,7 +49,7 @@ public class ComprobanteVentaReporteController implements Initializable {
     @FXML private TableColumn<DetalleVentaReporte, BigDecimal> colDetTotal;
     @FXML private Label lblTotal;
 
-    private final VentaResumenDAO dao = new VentaResumenDAO();
+    private final VentaResumenDAO dao = new VentaResumenDAOPostgres();
     private ObservableList<VentaResumen> lista = FXCollections.observableArrayList();
     private final ObservableList<DetalleVentaReporte> detalle = FXCollections.observableArrayList();
 

@@ -366,7 +366,7 @@ public class DatabaseConnection {
              java.sql.ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM configuracion_email WHERE activo=true")) {
             if (rs.next() && rs.getInt(1) == 0) {
                 try {
-                    String pwdCifrado = com.vendex.dao.ConfiguracionEmailDAO.cifrarParaGuardar("awnfnmidbtqyyclz");
+                    String pwdCifrado = com.vendex.dao.ConfiguracionEmailDAOPostgres.cifrarParaGuardar("awnfnmidbtqyyclz");
                     try (PreparedStatement ps = con.prepareStatement(
                             "INSERT INTO configuracion_email (host_smtp, puerto_smtp, usar_tls, email_remitente, nombre_remitente, usuario_smtp, password_cifrado, activo) " +
                             "VALUES (?,?,?,?,?,?,?,true)")) {

@@ -30,7 +30,7 @@ public class NotaDebitoService {
     private final NotaDebitoMotivoDAO notaDebitoMotivoDAO;
     private final CajaSesionDAO cajaSesionDAO;
     private final CajaMovimientoDAO cajaMovimientoDAO;
-    private final LogDAO logDAO = new LogDAO();
+    private final LogDAO logDAO = new LogDAOPostgres();
 
     public NotaDebitoService() {
         this.empresaDAO = new EmpresaDAOPostgres();

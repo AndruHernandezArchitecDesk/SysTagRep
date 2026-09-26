@@ -31,6 +31,7 @@ import org.kordamp.ikonli.javafx.FontIcon;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
+import com.vendex.dao.LogDAOPostgres;
 
 public class MainController implements Initializable {
 
@@ -64,7 +65,7 @@ public class MainController implements Initializable {
     @FXML
     private Label lblBannerSri;
 
-    private final LogDAO logDAO = new LogDAO();
+    private final LogDAO logDAO = new LogDAOPostgres();
     private final AlertaService alertaService = new AlertaService();
 
     private boolean mostrandoDashboard2 = false;
@@ -457,7 +458,7 @@ public class MainController implements Initializable {
     private void actualizarBannerSriPendientes() {
         Task<Integer> task = new Task<>() {
             @Override protected Integer call() {
-                try { return new com.vendex.dao.ComprobantePendienteSriDAO().contarPendientes(); } catch (Exception e) { return 0; }
+                try { return new com.vendex.dao.ComprobantePendienteSriDAOPostgres().contarPendientes(); } catch (Exception e) { return 0; }
             }
         };
         task.setOnSucceeded(e -> {

@@ -22,6 +22,7 @@ import javafx.scene.paint.Color;
 import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
 import org.kordamp.ikonli.javafx.FontIcon;
 import com.vendex.dao.VendedorDAOPostgres;
+import com.vendex.dao.LogDAOPostgres;
 
 public class VendedorController implements Initializable{
 
@@ -46,7 +47,7 @@ public class VendedorController implements Initializable{
     @FXML private TextField txtBuscar;
 
     private final VendedorDAO dao = new VendedorDAOPostgres();
-    private final LogDAO logDAO = new LogDAO();
+    private final LogDAO logDAO = new LogDAOPostgres();
     private ObservableList<Vendedor> listaVendedores = FXCollections.observableArrayList();
 
     @Override

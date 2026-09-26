@@ -56,6 +56,7 @@ import com.vendex.dao.NotaDebitoRegistroDAOPostgres;
 import com.vendex.dao.GuiaRemisionRegistroDAOPostgres;
 import com.vendex.dao.RetencionRegistroDAOPostgres;
 import com.vendex.dao.ClienteDAOPostgres;
+import com.vendex.dao.LogDAOPostgres;
 
 public class SeguimientoSriController implements Initializable {
 
@@ -85,7 +86,7 @@ public class SeguimientoSriController implements Initializable {
     private int totalPages = 1;
     private int totalCount = 0;
     private final FacturaRegistroDAO dao = new FacturaRegistroDAOPostgres();
-    private final LogDAO logDAO = new LogDAO();
+    private final LogDAO logDAO = new LogDAOPostgres();
     private final ClienteDAO clienteDAO = new ClienteDAOPostgres();
     private final FacturaService facturaService = new FacturaService();
     private final ObservableList<FacturaRegistro> listaFacturas = FXCollections.observableArrayList();
@@ -179,7 +180,7 @@ public class SeguimientoSriController implements Initializable {
     private void consultarSri() {
         // Contingencia: la cola persistente se encarga automáticamente cada 2min (ServicioReintentoSri).
         // Este botón ahora es solo vista/manual: fuerza reintento inmediato de la cola.
-        com.vendex.dao.ComprobantePendienteSriDAO pendDao = new com.vendex.dao.ComprobantePendienteSriDAO();
+        com.vendex.dao.ComprobantePendienteSriDAO pendDao = new com.vendex.dao.ComprobantePendienteSriDAOPostgres();
         int pendientesCola = pendDao.contarPendientes();
         if (pendientesCola == 0) {
             // fallback: también revisar tablas legacy por si hay pendientes no encolados (migración inicial)

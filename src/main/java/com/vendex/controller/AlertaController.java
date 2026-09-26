@@ -22,6 +22,8 @@ import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
+import com.vendex.dao.LogDAOPostgres;
+import com.vendex.dao.AlertaDAOPostgres;
 
 public class AlertaController implements Initializable {
 
@@ -37,8 +39,8 @@ public class AlertaController implements Initializable {
     @FXML private Label lblResumen;
 
     private final AlertaService alertaService = new AlertaService();
-    private final AlertaDAO alertaDAO = new AlertaDAO();
-    private final LogDAO logDAO = new LogDAO();
+    private final AlertaDAO alertaDAO = new AlertaDAOPostgres();
+    private final LogDAO logDAO = new LogDAOPostgres();
     private final ObservableList<Alerta> listaAlertas = FXCollections.observableArrayList();
 
     @Override

@@ -33,7 +33,7 @@ public class NotaCreditoService {
     private final HistorialProductoDAO historialProductoDAO;
     private final CajaSesionDAO cajaSesionDAO;
     private final CajaMovimientoDAO cajaMovimientoDAO;
-    private final LogDAO logDAO = new LogDAO();
+    private final LogDAO logDAO = new LogDAOPostgres();
 
     public NotaCreditoService() {
         this.empresaDAO = new EmpresaDAOPostgres();

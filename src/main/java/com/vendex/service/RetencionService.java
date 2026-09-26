@@ -29,7 +29,7 @@ public class RetencionService {
     private final RetencionRegistroDAO retencionDAO;
     private final RetencionDocumentoSustentoDAO docDAO;
     private final RetencionDetalleDAO detalleDAO;
-    private final LogDAO logDAO = new LogDAO();
+    private final LogDAO logDAO = new LogDAOPostgres();
 
     public RetencionService() {
         this.empresaDAO = new EmpresaDAOPostgres();

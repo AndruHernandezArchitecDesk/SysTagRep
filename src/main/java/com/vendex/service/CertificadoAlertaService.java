@@ -12,11 +12,12 @@ import java.time.LocalDate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import com.vendex.dao.EmpresaDAOPostgres;
+import com.vendex.dao.CertificadoEstadoDAOPostgres;
 
 public class CertificadoAlertaService {
 
     private static final Logger LOGGER = Logger.getLogger(CertificadoAlertaService.class.getName());
-    private final CertificadoEstadoDAO dao = new CertificadoEstadoDAO();
+    private final CertificadoEstadoDAO dao = new CertificadoEstadoDAOPostgres();
 
     public static class ResultadoAlerta {
         public final CertificadoDigitalInfo info;

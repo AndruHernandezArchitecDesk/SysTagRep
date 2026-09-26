@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import com.vendex.dao.ConfiguracionEmailDAOPostgres;
 
 public class EmailService {
 
@@ -44,7 +45,7 @@ public class EmailService {
         synchronized (CACHE_LOCK) {
             if (cachedConfig != null) return cachedConfig;
             try {
-                Optional<ConfiguracionEmail> opt = new ConfiguracionEmailDAO().obtenerActiva();
+                Optional<ConfiguracionEmail> opt = new ConfiguracionEmailDAOPostgres().obtenerActiva();
                 if (opt.isPresent()) {
                     cachedConfig = opt.get();
                     return cachedConfig;

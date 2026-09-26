@@ -27,6 +27,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import com.vendex.dao.InventarioDAOPostgres;
+import com.vendex.dao.UbicacionDetalleDAOPostgres;
+import com.vendex.dao.LogDAOPostgres;
+import com.vendex.dao.PercheroDAOPostgres;
 
 public class UbicacionPercheroController implements Initializable {
 
@@ -39,10 +42,10 @@ public class UbicacionPercheroController implements Initializable {
     @FXML private Button btnNuevoPerchero;
     @FXML private Button btnEliminarPerchero;
 
-    private final PercheroDAO percheroDAO = new PercheroDAO();
-    private final UbicacionDetalleDAO ubicacionDAO = new UbicacionDetalleDAO();
+    private final PercheroDAO percheroDAO = new PercheroDAOPostgres();
+    private final UbicacionDetalleDAO ubicacionDAO = new UbicacionDetalleDAOPostgres();
     private final InventarioDAO inventarioDAO = new InventarioDAOPostgres();
-    private final LogDAO logDAO = new LogDAO();
+    private final LogDAO logDAO = new LogDAOPostgres();
     private final ObservableList<String> listaNombresPerchero = FXCollections.observableArrayList();
     private UbicacionDetalle ubicacionSeleccionada;
     private VBox bloqueSeleccionado;

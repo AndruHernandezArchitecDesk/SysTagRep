@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.ResourceBundle;
 import com.vendex.dao.InventarioDAOPostgres;
 import com.vendex.dao.EmpresaDAOPostgres;
+import com.vendex.dao.UbicacionDetalleDAOPostgres;
 
 /**
  * Pantalla de Inventario: tabla con todo el inventario, búsqueda, paginación,
@@ -70,9 +71,9 @@ public class InventarioController implements Initializable {
     private int totalPages = 1;
     private int totalCount = 0;
     private final InventarioDAO dao = new InventarioDAOPostgres();
-    private final com.vendex.dao.LogDAO logDAO = new com.vendex.dao.LogDAO();
+    private final com.vendex.dao.LogDAO logDAO = new com.vendex.dao.LogDAOPostgres();
     private final EmpresaDAO daoEmpresa = new EmpresaDAOPostgres();
-    private final UbicacionDetalleDAO daoUbicacion = new UbicacionDetalleDAO();
+    private final UbicacionDetalleDAO daoUbicacion = new UbicacionDetalleDAOPostgres();
     private final ObservableList<Inventario> listaInventario = FXCollections.observableArrayList();
 
     @Override

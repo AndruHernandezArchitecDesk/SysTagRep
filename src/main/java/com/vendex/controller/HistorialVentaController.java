@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
+import com.vendex.dao.VentaResumenDAOPostgres;
 
 public class HistorialVentaController implements Initializable {
 
@@ -38,7 +39,7 @@ public class HistorialVentaController implements Initializable {
     @FXML private TableColumn<VentaResumen, Integer> colItems;
     @FXML private TableColumn<VentaResumen, BigDecimal> colTotal;
 
-    private final VentaResumenDAO dao = new VentaResumenDAO();
+    private final VentaResumenDAO dao = new VentaResumenDAOPostgres();
     private ObservableList<VentaResumen> lista = FXCollections.observableArrayList();
 
     @Override

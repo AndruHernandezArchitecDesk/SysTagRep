@@ -18,6 +18,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
 import javafx.util.Duration;
+import com.vendex.dao.RepuestoChatbotDAOPostgres;
 
 public class ChatWidgetController {
 
@@ -30,7 +31,7 @@ public class ChatWidgetController {
     @FXML private Label badgeIA;
     @FXML private Circle pulseCircle;
 
-    private final GeminiChatbotService chatbotService = new GeminiChatbotService(new RepuestoChatbotDAO());
+    private final GeminiChatbotService chatbotService = new GeminiChatbotService(new RepuestoChatbotDAOPostgres());
 
     @FXML
     public void initialize() {
