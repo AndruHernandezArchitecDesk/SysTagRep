@@ -315,33 +315,7 @@ public class NotaCreditoService {
     }
 
     private FacturaRegistro obtenerFacturaPorId(int id) {
-        String sql = "SELECT fr.*, c.nombre AS nombre_cliente, ce.mensaje_sri AS mensaje_sri, COALESCE(ce.estado_sri, fr.estado_sri) AS estado_sri_actual FROM factura_registro fr LEFT JOIN cliente c ON c.id=fr.cliente_id LEFT JOIN comprobantes_electronicos ce ON ce.clave_acceso=fr.clave_acceso WHERE fr.id=? LIMIT 1";
-        try (java.sql.Connection con = DatabaseConnection.getConnection();
-             java.sql.PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, id);
-            try (java.sql.ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    FacturaRegistro f = new FacturaRegistro();
-                    f.setId(rs.getInt("id"));
-                    f.setEmpresaId(rs.getInt("empresa_id"));
-                    f.setClienteId(rs.getInt("cliente_id"));
-                    f.setFecha(rs.getObject("fecha", LocalDateTime.class));
-                    f.setCodigo(rs.getString("codigo"));
-                    f.setFormaPago(rs.getString("forma_pago"));
-                    f.setSubtotal(rs.getBigDecimal("subtotal"));
-                    f.setIva(rs.getBigDecimal("iva"));
-                    f.setDescuento(rs.getBigDecimal("descuento"));
-                    f.setTotal(rs.getBigDecimal("total"));
-                    f.setClaveAcceso(rs.getString("clave_acceso"));
-                    f.setNumComprobante(rs.getString("num_comprobante"));
-                    f.setAmbienteSri(rs.getString("ambiente_sri"));
-                    f.setEstadoSri(rs.getString("estado_sri_actual"));
-                    f.setMensajeSri(rs.getString("mensaje_sri"));
-                    return f;
-                }
-            }
-        } catch (Exception e) { logDAO.guardar("NotaCreditoService","obtenerFacturaPorId", e.getMessage(), e); }
-        return null;
+        return facturaRegistroDAO.obtenerPorId(id);
     }
 
     public String regenerarRide(String claveAcceso, String numeroAutorizacion, String fechaAutorizacion, File directorioEscritorio) {
