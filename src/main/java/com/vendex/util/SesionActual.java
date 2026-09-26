@@ -9,6 +9,8 @@ import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import com.vendex.dao.PermisoDAOPostgres;
+import com.vendex.dao.AuditoriaAccionDAOPostgres;
 
 /**
  * Holder de sesión. Carga permisos una sola vez al login desde rol_permiso.
@@ -34,7 +36,7 @@ public final class SesionActual {
         if (rolId == 0 && u.getRol() != null) {
             // fallback compat: buscar rol por nombre
             try {
-                var rol = new com.vendex.dao.RolDAO().obtenerPorNombre(u.getRol());
+                var rol = new com.vendex.dao.RolDAOPostgres().obtenerPorNombre(u.getRol());
                 if (rol != null) {
                     rolId = rol.getId();
                     // cache limite del rol
@@ -43,7 +45,7 @@ public final class SesionActual {
             } catch (Exception ignored) {}
         } else if (rolId != 0) {
             try {
-                var rol = new com.vendex.dao.RolDAO().obtenerPorId(rolId);
+                var rol = new com.vendex.dao.RolDAOPostgres().obtenerPorId(rolId);
                 if (rol != null) limiteDescuento = rol.getLimiteDescuentoPct();
             } catch (Exception ignored) {}
         }
@@ -51,7 +53,7 @@ public final class SesionActual {
         if (u.getLimiteDescuentoPct() != null) limiteDescuento = u.getLimiteDescuentoPct();
 
         if (rolId != 0) {
-            permisos = new HashSet<>(new PermisoDAO().listarPorRol(rolId));
+            permisos = new HashSet<>(new PermisoDAOPostgres().listarPorRol(rolId));
         } else {
             permisos = Collections.emptySet();
         }
@@ -91,25 +93,25 @@ public final class SesionActual {
         if (!tienePermiso(codigo)) {
             // auditoría DENEGADO
             try {
-                if (usuario != null) new AuditoriaAccionDAO().registrar(usuario.getId(), codigo, "DENEGADO", "Intento sin permiso");
+                if (usuario != null) new AuditoriaAccionDAOPostgres().registrar(usuario.getId(), codigo, "DENEGADO", "Intento sin permiso");
             } catch (Exception ignored) {}
             throw new SinPermisoException(codigo);
         }
         // auditoría PERMITIDO solo para sensibles
         if (esSensible(codigo)) {
             try {
-                if (usuario != null) new AuditoriaAccionDAO().registrar(usuario.getId(), codigo, "PERMITIDO", null);
+                if (usuario != null) new AuditoriaAccionDAOPostgres().registrar(usuario.getId(), codigo, "PERMITIDO", null);
             } catch (Exception ignored) {}
         }
     }
 
     public static void exigirPermisoConDetalle(String codigo, String detalle) {
         if (!tienePermiso(codigo)) {
-            try { if (usuario != null) new AuditoriaAccionDAO().registrar(usuario.getId(), codigo, "DENEGADO", detalle); } catch (Exception ignored) {}
+            try { if (usuario != null) new AuditoriaAccionDAOPostgres().registrar(usuario.getId(), codigo, "DENEGADO", detalle); } catch (Exception ignored) {}
             throw new SinPermisoException(codigo, detalle);
         }
         if (esSensible(codigo)) {
-            try { if (usuario != null) new AuditoriaAccionDAO().registrar(usuario.getId(), codigo, "PERMITIDO", detalle); } catch (Exception ignored) {}
+            try { if (usuario != null) new AuditoriaAccionDAOPostgres().registrar(usuario.getId(), codigo, "PERMITIDO", detalle); } catch (Exception ignored) {}
         }
     }
 
@@ -119,7 +121,7 @@ public final class SesionActual {
         BigDecimal limite = getLimiteDescuento();
         if (limite == null) return; // sin tope (admin)
         if (pctSolicitado.compareTo(limite) > 0) {
-            try { if (usuario != null) new AuditoriaAccionDAO().registrar(usuario.getId(), "DESCUENTO_APLICAR", "DENEGADO", "Tope " + limite + "% solicitado " + pctSolicitado + "%"); } catch (Exception ignored) {}
+            try { if (usuario != null) new AuditoriaAccionDAOPostgres().registrar(usuario.getId(), "DESCUENTO_APLICAR", "DENEGADO", "Tope " + limite + "% solicitado " + pctSolicitado + "%"); } catch (Exception ignored) {}
             throw new SinPermisoException("DESCUENTO_APLICAR", "Tope excedido: máximo " + limite + "% solicitado " + pctSolicitado + "%");
         }
     }

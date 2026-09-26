@@ -22,6 +22,7 @@ import java.net.InetAddress;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.ResourceBundle;
+import com.vendex.dao.UsuarioDAOPostgres;
 
 public class LoginController implements Initializable {
 
@@ -34,7 +35,7 @@ public class LoginController implements Initializable {
 
     public static Usuario usuarioAutenticado;
 
-    private final UsuarioDAO dao = new UsuarioDAO();
+    private final UsuarioDAO dao = new UsuarioDAOPostgres();
     private final LoginIntentoLogDAO logDao = new LoginIntentoLogDAO();
 
     @Override

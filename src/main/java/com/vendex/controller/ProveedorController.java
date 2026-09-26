@@ -20,6 +20,7 @@ import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.net.URL;
 import java.util.ResourceBundle;
+import com.vendex.dao.ProveedorDAOPostgres;
 
 public class ProveedorController implements Initializable {
     private boolean formularioVisible = true;
@@ -49,7 +50,7 @@ public class ProveedorController implements Initializable {
     @FXML private TableColumn<Proveedor, String> colFechaRegistro;
     @FXML private TableColumn<Proveedor, Void> colAcciones;
 
-    private final ProveedorDAO dao = new ProveedorDAO();
+    private final ProveedorDAO dao = new ProveedorDAOPostgres();
     private final LogDAO logDAO = new LogDAO();
     private ObservableList<Proveedor> listaProveedores = FXCollections.observableArrayList();
 

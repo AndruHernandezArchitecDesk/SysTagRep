@@ -40,6 +40,8 @@ import java.util.ResourceBundle;
 import com.vendex.dao.FacturaDetalleDAOPostgres;
 import com.vendex.dao.InventarioDAOPostgres;
 import com.vendex.dao.HistorialProductoDAOPostgres;
+import com.vendex.dao.CuentaPorPagarDAOPostgres;
+import com.vendex.dao.FacturaProveedorDAOPostgres;
 
 public class FacturasIngresadasController implements Initializable {
 
@@ -60,9 +62,9 @@ public class FacturasIngresadasController implements Initializable {
     @FXML private TableColumn<FacturaProveedor, BigDecimal> colDetTotal;
     @FXML private Label lblTotal;
 
-    private final FacturaProveedorDAO dao = new FacturaProveedorDAO();
+    private final FacturaProveedorDAO dao = new FacturaProveedorDAOPostgres();
     private final InventarioDAO inventarioDAO = new InventarioDAOPostgres();
-    private final CuentaPorPagarDAO cuentaPorPagarDAO = new CuentaPorPagarDAO();
+    private final CuentaPorPagarDAO cuentaPorPagarDAO = new CuentaPorPagarDAOPostgres();
     private final FacturaDetalleDAO facturaDetalleDAO = new FacturaDetalleDAOPostgres();
     private final HistorialProductoDAO historialProductoDAO = new HistorialProductoDAOPostgres();
     private final UbicacionDetalleDAO ubicacionDAO = new UbicacionDetalleDAO();

@@ -36,6 +36,13 @@ public class AppContext {
     public final CajaSesionDAO cajaSesionDAO;
     public final CajaMovimientoDAO cajaMovimientoDAO;
     public final ProveedorDAO proveedorDAO;
+    public final CuentaPorPagarDAO cuentaPorPagarDAO;
+    public final FacturaProveedorDAO facturaProveedorDAO;
+    public final VendedorDAO vendedorDAO;
+    public final UsuarioDAO usuarioDAO;
+    public final RolDAO rolDAO;
+    public final PermisoDAO permisoDAO;
+    public final AuditoriaAccionDAO auditoriaAccionDAO;
 
     // Servicios
     public final FacturaService facturaService;
@@ -67,7 +74,14 @@ public class AppContext {
         this.empresaDAO = new EmpresaDAOPostgres();
         this.cajaSesionDAO = new CajaSesionDAOPostgres();
         this.cajaMovimientoDAO = new CajaMovimientoDAOPostgres();
-        this.proveedorDAO = new ProveedorDAO();
+        this.proveedorDAO = new ProveedorDAOPostgres();
+        this.cuentaPorPagarDAO = new CuentaPorPagarDAOPostgres();
+        this.facturaProveedorDAO = new FacturaProveedorDAOPostgres();
+        this.vendedorDAO = new VendedorDAOPostgres();
+        this.usuarioDAO = new UsuarioDAOPostgres();
+        this.rolDAO = new RolDAOPostgres();
+        this.permisoDAO = new PermisoDAOPostgres();
+        this.auditoriaAccionDAO = new AuditoriaAccionDAOPostgres();
 
         // Servicios con inyección por constructor
         this.facturaService = new FacturaService(

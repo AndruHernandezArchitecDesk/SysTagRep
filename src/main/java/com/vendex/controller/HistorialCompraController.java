@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
+import com.vendex.dao.FacturaProveedorDAOPostgres;
 
 public class HistorialCompraController implements Initializable {
 
@@ -36,7 +37,7 @@ public class HistorialCompraController implements Initializable {
     @FXML private TableColumn<CompraResumen, Integer> colItems;
     @FXML private TableColumn<CompraResumen, BigDecimal> colTotal;
 
-    private final FacturaProveedorDAO dao = new FacturaProveedorDAO();
+    private final FacturaProveedorDAO dao = new FacturaProveedorDAOPostgres();
     private ObservableList<CompraResumen> lista = FXCollections.observableArrayList();
 
     @Override

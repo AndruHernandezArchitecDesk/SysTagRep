@@ -33,7 +33,7 @@ public class RetencionService {
 
     public RetencionService() {
         this.empresaDAO = new EmpresaDAOPostgres();
-        this.proveedorDAO = new ProveedorDAO();
+        this.proveedorDAO = new ProveedorDAOPostgres();
         this.secuenciaDAO = new SecuenciaDocumentoDAOPostgres();
         this.comprobanteDAO = new ComprobanteDAOPostgres();
         this.retencionDAO = new RetencionRegistroDAOPostgres();

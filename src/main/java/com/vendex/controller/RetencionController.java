@@ -39,7 +39,7 @@ public class RetencionController implements Initializable {
 
     private final RetencionService retService = new RetencionService();
     private final SecuenciaDocumentoDAO secDAO = new SecuenciaDocumentoDAOPostgres();
-    private final ProveedorDAO proveedorDAO = new ProveedorDAO();
+    private final ProveedorDAO proveedorDAO = new ProveedorDAOPostgres();
     private final EmpresaDAO empresaDAO = new EmpresaDAOPostgres();
     private final LogDAO logDAO = new LogDAO();
     private final TablaRetencionDAO tablaDAO = new TablaRetencionDAO();

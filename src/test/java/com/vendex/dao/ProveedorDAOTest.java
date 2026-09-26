@@ -9,6 +9,7 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
+import com.vendex.dao.ProveedorDAOPostgres;
 
 class ProveedorDAOTest {
 
@@ -29,7 +30,7 @@ class ProveedorDAOTest {
         try (Connection con = DriverManager.getConnection("jdbc:hsqldb:mem:" + dbName, "sa", "")) {
             DatabaseConnection.setConnectionParams("jdbc:hsqldb:mem:" + dbName, "sa", "");
             crearTabla(con);
-            ProveedorDAO dao = new ProveedorDAO();
+            ProveedorDAO dao = new ProveedorDAOPostgres();
             Proveedor p = new Proveedor();
             p.setNombre("Bosch");
             p.setIdentificacion("1790000000001");
@@ -53,7 +54,7 @@ class ProveedorDAOTest {
         try (Connection con = DriverManager.getConnection("jdbc:hsqldb:mem:" + dbName, "sa", "")) {
             DatabaseConnection.setConnectionParams("jdbc:hsqldb:mem:" + dbName, "sa", "");
             crearTabla(con);
-            ProveedorDAO dao = new ProveedorDAO();
+            ProveedorDAO dao = new ProveedorDAOPostgres();
             List<Proveedor> lista = dao.listar();
             assertTrue(lista.isEmpty());
         } finally {
@@ -67,7 +68,7 @@ class ProveedorDAOTest {
         try (Connection con = DriverManager.getConnection("jdbc:hsqldb:mem:" + dbName, "sa", "")) {
             DatabaseConnection.setConnectionParams("jdbc:hsqldb:mem:" + dbName, "sa", "");
             crearTabla(con);
-            ProveedorDAO dao = new ProveedorDAO();
+            ProveedorDAO dao = new ProveedorDAOPostgres();
             Proveedor p = new Proveedor();
             p.setNombre("Bosch");
             p.setIdentificacion("1790000000001");

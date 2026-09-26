@@ -30,6 +30,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.ResourceBundle;
+import com.vendex.dao.CuentaPorPagarDAOPostgres;
 
 public class PorPagarController implements Initializable {
 
@@ -43,7 +44,7 @@ public class PorPagarController implements Initializable {
     @FXML private TableColumn<Object[], BigDecimal> colDetTotal, colDetAdelanto, colDetPendiente;
     @FXML private TableColumn<Object[], Void> colDetAccion;
 
-    private final CuentaPorPagarDAO dao = new CuentaPorPagarDAO();
+    private final CuentaPorPagarDAO dao = new CuentaPorPagarDAOPostgres();
     private ObservableList<Object[]> listaCreditos = FXCollections.observableArrayList();
     private ObservableList<Object[]> listaDetalle = FXCollections.observableArrayList();
 

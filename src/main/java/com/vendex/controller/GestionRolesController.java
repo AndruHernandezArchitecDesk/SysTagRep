@@ -19,6 +19,8 @@ import java.math.BigDecimal;
 import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
+import com.vendex.dao.RolDAOPostgres;
+import com.vendex.dao.PermisoDAOPostgres;
 
 public class GestionRolesController implements Initializable {
 
@@ -32,8 +34,8 @@ public class GestionRolesController implements Initializable {
     @FXML private Label lblInfo;
     @FXML private Button btnGuardar;
 
-    private final RolDAO rolDAO = new RolDAO();
-    private final PermisoDAO permisoDAO = new PermisoDAO();
+    private final RolDAO rolDAO = new RolDAOPostgres();
+    private final PermisoDAO permisoDAO = new PermisoDAOPostgres();
     private final ObservableList<FilaPermiso> filas = FXCollections.observableArrayList();
 
     @Override
@@ -100,7 +102,7 @@ public class GestionRolesController implements Initializable {
         permisoDAO.actualizarPermisosDeRol(rol.getId(), codigos);
         rolDAO.actualizarLimiteDescuento(rol.getId(), limite);
         // auditoría
-        try { new com.vendex.dao.AuditoriaAccionDAO().registrar(com.vendex.util.SesionActual.getUsuario().getId(),"USUARIO_GESTIONAR","PERMITIDO","Actualizar rol "+rol.getNombre()+" permisos="+codigos.size()+" tope="+limite); } catch(Exception ignored){}
+        try { new com.vendex.dao.AuditoriaAccionDAOPostgres().registrar(com.vendex.util.SesionActual.getUsuario().getId(),"USUARIO_GESTIONAR","PERMITIDO","Actualizar rol "+rol.getNombre()+" permisos="+codigos.size()+" tope="+limite); } catch(Exception ignored){}
         new Alert(Alert.AlertType.INFORMATION,"Rol actualizado. Los cambios aplican en el siguiente login de usuarios de ese rol.").showAndWait();
         cargarMatriz(rolDAO.obtenerPorId(rol.getId()));
     }

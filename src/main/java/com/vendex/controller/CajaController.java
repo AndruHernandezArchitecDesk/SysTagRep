@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.ResourceBundle;
 import com.vendex.dao.CajaSesionDAOPostgres;
 import com.vendex.dao.CajaMovimientoDAOPostgres;
+import com.vendex.dao.UsuarioDAOPostgres;
 
 public class CajaController implements Initializable {
 
@@ -74,7 +75,7 @@ public class CajaController implements Initializable {
     private final CajaService cajaService = new CajaService();
     private final CajaSesionDAO sesionDAO = new CajaSesionDAOPostgres();
     private final CajaMovimientoDAO movimientoDAO = new CajaMovimientoDAOPostgres();
-    private final UsuarioDAO usuarioDAO = new UsuarioDAO();
+    private final UsuarioDAO usuarioDAO = new UsuarioDAOPostgres();
     private final LogDAO logDAO = new LogDAO();
     private final ObservableList<CajaMovimiento> listaMovimientos = FXCollections.observableArrayList();
     private final ObservableList<CajaSesion> listaHistorial = FXCollections.observableArrayList();

@@ -426,9 +426,9 @@ public class SeguimientoSriController implements Initializable {
                                         // correo a proveedor
                                         String correo = null; String nombre = retFull.getRazonSocialSujeto();
                                         if (retFull.getProveedorId()!=null) {
-                                            for (com.vendex.model.Proveedor p : new com.vendex.dao.ProveedorDAO().listar()) if (p.getId()==retFull.getProveedorId()) { correo = p.getCorreo(); nombre = p.getNombre(); break; }
+                                            for (com.vendex.model.Proveedor p : new com.vendex.dao.ProveedorDAOPostgres().listar()) if (p.getId()==retFull.getProveedorId()) { correo = p.getCorreo(); nombre = p.getNombre(); break; }
                                         }
-                                        if (correo==null) for (com.vendex.model.Proveedor p : new com.vendex.dao.ProveedorDAO().listar()) if (retFull.getIdentificacionSujeto().equals(p.getIdentificacion())) { correo = p.getCorreo(); break; }
+                                        if (correo==null) for (com.vendex.model.Proveedor p : new com.vendex.dao.ProveedorDAOPostgres().listar()) if (retFull.getIdentificacionSujeto().equals(p.getIdentificacion())) { correo = p.getCorreo(); break; }
                                         if (correo != null && !correo.trim().isEmpty()) {
                                             EmailService es = new EmailService();
                                             boolean enviado = es.enviarCorreoConArchivos(correo.trim(), nombre, retFull.getNumComprobante(), AppConstants.TIPO_DOCUMENTO_RETENCION, new File(pdfRegenerado), new File(rutaXML));

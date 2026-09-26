@@ -57,6 +57,9 @@ import java.util.ResourceBundle;
 import com.vendex.dao.FacturaDetalleDAOPostgres;
 import com.vendex.dao.InventarioDAOPostgres;
 import com.vendex.dao.HistorialProductoDAOPostgres;
+import com.vendex.dao.ProveedorDAOPostgres;
+import com.vendex.dao.CuentaPorPagarDAOPostgres;
+import com.vendex.dao.FacturaProveedorDAOPostgres;
 
 /**
  * Formulario de ingreso de factura de mercadería. Permite registrar varios
@@ -108,11 +111,11 @@ public class IngresoMercaderiaController implements Initializable {
     private int facturaEditadaProveedorId;
     private boolean servicioLogistico = false;
     private final InventarioDAO dao = new InventarioDAOPostgres();
-    private final ProveedorDAO proveedorDAO = new ProveedorDAO();
+    private final ProveedorDAO proveedorDAO = new ProveedorDAOPostgres();
     private final GrupoDAO grupoDAO = new GrupoDAO();
     private final MarcaDAO marcaDAO = new MarcaDAO();
-    private final CuentaPorPagarDAO cuentaPorPagarDAO = new CuentaPorPagarDAO();
-    private final FacturaProveedorDAO facturaProveedorDAO = new FacturaProveedorDAO();
+    private final CuentaPorPagarDAO cuentaPorPagarDAO = new CuentaPorPagarDAOPostgres();
+    private final FacturaProveedorDAO facturaProveedorDAO = new FacturaProveedorDAOPostgres();
     private final CodigoDAO codigoDAO = new CodigoDAO();
     private final FacturaDetalleDAO facturaDetalleDAO = new FacturaDetalleDAOPostgres();
     private final HistorialProductoDAO historialProductoDAO = new HistorialProductoDAOPostgres();

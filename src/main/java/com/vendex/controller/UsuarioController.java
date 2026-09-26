@@ -24,6 +24,7 @@ import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import com.vendex.dao.UsuarioDAOPostgres;
 
 public class UsuarioController implements Initializable {
     private boolean formularioVisible = true;
@@ -56,7 +57,7 @@ public class UsuarioController implements Initializable {
     @FXML private TableColumn<Usuario, Boolean> colEstado;
     @FXML private TableColumn<Usuario, Void> colAcciones;
 
-    private final UsuarioDAO dao = new UsuarioDAO();
+    private final UsuarioDAO dao = new UsuarioDAOPostgres();
     private final LogDAO logDAO = new LogDAO();
     private ObservableList<Usuario> listaUsuarios = FXCollections.observableArrayList();
     private ObservableList<VistaPermiso> listaPermisos = FXCollections.observableArrayList();
@@ -215,7 +216,7 @@ public class UsuarioController implements Initializable {
             u.setRol(cmbRol.getValue());
             // mapear rol string → rol_id + tope
             try {
-                com.vendex.model.Rol rolEnt = new com.vendex.dao.RolDAO().obtenerPorNombre(cmbRol.getValue());
+                com.vendex.model.Rol rolEnt = new com.vendex.dao.RolDAOPostgres().obtenerPorNombre(cmbRol.getValue());
                 if (rolEnt != null) { u.setRolId(rolEnt.getId()); u.setLimiteDescuentoPct(rolEnt.getLimiteDescuentoPct()); }
             } catch (Exception ignored) {}
             u.setEstado("ACTIVO".equals(cmbEstado.getValue()));
@@ -366,7 +367,7 @@ public class UsuarioController implements Initializable {
 
         if (alert.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK) {
             dao.eliminar(u.getId());
-            try { new com.vendex.dao.AuditoriaAccionDAO().registrar(com.vendex.util.SesionActual.getUsuario().getId(),"USUARIO_GESTIONAR","PERMITIDO","Eliminar usuario "+u.getUsername()); } catch(Exception ignored){}
+            try { new com.vendex.dao.AuditoriaAccionDAOPostgres().registrar(com.vendex.util.SesionActual.getUsuario().getId(),"USUARIO_GESTIONAR","PERMITIDO","Eliminar usuario "+u.getUsername()); } catch(Exception ignored){}
             cargarDatos();
         }
     }
