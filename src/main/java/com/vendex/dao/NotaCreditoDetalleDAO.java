@@ -17,9 +17,16 @@ public class NotaCreditoDetalleDAO {
     private static final Logger LOGGER = Logger.getLogger(NotaCreditoDetalleDAO.class.getName());
 
     public void insertarDetalles(int notaCreditoId, List<NotaCreditoDetalle> detalles) {
+        try (Connection con = DatabaseConnection.getConnection()) {
+            insertarDetalles(con, notaCreditoId, detalles);
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Error en NotaCreditoDetalleDAO.insertarDetalles", e);
+        }
+    }
+
+    public void insertarDetalles(Connection con, int notaCreditoId, List<NotaCreditoDetalle> detalles) throws SQLException {
         String sql = "INSERT INTO nota_credito_detalle(nota_credito_id, factura_detalle_id, inventario_id, descripcion, cantidad, precio_unitario, descuento, codigo_porcentaje_iva, precio_total_sin_impuesto) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
             for (NotaCreditoDetalle d : detalles) {
                 ps.setInt(1, notaCreditoId);
                 if (d.getFacturaDetalleId() != null) ps.setInt(2, d.getFacturaDetalleId()); else ps.setNull(2, java.sql.Types.INTEGER);
@@ -33,8 +40,6 @@ public class NotaCreditoDetalleDAO {
                 ps.addBatch();
             }
             ps.executeBatch();
-        } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Error en NotaCreditoDetalleDAO.insertarDetalles", e);
         }
     }
 

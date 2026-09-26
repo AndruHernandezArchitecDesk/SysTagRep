@@ -75,6 +75,44 @@ public class SecuenciaDocumentoDAO {
         return -1;
     }
 
+    public int marcarUsado(Connection con, String tipo) throws SQLException {
+        asegurarFila(con, tipo);
+        String sql = "UPDATE secuencia_documento SET siguiente_numero = siguiente_numero + 1 WHERE tipo=? RETURNING siguiente_numero - 1 AS usado";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, tipo);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt("usado");
+            }
+        }
+        return -1;
+    }
+
+    private void asegurarFila(Connection con, String tipo) throws SQLException {
+        String sql = "INSERT INTO secuencia_documento(tipo, prefijo, establecimiento, punto_emision, siguiente_numero) " +
+                     "VALUES (?, '001', '001', '001', 1) ON CONFLICT (tipo) DO NOTHING";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, tipo);
+            ps.executeUpdate();
+        }
+    }
+
+    public SecuenciaDocumento obtener(Connection con, String tipo) throws SQLException {
+        String sql = "SELECT tipo, establecimiento, punto_emision, siguiente_numero FROM secuencia_documento WHERE tipo=?";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, tipo);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new SecuenciaDocumento(
+                            rs.getString("tipo"),
+                            rs.getString("establecimiento"),
+                            rs.getString("punto_emision"),
+                            rs.getInt("siguiente_numero"));
+                }
+            }
+        }
+        return new SecuenciaDocumento(tipo, "001", "001", 1);
+    }
+
     public boolean existeCodigoNotaVenta(String codigo) {
         return existeCodigo("nota_venta_registro", "codigo", codigo);
     }

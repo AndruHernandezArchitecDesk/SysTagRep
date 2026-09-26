@@ -36,10 +36,18 @@ public class ComprobanteDAO {
 
     public void insertar(String claveAcceso, Integer idRelacionado, String numeroComprobante,
                          String ambiente, String xmlGenerado, String tipoComprobante) {
+        try (Connection con = DatabaseConnection.getConnection()) {
+            insertar(con, claveAcceso, idRelacionado, numeroComprobante, ambiente, xmlGenerado, tipoComprobante);
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Error en operacion de ComprobanteDAO", e);
+        }
+    }
+
+    public void insertar(Connection con, String claveAcceso, Integer idRelacionado, String numeroComprobante,
+                         String ambiente, String xmlGenerado, String tipoComprobante) throws SQLException {
         String sql = "INSERT INTO comprobantes_electronicos(documento_relacionado_id, tipo_comprobante, clave_acceso, " +
-                      "numero_comprobante, ambiente, estado_sri, xml_generado) VALUES (?, ?, ?, ?, ?, 'PENDIENTE', ?)";
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+                     "numero_comprobante, ambiente, estado_sri, xml_generado) VALUES (?, ?, ?, ?, ?, 'PENDIENTE', ?)";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setObject(1, idRelacionado, Types.INTEGER);
             ps.setString(2, tipoComprobante);
             ps.setString(3, claveAcceso);
@@ -47,17 +55,28 @@ public class ComprobanteDAO {
             ps.setString(5, ambiente);
             ps.setString(6, xmlGenerado);
             ps.executeUpdate();
+        }
+    }
+
+    public void insertar(Connection con, String claveAcceso, Integer idRelacionado, String numeroComprobante,
+                         String ambiente, String xmlGenerado) throws SQLException {
+        insertar(con, claveAcceso, idRelacionado, numeroComprobante, ambiente, xmlGenerado, "01");
+    }
+
+    public void actualizarEstado(String claveAcceso, String estado, String mensaje,
+                                  String xmlAutorizado, String numeroAutorizacion, String fechaAutorizacion) {
+        try (Connection con = DatabaseConnection.getConnection()) {
+            actualizarEstado(con, claveAcceso, estado, mensaje, xmlAutorizado, numeroAutorizacion, fechaAutorizacion);
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Error en operacion de ComprobanteDAO", e);
         }
     }
 
-    public void actualizarEstado(String claveAcceso, String estado, String mensaje,
-                                  String xmlAutorizado, String numeroAutorizacion, String fechaAutorizacion) {
+    public void actualizarEstado(Connection con, String claveAcceso, String estado, String mensaje,
+                                  String xmlAutorizado, String numeroAutorizacion, String fechaAutorizacion) throws SQLException {
         String sql = "UPDATE comprobantes_electronicos SET estado_sri = ?, mensaje_sri = ?, " +
                      "xml_autorizado = ?, numero_autorizacion = ?, fecha_autorizacion = ? WHERE clave_acceso = ?";
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, estado);
             ps.setString(2, mensaje);
             ps.setString(3, xmlAutorizado);
@@ -65,8 +84,6 @@ public class ComprobanteDAO {
             ps.setTimestamp(5, parsearFechaAutorizacion(fechaAutorizacion));
             ps.setString(6, claveAcceso);
             ps.executeUpdate();
-        } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Error en operacion de ComprobanteDAO", e);
         }
     }
 
@@ -79,11 +96,20 @@ public class ComprobanteDAO {
     public void guardarEnvio(String claveAcceso, String numeroComprobante, String ambiente,
                              String xmlEnviado, String respuestaRecepcion, String respuestaAutorizacion,
                              String estado, String mensaje, String numeroAutorizacion, String fechaAutorizacion, String tipoComprobante) {
+        try (Connection con = DatabaseConnection.getConnection()) {
+            guardarEnvio(con, claveAcceso, numeroComprobante, ambiente, xmlEnviado, respuestaRecepcion, respuestaAutorizacion, estado, mensaje, numeroAutorizacion, fechaAutorizacion, tipoComprobante);
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Error en operacion de ComprobanteDAO", e);
+        }
+    }
+
+    public void guardarEnvio(Connection con, String claveAcceso, String numeroComprobante, String ambiente,
+                             String xmlEnviado, String respuestaRecepcion, String respuestaAutorizacion,
+                             String estado, String mensaje, String numeroAutorizacion, String fechaAutorizacion, String tipoComprobante) throws SQLException {
         String sql = "INSERT INTO xml_enviados(clave_acceso, numero_comprobante, ambiente, tipo_comprobante, " +
                      "xml_enviado, respuesta_recepcion, respuesta_autorizacion, estado_sri, mensaje_sri, " +
                      "numero_autorizacion, fecha_autorizacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, claveAcceso);
             ps.setString(2, numeroComprobante);
             ps.setString(3, ambiente);
@@ -96,9 +122,13 @@ public class ComprobanteDAO {
             ps.setString(10, numeroAutorizacion);
             ps.setTimestamp(11, parsearFechaAutorizacion(fechaAutorizacion));
             ps.executeUpdate();
-        } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Error en operacion de ComprobanteDAO", e);
         }
+    }
+
+    public void guardarEnvio(Connection con, String claveAcceso, String numeroComprobante, String ambiente,
+                             String xmlEnviado, String respuestaRecepcion, String respuestaAutorizacion,
+                             String estado, String mensaje, String numeroAutorizacion, String fechaAutorizacion) throws SQLException {
+        guardarEnvio(con, claveAcceso, numeroComprobante, ambiente, xmlEnviado, respuestaRecepcion, respuestaAutorizacion, estado, mensaje, numeroAutorizacion, fechaAutorizacion, "01");
     }
 
     /**

@@ -14,9 +14,12 @@ public class RetencionDetalleDAO {
     private static final Logger LOGGER = Logger.getLogger(RetencionDetalleDAO.class.getName());
 
     public void insertarDetalles(int docSustentoId, List<RetencionDetalle> lista) {
+        try (Connection con = DatabaseConnection.getConnection()) { insertarDetalles(con, docSustentoId, lista); } catch (SQLException e) { LOGGER.log(Level.SEVERE, "insertarDetalles Retencion", e); }
+    }
+    public void insertarDetalles(Connection con, int docSustentoId, List<RetencionDetalle> lista) throws SQLException {
         if (lista == null || lista.isEmpty()) return;
         String sql = "INSERT INTO retencion_detalle(doc_sustento_id, codigo, codigo_retencion, base_imponible, porcentaje_retener, valor_retenido) VALUES (?,?,?,?,?,?)";
-        try (Connection con = DatabaseConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
             for (RetencionDetalle d : lista) {
                 ps.setInt(1, docSustentoId);
                 ps.setString(2, d.getCodigo());
@@ -27,7 +30,7 @@ public class RetencionDetalleDAO {
                 ps.addBatch();
             }
             ps.executeBatch();
-        } catch (SQLException e) { LOGGER.log(Level.SEVERE, "insertarDetalles Retencion", e); }
+        }
     }
 
     public List<RetencionDetalle> listarPorDocumentoId(int docId) {

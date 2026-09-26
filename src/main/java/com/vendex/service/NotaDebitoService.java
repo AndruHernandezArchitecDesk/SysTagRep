@@ -5,6 +5,8 @@ import com.vendex.dao.*;
 import com.vendex.model.*;
 import com.vendex.util.*;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -202,13 +204,18 @@ public class NotaDebitoService {
         nd.setEstadoSri(AppConstants.ESTADO_PENDIENTE);
         nd.setXmlFirmado(xmlFirmado);
         nd.setUsuarioId(usuarioId);
-        int ndId = notaDebitoDAO.insertar(nd);
-        if (ndId == -1) throw new IllegalStateException("Error al registrar la nota de debito.");
-
-        for (NotaDebitoMotivo m : motivosParaDao) m.setNotaDebitoId(ndId);
-        notaDebitoMotivoDAO.insertarMotivos(ndId, motivosParaDao);
-
-        comprobanteDAO.insertar(claveAcceso, ndId, numComprobante, ambienteSri, xmlFirmado, AppConstants.TIPO_COMPROBANTE_NOTA_DEBITO);
+        int ndId;
+        try (Connection con = DatabaseConnection.getConnection()) {
+            con.setAutoCommit(false);
+            try {
+                ndId = notaDebitoDAO.insertar(con, nd);
+                if (ndId == -1) throw new IllegalStateException("Error al registrar la nota de debito.");
+                for (NotaDebitoMotivo m : motivosParaDao) m.setNotaDebitoId(ndId);
+                notaDebitoMotivoDAO.insertarMotivos(con, ndId, motivosParaDao);
+                comprobanteDAO.insertar(con, claveAcceso, ndId, numComprobante, ambienteSri, xmlFirmado, AppConstants.TIPO_COMPROBANTE_NOTA_DEBITO);
+                con.commit();
+            } catch (Exception e) { try { con.rollback(); } catch (SQLException re) {} throw e; } finally { try { con.setAutoCommit(true); } catch (SQLException ignore) {} }
+        }
 
         String rutaPDF = directorioEscritorio.getAbsolutePath() + File.separator + AppConstants.PREFIJO_PDF_NOTA_DEBITO + numComprobante.replace("-", "") + AppConstants.EXTENSION_PDF;
         String rutaXML = directorioEscritorio.getAbsolutePath() + File.separator + AppConstants.PREFIJO_PDF_NOTA_DEBITO + numComprobante.replace("-", "") + AppConstants.EXTENSION_XML;
@@ -247,9 +254,15 @@ public class NotaDebitoService {
                 logDAO.guardar("NotaDebitoService","SRI-DEVUELTA","ND "+resultado.numComprobante+" clave="+resultado.claveAcceso+" estado="+estado+" msg="+sriResp.getMensaje());
             } catch (Exception e) { logDAO.guardar("NotaDebitoService","volcarXMLError", e.getMessage(), e); }
         }
-        notaDebitoDAO.actualizarEstado(resultado.claveAcceso, estado, sriResp.getMensaje(), numAut, fechaAut);
-        comprobanteDAO.actualizarEstado(resultado.claveAcceso, estado, sriResp.getMensaje(), resultado.xmlFirmado, numAut, fechaAut);
-        comprobanteDAO.guardarEnvio(resultado.claveAcceso, resultado.numComprobante, resultado.ambienteSri, resultado.xmlFirmado, sriResp.getRespuestaRecepcionXml(), sriResp.getRespuestaAutorizacionXml(), estado, sriResp.getMensaje(), numAut, fechaAut, AppConstants.TIPO_COMPROBANTE_NOTA_DEBITO);
+        try (Connection con = DatabaseConnection.getConnection()) {
+            con.setAutoCommit(false);
+            try {
+                notaDebitoDAO.actualizarEstado(con, resultado.claveAcceso, estado, sriResp.getMensaje(), numAut, fechaAut);
+                comprobanteDAO.actualizarEstado(con, resultado.claveAcceso, estado, sriResp.getMensaje(), resultado.xmlFirmado, numAut, fechaAut);
+                comprobanteDAO.guardarEnvio(con, resultado.claveAcceso, resultado.numComprobante, resultado.ambienteSri, resultado.xmlFirmado, sriResp.getRespuestaRecepcionXml(), sriResp.getRespuestaAutorizacionXml(), estado, sriResp.getMensaje(), numAut, fechaAut, AppConstants.TIPO_COMPROBANTE_NOTA_DEBITO);
+                con.commit();
+            } catch (Exception e) { try { con.rollback(); } catch (SQLException re) {} throw new RuntimeException(e); } finally { try { con.setAutoCommit(true); } catch (SQLException ignore) {} }
+        } catch (SQLException e) { throw new RuntimeException(e); }
         actualizarEstadoFactura(resultado, estado);
         if (AppConstants.ESTADO_AUTORIZADO.equals(estado)) {
             try {

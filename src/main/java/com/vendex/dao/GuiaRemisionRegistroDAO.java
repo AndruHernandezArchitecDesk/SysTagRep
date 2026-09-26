@@ -17,8 +17,10 @@ public class GuiaRemisionRegistroDAO {
     private final LogDAO logDAO = new LogDAO();
 
     public int insertar(GuiaRemisionRegistro r) {
+        try (Connection con = DatabaseConnection.getConnection()) { return insertar(con, r); } catch (SQLException e) { if (e.getMessage() != null && e.getMessage().contains("does not exist")) { DatabaseConnection.ensureGuiaRemisionSchema(); return insertar(r); } LOGGER.log(Level.SEVERE, "insertar GR", e); } return -1; }
+    public int insertar(Connection con, GuiaRemisionRegistro r) throws SQLException {
         String sql = "INSERT INTO guia_remision_registro(clave_acceso, establecimiento, punto_emision, secuencial, fecha_emision, dir_partida, razon_social_transportista, tipo_identificacion_transportista, ruc_transportista, placa, fecha_ini_transporte, fecha_fin_transporte, estado_sri, xml_firmado, usuario_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id";
-        try (Connection con = DatabaseConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, r.getClaveAcceso());
             ps.setString(2, r.getEstablecimiento());
             ps.setString(3, r.getPuntoEmision());
@@ -36,13 +38,6 @@ public class GuiaRemisionRegistroDAO {
             ps.setInt(15, r.getUsuarioId());
             ResultSet rs = ps.executeQuery();
             if (rs.next()) return rs.getInt(1);
-        } catch (SQLException e) {
-            if (e.getMessage() != null && e.getMessage().contains("does not exist")) {
-                DatabaseConnection.ensureGuiaRemisionSchema();
-                return insertar(r);
-            }
-            LOGGER.log(Level.SEVERE, "insertar GR", e);
-            try { logDAO.guardar("GuiaRemisionRegistroDAO","insertar","SQL: "+e.getMessage()+" clave="+r.getClaveAcceso()+" placa="+r.getPlaca()+" rucTrans="+r.getRucTransportista(), e); } catch (Exception ignore) {}
         }
         return -1;
     }
@@ -81,8 +76,11 @@ public class GuiaRemisionRegistroDAO {
     }
 
     public void actualizarEstado(String claveAcceso, String estado, String mensaje, String numeroAutorizacion, String fechaAutorizacion) {
+        try (Connection con = DatabaseConnection.getConnection()) { actualizarEstado(con, claveAcceso, estado, mensaje, numeroAutorizacion, fechaAutorizacion); } catch (SQLException e) { LOGGER.log(Level.WARNING, "actualizarEstado GR", e); }
+    }
+    public void actualizarEstado(Connection con, String claveAcceso, String estado, String mensaje, String numeroAutorizacion, String fechaAutorizacion) throws SQLException {
         String sql = "UPDATE guia_remision_registro SET estado_sri=?, mensaje_sri=?, numero_autorizacion=?, fecha_autorizacion=? WHERE clave_acceso=?";
-        try (Connection con = DatabaseConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, estado);
             ps.setString(2, mensaje != null && mensaje.length() > 500 ? mensaje.substring(0, 500) : mensaje);
             ps.setString(3, numeroAutorizacion);
@@ -91,7 +89,7 @@ public class GuiaRemisionRegistroDAO {
             } else ps.setObject(4, null);
             ps.setString(5, claveAcceso);
             ps.executeUpdate();
-        } catch (SQLException e) { LOGGER.log(Level.WARNING, "actualizarEstado GR", e); }
+        }
     }
 
     private GuiaRemisionRegistro mapear(ResultSet rs) throws SQLException {

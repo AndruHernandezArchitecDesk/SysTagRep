@@ -18,10 +18,17 @@ public class CuentaPorCobrarDAO {
     private static final Logger LOGGER = Logger.getLogger(CuentaPorCobrarDAO.class.getName());
 
     public void insertar(CuentaPorCobrar cpc) {
+        try (Connection con = DatabaseConnection.getConnection()) {
+            insertar(con, cpc);
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Error en operacion de CuentaPorCobrarDAO", e);
+        }
+    }
+
+    public void insertar(Connection con, CuentaPorCobrar cpc) throws SQLException {
         String sql = "INSERT INTO cuentas_por_cobrar(nota_venta_id, cliente_id, total, meses_plazo, interes, cuota_mensual, estado, fecha_registro) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, cpc.getNotaVentaId());
             ps.setInt(2, cpc.getClienteId());
             ps.setBigDecimal(3, cpc.getTotal());
@@ -30,8 +37,6 @@ public class CuentaPorCobrarDAO {
             ps.setBigDecimal(6, cpc.getCuotaMensual());
             ps.setString(7, "Pendiente");
             ps.executeUpdate();
-        } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Error en operacion de CuentaPorCobrarDAO", e);
         }
     }
 

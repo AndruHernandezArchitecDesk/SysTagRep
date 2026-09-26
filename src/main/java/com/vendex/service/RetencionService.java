@@ -5,6 +5,8 @@ import com.vendex.dao.*;
 import com.vendex.model.*;
 import com.vendex.util.*;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -196,17 +198,22 @@ public class RetencionService {
         reg.setEstadoSri(AppConstants.ESTADO_PENDIENTE);
         reg.setXmlFirmado(xmlFirmado);
         reg.setUsuarioId(usuarioId);
-        int retId = retencionDAO.insertar(reg);
-        if (retId == -1) throw new IllegalStateException("Error al registrar retención.");
-
-        for (int i=0;i<docEntities.size();i++) docEntities.get(i).setRetencionId(retId);
-        docDAO.insertarDocumentos(retId, docEntities);
-        for (int i=0;i<docEntities.size();i++) {
-            int docId = docEntities.get(i).getId();
-            detalleDAO.insertarDetalles(docId, detallesPorDoc.get(i));
+        int retId;
+        try (Connection con = DatabaseConnection.getConnection()) {
+            con.setAutoCommit(false);
+            try {
+                retId = retencionDAO.insertar(con, reg);
+                if (retId == -1) throw new IllegalStateException("Error al registrar retención.");
+                for (int i=0;i<docEntities.size();i++) docEntities.get(i).setRetencionId(retId);
+                docDAO.insertarDocumentos(con, retId, docEntities);
+                for (int i=0;i<docEntities.size();i++) {
+                    int docId = docEntities.get(i).getId();
+                    detalleDAO.insertarDetalles(con, docId, detallesPorDoc.get(i));
+                }
+                comprobanteDAO.insertar(con, claveAcceso, retId, numComprobante, ambienteSri, xmlFirmado, AppConstants.TIPO_COMPROBANTE_RETENCION);
+                con.commit();
+            } catch (Exception e) { try { con.rollback(); } catch (SQLException re) {} throw e; } finally { try { con.setAutoCommit(true); } catch (SQLException ignore) {} }
         }
-
-        comprobanteDAO.insertar(claveAcceso, retId, numComprobante, ambienteSri, xmlFirmado, AppConstants.TIPO_COMPROBANTE_RETENCION);
 
         String rutaPDF = directorioEscritorio.getAbsolutePath() + File.separator + AppConstants.PREFIJO_PDF_RETENCION + numComprobante.replace("-", "") + AppConstants.EXTENSION_PDF;
         String rutaXML = directorioEscritorio.getAbsolutePath() + File.separator + AppConstants.PREFIJO_PDF_RETENCION + numComprobante.replace("-", "") + AppConstants.EXTENSION_XML;
@@ -244,9 +251,15 @@ public class RetencionService {
                 logDAO.guardar("RetencionService","SRI-DEVUELTA","RET "+resultado.numComprobante+" clave="+resultado.claveAcceso+" estado="+estado+" msg="+sriResp.getMensaje());
             } catch (Exception e) { logDAO.guardar("RetencionService","volcarXMLError", e.getMessage(), e); }
         }
-        retencionDAO.actualizarEstado(resultado.claveAcceso, estado, sriResp.getMensaje(), numAut, fechaAut);
-        comprobanteDAO.actualizarEstado(resultado.claveAcceso, estado, sriResp.getMensaje(), resultado.xmlFirmado, numAut, fechaAut);
-        comprobanteDAO.guardarEnvio(resultado.claveAcceso, resultado.numComprobante, resultado.ambienteSri, resultado.xmlFirmado, sriResp.getRespuestaRecepcionXml(), sriResp.getRespuestaAutorizacionXml(), estado, sriResp.getMensaje(), numAut, fechaAut, AppConstants.TIPO_COMPROBANTE_RETENCION);
+        try (Connection con = DatabaseConnection.getConnection()) {
+            con.setAutoCommit(false);
+            try {
+                retencionDAO.actualizarEstado(con, resultado.claveAcceso, estado, sriResp.getMensaje(), numAut, fechaAut);
+                comprobanteDAO.actualizarEstado(con, resultado.claveAcceso, estado, sriResp.getMensaje(), resultado.xmlFirmado, numAut, fechaAut);
+                comprobanteDAO.guardarEnvio(con, resultado.claveAcceso, resultado.numComprobante, resultado.ambienteSri, resultado.xmlFirmado, sriResp.getRespuestaRecepcionXml(), sriResp.getRespuestaAutorizacionXml(), estado, sriResp.getMensaje(), numAut, fechaAut, AppConstants.TIPO_COMPROBANTE_RETENCION);
+                con.commit();
+            } catch (Exception e) { try { con.rollback(); } catch (SQLException re) {} throw new RuntimeException(e); } finally { try { con.setAutoCommit(true); } catch (SQLException ignore) {} }
+        } catch (SQLException e) { throw new RuntimeException(e); }
         try {
             String rutaPDF = directorioEscritorio.getAbsolutePath() + File.separator + AppConstants.PREFIJO_PDF_RETENCION + resultado.numComprobante.replace("-", "") + AppConstants.EXTENSION_PDF;
             PdfRetencion.generar(rutaPDF, resultado.claveAcceso, numAut, fechaAut, resultado.ambienteSri,

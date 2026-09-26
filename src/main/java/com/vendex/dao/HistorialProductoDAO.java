@@ -12,10 +12,17 @@ import java.util.List;
 public class HistorialProductoDAO {
 
     public void insertar(List<HistorialProducto> lista) {
+        try (Connection con = DatabaseConnection.getConnection()) {
+            insertar(con, lista);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void insertar(Connection con, List<HistorialProducto> lista) throws SQLException {
         String sql = "INSERT INTO historial_producto(producto_id, producto_codigo, producto_descripcion, cantidad, precio_unitario, tipo_comprobante, codigo_comprobante, cliente_nombre, proveedor_nombre, fecha_venta) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
             for (HistorialProducto h : lista) {
                 ps.setInt(1, h.getProductoId());
                 ps.setString(2, h.getProductoCodigo());
@@ -30,8 +37,6 @@ public class HistorialProductoDAO {
                 ps.addBatch();
             }
             ps.executeBatch();
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
     }
 

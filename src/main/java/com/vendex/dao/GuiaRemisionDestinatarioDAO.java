@@ -15,10 +15,12 @@ public class GuiaRemisionDestinatarioDAO {
     private static final Logger LOGGER = Logger.getLogger(GuiaRemisionDestinatarioDAO.class.getName());
 
     public void insertarDestinatarios(int guiaId, List<GuiaRemisionDestinatario> lista) {
+        try (Connection con = DatabaseConnection.getConnection()) { insertarDestinatarios(con, guiaId, lista); } catch (SQLException e) { LOGGER.log(Level.SEVERE, "insertarDestinatarios", e); }
+    }
+    public void insertarDestinatarios(Connection con, int guiaId, List<GuiaRemisionDestinatario> lista) throws SQLException {
         if (lista == null || lista.isEmpty()) return;
         String sql = "INSERT INTO guia_remision_destinatario(guia_remision_id, identificacion_destinatario, razon_social_destinatario, direccion_destinatario, motivo_traslado, factura_registro_id, cod_doc_sustento, num_doc_sustento, num_aut_doc_sustento, fecha_emision_doc_sustento) VALUES (?,?,?,?,?,?,?,?,?,?) RETURNING id";
-        try (Connection con = DatabaseConnection.getConnection()) {
-            for (GuiaRemisionDestinatario d : lista) {
+        for (GuiaRemisionDestinatario d : lista) {
                 try (PreparedStatement ps = con.prepareStatement(sql)) {
                     ps.setInt(1, guiaId);
                     ps.setString(2, d.getIdentificacionDestinatario());
@@ -34,7 +36,6 @@ public class GuiaRemisionDestinatarioDAO {
                     if (rs.next()) d.setId(rs.getInt(1));
                 }
             }
-        } catch (SQLException e) { LOGGER.log(Level.SEVERE, "insertarDestinatarios", e); }
     }
 
     public List<GuiaRemisionDestinatario> listarPorGuiaId(int guiaId) {

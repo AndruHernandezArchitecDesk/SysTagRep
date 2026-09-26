@@ -5,6 +5,8 @@ import com.vendex.dao.*;
 import com.vendex.model.*;
 import com.vendex.util.*;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -242,22 +244,24 @@ public class GuiaRemisionService {
         gr.setEstadoSri(AppConstants.ESTADO_PENDIENTE);
         gr.setXmlFirmado(xmlFirmado);
         gr.setUsuarioId(usuarioId);
-        int guiaId = guiaDAO.insertar(gr);
-        if (guiaId == -1) throw new IllegalStateException("Error al registrar guía de remisión.");
-
-        for (int i = 0; i < destEntities.size(); i++) {
-            destEntities.get(i).setGuiaRemisionId(guiaId);
+        int guiaId;
+        try (Connection con = DatabaseConnection.getConnection()) {
+            con.setAutoCommit(false);
+            try {
+                guiaId = guiaDAO.insertar(con, gr);
+                if (guiaId == -1) throw new IllegalStateException("Error al registrar guía de remisión.");
+                for (int i = 0; i < destEntities.size(); i++) destEntities.get(i).setGuiaRemisionId(guiaId);
+                destDAO.insertarDestinatarios(con, guiaId, destEntities);
+                for (int i = 0; i < destEntities.size(); i++) {
+                    int destId = destEntities.get(i).getId();
+                    List<GuiaRemisionDetalle> detalles = detallesPorDest.get(i);
+                    for (GuiaRemisionDetalle d : detalles) d.setGuiaRemisionDestinatarioId(destId);
+                    detalleDAO.insertarDetalles(con, destId, detalles);
+                }
+                comprobanteDAO.insertar(con, claveAcceso, guiaId, numComprobante, ambienteSri, xmlFirmado, AppConstants.TIPO_COMPROBANTE_GUIA_REMISION);
+                con.commit();
+            } catch (Exception e) { try { con.rollback(); } catch (SQLException re) {} throw e; } finally { try { con.setAutoCommit(true); } catch (SQLException ignore) {} }
         }
-        destDAO.insertarDestinatarios(guiaId, destEntities);
-        // Asignar ids generados a detalles
-        for (int i = 0; i < destEntities.size(); i++) {
-            int destId = destEntities.get(i).getId();
-            List<GuiaRemisionDetalle> detalles = detallesPorDest.get(i);
-            for (GuiaRemisionDetalle d : detalles) d.setGuiaRemisionDestinatarioId(destId);
-            detalleDAO.insertarDetalles(destId, detalles);
-        }
-
-        comprobanteDAO.insertar(claveAcceso, guiaId, numComprobante, ambienteSri, xmlFirmado, AppConstants.TIPO_COMPROBANTE_GUIA_REMISION);
 
         String rutaPDF = directorioEscritorio.getAbsolutePath() + File.separator + AppConstants.PREFIJO_PDF_GUIA_REMISION + numComprobante.replace("-", "") + AppConstants.EXTENSION_PDF;
         String rutaXML = directorioEscritorio.getAbsolutePath() + File.separator + AppConstants.PREFIJO_PDF_GUIA_REMISION + numComprobante.replace("-", "") + AppConstants.EXTENSION_XML;
@@ -295,9 +299,15 @@ public class GuiaRemisionService {
                 logDAO.guardar("GuiaRemisionService","SRI-DEVUELTA","GR "+resultado.numComprobante+" clave="+resultado.claveAcceso+" estado="+estado+" msg="+sriResp.getMensaje());
             } catch (Exception e) { logDAO.guardar("GuiaRemisionService","volcarXMLError", e.getMessage(), e); }
         }
-        guiaDAO.actualizarEstado(resultado.claveAcceso, estado, sriResp.getMensaje(), numAut, fechaAut);
-        comprobanteDAO.actualizarEstado(resultado.claveAcceso, estado, sriResp.getMensaje(), resultado.xmlFirmado, numAut, fechaAut);
-        comprobanteDAO.guardarEnvio(resultado.claveAcceso, resultado.numComprobante, resultado.ambienteSri, resultado.xmlFirmado, sriResp.getRespuestaRecepcionXml(), sriResp.getRespuestaAutorizacionXml(), estado, sriResp.getMensaje(), numAut, fechaAut, AppConstants.TIPO_COMPROBANTE_GUIA_REMISION);
+        try (Connection con = DatabaseConnection.getConnection()) {
+            con.setAutoCommit(false);
+            try {
+                guiaDAO.actualizarEstado(con, resultado.claveAcceso, estado, sriResp.getMensaje(), numAut, fechaAut);
+                comprobanteDAO.actualizarEstado(con, resultado.claveAcceso, estado, sriResp.getMensaje(), resultado.xmlFirmado, numAut, fechaAut);
+                comprobanteDAO.guardarEnvio(con, resultado.claveAcceso, resultado.numComprobante, resultado.ambienteSri, resultado.xmlFirmado, sriResp.getRespuestaRecepcionXml(), sriResp.getRespuestaAutorizacionXml(), estado, sriResp.getMensaje(), numAut, fechaAut, AppConstants.TIPO_COMPROBANTE_GUIA_REMISION);
+                con.commit();
+            } catch (Exception e) { try { con.rollback(); } catch (SQLException re) {} throw new RuntimeException(e); } finally { try { con.setAutoCommit(true); } catch (SQLException ignore) {} }
+        } catch (SQLException e) { throw new RuntimeException(e); }
         try {
             String rutaPDF = directorioEscritorio.getAbsolutePath() + File.separator + AppConstants.PREFIJO_PDF_GUIA_REMISION + resultado.numComprobante.replace("-", "") + AppConstants.EXTENSION_PDF;
             PdfGuiaRemision.generar(rutaPDF, resultado.claveAcceso, numAut, fechaAut, resultado.ambienteSri,

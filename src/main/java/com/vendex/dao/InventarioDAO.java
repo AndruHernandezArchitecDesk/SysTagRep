@@ -337,39 +337,55 @@ public class InventarioDAO {
     }
 
     public String obtenerProveedorNombre(int productoId) {
-        String sql = "SELECT p.nombre FROM inventario i JOIN proveedor p ON p.id = i.proveedor_id WHERE i.id=?";
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, productoId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return rs.getString("nombre");
-            }
+        try (Connection con = DatabaseConnection.getConnection()) {
+            return obtenerProveedorNombre(con, productoId);
         } catch (SQLException e) { e.printStackTrace(); }
         return "";
     }
 
+    public String obtenerProveedorNombre(Connection con, int productoId) throws SQLException {
+        String sql = "SELECT p.nombre FROM inventario i JOIN proveedor p ON p.id = i.proveedor_id WHERE i.id=?";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, productoId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getString("nombre");
+            }
+        }
+        return "";
+    }
+
     public void descontarStock(int productoId, int cantidad) {
-        String sql = "UPDATE inventario SET cantidad = cantidad - ? WHERE id = ? AND cantidad >= ?";
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, cantidad);
-            ps.setInt(2, productoId);
-            ps.setInt(3, cantidad);
-            ps.executeUpdate();
+        try (Connection con = DatabaseConnection.getConnection()) {
+            descontarStock(con, productoId, cantidad);
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Error en operacion de InventarioDAO", e);
         }
     }
 
+    public void descontarStock(Connection con, int productoId, int cantidad) throws SQLException {
+        String sql = "UPDATE inventario SET cantidad = cantidad - ? WHERE id = ? AND cantidad >= ?";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, cantidad);
+            ps.setInt(2, productoId);
+            ps.setInt(3, cantidad);
+            ps.executeUpdate();
+        }
+    }
+
     public void devolverStock(int productoId, java.math.BigDecimal cantidad) {
+        try (Connection con = DatabaseConnection.getConnection()) {
+            devolverStock(con, productoId, cantidad);
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Error en operacion de InventarioDAO.devolverStock", e);
+        }
+    }
+
+    public void devolverStock(Connection con, int productoId, java.math.BigDecimal cantidad) throws SQLException {
         String sql = "UPDATE inventario SET cantidad = cantidad + ? WHERE id = ?";
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setBigDecimal(1, cantidad);
             ps.setInt(2, productoId);
             ps.executeUpdate();
-        } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Error en operacion de InventarioDAO.devolverStock", e);
         }
     }
 

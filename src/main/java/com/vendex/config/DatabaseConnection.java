@@ -1,6 +1,8 @@
 package com.vendex.config;
 
 import com.vendex.util.PasswordDebilValidator;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -22,6 +24,12 @@ public class DatabaseConnection {
 
     private static volatile boolean configLoaded = false;
 
+    // HikariCP pool — singleton por JVM (una instancia de app por PC)
+    private static volatile HikariDataSource dataSource;
+    private static final Object POOL_LOCK = new Object();
+    private static volatile String poolUrl;
+    private static volatile String poolUser;
+
     static {
         URL.set(DEFAULT_URL);
         USER.set(DEFAULT_USER);
@@ -42,6 +50,8 @@ public class DatabaseConnection {
             PASSWORD.set(cfg[2]);
             configLoaded = true;
             validarPasswordDebil(cfg[2]);
+            // Inicializar pool si es PostgreSQL
+            ensurePool(cfg[0], cfg[1], cfg[2]);
         } catch (Exception e) {
             // fallback a defaults si el archivo esta corrupto — no loguear password ni connection string
             LOG.log(Level.WARNING, "No se pudo cargar db.properties, usando defaults en memoria", e);
@@ -50,6 +60,9 @@ public class DatabaseConnection {
             PASSWORD.set(DEFAULT_PASSWORD);
             configLoaded = true;
             validarPasswordDebil(DEFAULT_PASSWORD);
+            try { ensurePool(DEFAULT_URL, DEFAULT_USER, DEFAULT_PASSWORD); } catch (Exception ex) {
+                LOG.log(Level.WARNING, "No se pudo inicializar pool con defaults", ex);
+            }
         }
     }
 
@@ -68,6 +81,92 @@ public class DatabaseConnection {
         return PasswordDebilValidator.esDebil(p);
     }
 
+    private static boolean isHsqldbUrl(String url) {
+        return url != null && url.toLowerCase().contains("hsqldb");
+    }
+
+    private static boolean isTestContainerUrl(String url) {
+        return url != null && url.contains("tc:");
+    }
+
+    private static void ensurePool(String url, String user, String password) {
+        if (url == null || isHsqldbUrl(url) || isTestContainerUrl(url)) {
+            // HSQLDB y tc: no usar pool, se maneja via DriverManager directo
+            return;
+        }
+        synchronized (POOL_LOCK) {
+            if (dataSource != null && !dataSource.isClosed()
+                    && url.equals(poolUrl) && user.equals(poolUser)) {
+                return;
+            }
+            // URL o usuario cambió — cerrar pool anterior
+            closePoolLocked();
+            HikariConfig config = new HikariConfig();
+            config.setJdbcUrl(url);
+            config.setUsername(user);
+            config.setPassword(password);
+            config.setMaximumPoolSize(6);
+            config.setMinimumIdle(2);
+            config.setConnectionTimeout(10_000);
+            config.setIdleTimeout(300_000);
+            // leakDetection 60s en prod, 30s en test/staging via -Dvendex.leakThreshold
+            long leakThreshold = 60_000;
+            String prop = System.getProperty("vendex.leakThreshold");
+            if (prop != null) {
+                try { leakThreshold = Long.parseLong(prop); } catch (NumberFormatException ignore) {}
+            } else if (isTestProfile()) {
+                leakThreshold = 30_000;
+            }
+            config.setLeakDetectionThreshold(leakThreshold);
+            config.setPoolName("vendex-pool");
+            config.setAutoCommit(true);
+            config.addDataSourceProperty("cachePrepStmts", "true");
+            config.addDataSourceProperty("prepStmtCacheSize", "250");
+            config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+            // Validación de conexión
+            config.setConnectionTestQuery("SELECT 1");
+            dataSource = new HikariDataSource(config);
+            poolUrl = url;
+            poolUser = user;
+            LOG.info("HikariCP pool inicializado: url=" + url + " maxPool=6 minIdle=2 leakThreshold=" + leakThreshold + "ms");
+            // shutdown hook
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                try { closePool(); } catch (Exception ignore) {}
+            }));
+        }
+    }
+
+    private static boolean isTestProfile() {
+        String v = System.getProperty("vendex.env");
+        return "test".equalsIgnoreCase(v);
+    }
+
+    private static void closePoolLocked() {
+        if (dataSource != null) {
+            try {
+                dataSource.close();
+                LOG.info("HikariCP pool cerrado");
+            } catch (Exception e) {
+                LOG.log(Level.WARNING, "Error cerrando HikariCP pool", e);
+            } finally {
+                dataSource = null;
+                poolUrl = null;
+                poolUser = null;
+            }
+        }
+    }
+
+    public static void closePool() {
+        synchronized (POOL_LOCK) {
+            closePoolLocked();
+        }
+    }
+
+    /** Para tests y monitoreo */
+    public static HikariDataSource getDataSource() {
+        return dataSource;
+    }
+
     public static Connection getConnection() throws SQLException {
         // lazy init por si alguien llama antes de MainApp (ej. TestConexion)
         if (!configLoaded) {
@@ -82,7 +181,27 @@ public class DatabaseConnection {
             USER.set(DEFAULT_USER);
             PASSWORD.set(DEFAULT_PASSWORD);
         }
-        return DriverManager.getConnection(url, USER.get(), PASSWORD.get());
+        String user = USER.get();
+        String pass = PASSWORD.get();
+        if (user == null) user = DEFAULT_USER;
+        if (pass == null) pass = DEFAULT_PASSWORD;
+
+        // HSQLDB / tc: bypass pool, DriverManager directo (tests aislados)
+        if (isHsqldbUrl(url)) {
+            return DriverManager.getConnection(url, user, pass);
+        }
+        if (isTestContainerUrl(url)) {
+            return DriverManager.getConnection(url, user, pass);
+        }
+
+        // PostgreSQL: usar pool
+        ensurePool(url, user, pass);
+        HikariDataSource ds = dataSource;
+        if (ds != null && !ds.isClosed()) {
+            return ds.getConnection();
+        }
+        // fallback
+        return DriverManager.getConnection(url, user, pass);
     }
 
     /**
@@ -448,12 +567,24 @@ public class DatabaseConnection {
         USER.set(user);
         PASSWORD.set(password);
         configLoaded = true;
+        // Si cambia a postgres real, recrear pool; si es hsqldb, cerrar pool
+        if (url != null && (url.toLowerCase().contains("hsqldb") || url.contains("tc:"))) {
+            synchronized (POOL_LOCK) { closePoolLocked(); }
+        } else if (url != null && url.toLowerCase().contains("postgresql")) {
+            ensurePool(url, user, password);
+        }
     }
 
     public static void resetToDefault() {
         URL.set(DEFAULT_URL);
         USER.set(DEFAULT_USER);
         PASSWORD.set(DEFAULT_PASSWORD);
+        synchronized (POOL_LOCK) { closePoolLocked(); }
         configLoaded = false;
+    }
+
+    /** Para usar en tests Testcontainers: cerrar pool al final suite */
+    public static void shutdown() {
+        closePool();
     }
 }

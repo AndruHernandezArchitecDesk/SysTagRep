@@ -16,18 +16,22 @@ import java.util.List;
 public class FacturaDetalleDAO {
 
     public void insertarDetalle(int facturaRegistroId, List<FacturaDetalle> detalles) {
+        try (Connection con = DatabaseConnection.getConnection()) {
+            insertarDetalle(con, facturaRegistroId, detalles);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void insertarDetalle(Connection con, int facturaRegistroId, List<FacturaDetalle> detalles) throws SQLException {
         String sql = "INSERT INTO factura_detalle(factura_registro_id, inventario_id, codigo, descripcion, " +
                      "cantidad, precio_unitario, precio_total, subtotal, iva, descuento, total, fecha_registro) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
             for (FacturaDetalle d : detalles) {
                 BigDecimal subtotal = d.getPrecioUnitario().multiply(new BigDecimal(d.getCantidad()));
                 BigDecimal iva = subtotal.multiply(new BigDecimal("0.15")).setScale(2, RoundingMode.HALF_UP);
                 BigDecimal total = subtotal.add(iva).setScale(2, RoundingMode.HALF_UP);
-
                 ps.setInt(1, facturaRegistroId);
                 ps.setInt(2, d.getInventarioId());
                 ps.setString(3, d.getCodigo());
@@ -43,9 +47,6 @@ public class FacturaDetalleDAO {
                 ps.addBatch();
             }
             ps.executeBatch();
-
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
     }
 

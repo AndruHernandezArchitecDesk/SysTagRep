@@ -2,8 +2,11 @@ package com.vendex.service;
 
 import com.vendex.dao.*;
 import com.vendex.model.*;
+import com.vendex.config.DatabaseConnection;
 import com.vendex.util.*;
 import com.vendex.util.AppConstants;
+import java.sql.Connection;
+import java.sql.SQLException;
 
 import java.io.File;
 import java.io.IOException;
@@ -80,107 +83,101 @@ public class FacturaService {
             throw new IllegalArgumentException("Factura a Consumidor Final (9999999999999 / tipo 07) no puede exceder $50.00. Total: $" + totCalc + ". Use identificación válida (cédula/RUC/pasaporte).");
         }
 
-        // Leer establecimiento/punto de la BD para multi-PC (001-001 centralizado)
-        // marcarUsado es atomico (UPDATE ... RETURNING), evita que dos PCs reutilicen el mismo numero
-        int secuencialFE = secuenciaDAO.marcarUsado("FACTURA");
-        if (secuencialFE == -1) throw new IllegalStateException("No se pudo obtener el secuencial de FACTURA (secuencia_documento).");
-        SecuenciaDocumento secActual = secuenciaDAO.obtener("FACTURA");
-        String codEstab = secActual.getEstablecimiento() != null ? secActual.getEstablecimiento() : AppConstants.ESTABLECIMIENTO_DEFAULT;
-        String codPtoEmi = secActual.getPuntoEmision() != null ? secActual.getPuntoEmision() : AppConstants.PUNTO_EMISION_DEFAULT;
-        String claveAcceso = ClaveAcceso.generar(
-                AppConstants.TIPO_COMPROBANTE_FACTURA,
-                empresa.getRuc(), ambienteSri, codEstab, codPtoEmi, secuencialFE
-        );
-        String fechaEmisionFE = ahora.format(DateTimeFormatter.ofPattern(AppConstants.PATRON_FECHA_EMISION));
-        String numComprobante = codEstab + "-" + codPtoEmi + "-" + String.format(AppConstants.PATRON_NUMERO_COMPROBANTE, secuencialFE);
+        // Transacción atómica: secuencial + factura + detalles + stock + historial + cpc + comprobante
+        // Usa una sola Connection del pool HikariCP con autoCommit=false
+        int secuencialFE;
+        String codEstab;
+        String codPtoEmi;
+        String claveAcceso;
+        String fechaEmisionFE;
+        String numComprobante;
+        int facturaId;
+        // Variables para firma/comprobante (fuera de la transacción inicial, pero comprobante insertado dentro)
+        String xmlGenerado;
+        String xmlFirmado;
+        boolean firmaOk;
 
-        FacturaRegistro fr = new FacturaRegistro(
-                empresaId, clienteId, ahora, codigo, formaPago,
-                sub, ivaCalc, descCalc, totCalc,
-                claveAcceso, numComprobante, ambienteSri
-        );
-        fr.setEstadoSri(AppConstants.ESTADO_PENDIENTE);
-        int facturaId = facturaRegistroDAO.insertar(fr);
-
-        if (facturaId == -1) {
-            throw new IllegalStateException("Error al registrar la factura.");
+        // Pre-cálculo de tipoIdComp (no necesita BD)
+        String tipoIdCompTmp;
+        {
+            String identTrimTmp = cliente.getIdentificacion() != null ? cliente.getIdentificacion().trim() : "";
+            if (AppConstants.esConsumidorFinal(identTrimTmp)) tipoIdCompTmp = AppConstants.TIPO_ID_CONSUMIDOR_FINAL;
+            else tipoIdCompTmp = identTrimTmp.length() == AppConstants.MAX_LONGITUD_IDENTIFICACION_JURIDICA ? "04" : "05";
         }
 
-        List<FacturaDetalle> detallesDb = new ArrayList<>();
-        for (FacturaDetalle d : itemsDetalle) {
-            FacturaDetalle fd = new FacturaDetalle(
-                    d.getInventarioId(), d.getCodigo(), d.getDescripcion(), d.getCantidad(), d.getPrecioUnitario()
-            );
-            fd.setFacturaRegistroId(facturaId);
-            detallesDb.add(fd);
-        }
-        facturaDetalleDAO.insertarDetalle(facturaId, detallesDb);
+        // Construir XML antes de abrir transacción (no necesita BD)
+        // Pero necesitamos secuencial/codEstab/codPtoEmi que vienen de la BD, así que primero abrimos tx para obtenerlos
+        // y luego generamos XML/firma dentro de la misma tx antes del commit
 
-        for (FacturaDetalle d : itemsDetalle) {
-            inventarioDAO.descontarStock(d.getInventarioId(), d.getCantidad());
-        }
-
-        String clienteNombre = cliente.getNombre();
-        List<HistorialProducto> historial = new ArrayList<>();
-        for (FacturaDetalle d : itemsDetalle) {
-            String provNombre = inventarioDAO.obtenerProveedorNombre(d.getInventarioId());
-            historial.add(new HistorialProducto(
-                    d.getInventarioId(), d.getCodigo(), d.getDescripcion(),
-                    d.getCantidad(), d.getPrecioUnitario(), "FACTURA", codigo,
-                    clienteNombre, provNombre, ahora
-            ));
-        }
-        historialProductoDAO.insertar(historial);
-
-        if (AppConstants.FORMA_PAGO_CREDITO.equals(formaPago) && mesesPlazo != null && interes != null) {
-            int dias = mesesPlazo;
-            BigDecimal tasaInteres = new BigDecimal(interes).divide(AppConstants.CIEN);
-            BigDecimal totalConInteres = totCalc.multiply(BigDecimal.ONE.add(tasaInteres)).setScale(2, RoundingMode.HALF_UP);
-            BigDecimal cuotaMensual = totalConInteres.divide(new BigDecimal(dias), 2, RoundingMode.HALF_UP);
-
-            CuentaPorCobrar cpc = new CuentaPorCobrar(
-                    facturaId, clienteId, totCalc, dias,
-                    new BigDecimal(interes), cuotaMensual
-            );
-            cuentaPorCobrarDAO.insertar(cpc);
-        }
-
-        String tipoIdComp;
-        String identTrim = cliente.getIdentificacion() != null ? cliente.getIdentificacion().trim() : "";
-        if (AppConstants.esConsumidorFinal(identTrim)) tipoIdComp = AppConstants.TIPO_ID_CONSUMIDOR_FINAL;
-        else tipoIdComp = identTrim.length() == AppConstants.MAX_LONGITUD_IDENTIFICACION_JURIDICA ? "04" : "05";
-
-        String xmlGenerado = XmlSriBuilder.construirFactura(
-                ambienteSri, claveAcceso, empresa.getRuc(), empresa.getRazonSocial(),
-                codEstab, codPtoEmi, secuencialFE,
-                empresa.getDireccionCallePrincipal() + " y " + empresa.getDireccionCalleSecundaria(),
-                "", "NO",
-                tipoIdComp, cliente.getNombre(), cliente.getIdentificacion(),
-                cliente.getDireccion(),
-                sub.setScale(2, RoundingMode.HALF_UP).toString(), descCalc.setScale(2, RoundingMode.HALF_UP).toString(),
-                ivaCalc.setScale(2, RoundingMode.HALF_UP).toString(), totCalc.setScale(2, RoundingMode.HALF_UP).toString(),
-                "0.00", formaPago, fechaEmisionFE, armarDetalles(itemsDetalle, descCalc)
-        );
-
-        String xmlFirmado = xmlGenerado;
-        boolean firmaOk = false;
-        if (rutaP12 == null || rutaP12.trim().isEmpty() || claveP12 == null || claveP12.trim().isEmpty()) {
-            throw new IllegalStateException("No se configuró la firma electrónica (.p12 y contraseña).");
-        } else {
+        try (Connection con = DatabaseConnection.getConnection()) {
+            con.setAutoCommit(false);
             try {
-                FirmaDigital firma = new FirmaDigital();
-                if (!firma.cargarCertificado(rutaP12, claveP12)) {
-                    throw new IllegalStateException("No se pudo cargar el certificado. Verifique la ruta y la contraseña.");
+                secuencialFE = secuenciaDAO.marcarUsado(con, "FACTURA");
+                if (secuencialFE == -1) throw new IllegalStateException("No se pudo obtener el secuencial de FACTURA (secuencia_documento).");
+                SecuenciaDocumento secActual = secuenciaDAO.obtener(con, "FACTURA");
+                codEstab = secActual.getEstablecimiento() != null ? secActual.getEstablecimiento() : AppConstants.ESTABLECIMIENTO_DEFAULT;
+                codPtoEmi = secActual.getPuntoEmision() != null ? secActual.getPuntoEmision() : AppConstants.PUNTO_EMISION_DEFAULT;
+                claveAcceso = ClaveAcceso.generar(AppConstants.TIPO_COMPROBANTE_FACTURA, empresa.getRuc(), ambienteSri, codEstab, codPtoEmi, secuencialFE);
+                fechaEmisionFE = ahora.format(DateTimeFormatter.ofPattern(AppConstants.PATRON_FECHA_EMISION));
+                numComprobante = codEstab + "-" + codPtoEmi + "-" + String.format(AppConstants.PATRON_NUMERO_COMPROBANTE, secuencialFE);
+
+                FacturaRegistro fr = new FacturaRegistro(empresaId, clienteId, ahora, codigo, formaPago, sub, ivaCalc, descCalc, totCalc, claveAcceso, numComprobante, ambienteSri);
+                fr.setEstadoSri(AppConstants.ESTADO_PENDIENTE);
+                facturaId = facturaRegistroDAO.insertar(con, fr);
+                if (facturaId == -1) throw new IllegalStateException("Error al registrar la factura.");
+
+                List<FacturaDetalle> detallesDb = new ArrayList<>();
+                for (FacturaDetalle d : itemsDetalle) {
+                    FacturaDetalle fd = new FacturaDetalle(d.getInventarioId(), d.getCodigo(), d.getDescripcion(), d.getCantidad(), d.getPrecioUnitario());
+                    fd.setFacturaRegistroId(facturaId);
+                    detallesDb.add(fd);
                 }
-                xmlFirmado = firma.firmarXml(xmlGenerado);
-                firmaOk = true;
+                facturaDetalleDAO.insertarDetalle(con, facturaId, detallesDb);
+                for (FacturaDetalle d : itemsDetalle) {
+                    inventarioDAO.descontarStock(con, d.getInventarioId(), d.getCantidad());
+                }
+                String clienteNombre = cliente.getNombre();
+                List<HistorialProducto> historial = new ArrayList<>();
+                for (FacturaDetalle d : itemsDetalle) {
+                    String provNombre = inventarioDAO.obtenerProveedorNombre(con, d.getInventarioId());
+                    historial.add(new HistorialProducto(d.getInventarioId(), d.getCodigo(), d.getDescripcion(), d.getCantidad(), d.getPrecioUnitario(), "FACTURA", codigo, clienteNombre, provNombre, ahora));
+                }
+                historialProductoDAO.insertar(con, historial);
+                if (AppConstants.FORMA_PAGO_CREDITO.equals(formaPago) && mesesPlazo != null && interes != null) {
+                    int dias = mesesPlazo;
+                    BigDecimal tasaInteres = new BigDecimal(interes).divide(AppConstants.CIEN);
+                    BigDecimal totalConInteres = totCalc.multiply(BigDecimal.ONE.add(tasaInteres)).setScale(2, RoundingMode.HALF_UP);
+                    BigDecimal cuotaMensual = totalConInteres.divide(new BigDecimal(dias), 2, RoundingMode.HALF_UP);
+                    CuentaPorCobrar cpc = new CuentaPorCobrar(facturaId, clienteId, totCalc, dias, new BigDecimal(interes), cuotaMensual);
+                    cuentaPorCobrarDAO.insertar(con, cpc);
+                }
+
+                // Generar y firmar XML dentro de la transacción para poder hacer rollback si la firma falla
+                if (rutaP12 == null || rutaP12.trim().isEmpty() || claveP12 == null || claveP12.trim().isEmpty()) {
+                    throw new IllegalStateException("No se configuró la firma electrónica (.p12 y contraseña).");
+                }
+                String tipoIdComp = tipoIdCompTmp;
+                xmlGenerado = XmlSriBuilder.construirFactura(ambienteSri, claveAcceso, empresa.getRuc(), empresa.getRazonSocial(), codEstab, codPtoEmi, secuencialFE, empresa.getDireccionCallePrincipal() + " y " + empresa.getDireccionCalleSecundaria(), "", "NO", tipoIdComp, cliente.getNombre(), cliente.getIdentificacion(), cliente.getDireccion(), sub.setScale(2, RoundingMode.HALF_UP).toString(), descCalc.setScale(2, RoundingMode.HALF_UP).toString(), ivaCalc.setScale(2, RoundingMode.HALF_UP).toString(), totCalc.setScale(2, RoundingMode.HALF_UP).toString(), "0.00", formaPago, fechaEmisionFE, armarDetalles(itemsDetalle, descCalc));
+                try {
+                    FirmaDigital firma = new FirmaDigital();
+                    if (!firma.cargarCertificado(rutaP12, claveP12)) throw new IllegalStateException("No se pudo cargar el certificado. Verifique la ruta y la contraseña.");
+                    xmlFirmado = firma.firmarXml(xmlGenerado);
+                    firmaOk = true;
+                } catch (Exception e) {
+                    logDAO.guardar("FacturaService", "firmarXml", e.getMessage(), e);
+                    throw new Exception("Error al firmar el XML: " + e.getMessage(), e);
+                }
+                comprobanteDAO.insertar(con, claveAcceso, null, numComprobante, ambienteSri, xmlFirmado);
+                con.commit();
             } catch (Exception e) {
-                logDAO.guardar("FacturaService", "firmarXml", e.getMessage(), e);
-                throw new Exception("Error al firmar el XML: " + e.getMessage(), e);
+                try { con.rollback(); } catch (SQLException re) { /* ignore */ }
+                throw e;
+            } finally {
+                try { con.setAutoCommit(true); } catch (SQLException ignore) {}
             }
         }
 
-        comprobanteDAO.insertar(claveAcceso, null, numComprobante, ambienteSri, xmlFirmado);
+        String tipoIdComp = tipoIdCompTmp;
 
         String rutaPDF = directorioEscritorio.getAbsolutePath() + File.separator
                 + AppConstants.PREFIJO_PDF_FACTURA + numComprobante.replace("-", "") + AppConstants.EXTENSION_PDF;
@@ -214,28 +211,30 @@ public class FacturaService {
         }
     }
 
-    public void finalizarEnvioSRI(SRIWebService.SRIResponse sriResp, ResultadoFactura resultado,
-                                  File directorioEscritorio) {
+        public void finalizarEnvioSRI(SRIWebService.SRIResponse sriResp, ResultadoFactura resultado,
+                                   File directorioEscritorio) {
         String estadoSri = sriResp.getEstado();
         String numeroAutorizacion = sriResp.getNumeroAutorizacion();
         String fechaAutorizacion = sriResp.getFechaAutorizacion();
-
-        if (AppConstants.ESTADO_AUTORIZADO.equals(estadoSri)) {
-            comprobanteDAO.actualizarEstado(resultado.claveAcceso, AppConstants.ESTADO_AUTORIZADO,
-                    sriResp.getMensaje(), resultado.xmlFirmado, numeroAutorizacion, fechaAutorizacion);
-            facturaRegistroDAO.actualizarEstado(resultado.claveAcceso, AppConstants.ESTADO_AUTORIZADO);
-        } else if (AppConstants.ESTADO_RECHAZADA.equals(estadoSri) || AppConstants.ESTADO_DEVUELTA.equals(estadoSri)) {
-            comprobanteDAO.actualizarEstado(resultado.claveAcceso, estadoSri, sriResp.getMensaje(),
-                    resultado.xmlFirmado, numeroAutorizacion, null);
-            facturaRegistroDAO.actualizarEstado(resultado.claveAcceso, estadoSri);
-        } else {
-            comprobanteDAO.actualizarEstado(resultado.claveAcceso, estadoSri, sriResp.getMensaje(),
-                    resultado.xmlFirmado, numeroAutorizacion, fechaAutorizacion);
-        }
-
-        comprobanteDAO.guardarEnvio(resultado.claveAcceso, resultado.numComprobante, resultado.ambienteSri, resultado.xmlFirmado,
-                sriResp.getRespuestaRecepcionXml(), sriResp.getRespuestaAutorizacionXml(),
-                estadoSri, sriResp.getMensaje(), numeroAutorizacion, fechaAutorizacion);
+        try (Connection con = DatabaseConnection.getConnection()) {
+            con.setAutoCommit(false);
+            try {
+                if (AppConstants.ESTADO_AUTORIZADO.equals(estadoSri)) {
+                    comprobanteDAO.actualizarEstado(con, resultado.claveAcceso, AppConstants.ESTADO_AUTORIZADO, sriResp.getMensaje(), resultado.xmlFirmado, numeroAutorizacion, fechaAutorizacion);
+                    facturaRegistroDAO.actualizarEstado(con, resultado.claveAcceso, AppConstants.ESTADO_AUTORIZADO);
+                } else if (AppConstants.ESTADO_RECHAZADA.equals(estadoSri) || AppConstants.ESTADO_DEVUELTA.equals(estadoSri)) {
+                    comprobanteDAO.actualizarEstado(con, resultado.claveAcceso, estadoSri, sriResp.getMensaje(), resultado.xmlFirmado, numeroAutorizacion, null);
+                    facturaRegistroDAO.actualizarEstado(con, resultado.claveAcceso, estadoSri);
+                } else {
+                    comprobanteDAO.actualizarEstado(con, resultado.claveAcceso, estadoSri, sriResp.getMensaje(), resultado.xmlFirmado, numeroAutorizacion, fechaAutorizacion);
+                }
+                comprobanteDAO.guardarEnvio(con, resultado.claveAcceso, resultado.numComprobante, resultado.ambienteSri, resultado.xmlFirmado, sriResp.getRespuestaRecepcionXml(), sriResp.getRespuestaAutorizacionXml(), estadoSri, sriResp.getMensaje(), numeroAutorizacion, fechaAutorizacion);
+                con.commit();
+            } catch (Exception e) {
+                try { con.rollback(); } catch (java.sql.SQLException re) {}
+                throw new RuntimeException(e);
+            } finally { try { con.setAutoCommit(true); } catch (java.sql.SQLException ignore) {} }
+        } catch (java.sql.SQLException e) { throw new RuntimeException(e); }
 
         String rutaPDF = directorioEscritorio.getAbsolutePath() + File.separator
                 + AppConstants.PREFIJO_PDF_FACTURA + resultado.numComprobante.replace("-", "") + AppConstants.EXTENSION_PDF;

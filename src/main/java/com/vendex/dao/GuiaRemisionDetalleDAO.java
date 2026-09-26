@@ -14,9 +14,12 @@ public class GuiaRemisionDetalleDAO {
     private static final Logger LOGGER = Logger.getLogger(GuiaRemisionDetalleDAO.class.getName());
 
     public void insertarDetalles(int destinatarioId, List<GuiaRemisionDetalle> lista) {
+        try (Connection con = DatabaseConnection.getConnection()) { insertarDetalles(con, destinatarioId, lista); } catch (SQLException e) { LOGGER.log(Level.SEVERE, "insertarDetalles GR", e); }
+    }
+    public void insertarDetalles(Connection con, int destinatarioId, List<GuiaRemisionDetalle> lista) throws SQLException {
         if (lista == null || lista.isEmpty()) return;
         String sql = "INSERT INTO guia_remision_detalle(guia_remision_destinatario_id, inventario_id, codigo_interno, descripcion, cantidad) VALUES (?,?,?,?,?)";
-        try (Connection con = DatabaseConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
             for (GuiaRemisionDetalle d : lista) {
                 ps.setInt(1, destinatarioId);
                 if (d.getInventarioId() != null) ps.setInt(2, d.getInventarioId()); else ps.setObject(2, null);
@@ -26,7 +29,7 @@ public class GuiaRemisionDetalleDAO {
                 ps.addBatch();
             }
             ps.executeBatch();
-        } catch (SQLException e) { LOGGER.log(Level.SEVERE, "insertarDetalles GR", e); }
+        }
     }
 
     public List<GuiaRemisionDetalle> listarPorDestinatarioId(int destinatarioId) {

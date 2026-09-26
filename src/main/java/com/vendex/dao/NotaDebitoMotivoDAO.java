@@ -15,9 +15,16 @@ public class NotaDebitoMotivoDAO {
     private static final Logger LOGGER = Logger.getLogger(NotaDebitoMotivoDAO.class.getName());
 
     public void insertarMotivos(int notaDebitoId, List<NotaDebitoMotivo> motivos) {
+        try (Connection con = DatabaseConnection.getConnection()) {
+            insertarMotivos(con, notaDebitoId, motivos);
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Error en NotaDebitoMotivoDAO.insertarMotivos", e);
+        }
+    }
+
+    public void insertarMotivos(Connection con, int notaDebitoId, List<NotaDebitoMotivo> motivos) throws SQLException {
         String sql = "INSERT INTO nota_debito_motivo(nota_debito_id, razon, valor, grava_iva, codigo_porcentaje_iva) VALUES (?, ?, ?, ?, ?)";
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
             for (NotaDebitoMotivo m : motivos) {
                 ps.setInt(1, notaDebitoId);
                 ps.setString(2, m.getRazon());
@@ -27,8 +34,6 @@ public class NotaDebitoMotivoDAO {
                 ps.addBatch();
             }
             ps.executeBatch();
-        } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Error en NotaDebitoMotivoDAO.insertarMotivos", e);
         }
     }
 

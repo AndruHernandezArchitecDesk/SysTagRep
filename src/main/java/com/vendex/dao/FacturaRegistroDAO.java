@@ -34,11 +34,19 @@ public class FacturaRegistroDAO {
     }
 
     public int insertar(FacturaRegistro fr) {
+        try (Connection con = DatabaseConnection.getConnection()) {
+            return insertar(con, fr);
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Error en operacion de FacturaRegistroDAO", e);
+        }
+        return -1;
+    }
+
+    public int insertar(Connection con, FacturaRegistro fr) throws SQLException {
         String sql = "INSERT INTO factura_registro(empresa_id, cliente_id, fecha, codigo, forma_pago, " +
                      "subtotal, iva, descuento, total, clave_acceso, num_comprobante, ambiente_sri, estado_sri, fecha_registro) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id";
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, fr.getEmpresaId());
             ps.setInt(2, fr.getClienteId());
             ps.setObject(3, fr.getFecha());
@@ -55,10 +63,17 @@ public class FacturaRegistroDAO {
             ps.setObject(14, fr.getFechaRegistro());
             ResultSet rs = ps.executeQuery();
             if (rs.next()) return rs.getInt("id");
-        } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Error en operacion de FacturaRegistroDAO", e);
         }
         return -1;
+    }
+
+    public void actualizarEstado(Connection con, String claveAcceso, String estado) throws SQLException {
+        String sql = "UPDATE factura_registro SET estado_sri = ? WHERE clave_acceso = ?";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, estado);
+            ps.setString(2, claveAcceso);
+            ps.executeUpdate();
+        }
     }
 
     public FacturaRegistro obtenerPorId(int id) {

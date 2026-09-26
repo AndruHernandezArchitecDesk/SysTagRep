@@ -16,11 +16,19 @@ public class NotaCreditoRegistroDAO {
     private static final Logger LOGGER = Logger.getLogger(NotaCreditoRegistroDAO.class.getName());
 
     public int insertar(NotaCreditoRegistro nc) {
+        try (Connection con = DatabaseConnection.getConnection()) {
+            return insertar(con, nc);
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Error en NotaCreditoRegistroDAO.insertar", e);
+        }
+        return -1;
+    }
+
+    public int insertar(Connection con, NotaCreditoRegistro nc) throws SQLException {
         String sql = "INSERT INTO nota_credito_registro(clave_acceso, factura_registro_id, establecimiento, punto_emision, secuencial, " +
                 "fecha_emision, cliente_id, motivo, tipo_motivo, total_sin_impuestos, valor_iva, valor_modificacion, reingresa_stock, estado_sri, mensaje_sri, numero_autorizacion, fecha_autorizacion, xml_firmado, usuario_id) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id";
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, nc.getClaveAcceso());
             ps.setInt(2, nc.getFacturaRegistroId());
             ps.setString(3, nc.getEstablecimiento());
@@ -42,10 +50,20 @@ public class NotaCreditoRegistroDAO {
             ps.setInt(19, nc.getUsuarioId());
             ResultSet rs = ps.executeQuery();
             if (rs.next()) return rs.getInt(1);
-        } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Error en NotaCreditoRegistroDAO.insertar", e);
         }
         return -1;
+    }
+
+    public void actualizarEstado(Connection con, String claveAcceso, String estado, String mensaje, String numeroAutorizacion, String fechaAutorizacion) throws SQLException {
+        String sql = "UPDATE nota_credito_registro SET estado_sri=?, mensaje_sri=?, numero_autorizacion=?, fecha_autorizacion=? WHERE clave_acceso=?";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, estado);
+            ps.setString(2, mensaje);
+            ps.setString(3, numeroAutorizacion);
+            ps.setTimestamp(4, parsearFecha(fechaAutorizacion));
+            ps.setString(5, claveAcceso);
+            ps.executeUpdate();
+        }
     }
 
     public NotaCreditoRegistro obtenerPorClave(String claveAcceso) {

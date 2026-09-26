@@ -5,6 +5,8 @@ import com.vendex.dao.*;
 import com.vendex.model.*;
 import com.vendex.util.*;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -182,26 +184,34 @@ public class NotaCreditoService {
         nc.setEstadoSri(AppConstants.ESTADO_PENDIENTE);
         nc.setXmlFirmado(xmlFirmado);
         nc.setUsuarioId(usuarioId);
-        int ncId = notaCreditoDAO.insertar(nc);
-        if (ncId == -1) throw new IllegalStateException("Error al registrar la nota de credito.");
-
-        notaCreditoDetalleDAO.insertarDetalles(ncId, detallesParaDao);
-        comprobanteDAO.insertar(claveAcceso, ncId, numComprobante, ambienteSri, xmlFirmado, AppConstants.TIPO_COMPROBANTE_NOTA_CREDITO);
-
-        if (reingresaStock) {
-            for (NotaCreditoDetalle d : detallesParaDao) {
-                if (d.getInventarioId() != null) {
-                    inventarioDAO.devolverStock(d.getInventarioId(), d.getCantidad());
+        int ncId;
+        try (Connection con = DatabaseConnection.getConnection()) {
+            con.setAutoCommit(false);
+            try {
+                // Re-obtener secuencial dentro de tx si no se hizo? Ya se hizo fuera, pero para atomicidad movemos marca dentro si se requiere
+                // Aquí solo envolvemos inserts
+                ncId = notaCreditoDAO.insertar(con, nc);
+                if (ncId == -1) throw new IllegalStateException("Error al registrar la nota de credito.");
+                notaCreditoDetalleDAO.insertarDetalles(con, ncId, detallesParaDao);
+                comprobanteDAO.insertar(con, claveAcceso, ncId, numComprobante, ambienteSri, xmlFirmado, AppConstants.TIPO_COMPROBANTE_NOTA_CREDITO);
+                if (reingresaStock) {
+                    for (NotaCreditoDetalle d : detallesParaDao) {
+                        if (d.getInventarioId() != null) inventarioDAO.devolverStock(con, d.getInventarioId(), d.getCantidad());
+                    }
+                    List<HistorialProducto> hist = new ArrayList<>();
+                    for (NotaCreditoDetalle d : detallesParaDao) {
+                        if (d.getInventarioId() != null) {
+                            String provNombre = inventarioDAO.obtenerProveedorNombre(con, d.getInventarioId());
+                            hist.add(new HistorialProducto(d.getInventarioId(), d.getInventarioId().toString(), d.getDescripcion(), d.getCantidad().intValue(), d.getPrecioUnitario(), "DEVOLUCION_NC", numComprobante, cliente.getNombre(), provNombre, ahora));
+                        }
+                    }
+                    if (!hist.isEmpty()) historialProductoDAO.insertar(con, hist);
                 }
-            }
-            List<HistorialProducto> hist = new ArrayList<>();
-            for (NotaCreditoDetalle d : detallesParaDao) {
-                if (d.getInventarioId() != null) {
-                    String provNombre = inventarioDAO.obtenerProveedorNombre(d.getInventarioId());
-                    hist.add(new HistorialProducto(d.getInventarioId(), d.getInventarioId().toString(), d.getDescripcion(), d.getCantidad().intValue(), d.getPrecioUnitario(), "DEVOLUCION_NC", numComprobante, cliente.getNombre(), provNombre, ahora));
-                }
-            }
-            if (!hist.isEmpty()) historialProductoDAO.insertar(hist);
+                con.commit();
+            } catch (Exception e) {
+                try { con.rollback(); } catch (SQLException re) {}
+                throw e;
+            } finally { try { con.setAutoCommit(true); } catch (SQLException ignore) {} }
         }
 
         String rutaPDF = directorioEscritorio.getAbsolutePath() + File.separator + AppConstants.PREFIJO_PDF_NOTA_CREDITO + numComprobante.replace("-", "") + AppConstants.EXTENSION_PDF;
@@ -228,9 +238,15 @@ public class NotaCreditoService {
         String estado = sriResp.getEstado();
         String numAut = sriResp.getNumeroAutorizacion();
         String fechaAut = sriResp.getFechaAutorizacion();
-        notaCreditoDAO.actualizarEstado(resultado.claveAcceso, estado, sriResp.getMensaje(), numAut, fechaAut);
-        comprobanteDAO.actualizarEstado(resultado.claveAcceso, estado, sriResp.getMensaje(), resultado.xmlFirmado, numAut, fechaAut);
-        comprobanteDAO.guardarEnvio(resultado.claveAcceso, resultado.numComprobante, resultado.ambienteSri, resultado.xmlFirmado, sriResp.getRespuestaRecepcionXml(), sriResp.getRespuestaAutorizacionXml(), estado, sriResp.getMensaje(), numAut, fechaAut, AppConstants.TIPO_COMPROBANTE_NOTA_CREDITO);
+        try (Connection con = DatabaseConnection.getConnection()) {
+            con.setAutoCommit(false);
+            try {
+                notaCreditoDAO.actualizarEstado(con, resultado.claveAcceso, estado, sriResp.getMensaje(), numAut, fechaAut);
+                comprobanteDAO.actualizarEstado(con, resultado.claveAcceso, estado, sriResp.getMensaje(), resultado.xmlFirmado, numAut, fechaAut);
+                comprobanteDAO.guardarEnvio(con, resultado.claveAcceso, resultado.numComprobante, resultado.ambienteSri, resultado.xmlFirmado, sriResp.getRespuestaRecepcionXml(), sriResp.getRespuestaAutorizacionXml(), estado, sriResp.getMensaje(), numAut, fechaAut, AppConstants.TIPO_COMPROBANTE_NOTA_CREDITO);
+                con.commit();
+            } catch (Exception e) { try { con.rollback(); } catch (SQLException re) {} throw new RuntimeException(e); } finally { try { con.setAutoCommit(true); } catch (SQLException ignore) {} }
+        } catch (SQLException e) { throw new RuntimeException(e); }
 
         actualizarEstadoFactura(resultado, estado);
 
