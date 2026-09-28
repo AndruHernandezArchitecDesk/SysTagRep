@@ -165,8 +165,8 @@ public class UsuarioDAOPostgres implements UsuarioDAO {
 
     public int guardar(Usuario u) {
         String hash = hashPassword(u.getPassword());
-        String sql = "INSERT INTO usuarios (nombre, apellido, email, username, password, password_hash, rol, activo, permisos, fecha_creacion, rol_id, limite_descuento_pct) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?)";
+        String sql = "INSERT INTO usuarios (nombre, apellido, email, username, password, password_hash, rol, activo, permisos, fecha_creacion, rol_id, limite_descuento_pct, sucursal_id) " +
+                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?, ?)";
         try (Connection con = new DatabaseConnection().getConnection();
              PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, u.getNombre());
@@ -180,6 +180,7 @@ public class UsuarioDAOPostgres implements UsuarioDAO {
             ps.setString(9, u.getPermisos());
             if (u.getRolId() != 0) ps.setInt(10, u.getRolId()); else ps.setNull(10, Types.INTEGER);
             if (u.getLimiteDescuentoPct() != null) ps.setBigDecimal(11, u.getLimiteDescuentoPct()); else ps.setNull(11, Types.NUMERIC);
+            if (u.getSucursalId() != null) ps.setInt(12, u.getSucursalId()); else ps.setNull(12, Types.INTEGER);
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 if (keys.next()) return keys.getInt(1);
@@ -188,12 +189,13 @@ public class UsuarioDAOPostgres implements UsuarioDAO {
         } catch (SQLException e) {
             // fallback sin columnas nuevas (instalaciones viejas)
             try {
-                String fallback = "INSERT INTO usuarios (nombre, apellido, email, username, password, password_hash, rol, activo, permisos, fecha_creacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                String fallback = "INSERT INTO usuarios (nombre, apellido, email, username, password, password_hash, rol, activo, permisos, fecha_creacion, sucursal_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)";
                 try (Connection con = DatabaseConnection.getConnection();
-                     PreparedStatement ps = con.prepareStatement(fallback, Statement.RETURN_GENERATED_KEYS)) {
+                      PreparedStatement ps = con.prepareStatement(fallback, Statement.RETURN_GENERATED_KEYS)) {
                     ps.setString(1, u.getNombre()); ps.setString(2, u.getApellido()); ps.setString(3, u.getCorreo());
                     ps.setString(4, u.getUsername()); ps.setString(5, hash); ps.setString(6, hash);
                     ps.setString(7, u.getRol()); ps.setBoolean(8, u.isEstado()); ps.setString(9, u.getPermisos());
+                    ps.setInt(10, u.getSucursalId() != null ? u.getSucursalId() : 1);
                     ps.executeUpdate();
                     try (ResultSet keys = ps.getGeneratedKeys()) { if (keys.next()) return keys.getInt(1); }
                 }
@@ -206,8 +208,8 @@ public class UsuarioDAOPostgres implements UsuarioDAO {
         String hash = u.getPassword() != null && !u.getPassword().isEmpty() ? hashPassword(u.getPassword()) : null;
         // intentar con rol_id / limite_descuento_pct
         String sqlConRol = hash != null
-                ? "UPDATE usuarios SET nombre=?, apellido=?, email=?, username=?, password=?, password_hash=?, rol=?, activo=?, permisos=?, rol_id=?, limite_descuento_pct=? WHERE id=?"
-                : "UPDATE usuarios SET nombre=?, apellido=?, email=?, username=?, rol=?, activo=?, permisos=?, rol_id=?, limite_descuento_pct=? WHERE id=?";
+                ? "UPDATE usuarios SET nombre=?, apellido=?, email=?, username=?, password=?, password_hash=?, rol=?, activo=?, permisos=?, rol_id=?, limite_descuento_pct=?, sucursal_id=? WHERE id=?"
+                : "UPDATE usuarios SET nombre=?, apellido=?, email=?, username=?, rol=?, activo=?, permisos=?, rol_id=?, limite_descuento_pct=?, sucursal_id=? WHERE id=?";
         String sqlLegacy = hash != null
                 ? "UPDATE usuarios SET nombre=?, apellido=?, email=?, username=?, password=?, password_hash=?, rol=?, activo=?, permisos=? WHERE id=?"
                 : "UPDATE usuarios SET nombre=?, apellido=?, email=?, username=?, rol=?, activo=?, permisos=? WHERE id=?";
@@ -227,6 +229,7 @@ public class UsuarioDAOPostgres implements UsuarioDAO {
             ps.setString(idx++, u.getPermisos());
             if (u.getRolId() != 0) ps.setInt(idx++, u.getRolId()); else ps.setNull(idx++, Types.INTEGER);
             if (u.getLimiteDescuentoPct() != null) ps.setBigDecimal(idx++, u.getLimiteDescuentoPct()); else ps.setNull(idx++, Types.NUMERIC);
+            if (u.getSucursalId() != null) ps.setInt(idx++, u.getSucursalId()); else ps.setNull(idx++, Types.INTEGER);
             ps.setInt(idx, u.getId());
             ps.executeUpdate();
             return;
@@ -282,6 +285,7 @@ public class UsuarioDAOPostgres implements UsuarioDAO {
         try { java.sql.Timestamp t = rs.getTimestamp("bloqueado_hasta"); u.setBloqueadoHasta(t != null ? t.toLocalDateTime() : null); } catch (SQLException ignored) {}
         try { u.setRolId(rs.getInt("rol_id")); if (rs.wasNull()) u.setRolId(0); } catch (SQLException ignored) {}
         try { u.setLimiteDescuentoPct(rs.getBigDecimal("limite_descuento_pct")); } catch (SQLException ignored) {}
+        try { int sid = rs.getInt("sucursal_id"); if (!rs.wasNull()) u.setSucursalId(sid); else u.setSucursalId(1); } catch (SQLException ignored) { u.setSucursalId(1); }
         return u;
     }
 }

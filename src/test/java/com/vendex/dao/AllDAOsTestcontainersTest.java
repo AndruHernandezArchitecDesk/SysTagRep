@@ -77,7 +77,7 @@ public class AllDAOsTestcontainersTest {
         assertDoesNotThrow(() -> ctx.percheroDAO.listar(), "PercheroDAO.listar");
         assertDoesNotThrow(() -> ctx.facturaRegistroDAO.listarPaginado(1, 10, null), "FacturaRegistroDAO.listarPaginado");
         assertDoesNotThrow(() -> ctx.facturaDetalleDAO.listarPorFacturaRegistroId(1), "FacturaDetalleDAO.listarPorFacturaRegistroId");
-        assertDoesNotThrow(() -> ctx.secuenciaDAO.obtener("FACTURA"), "SecuenciaDocumentoDAO.obtener");
+        assertDoesNotThrow(() -> ctx.secuenciaDAO.obtener(1, "FACTURA"), "SecuenciaDocumentoDAO.obtener");
         assertDoesNotThrow(() -> ctx.comprobanteDAO.consultarSecuencial("FACTURA"), "ComprobanteDAO.consultarSecuencial");
         assertDoesNotThrow(() -> ctx.notaCreditoRegistroDAO.listarPendientesSri(), "NotaCreditoRegistroDAO.listarPendientesSri");
         assertDoesNotThrow(() -> ctx.notaCreditoDetalleDAO.listarPorNotaCreditoId(1), "NotaCreditoDetalleDAO.listarPorNotaCreditoId");

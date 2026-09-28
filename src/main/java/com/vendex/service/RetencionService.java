@@ -133,9 +133,9 @@ public class RetencionService {
         Empresa empresa = empresaDAO.listar().isEmpty() ? null : empresaDAO.listar().get(0);
         if (empresa == null) throw new IllegalStateException("No se encontraron datos de la empresa.");
 
-        int secuencialRet = secuenciaDAO.marcarUsado("RETENCION");
+        int secuencialRet = secuenciaDAO.marcarUsado(com.vendex.util.SesionActual.getPuntoEmisionId(), "RETENCION");
         if (secuencialRet == -1) throw new IllegalStateException("No se pudo obtener secuencial RETENCION.");
-        SecuenciaDocumento sec = secuenciaDAO.obtener("RETENCION");
+        SecuenciaDocumento sec = secuenciaDAO.obtener(com.vendex.util.SesionActual.getPuntoEmisionId(), "RETENCION");
         String codEstab = sec.getEstablecimiento() != null ? sec.getEstablecimiento() : AppConstants.ESTABLECIMIENTO_DEFAULT;
         String codPtoEmi = sec.getPuntoEmision() != null ? sec.getPuntoEmision() : AppConstants.PUNTO_EMISION_DEFAULT;
         String claveAcceso = ClaveAcceso.generar(AppConstants.TIPO_COMPROBANTE_RETENCION, empresa.getRuc(), ambienteSri, codEstab, codPtoEmi, secuencialRet);
@@ -143,7 +143,7 @@ public class RetencionService {
         String numComprobante = codEstab + "-" + codPtoEmi + "-" + secuencialStr;
         LocalDateTime ahora = LocalDateTime.now();
         String fechaEmision = ahora.format(DateTimeFormatter.ofPattern(AppConstants.PATRON_FECHA_EMISION));
-        String dirMatriz = empresa.getDireccionCallePrincipal() + " y " + empresa.getDireccionCalleSecundaria();
+        String dirMatriz = com.vendex.util.SucursalActual.direccionEstablecimiento(empresa.getDireccionCallePrincipal() + " y " + empresa.getDireccionCalleSecundaria());
         String dirEstablecimiento = dirMatriz;
 
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern(AppConstants.PATRON_FECHA_EMISION);
@@ -276,7 +276,7 @@ public class RetencionService {
             String rutaPDF = directorioEscritorio.getAbsolutePath() + File.separator + AppConstants.PREFIJO_PDF_RETENCION + resultado.numComprobante.replace("-", "") + AppConstants.EXTENSION_PDF;
             PdfRetencion.generar(rutaPDF, resultado.claveAcceso, numAut, fechaAut, resultado.ambienteSri,
                     resultado.empresa.getRuc(), resultado.empresa.getRazonSocial(),
-                    resultado.empresa.getDireccionCallePrincipal() + " y " + resultado.empresa.getDireccionCalleSecundaria(),
+                    com.vendex.util.SucursalActual.direccionEstablecimiento(resultado.empresa.getDireccionCallePrincipal() + " y " + resultado.empresa.getDireccionCalleSecundaria()),
                     resultado.codEstab, resultado.codPtoEmi, resultado.secuencial, resultado.fechaEmision, resultado.periodoFiscal,
                     resultado.tipoIdSujeto, resultado.razonSujeto, resultado.identSujeto, resultado.docsParaXml);
         } catch (Exception e) { logDAO.guardar("RetencionService","generarPDF", e.getMessage(), e); }

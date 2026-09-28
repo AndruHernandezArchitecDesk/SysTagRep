@@ -1,6 +1,7 @@
 package com.vendex.model;
 
 public class SecuenciaDocumento {
+    private int puntoEmisionId;
     private String tipo;
     private String establecimiento;
     private String puntoEmision;
@@ -14,6 +15,17 @@ public class SecuenciaDocumento {
         this.puntoEmision = puntoEmision;
         this.siguienteNumero = siguienteNumero;
     }
+
+    public SecuenciaDocumento(int puntoEmisionId, String tipo, String establecimiento, String puntoEmision, int siguienteNumero) {
+        this.puntoEmisionId = puntoEmisionId;
+        this.tipo = tipo;
+        this.establecimiento = establecimiento;
+        this.puntoEmision = puntoEmision;
+        this.siguienteNumero = siguienteNumero;
+    }
+
+    public int getPuntoEmisionId() { return puntoEmisionId; }
+    public void setPuntoEmisionId(int puntoEmisionId) { this.puntoEmisionId = puntoEmisionId; }
 
     public String getTipo() { return tipo; }
     public void setTipo(String tipo) { this.tipo = tipo; }

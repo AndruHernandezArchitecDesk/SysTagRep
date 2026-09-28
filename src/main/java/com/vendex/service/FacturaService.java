@@ -125,9 +125,9 @@ public class FacturaService {
         try (Connection con = DatabaseConnection.getConnection()) {
             con.setAutoCommit(false);
             try {
-                secuencialFE = secuenciaDAO.marcarUsado(con, "FACTURA");
+                secuencialFE = secuenciaDAO.marcarUsado(con, com.vendex.util.SesionActual.getPuntoEmisionId(), "FACTURA");
                 if (secuencialFE == -1) throw new IllegalStateException("No se pudo obtener el secuencial de FACTURA (secuencia_documento).");
-                SecuenciaDocumento secActual = secuenciaDAO.obtener(con, "FACTURA");
+                SecuenciaDocumento secActual = secuenciaDAO.obtener(con, com.vendex.util.SesionActual.getPuntoEmisionId(), "FACTURA");
                 codEstab = secActual.getEstablecimiento() != null ? secActual.getEstablecimiento() : AppConstants.ESTABLECIMIENTO_DEFAULT;
                 codPtoEmi = secActual.getPuntoEmision() != null ? secActual.getPuntoEmision() : AppConstants.PUNTO_EMISION_DEFAULT;
                 claveAcceso = ClaveAcceso.generar(AppConstants.TIPO_COMPROBANTE_FACTURA, empresa.getRuc(), ambienteSri, codEstab, codPtoEmi, secuencialFE);
@@ -171,7 +171,7 @@ public class FacturaService {
                     throw new IllegalStateException("No se configuró la firma electrónica (.p12 y contraseña).");
                 }
                 String tipoIdComp = tipoIdCompTmp;
-                xmlGenerado = XmlSriBuilder.construirFactura(ambienteSri, claveAcceso, empresa.getRuc(), empresa.getRazonSocial(), codEstab, codPtoEmi, secuencialFE, empresa.getDireccionCallePrincipal() + " y " + empresa.getDireccionCalleSecundaria(), "", "NO", tipoIdComp, cliente.getNombre(), cliente.getIdentificacion(), cliente.getDireccion(), sub.setScale(2, RoundingMode.HALF_UP).toString(), descCalc.setScale(2, RoundingMode.HALF_UP).toString(), ivaCalc.setScale(2, RoundingMode.HALF_UP).toString(), totCalc.setScale(2, RoundingMode.HALF_UP).toString(), "0.00", formaPago, fechaEmisionFE, armarDetalles(itemsDetalle, descCalc));
+                xmlGenerado = XmlSriBuilder.construirFactura(ambienteSri, claveAcceso, empresa.getRuc(), empresa.getRazonSocial(), codEstab, codPtoEmi, secuencialFE, com.vendex.util.SucursalActual.direccionEstablecimiento(empresa.getDireccionCallePrincipal() + " y " + empresa.getDireccionCalleSecundaria()), "", "NO", tipoIdComp, cliente.getNombre(), cliente.getIdentificacion(), cliente.getDireccion(), sub.setScale(2, RoundingMode.HALF_UP).toString(), descCalc.setScale(2, RoundingMode.HALF_UP).toString(), ivaCalc.setScale(2, RoundingMode.HALF_UP).toString(), totCalc.setScale(2, RoundingMode.HALF_UP).toString(), "0.00", formaPago, fechaEmisionFE, armarDetalles(itemsDetalle, descCalc));
                 try {
                     FirmaDigital firma = new FirmaDigital();
                     if (!firma.cargarCertificado(rutaP12, claveP12)) throw new IllegalStateException("No se pudo cargar el certificado. Verifique la ruta y la contraseña.");
@@ -255,7 +255,7 @@ public class FacturaService {
 
         PdfElectronico.generar(rutaPDF, resultado.claveAcceso, numeroAutorizacion, fechaAutorizacion, resultado.ambienteSri,
                 resultado.empresa.getRuc(), resultado.empresa.getRazonSocial(),
-                resultado.empresa.getDireccionCallePrincipal() + " y " + resultado.empresa.getDireccionCalleSecundaria(),
+                com.vendex.util.SucursalActual.direccionEstablecimiento(resultado.empresa.getDireccionCallePrincipal() + " y " + resultado.empresa.getDireccionCalleSecundaria()),
                 resultado.empresa.getTelefono(), resultado.empresa.getCorreo(),
                 "", "NO", resultado.empresa.getSucursal(),
                 resultado.empresa.getAgenteRetencion(), resultado.empresa.getResolucion(),
@@ -313,7 +313,7 @@ public class FacturaService {
 
         PdfElectronico.generar(rutaPDF, fr.getClaveAcceso(), numeroAutorizacion, fechaAutorizacion, fr.getAmbienteSri(),
                 empresa.getRuc(), empresa.getRazonSocial(),
-                empresa.getDireccionCallePrincipal() + " y " + empresa.getDireccionCalleSecundaria(),
+                com.vendex.util.SucursalActual.direccionEstablecimiento(empresa.getDireccionCallePrincipal() + " y " + empresa.getDireccionCalleSecundaria()),
                 empresa.getTelefono(), empresa.getCorreo(),
                 "", "NO", empresa.getSucursal(),
                 empresa.getAgenteRetencion(), empresa.getResolucion(),

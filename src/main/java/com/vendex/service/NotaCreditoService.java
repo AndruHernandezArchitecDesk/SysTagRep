@@ -140,9 +140,9 @@ public class NotaCreditoService {
         Cliente cliente = clienteDAO.obtenerPorId(factura.getClienteId());
         if (cliente == null) throw new IllegalStateException("Cliente no encontrado para la factura.");
 
-        int secuencialNC = secuenciaDAO.marcarUsado("NOTA_CREDITO");
+        int secuencialNC = secuenciaDAO.marcarUsado(com.vendex.util.SesionActual.getPuntoEmisionId(), "NOTA_CREDITO");
         if (secuencialNC == -1) throw new IllegalStateException("No se pudo obtener secuencial NOTA_CREDITO.");
-        SecuenciaDocumento sec = secuenciaDAO.obtener("NOTA_CREDITO");
+        SecuenciaDocumento sec = secuenciaDAO.obtener(com.vendex.util.SesionActual.getPuntoEmisionId(), "NOTA_CREDITO");
         String codEstab = sec.getEstablecimiento() != null ? sec.getEstablecimiento() : AppConstants.ESTABLECIMIENTO_DEFAULT;
         String codPtoEmi = sec.getPuntoEmision() != null ? sec.getPuntoEmision() : AppConstants.PUNTO_EMISION_DEFAULT;
         String claveAcceso = ClaveAcceso.generar(AppConstants.TIPO_COMPROBANTE_NOTA_CREDITO, empresa.getRuc(), ambienteSri, codEstab, codPtoEmi, secuencialNC);
@@ -157,7 +157,7 @@ public class NotaCreditoService {
         String identTrim = cliente.getIdentificacion() != null ? cliente.getIdentificacion().trim() : "";
         tipoIdComp = AppConstants.esConsumidorFinal(identTrim) ? "05" : (identTrim.length() == AppConstants.MAX_LONGITUD_IDENTIFICACION_JURIDICA ? "04" : "05");
 
-        String dirMatriz = empresa.getDireccionCallePrincipal() + " y " + empresa.getDireccionCalleSecundaria();
+        String dirMatriz = com.vendex.util.SucursalActual.direccionEstablecimiento(empresa.getDireccionCallePrincipal() + " y " + empresa.getDireccionCalleSecundaria());
         String xmlGenerado = XmlNotaCreditoBuilder.construirNotaCredito(
                 ambienteSri, claveAcceso, empresa.getRuc(), empresa.getRazonSocial(),
                 codEstab, codPtoEmi, secuencialNC, dirMatriz, dirMatriz,
@@ -285,7 +285,7 @@ public class NotaCreditoService {
             String rutaPDF = directorioEscritorio.getAbsolutePath() + File.separator + AppConstants.PREFIJO_PDF_NOTA_CREDITO + resultado.numComprobante.replace("-", "") + AppConstants.EXTENSION_PDF;
             PdfNotaCredito.generar(rutaPDF, resultado.claveAcceso, numAut, fechaAut, resultado.ambienteSri,
                     resultado.empresa.getRuc(), resultado.empresa.getRazonSocial(),
-                    resultado.empresa.getDireccionCallePrincipal() + " y " + resultado.empresa.getDireccionCalleSecundaria(),
+                    com.vendex.util.SucursalActual.direccionEstablecimiento(resultado.empresa.getDireccionCallePrincipal() + " y " + resultado.empresa.getDireccionCalleSecundaria()),
                     resultado.empresa.getTelefono(), resultado.empresa.getCorreo(),
                     resultado.codEstab, resultado.codPtoEmi, resultado.secuencial,
                     resultado.fechaEmision, resultado.fechaEmisionDocSustento, resultado.numDocModificado,

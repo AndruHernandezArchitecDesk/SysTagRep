@@ -462,7 +462,7 @@ public class FacturaController implements Initializable {
     }
 
     private void obtenerNumFactura() {
-        SecuenciaDocumento sec = secuenciaDAO.obtener("FACTURA");
+        SecuenciaDocumento sec = secuenciaDAO.obtener(com.vendex.util.SesionActual.getPuntoEmisionId(), "FACTURA");
         lblNumFactura.setText(sec.getProximoCodigo());
     }
 

@@ -595,7 +595,7 @@ public class NotaVentaController implements Initializable {
     }
 
     private void obtenerNumNotaVenta() {
-        SecuenciaDocumento sec = secuenciaDAO.obtener("PROFORMA");
+        SecuenciaDocumento sec = secuenciaDAO.obtener(com.vendex.util.SesionActual.getPuntoEmisionId(), "PROFORMA");
         lblNumNotaVenta.setText(sec.getProximoCodigo());
     }
 
@@ -622,17 +622,18 @@ public class NotaVentaController implements Initializable {
         // Numeracion atomica centralizada 001-001: reservar secuencial ANTES de insertar
         // UPDATE secuencia_documento SET siguiente_numero=siguiente_numero+1 RETURNING ... usado
         // evita que dos PCs reutilicen el mismo numero
-        int secuencialUsado = secuenciaDAO.marcarUsado("PROFORMA");
+        int secuencialUsado = secuenciaDAO.marcarUsado(com.vendex.util.SesionActual.getPuntoEmisionId(), "PROFORMA");
         if (secuencialUsado == -1) {
             new Alert(Alert.AlertType.ERROR, "No se pudo obtener el secuencial de PROFORMA (secuencia_documento). Verifique la conexion a vendex-db.").showAndWait();
             return;
         }
-        SecuenciaDocumento secInfo = secuenciaDAO.obtener("PROFORMA");
+        SecuenciaDocumento secInfo = secuenciaDAO.obtener(com.vendex.util.SesionActual.getPuntoEmisionId(), "PROFORMA");
         String estab = secInfo.getEstablecimiento() != null ? secInfo.getEstablecimiento() : "001";
         String pto = secInfo.getPuntoEmision() != null ? secInfo.getPuntoEmision() : "001";
         String codigo = estab + "-" + pto + "-" + String.format("%09d", secuencialUsado);
 
         NotaVentaRegistro nvr = new NotaVentaRegistro(empresaId, clienteId, ahora, codigo, cmbFormaPago.getValue(), ahora);
+        nvr.setSucursalId(com.vendex.util.SucursalActual.getId());
         int notaVentaId = daoNotaVentaRegistro.insertar(nvr);
 
         if (notaVentaId == -1) {

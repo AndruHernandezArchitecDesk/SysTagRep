@@ -42,7 +42,7 @@ class SRIRealIntegracionTest {
         Empresa empresa = empresas.get(0);
 
         SecuenciaDocumentoDAO secuenciaDAO = new SecuenciaDocumentoDAOPostgres();
-        SecuenciaDocumento sec = secuenciaDAO.obtener("FACTURA");
+        SecuenciaDocumento sec = secuenciaDAO.obtener(1, "FACTURA");
         String codEstab = sec.getEstablecimiento();
         String codPtoEmi = sec.getPuntoEmision();
         int secuencialFE = sec.getSiguienteNumero();

@@ -3,6 +3,7 @@ package com.vendex.controller;
 import com.vendex.dao.LoginIntentoLogDAO;
 import com.vendex.dao.UsuarioDAO;
 import com.vendex.model.Usuario;
+import com.vendex.model.PuntoEmision;
 import com.vendex.util.PoliticaBloqueo;
 import com.vendex.util.ThemeManager;
 import javafx.application.Platform;
@@ -180,11 +181,16 @@ public class LoginController implements Initializable {
         task.setOnSucceeded(e -> {
             setLoading(false);
             LoginResult r = task.getValue();
-            if (r.exito != null) {
-                usuarioAutenticado = r.exito;
-                // cargar permisos granulares en sesión (una sola vez, servicio enforces)
-                try { com.vendex.util.SesionActual.iniciar(r.exito); } catch (Exception ignored) {}
-                abrirMain();
+                if (r.exito != null) {
+                    usuarioAutenticado = r.exito;
+                    Integer sucursalId = r.exito.getSucursalId();
+                    Integer puntoEmisionId = null;
+                    if (sucursalId != null) {
+                        var pe = com.vendex.config.AppContext.getInstance().puntoEmisionDAO.listarPorSucursal(sucursalId).stream().findFirst();
+                        puntoEmisionId = pe.map(PuntoEmision::getId).orElse(null);
+                    }
+                    try { com.vendex.util.SesionActual.iniciar(r.exito, sucursalId, puntoEmisionId); } catch (Exception ignored) {}
+                    abrirMain();
             } else if (r.bloqueada) {
                 showStatus("Cuenta bloqueada temporalmente por múltiples intentos fallidos, intenta de nuevo en " + r.minutos + " minuto(s).", true);
             } else {

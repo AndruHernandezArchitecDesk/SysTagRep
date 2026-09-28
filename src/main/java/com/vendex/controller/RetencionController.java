@@ -221,7 +221,7 @@ public class RetencionController implements Initializable {
     }
 
     private void actualizarSecuencial() {
-        try { lblSecuencial.setText(secDAO.obtener("RETENCION").getProximoCodigo()); } catch (Exception ignore) {}
+        try { lblSecuencial.setText(secDAO.obtener(com.vendex.util.SesionActual.getPuntoEmisionId(), "RETENCION").getProximoCodigo()); } catch (Exception ignore) {}
     }
 
     @FXML

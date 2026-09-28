@@ -21,25 +21,30 @@ public final class SesionActual {
     private static Usuario usuario;
     private static Set<String> permisos = Collections.emptySet();
     private static BigDecimal limiteDescuento;
+    private static Integer sucursalId;
+    private static Integer puntoEmisionId;
 
     private SesionActual() {}
 
     public static void iniciar(Usuario u) {
+        iniciar(u, u != null ? u.getSucursalId() : null, null);
+    }
+
+    public static void iniciar(Usuario u, Integer sucursalId, Integer puntoEmisionId) {
         usuario = u;
+        SesionActual.sucursalId = sucursalId;
+        SesionActual.puntoEmisionId = puntoEmisionId;
         if (u == null) {
             permisos = Collections.emptySet();
             limiteDescuento = null;
             return;
         }
-        // resolver rol_id: si tiene rol_id usarlo, si no fallback a rol string
         int rolId = u.getRolId();
         if (rolId == 0 && u.getRol() != null) {
-            // fallback compat: buscar rol por nombre
             try {
                 var rol = new com.vendex.dao.RolDAOPostgres().obtenerPorNombre(u.getRol());
                 if (rol != null) {
                     rolId = rol.getId();
-                    // cache limite del rol
                     limiteDescuento = rol.getLimiteDescuentoPct();
                 }
             } catch (Exception ignored) {}
@@ -49,15 +54,12 @@ public final class SesionActual {
                 if (rol != null) limiteDescuento = rol.getLimiteDescuentoPct();
             } catch (Exception ignored) {}
         }
-        // override por usuario
         if (u.getLimiteDescuentoPct() != null) limiteDescuento = u.getLimiteDescuentoPct();
-
         if (rolId != 0) {
             permisos = new HashSet<>(new PermisoDAOPostgres().listarPorRol(rolId));
         } else {
             permisos = Collections.emptySet();
         }
-        // compat CSV legacy: si tiene permisos CSV antiguos, agregarlos como permisos también
         if (u.getPermisos() != null && !u.getPermisos().isBlank()) {
             for (String p : u.getPermisos().split(",")) {
                 if (!p.isBlank()) permisos.add(p.trim().toUpperCase());
@@ -69,11 +71,15 @@ public final class SesionActual {
         usuario = null;
         permisos = Collections.emptySet();
         limiteDescuento = null;
+        sucursalId = null;
+        puntoEmisionId = null;
     }
 
     public static Usuario getUsuario() { return usuario; }
     public static Set<String> getPermisos() { return Collections.unmodifiableSet(permisos); }
     public static BigDecimal getLimiteDescuento() { return limiteDescuento; }
+    public static Integer getSucursalId() { return sucursalId != null ? sucursalId : 1; }
+    public static Integer getPuntoEmisionId() { return puntoEmisionId != null ? puntoEmisionId : 1; }
 
     public static boolean tienePermiso(String codigo) {
         if (usuario == null) return false;
@@ -133,4 +139,6 @@ public final class SesionActual {
     // para tests
     public static void setPermisosForTest(Set<String> perms) { permisos = new HashSet<>(perms); }
     public static void setUsuarioForTest(Usuario u) { usuario = u; }
+    public static void setSucursalIdForTest(Integer s) { sucursalId = s; }
+    public static void setPuntoEmisionIdForTest(Integer p) { puntoEmisionId = p; }
 }

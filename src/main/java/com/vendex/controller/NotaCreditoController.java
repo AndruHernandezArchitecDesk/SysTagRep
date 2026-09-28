@@ -92,18 +92,21 @@ public class NotaCreditoController implements Initializable {
 
     private void cargarFacturasAutorizadas() {
         List<FacturaRegistro> facturas = new ArrayList<>();
-        // listar facturas AUTORIZADAS (+ PENDIENTE en modo contingencia)
         boolean modoContingencia = com.vendex.util.SRIContingenciaConfig.isModoContingencia();
         String estadoFiltro = modoContingencia ? "COALESCE(ce.estado_sri, fr.estado_sri) IN ('AUTORIZADO','PENDIENTE','RECIBIDA','ERROR')" : "COALESCE(ce.estado_sri, fr.estado_sri)='AUTORIZADO'";
-        String sql = "SELECT fr.*, c.nombre as nombre_cliente, COALESCE(ce.estado_sri, fr.estado_sri) as estado_sri_actual, ce.mensaje_sri FROM factura_registro fr LEFT JOIN cliente c ON c.id=fr.cliente_id LEFT JOIN comprobantes_electronicos ce ON ce.clave_acceso=fr.clave_acceso WHERE " + estadoFiltro + " ORDER BY fr.id DESC LIMIT 200";
-        try (java.sql.Connection con = DatabaseConnection.getConnection(); java.sql.PreparedStatement ps = con.prepareStatement(sql); java.sql.ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                FacturaRegistro fr = new FacturaRegistro();
-                fr.setId(rs.getInt("id")); fr.setCodigo(rs.getString("codigo")); fr.setNumComprobante(rs.getString("num_comprobante"));
-                fr.setClienteId(rs.getInt("cliente_id")); fr.setTotal(rs.getBigDecimal("total")); fr.setFecha(rs.getObject("fecha", LocalDateTime.class));
-                fr.setClaveAcceso(rs.getString("clave_acceso")); fr.setEstadoSri(rs.getString("estado_sri_actual"));
-                try { fr.setNombreCliente(rs.getString("nombre_cliente")); } catch (Exception ignore) {}
-                facturas.add(fr);
+        int sucursalId = com.vendex.util.SesionActual.getSucursalId();
+        String sql = "SELECT fr.*, c.nombre as nombre_cliente, COALESCE(ce.estado_sri, fr.estado_sri) as estado_sri_actual, ce.mensaje_sri FROM factura_registro fr LEFT JOIN cliente c ON c.id=fr.cliente_id LEFT JOIN comprobantes_electronicos ce ON ce.clave_acceso=fr.clave_acceso WHERE " + estadoFiltro + " AND fr.sucursal_id=? ORDER BY fr.id DESC LIMIT 200";
+        try (java.sql.Connection con = DatabaseConnection.getConnection(); java.sql.PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, sucursalId);
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    FacturaRegistro fr = new FacturaRegistro();
+                    fr.setId(rs.getInt("id")); fr.setCodigo(rs.getString("codigo")); fr.setNumComprobante(rs.getString("num_comprobante"));
+                    fr.setClienteId(rs.getInt("cliente_id")); fr.setTotal(rs.getBigDecimal("total")); fr.setFecha(rs.getObject("fecha", LocalDateTime.class));
+                    fr.setClaveAcceso(rs.getString("clave_acceso")); fr.setEstadoSri(rs.getString("estado_sri_actual"));
+                    try { fr.setNombreCliente(rs.getString("nombre_cliente")); } catch (Exception ignore) {}
+                    facturas.add(fr);
+                }
             }
         } catch (Exception e) { e.printStackTrace(); }
         ComboFilter.habilitar(cmbFactura, FXCollections.observableArrayList(facturas), new StringConverter<>() {
@@ -173,7 +176,7 @@ public class NotaCreditoController implements Initializable {
     }
 
     private void actualizarSecuencial() {
-        try { lblSecuencial.setText(secDAO.obtener("NOTA_CREDITO").getProximoCodigo()); } catch (Exception ignore) {}
+        try { lblSecuencial.setText(secDAO.obtener(com.vendex.util.SesionActual.getPuntoEmisionId(), "NOTA_CREDITO").getProximoCodigo()); } catch (Exception ignore) {}
     }
 
     @FXML private void emitirNotaCredito() {

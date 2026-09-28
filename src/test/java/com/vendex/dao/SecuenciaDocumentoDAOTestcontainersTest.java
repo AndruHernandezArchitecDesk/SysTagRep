@@ -24,6 +24,7 @@ public class SecuenciaDocumentoDAOTestcontainersTest {
             .withPassword("test");
 
     private SecuenciaDocumentoDAO dao;
+    private static final int PE_ID = 1;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -33,18 +34,16 @@ public class SecuenciaDocumentoDAOTestcontainersTest {
         String user = postgres.getUsername();
         String pass = postgres.getPassword();
         DatabaseConnection.setConnectionParams(url, user, pass);
-
-        // Crear tabla secuencia_documento (DDL Postgres)
         try (Connection con = DatabaseConnection.getConnection();
              Statement st = con.createStatement()) {
             st.execute("CREATE TABLE IF NOT EXISTS secuencia_documento (" +
-                    "tipo VARCHAR(50) PRIMARY KEY, " +
-                    "prefijo VARCHAR(10), " +
-                    "establecimiento VARCHAR(3), " +
-                    "punto_emision VARCHAR(3), " +
-                    "siguiente_numero INT NOT NULL DEFAULT 1)");
+                    "punto_emision_id INTEGER NOT NULL, tipo VARCHAR(50) NOT NULL, " +
+                    "prefijo VARCHAR(10), establecimiento VARCHAR(3), punto_emision VARCHAR(3), " +
+                    "siguiente_numero INT NOT NULL DEFAULT 1, " +
+                    "PRIMARY KEY (punto_emision_id, tipo))");
             st.execute("DELETE FROM secuencia_documento");
-            st.execute("INSERT INTO secuencia_documento(tipo, prefijo, establecimiento, punto_emision, siguiente_numero) VALUES ('FACTURA','001','001','001',1)");
+            st.execute("INSERT INTO secuencia_documento(punto_emision_id, tipo, prefijo, establecimiento, punto_emision, siguiente_numero) " +
+                    "VALUES (" + PE_ID + ",'FACTURA','001','001','001',1)");
         }
         dao = new SecuenciaDocumentoDAOPostgres();
     }
@@ -57,15 +56,15 @@ public class SecuenciaDocumentoDAOTestcontainersTest {
 
     @Test
     void marcarUsado_incrementaSecuencialAtomico() {
-        int primero = dao.marcarUsado("FACTURA");
-        int segundo = dao.marcarUsado("FACTURA");
+        int primero = dao.marcarUsado(PE_ID, "FACTURA");
+        int segundo = dao.marcarUsado(PE_ID, "FACTURA");
         assertEquals(1, primero, "Primer uso debe ser 1");
         assertEquals(2, segundo, "Segundo uso debe ser 2");
     }
 
     @Test
     void obtener_devuelveEstablecimientoYPunto() {
-        var sec = dao.obtener("FACTURA");
+        var sec = dao.obtener(PE_ID, "FACTURA");
         assertNotNull(sec);
         assertEquals("FACTURA", sec.getTipo());
         assertEquals("001", sec.getEstablecimiento());
@@ -77,11 +76,10 @@ public class SecuenciaDocumentoDAOTestcontainersTest {
     void marcarUsado_conConnection_transaccional() throws Exception {
         try (Connection con = DatabaseConnection.getConnection()) {
             con.setAutoCommit(false);
-            int usado = dao.marcarUsado(con, "FACTURA");
+            int usado = dao.marcarUsado(con, PE_ID, "FACTURA");
             assertEquals(1, usado);
             con.rollback();
-            // Después de rollback, el siguiente debe seguir siendo 1 (no se consumió)
-            int despues = dao.marcarUsado("FACTURA");
+            int despues = dao.marcarUsado(PE_ID, "FACTURA");
             assertEquals(1, despues, "Rollback debe liberar el secuencial");
         }
     }

@@ -43,6 +43,11 @@ public final class SucursalActual {
         return sucursal != null;
     }
 
+    /** Dirección del establecimiento de la sucursal seleccionada, o la que se pase si no hay sucursal. */
+    public static String direccionEstablecimiento(String direccionEmpresa) {
+        return (sucursal != null && sucursal.getDireccion() != null) ? sucursal.getDireccion() : direccionEmpresa;
+    }
+
     public static int getIdPersistido() {
         return PREFS.getInt(PREF_KEY, 1);
     }

@@ -10,6 +10,7 @@ public class NotaVentaRegistro {
     private String codigo;
     private String formaPago;
     private LocalDateTime fechaRegistro;
+    private Integer sucursalId;
 
     public NotaVentaRegistro(){}
 
@@ -42,4 +43,7 @@ public class NotaVentaRegistro {
 
     public LocalDateTime getFechaRegistro() { return fechaRegistro; }
     public void setFechaRegistro(LocalDateTime fechaRegistro) { this.fechaRegistro = fechaRegistro; }
+
+    public Integer getSucursalId() { return sucursalId; }
+    public void setSucursalId(Integer sucursalId) { this.sucursalId = sucursalId; }
 }

@@ -45,9 +45,9 @@ public class NumeracionController implements Initializable {
     }
 
     private void cargarSecuencias() {
-        SecuenciaDocumento proforma = secuenciaDAO.obtener("PROFORMA");
-        SecuenciaDocumento factura = secuenciaDAO.obtener("FACTURA");
-        SecuenciaDocumento nc = secuenciaDAO.obtener("NOTA_CREDITO");
+        SecuenciaDocumento proforma = secuenciaDAO.obtener(com.vendex.util.SesionActual.getPuntoEmisionId(), "PROFORMA");
+        SecuenciaDocumento factura = secuenciaDAO.obtener(com.vendex.util.SesionActual.getPuntoEmisionId(), "FACTURA");
+        SecuenciaDocumento nc = secuenciaDAO.obtener(com.vendex.util.SesionActual.getPuntoEmisionId(), "NOTA_CREDITO");
         lblSiguienteProforma.setText(proforma.getProximoCodigo());
         lblSiguienteFactura.setText(factura.getProximoCodigo());
         if (lblSiguienteNotaCredito != null) lblSiguienteNotaCredito.setText(nc.getProximoCodigo());
@@ -100,7 +100,7 @@ public class NumeracionController implements Initializable {
                 new Alert(Alert.AlertType.ERROR, "El número " + codigo + " ya existe en la base de datos, no se puede repetir.").showAndWait();
                 return;
             }
-            if (!secuenciaDAO.establecer(tipo, estab, pto, numero)) {
+            if (!secuenciaDAO.establecer(com.vendex.util.SesionActual.getPuntoEmisionId(), tipo, "001", estab, pto, numero)) {
                 new Alert(Alert.AlertType.ERROR, "No se pudo actualizar la numeración.").showAndWait();
                 return;
             }

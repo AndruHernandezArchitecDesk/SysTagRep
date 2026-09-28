@@ -131,9 +131,9 @@ public class NotaDebitoService {
         Cliente cliente = clienteDAO.obtenerPorId(factura.getClienteId());
         if (cliente == null) throw new IllegalStateException("Cliente no encontrado para la factura.");
 
-        int secuencialND = secuenciaDAO.marcarUsado("NOTA_DEBITO");
+        int secuencialND = secuenciaDAO.marcarUsado(com.vendex.util.SesionActual.getPuntoEmisionId(), "NOTA_DEBITO");
         if (secuencialND == -1) throw new IllegalStateException("No se pudo obtener secuencial NOTA_DEBITO.");
-        SecuenciaDocumento sec = secuenciaDAO.obtener("NOTA_DEBITO");
+        SecuenciaDocumento sec = secuenciaDAO.obtener(com.vendex.util.SesionActual.getPuntoEmisionId(), "NOTA_DEBITO");
         String codEstab = sec.getEstablecimiento() != null ? sec.getEstablecimiento() : AppConstants.ESTABLECIMIENTO_DEFAULT;
         String codPtoEmi = sec.getPuntoEmision() != null ? sec.getPuntoEmision() : AppConstants.PUNTO_EMISION_DEFAULT;
         String claveAcceso = ClaveAcceso.generar(AppConstants.TIPO_COMPROBANTE_NOTA_DEBITO, empresa.getRuc(), ambienteSri, codEstab, codPtoEmi, secuencialND);
@@ -178,7 +178,7 @@ public class NotaDebitoService {
         iva = iva.setScale(2, RoundingMode.HALF_UP);
         BigDecimal valorTotal = subSinIva.add(iva).setScale(2, RoundingMode.HALF_UP);
 
-        String dirMatriz = empresa.getDireccionCallePrincipal() + " y " + empresa.getDireccionCalleSecundaria();
+        String dirMatriz = com.vendex.util.SucursalActual.direccionEstablecimiento(empresa.getDireccionCallePrincipal() + " y " + empresa.getDireccionCalleSecundaria());
         String xmlGenerado = XmlNotaDebitoBuilder.construirNotaDebito(
                 ambienteSri, claveAcceso, empresa.getRuc(), empresa.getRazonSocial(),
                 codEstab, codPtoEmi, secuencialND, dirMatriz, dirMatriz,
@@ -293,7 +293,7 @@ public class NotaDebitoService {
             String rutaPDF = directorioEscritorio.getAbsolutePath() + File.separator + AppConstants.PREFIJO_PDF_NOTA_DEBITO + resultado.numComprobante.replace("-", "") + AppConstants.EXTENSION_PDF;
             PdfNotaDebito.generar(rutaPDF, resultado.claveAcceso, numAut, fechaAut, resultado.ambienteSri,
                     resultado.empresa.getRuc(), resultado.empresa.getRazonSocial(),
-                    resultado.empresa.getDireccionCallePrincipal() + " y " + resultado.empresa.getDireccionCalleSecundaria(),
+                    com.vendex.util.SucursalActual.direccionEstablecimiento(resultado.empresa.getDireccionCallePrincipal() + " y " + resultado.empresa.getDireccionCalleSecundaria()),
                     resultado.empresa.getTelefono(), resultado.empresa.getCorreo(),
                     resultado.codEstab, resultado.codPtoEmi, resultado.secuencial,
                     resultado.fechaEmision, resultado.fechaEmisionDocSustento, resultado.numDocModificado,

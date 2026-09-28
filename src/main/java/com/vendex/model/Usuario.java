@@ -76,8 +76,11 @@ public class Usuario {
     // permisos granulares
     private int rolId;
     private java.math.BigDecimal limiteDescuentoPct;
+    private Integer sucursalId;
     public int getRolId() { return rolId; }
     public void setRolId(int rolId) { this.rolId = rolId; }
     public java.math.BigDecimal getLimiteDescuentoPct() { return limiteDescuentoPct; }
     public void setLimiteDescuentoPct(java.math.BigDecimal limiteDescuentoPct) { this.limiteDescuentoPct = limiteDescuentoPct; }
+    public Integer getSucursalId() { return sucursalId; }
+    public void setSucursalId(Integer sucursalId) { this.sucursalId = sucursalId; }
 }

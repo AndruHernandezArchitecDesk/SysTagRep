@@ -23,6 +23,7 @@ public class NotaVentaRegistroDAOPostgres implements NotaVentaRegistroDAO {
                 NotaVentaRegistro n = new NotaVentaRegistro();
                 n.setId(rs.getInt("id"));
                 n.setCodigo(rs.getString("codigo"));
+                try { n.setSucursalId(rs.getInt("sucursal_id")); if (rs.wasNull()) n.setSucursalId(1); } catch (Exception ignore) {}
                 lista.add(n);
             }
 
@@ -34,8 +35,8 @@ public class NotaVentaRegistroDAOPostgres implements NotaVentaRegistroDAO {
     }
 
     public int insertar(NotaVentaRegistro nvr) {
-        String sql = "INSERT INTO nota_venta_registro(empresa_id, cliente_id, fecha, codigo, forma_pago, fecha_registro) " +
-                     "VALUES (?, ?, ?, ?, ?, ?) RETURNING id";
+        String sql = "INSERT INTO nota_venta_registro(empresa_id, cliente_id, fecha, codigo, forma_pago, fecha_registro, sucursal_id) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id";
         try (Connection con = new DatabaseConnection().getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, nvr.getEmpresaId());
@@ -44,6 +45,7 @@ public class NotaVentaRegistroDAOPostgres implements NotaVentaRegistroDAO {
             ps.setString(4, nvr.getCodigo());
             ps.setString(5, nvr.getFormaPago());
             ps.setObject(6, nvr.getFechaRegistro());
+            if (nvr.getSucursalId() != null) ps.setInt(7, nvr.getSucursalId()); else ps.setNull(7, java.sql.Types.INTEGER);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) return rs.getInt("id");
         } catch (SQLException e) {

@@ -159,9 +159,9 @@ public class GuiaRemisionService {
         Empresa empresa = empresaDAO.listar().isEmpty() ? null : empresaDAO.listar().get(0);
         if (empresa == null) throw new IllegalStateException("No se encontraron datos de la empresa.");
 
-        int secuencialGR = secuenciaDAO.marcarUsado("GUIA_REMISION");
+        int secuencialGR = secuenciaDAO.marcarUsado(com.vendex.util.SesionActual.getPuntoEmisionId(), "GUIA_REMISION");
         if (secuencialGR == -1) throw new IllegalStateException("No se pudo obtener secuencial GUIA_REMISION.");
-        SecuenciaDocumento sec = secuenciaDAO.obtener("GUIA_REMISION");
+        SecuenciaDocumento sec = secuenciaDAO.obtener(com.vendex.util.SesionActual.getPuntoEmisionId(), "GUIA_REMISION");
         String codEstab = sec.getEstablecimiento() != null ? sec.getEstablecimiento() : AppConstants.ESTABLECIMIENTO_DEFAULT;
         String codPtoEmi = sec.getPuntoEmision() != null ? sec.getPuntoEmision() : AppConstants.PUNTO_EMISION_DEFAULT;
         String claveAcceso = ClaveAcceso.generar(AppConstants.TIPO_COMPROBANTE_GUIA_REMISION, empresa.getRuc(), ambienteSri, codEstab, codPtoEmi, secuencialGR);
@@ -172,7 +172,7 @@ public class GuiaRemisionService {
         DateTimeFormatter fmtDate = DateTimeFormatter.ofPattern(AppConstants.PATRON_FECHA_EMISION);
         String fechaIniStr = fechaIniTransporte.format(fmtDate);
         String fechaFinStr = fechaFinTransporte.format(fmtDate);
-        String dirMatriz = empresa.getDireccionCallePrincipal() + " y " + empresa.getDireccionCalleSecundaria();
+        String dirMatriz = com.vendex.util.SucursalActual.direccionEstablecimiento(empresa.getDireccionCallePrincipal() + " y " + empresa.getDireccionCalleSecundaria());
         String dirEstablecimiento = dirMatriz;
 
         // Preparar destinatarios para XML
@@ -325,7 +325,7 @@ public class GuiaRemisionService {
             String rutaPDF = directorioEscritorio.getAbsolutePath() + File.separator + AppConstants.PREFIJO_PDF_GUIA_REMISION + resultado.numComprobante.replace("-", "") + AppConstants.EXTENSION_PDF;
             PdfGuiaRemision.generar(rutaPDF, resultado.claveAcceso, numAut, fechaAut, resultado.ambienteSri,
                     resultado.empresa.getRuc(), resultado.empresa.getRazonSocial(),
-                    resultado.empresa.getDireccionCallePrincipal() + " y " + resultado.empresa.getDireccionCalleSecundaria(),
+                    com.vendex.util.SucursalActual.direccionEstablecimiento(resultado.empresa.getDireccionCallePrincipal() + " y " + resultado.empresa.getDireccionCalleSecundaria()),
                     resultado.empresa.getTelefono(), resultado.empresa.getCorreo(),
                     resultado.codEstab, resultado.codPtoEmi, resultado.secuencial, resultado.fechaEmision,
                     resultado.dirPartida, resultado.razonSocialTransportista, resultado.tipoIdTransportista, resultado.rucTransportista, resultado.placa,
