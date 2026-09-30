@@ -111,4 +111,90 @@ public class InventarioApiController {
         if (inv == null) ctx.status(404).json(Map.of("error", "Inventario no encontrado"));
         else ctx.json(inv);
     }
+
+    public void guardar(Context ctx) {
+        try {
+            Map<String, Object> body = ctx.bodyAsClass(Map.class);
+            Inventario inv = new Inventario();
+            inv.setCodigo((String) body.get("codigo"));
+            inv.setDescripcion((String) body.get("descripcion"));
+            inv.setCantidad(((Number) body.get("cantidad")).intValue());
+            inv.setCostoSinIVA(new java.math.BigDecimal(body.get("precioCompra").toString()));
+            inv.setPrecioVenta(new java.math.BigDecimal(body.get("precioVenta").toString()));
+            inv.setSucursalId(((Number) body.get("sucursalId")).intValue());
+            int id = dao.guardar(inv);
+            ctx.json(Map.of("id", id));
+        } catch (Exception e) {
+            ctx.status(500).json(Map.of("error", e.getMessage() != null ? e.getMessage() : "Error interno"));
+        }
+    }
+
+    public void actualizar(Context ctx) {
+        try {
+            Map<String, Object> body = ctx.bodyAsClass(Map.class);
+            int id = ((Number) body.get("id")).intValue();
+            Inventario inv = dao.obtenerPorId(id);
+            if (inv == null) { ctx.status(404).json(Map.of("error", "Inventario no encontrado")); return; }
+            inv.setDescripcion((String) body.get("descripcion"));
+            inv.setPrecioVenta(new java.math.BigDecimal(body.get("precioVenta").toString()));
+            dao.actualizar(inv);
+            ctx.json(Map.of("ok", true));
+        } catch (Exception e) {
+            ctx.status(500).json(Map.of("error", e.getMessage() != null ? e.getMessage() : "Error interno"));
+        }
+    }
+
+    public void eliminar(Context ctx) {
+        int id = Integer.parseInt(ctx.pathParam("id"));
+        try {
+            dao.eliminar(id);
+            ctx.json(Map.of("ok", true));
+        } catch (Exception e) {
+            ctx.status(500).json(Map.of("error", e.getMessage() != null ? e.getMessage() : "Error interno"));
+        }
+    }
+
+    public void descontarStock(Context ctx) {
+        int id = Integer.parseInt(ctx.pathParam("id"));
+        int cantidad = Integer.parseInt(ctx.queryParam("cantidad"));
+        try {
+            dao.descontarStock(id, cantidad);
+            ctx.json(Map.of("ok", true));
+        } catch (Exception e) {
+            ctx.status(500).json(Map.of("error", e.getMessage() != null ? e.getMessage() : "Error interno"));
+        }
+    }
+
+    public void devolverStock(Context ctx) {
+        int id = Integer.parseInt(ctx.pathParam("id"));
+        java.math.BigDecimal cantidad = new java.math.BigDecimal(ctx.queryParam("cantidad"));
+        try {
+            dao.devolverStock(id, cantidad);
+            ctx.json(Map.of("ok", true));
+        } catch (Exception e) {
+            ctx.status(500).json(Map.of("error", e.getMessage() != null ? e.getMessage() : "Error interno"));
+        }
+    }
+
+    public void listarPorSucursal(Context ctx) {
+        int sucursalId = Integer.parseInt(ctx.pathParam("sucursalId"));
+        try {
+            List<Inventario> base = dao.listarPorSucursal(sucursalId);
+            ctx.json(filtrar(base, ctx.queryParam("q"), ctx.queryParam("numeroFactura"), idsFiltroVehiculo(ctx)));
+        } catch (Exception e) {
+            ctx.status(500).json(Map.of("error", e.getMessage() != null ? e.getMessage() : "Error interno"));
+        }
+    }
+
+    public void obtenerPorCodigo(Context ctx) {
+        String codigo = ctx.pathParam("codigo");
+        int sucursalId = Integer.parseInt(ctx.pathParam("sucursalId"));
+        try {
+            Inventario inv = dao.obtenerPorCodigoYSucursal(codigo, sucursalId);
+            if (inv == null) ctx.status(404).json(Map.of("error", "Inventario no encontrado"));
+            else ctx.json(inv);
+        } catch (Exception e) {
+            ctx.status(500).json(Map.of("error", e.getMessage() != null ? e.getMessage() : "Error interno"));
+        }
+    }
 }

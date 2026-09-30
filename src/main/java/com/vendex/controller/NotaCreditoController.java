@@ -4,6 +4,8 @@ import com.vendex.config.AppContext;
 import com.vendex.config.DatabaseConnection;
 import com.vendex.dao.*;
 import com.vendex.model.*;
+import com.vendex.remote.ApiConfig;
+import com.vendex.remote.RestClient;
 import com.vendex.service.NotaCreditoService;
 import com.vendex.util.*;
 import javafx.beans.property.ReadOnlyObjectWrapper;
@@ -181,6 +183,11 @@ public class NotaCreditoController implements Initializable {
 
     @FXML private void emitirNotaCredito() {
         try {
+            if (ApiConfig.isModoRemoto()) {
+                emitirNotaCreditoRemoto();
+                return;
+            }
+
             FacturaRegistro fr = cmbFactura.getValue();
             if (fr==null) throw new IllegalArgumentException("Seleccione una factura autorizada.");
             if (detallesNc.isEmpty()) throw new IllegalArgumentException("Agregue al menos un item a acreditar.");
@@ -209,4 +216,48 @@ public class NotaCreditoController implements Initializable {
     }
 
     private File obtenerDirEscritorio(){ File h=new File(System.getProperty("user.home")); for(String n: new String[]{AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT, AppConstants.DIRECTORIO_ESCRITORIO_ALT}){ File d=new File(h,n); if(d.exists()&&d.isDirectory()) return d; } File d=new File(h, AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT); d.mkdirs(); return d; }
+
+    private void emitirNotaCreditoRemoto() {
+        try {
+            FacturaRegistro fr = cmbFactura.getValue();
+            if (fr == null) throw new IllegalArgumentException("Seleccione una factura autorizada.");
+            if (detallesNc.isEmpty()) throw new IllegalArgumentException("Agregue al menos un item a acreditar.");
+            String motivo = txtMotivo.getText();
+            if (motivo == null || motivo.trim().isEmpty()) throw new IllegalArgumentException("Motivo obligatorio (max 300).");
+            String tipoMotivo = cmbTipoMotivo.getValue();
+            boolean reingresa = chkReingresaStock.isSelected();
+            String ambiente = cmbAmbiente.getValue() != null ? cmbAmbiente.getValue() : AppConstants.AMBIENTE_PRUEBAS;
+
+            RestClient client = ApiConfig.client();
+            java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+            body.put("facturaRegistroId", fr.getId());
+            body.put("motivo", motivo.trim());
+            body.put("tipoMotivo", tipoMotivo);
+            body.put("reingresaStock", reingresa);
+            body.put("ambienteSri", ambiente);
+            java.util.List<java.util.Map<String, Object>> items = new java.util.ArrayList<>();
+            for (NotaCreditoService.DetalleNCInput d : detallesNc) {
+                java.util.Map<String, Object> it = new java.util.LinkedHashMap<>();
+                it.put("inventarioId", d.inventarioId);
+                it.put("cantidad", d.cantidad);
+                it.put("precioUnitario", d.precioUnitario.toString());
+                items.add(it);
+            }
+            body.put("items", items);
+
+            java.util.Map<String, Object> resp = client.post("/api/nota-credito/emitir", body, java.util.Map.class);
+            if (resp == null) throw new RuntimeException("Respuesta vacía del backend");
+
+            String numComprobante = (String) resp.get("numComprobante");
+            String claveAcceso = (String) resp.get("claveAcceso");
+            String rutaPDF = (String) resp.get("rutaPDF");
+
+            new Alert(Alert.AlertType.INFORMATION, "NC " + numComprobante + " registrada (pendiente SRI).\nClave: " + claveAcceso + "\nPDF provisional: " + rutaPDF + "\nEn cola cada 2min. Banner mostrara pendientes.").showAndWait();
+            try { if (Desktop.isDesktopSupported()) Desktop.getDesktop().open(new File(rutaPDF)); } catch (Exception ignore) {}
+            detallesNc.clear(); txtMotivo.clear(); cargarFacturasAutorizadas(); actualizarSecuencial(); calcularTotales();
+        } catch (Exception ex) {
+            logDAO.guardar("NotaCreditoController", "emitirNotaCreditoRemoto", ex.getMessage(), ex);
+            new Alert(Alert.AlertType.ERROR, "Error: " + ex.getMessage()).showAndWait();
+        }
+    }
 }

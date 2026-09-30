@@ -11,6 +11,8 @@ import com.vendex.dao.HistorialProductoDAO;
 import com.vendex.dao.NotaVentaDetalleDAO;
 import com.vendex.dao.NotaVentaRegistroDAO;
 import com.vendex.dao.SecuenciaDocumentoDAO;
+import com.vendex.remote.ApiConfig;
+import com.vendex.remote.RestClient;
 import com.vendex.model.*;
 import com.vendex.util.NotaVentaPDF;
 import com.vendex.util.SortTable;
@@ -601,8 +603,13 @@ public class NotaVentaController implements Initializable {
 
     @FXML
     private void guardar() {
-    try {
-        if (cmbCliente.getValue() == null) {
+        try {
+            if (ApiConfig.isModoRemoto()) {
+                guardarRemoto();
+                return;
+            }
+
+            if (cmbCliente.getValue() == null) {
             new Alert(Alert.AlertType.WARNING, "Debe seleccionar un cliente.").showAndWait();
             return;
         }
@@ -762,5 +769,76 @@ public class NotaVentaController implements Initializable {
         logDAO.guardar("NotaVentaController", "guardar", e.getMessage(), e);
         new Alert(Alert.AlertType.ERROR, "Error al guardar: " + e.getMessage()).showAndWait();
     }
+    }
+
+    private void guardarRemoto() {
+        try {
+            RestClient client = ApiConfig.client();
+            java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+            body.put("clienteId", cmbCliente.getValue() != null ? cmbCliente.getValue().getId() : null);
+            body.put("formaPago", cmbFormaPago.getValue());
+            java.util.List<java.util.Map<String, Object>> items = new java.util.ArrayList<>();
+            for (DetalleVenta d : itemsDetalle) {
+                java.util.Map<String, Object> it = new java.util.LinkedHashMap<>();
+                it.put("inventarioId", d.getProductoId());
+                it.put("cantidad", d.getCantidad());
+                it.put("precioUnitario", d.getPrecioUnitario().toString());
+                items.add(it);
+            }
+            body.put("items", items);
+
+            java.util.Map<String, Object> resp = client.post("/api/nota-venta", body, java.util.Map.class);
+            if (resp == null) throw new RuntimeException("Respuesta vacía del backend");
+
+            String codigo = (String) resp.get("codigo");
+            int notaVentaId = ((Number) resp.get("id")).intValue();
+
+            BigDecimal sub = itemsDetalle.stream().map(DetalleVenta::getPrecioTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal ivaCalc = sub.multiply(new BigDecimal("0.15")).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal totalBruto = sub.add(ivaCalc);
+            BigDecimal descCalc = calcularDescuento(totalBruto);
+            BigDecimal totCalc = totalBruto.subtract(descCalc).setScale(2, RoundingMode.HALF_UP);
+
+            String rutaPDF = System.getProperty("java.io.tmpdir") + File.separator
+                    + "Proforma_" + (codigo != null ? codigo.replace("-", "") : notaVentaId) + ".pdf";
+            List<String[]> detallesPDF = new ArrayList<>();
+            for (DetalleVenta d : itemsDetalle) {
+                detallesPDF.add(new String[]{
+                        d.getCodigo(),
+                        d.getDescripcion(),
+                        String.valueOf(d.getCantidad()),
+                        "$" + d.getPrecioUnitario().setScale(2, RoundingMode.HALF_UP),
+                        "$" + d.getPrecioTotal().setScale(2, RoundingMode.HALF_UP)
+                });
+            }
+            String fechaStr = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+            NotaVentaPDF.generar(rutaPDF, codigo != null ? codigo : String.valueOf(notaVentaId),
+                    fechaStr,
+                    empresaActual.getRazonSocial(), empresaActual.getRuc(),
+                    empresaActual.getDireccionCallePrincipal() + " y " + empresaActual.getDireccionCalleSecundaria(),
+                    empresaActual.getTelefono() + " / " + empresaActual.getCelular(), empresaActual.getCorreo(),
+                    cmbCliente.getValue().getNombre(), cmbCliente.getValue().getIdentificacion(),
+                    txtDireccion.getText(), txtTelefono.getText(), txtCorreo.getText(),
+                    cmbFormaPago.getValue(), detallesPDF, sub, ivaCalc, descCalc, totCalc);
+
+            Alert alertExito = new Alert(Alert.AlertType.INFORMATION);
+            alertExito.setTitle("Proforma registrada");
+            alertExito.setHeaderText(null);
+            alertExito.setContentText("Proforma " + codigo + " registrada exitosamente.\nPDF: " + rutaPDF);
+            alertExito.showAndWait();
+
+            itemsDetalle.clear();
+            tblDetalle.refresh();
+            if (txtDescuento != null) txtDescuento.setText("0.00");
+            cmbDescuento.setValue("0");
+            calcularTotales();
+            cmbCliente.getSelectionModel().clearSelection();
+            cmbCliente.getEditor().clear();
+            txtNombre.clear(); txtIdentificacion.clear(); txtDireccion.clear(); txtCorreo.clear(); txtTelefono.clear(); txtBuscarProducto.clear();
+            obtenerNumNotaVenta();
+        } catch (Exception e) {
+            logDAO.guardar("NotaVentaController", "guardarRemoto", e.getMessage(), e);
+            new Alert(Alert.AlertType.ERROR, "Error al guardar (remoto): " + e.getMessage()).showAndWait();
+        }
     }
 }

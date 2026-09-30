@@ -1,6 +1,8 @@
 package com.vendex.controller;
 
 import com.vendex.config.AppContext;
+import com.vendex.remote.ApiConfig;
+import com.vendex.remote.RestClient;
 import com.vendex.dao.EmpresaDAO;
 import com.vendex.dao.ClienteDAO;
 import com.vendex.dao.InventarioDAO;
@@ -481,6 +483,11 @@ public class FacturaController implements Initializable {
             String ambienteSri = cmbAmbiente.getValue() != null ? cmbAmbiente.getValue() : AppConstants.AMBIENTE_PRUEBAS;
             File directorioEscritorio = obtenerDirectorioEscritorio();
 
+            if (ApiConfig.isModoRemoto()) {
+                guardarRemoto(codigo, ambienteSri, directorioEscritorio);
+                return;
+            }
+
             FacturaService.ResultadoFactura resultado = facturaService.guardarFactura(
                     cmbCliente.getValue(), empresaActual, codigo, itemsDetalle,
                     cmbFormaPago.getValue(), cmbMesesPlazo.getValue(), cmbInteres.getValue(),
@@ -537,6 +544,64 @@ public class FacturaController implements Initializable {
             logDAO.guardar("FacturaController", "guardar", e.getMessage(), e);
             String mensaje = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
             new Alert(Alert.AlertType.ERROR, "Error al guardar: " + mensaje).showAndWait();
+        }
+    }
+
+    private void guardarRemoto(String codigo, String ambienteSri, File directorioEscritorio) {
+        try {
+            RestClient client = ApiConfig.client();
+            java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+            body.put("clienteId", cmbCliente.getValue() != null ? cmbCliente.getValue().getId() : null);
+            body.put("formaPago", cmbFormaPago.getValue());
+            body.put("ambienteSri", ambienteSri);
+            body.put("descuentoPct", obtenerDescuentoPct());
+            java.util.List<java.util.Map<String, Object>> items = new java.util.ArrayList<>();
+            for (FacturaDetalle d : itemsDetalle) {
+                java.util.Map<String, Object> it = new java.util.LinkedHashMap<>();
+                it.put("inventarioId", d.getInventarioId());
+                it.put("cantidad", d.getCantidad());
+                it.put("precioUnitario", d.getPrecioUnitario().toString());
+                items.add(it);
+            }
+            body.put("items", items);
+
+            java.util.Map<String, Object> resp = client.post("/api/facturas", body, java.util.Map.class);
+            if (resp == null) throw new RuntimeException("Respuesta vacía del backend");
+
+            String numComprobante = (String) resp.get("numComprobante");
+            String claveAcceso = (String) resp.get("claveAcceso");
+            String rutaPDF = (String) resp.get("rutaPDF");
+            String rutaXML = (String) resp.get("rutaXML");
+
+            Alert alertExito = new Alert(Alert.AlertType.INFORMATION);
+            alertExito.setTitle("Factura registrada — pendiente SRI");
+            alertExito.setHeaderText("Comprobante entregable en mostrador");
+            alertExito.setContentText("Factura " + numComprobante + " registrada.\nClave: " + claveAcceso +
+                    "\nPDF provisional guardado en: " + rutaPDF +
+                    "\n\nEl SRI autorizará en segundo plano (cola cada 2min). El PDF se actualizará y el correo se enviará al autorizar.");
+            alertExito.showAndWait();
+            try {
+                if (Desktop.isDesktopSupported()) {
+                    final File pdfFinal = new File(rutaPDF);
+                    new Thread(() -> {
+                        try { Desktop.getDesktop().open(pdfFinal); } catch (Exception ignored) { LOGGER.log(Level.WARNING, "No se pudo abrir PDF", ignored); }
+                    }, "Abrir-PDF").start();
+                }
+            } catch (Exception ignored) { LOGGER.log(Level.WARNING, "Desktop no soportado", ignored); }
+            new Alert(Alert.AlertType.INFORMATION, "Factura en cola SRI. Quedará AUTORIZADA automáticamente. Verifique en Seguimiento SRI o banner.").showAndWait();
+            itemsDetalle.clear();
+            tblDetalle.refresh();
+            if (txtDescuento != null) txtDescuento.setText("0.00");
+            cmbDescuento.setValue("0");
+            calcularTotales();
+            cmbCliente.getSelectionModel().clearSelection();
+            cmbCliente.getEditor().clear();
+            txtNombre.clear(); txtIdentificacion.clear(); txtDireccion.clear(); txtCorreo.clear(); txtTelefono.clear(); txtBuscarProducto.clear();
+            obtenerNumFactura();
+        } catch (Exception e) {
+            logDAO.guardar("FacturaController", "guardarRemoto", e.getMessage(), e);
+            String mensaje = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
+            new Alert(Alert.AlertType.ERROR, "Error al guardar (remoto): " + mensaje).showAndWait();
         }
     }
 
