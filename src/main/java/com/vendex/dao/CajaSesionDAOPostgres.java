@@ -74,11 +74,12 @@ public class CajaSesionDAOPostgres implements CajaSesionDAO {
 
     public List<CajaSesion> listarPorFecha(java.time.LocalDate desde, java.time.LocalDate hasta) {
         List<CajaSesion> lista = new ArrayList<>();
-        String sql = "SELECT * FROM caja_sesion WHERE CAST(fecha_apertura AS DATE) BETWEEN ? AND ? ORDER BY fecha_apertura DESC";
+        String sql = "SELECT * FROM caja_sesion WHERE CAST(fecha_apertura AS DATE) BETWEEN ? AND ? AND sucursal_id = ? ORDER BY fecha_apertura DESC";
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setObject(1, desde);
             ps.setObject(2, hasta);
+            ps.setInt(3, com.vendex.util.SucursalActual.getId());
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) lista.add(mapear(rs));
             }
