@@ -6,6 +6,9 @@ import com.vendex.dao.*;
 import com.vendex.model.*;
 import com.vendex.remote.ApiConfig;
 import com.vendex.remote.RestClient;
+import com.vendex.offline.OfflineHelper;
+import com.vendex.offline.LocalOperationQueue;
+import com.vendex.offline.OperacionOffline;
 import com.vendex.service.NotaCreditoService;
 import com.vendex.util.*;
 import javafx.beans.property.ReadOnlyObjectWrapper;
@@ -184,7 +187,11 @@ public class NotaCreditoController implements Initializable {
     @FXML private void emitirNotaCredito() {
         try {
             if (ApiConfig.isModoRemoto()) {
-                emitirNotaCreditoRemoto();
+                if (OfflineHelper.debeUsarModoOffline()) {
+                    emitirNotaCreditoOffline();
+                } else {
+                    emitirNotaCreditoRemoto();
+                }
                 return;
             }
 
@@ -257,6 +264,45 @@ public class NotaCreditoController implements Initializable {
             detallesNc.clear(); txtMotivo.clear(); cargarFacturasAutorizadas(); actualizarSecuencial(); calcularTotales();
         } catch (Exception ex) {
             logDAO.guardar("NotaCreditoController", "emitirNotaCreditoRemoto", ex.getMessage(), ex);
+            new Alert(Alert.AlertType.ERROR, "Error: " + ex.getMessage()).showAndWait();
+        }
+    }
+
+    private void emitirNotaCreditoOffline() {
+        try {
+            FacturaRegistro fr = cmbFactura.getValue();
+            if (fr == null) throw new IllegalArgumentException("Seleccione una factura autorizada.");
+            if (detallesNc.isEmpty()) throw new IllegalArgumentException("Agregue al menos un item a acreditar.");
+            String motivo = txtMotivo.getText();
+            if (motivo == null || motivo.trim().isEmpty()) throw new IllegalArgumentException("Motivo obligatorio (max 300).");
+            String tipoMotivo = cmbTipoMotivo.getValue();
+            boolean reingresa = chkReingresaStock.isSelected();
+            String ambiente = cmbAmbiente.getValue() != null ? cmbAmbiente.getValue() : AppConstants.AMBIENTE_PRUEBAS;
+
+            java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+            body.put("facturaRegistroId", fr.getId());
+            body.put("motivo", motivo.trim());
+            body.put("tipoMotivo", tipoMotivo);
+            body.put("reingresaStock", reingresa);
+            body.put("ambienteSri", ambiente);
+            java.util.List<java.util.Map<String, Object>> items = new java.util.ArrayList<>();
+            for (NotaCreditoService.DetalleNCInput d : detallesNc) {
+                java.util.Map<String, Object> it = new java.util.LinkedHashMap<>();
+                it.put("inventarioId", d.inventarioId);
+                it.put("cantidad", d.cantidad);
+                it.put("precioUnitario", d.precioUnitario.toString());
+                items.add(it);
+            }
+            body.put("items", items);
+
+            OperacionOffline op = new OperacionOffline("NOTA_CREDITO", OfflineHelper.generarPayload(body));
+            LocalOperationQueue queue = new LocalOperationQueue();
+            queue.encolar(op);
+
+            new Alert(Alert.AlertType.WARNING, "Modo OFFLINE\n\nNota de crédito encolada para sincronizar cuando haya conexión.\n\nLa NC se guardará localmente y se enviará al backend al reconectar.").showAndWait();
+            detallesNc.clear(); txtMotivo.clear(); cargarFacturasAutorizadas(); actualizarSecuencial(); calcularTotales();
+        } catch (Exception ex) {
+            logDAO.guardar("NotaCreditoController", "emitirNotaCreditoOffline", ex.getMessage(), ex);
             new Alert(Alert.AlertType.ERROR, "Error: " + ex.getMessage()).showAndWait();
         }
     }

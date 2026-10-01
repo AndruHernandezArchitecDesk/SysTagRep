@@ -6,6 +6,11 @@ import com.vendex.model.Empresa;
 import com.vendex.model.Proveedor;
 import com.vendex.service.RetencionService;
 import com.vendex.util.*;
+import com.vendex.remote.ApiConfig;
+import com.vendex.remote.RestClient;
+import com.vendex.offline.OfflineHelper;
+import com.vendex.offline.LocalOperationQueue;
+import com.vendex.offline.OperacionOffline;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -227,6 +232,11 @@ public class RetencionController implements Initializable {
     @FXML
     private void emitirRetencion() {
         try {
+            if (ApiConfig.isModoRemoto() && OfflineHelper.debeUsarModoOffline()) {
+                emitirRetencionOffline();
+                return;
+            }
+
             if (docs.isEmpty()) throw new IllegalArgumentException("Agregue al menos un documento sustento.");
             for (var d : docs) if (d.retenciones.isEmpty()) throw new IllegalArgumentException("Documento "+d.numDocSustento+" sin retenciones.");
             String periodo = txtPeriodoFiscal.getText();
@@ -272,6 +282,57 @@ public class RetencionController implements Initializable {
         alert.getDialogPane().setContent(box); alert.getDialogPane().setPrefSize(600, 400); alert.setResizable(true);
         ta.requestFocus(); ta.selectAll();
         alert.showAndWait();
+    }
+
+    private void emitirRetencionOffline() {
+        try {
+            if (docs.isEmpty()) throw new IllegalArgumentException("Agregue al menos un documento sustento.");
+            String periodo = txtPeriodoFiscal.getText();
+            String tipoId = cmbTipoIdSujeto.getValue();
+            String razon = txtRazonSujeto.getText();
+            String ident = txtIdentSujeto.getText();
+            Integer provId = cmbProveedor.getValue()!=null ? cmbProveedor.getValue().getId() : null;
+            String ambiente = cmbAmbiente.getValue()!=null? cmbAmbiente.getValue(): AppConstants.AMBIENTE_PRUEBAS;
+
+            java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+            body.put("periodo", periodo);
+            body.put("tipoIdentificacionSujeto", tipoId);
+            body.put("razonSocialSujeto", razon);
+            body.put("identificacionSujeto", ident);
+            body.put("proveedorId", provId);
+            body.put("ambienteSri", ambiente);
+            java.util.List<java.util.Map<String, Object>> docsJson = new java.util.ArrayList<>();
+            for (RetencionService.DocSustentoInput d : docs) {
+                java.util.Map<String, Object> doc = new java.util.LinkedHashMap<>();
+                doc.put("numDocSustento", d.numDocSustento);
+                doc.put("fechaEmisionDocSustento", d.fechaEmisionDocSustento.toString());
+                doc.put("totalSinImpuestos", d.totalSinImpuestos);
+                doc.put("codSustento", d.codSustento);
+                doc.put("codDocSustento", d.codDocSustento);
+                java.util.List<java.util.Map<String, Object>> retsJson = new java.util.ArrayList<>();
+                for (RetencionService.RetencionLineaInput r : d.retenciones) {
+                    java.util.Map<String, Object> ret = new java.util.LinkedHashMap<>();
+                    ret.put("codigo", r.codigo);
+                    ret.put("codigoRetencion", r.codigoRetencion);
+                    ret.put("baseImponible", r.baseImponible);
+                    ret.put("porcentajeRetener", r.porcentajeRetener);
+                    retsJson.add(ret);
+                }
+                doc.put("retenciones", retsJson);
+                docsJson.add(doc);
+            }
+            body.put("docs", docsJson);
+
+            OperacionOffline op = new OperacionOffline("RETENCION", OfflineHelper.generarPayload(body));
+            LocalOperationQueue queue = new LocalOperationQueue();
+            queue.encolar(op);
+
+            mostrarAlertaCopiable(Alert.AlertType.WARNING, "Retención", "RET encolada", "Retención encolada para sincronizar cuando haya conexión.\n\nLa retención se guardará localmente y se enviará al backend al reconectar.");
+            docs.clear(); retsActual.clear(); actualizarSecuencial();
+        } catch (Exception ex) {
+            logDAO.guardar("RetencionController", "emitirRetencionOffline", ex.getMessage(), ex);
+            mostrarAlertaCopiable(Alert.AlertType.ERROR, "Error", "Error al emitir (offline)", ex.getMessage());
+        }
     }
 
     private void volcarErrorSRI(String detalle, SRIWebService.SRIResponse resp, RetencionService.ResultadoRetencion res) {

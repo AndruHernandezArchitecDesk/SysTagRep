@@ -13,6 +13,9 @@ import com.vendex.dao.NotaVentaRegistroDAO;
 import com.vendex.dao.SecuenciaDocumentoDAO;
 import com.vendex.remote.ApiConfig;
 import com.vendex.remote.RestClient;
+import com.vendex.offline.OfflineHelper;
+import com.vendex.offline.LocalOperationQueue;
+import com.vendex.offline.OperacionOffline;
 import com.vendex.model.*;
 import com.vendex.util.NotaVentaPDF;
 import com.vendex.util.SortTable;
@@ -605,7 +608,11 @@ public class NotaVentaController implements Initializable {
     private void guardar() {
         try {
             if (ApiConfig.isModoRemoto()) {
-                guardarRemoto();
+                if (OfflineHelper.debeUsarModoOffline()) {
+                    guardarOffline();
+                } else {
+                    guardarRemoto();
+                }
                 return;
             }
 
@@ -839,6 +846,42 @@ public class NotaVentaController implements Initializable {
         } catch (Exception e) {
             logDAO.guardar("NotaVentaController", "guardarRemoto", e.getMessage(), e);
             new Alert(Alert.AlertType.ERROR, "Error al guardar (remoto): " + e.getMessage()).showAndWait();
+        }
+    }
+
+    private void guardarOffline() {
+        try {
+            java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+            body.put("clienteId", cmbCliente.getValue() != null ? cmbCliente.getValue().getId() : null);
+            body.put("formaPago", cmbFormaPago.getValue());
+            java.util.List<java.util.Map<String, Object>> items = new java.util.ArrayList<>();
+            for (DetalleVenta d : itemsDetalle) {
+                java.util.Map<String, Object> it = new java.util.LinkedHashMap<>();
+                it.put("inventarioId", d.getProductoId());
+                it.put("cantidad", d.getCantidad());
+                it.put("precioUnitario", d.getPrecioUnitario().toString());
+                items.add(it);
+            }
+            body.put("items", items);
+
+            OperacionOffline op = new OperacionOffline("NOTA_VENTA", OfflineHelper.generarPayload(body));
+            LocalOperationQueue queue = new LocalOperationQueue();
+            queue.encolar(op);
+
+            new Alert(Alert.AlertType.WARNING, "Modo OFFLINE\n\nProforma encolada para sincronizar cuando haya conexión.\n\nLa proforma se guardará localmente y se enviará al backend al reconectar.").showAndWait();
+
+            itemsDetalle.clear();
+            tblDetalle.refresh();
+            if (txtDescuento != null) txtDescuento.setText("0.00");
+            cmbDescuento.setValue("0");
+            calcularTotales();
+            cmbCliente.getSelectionModel().clearSelection();
+            cmbCliente.getEditor().clear();
+            txtNombre.clear(); txtIdentificacion.clear(); txtDireccion.clear(); txtCorreo.clear(); txtTelefono.clear(); txtBuscarProducto.clear();
+            obtenerNumNotaVenta();
+        } catch (Exception e) {
+            logDAO.guardar("NotaVentaController", "guardarOffline", e.getMessage(), e);
+            new Alert(Alert.AlertType.ERROR, "Error al guardar (offline): " + e.getMessage()).showAndWait();
         }
     }
 }

@@ -7,6 +7,10 @@ import com.vendex.dao.LogDAO;
 import com.vendex.dao.SucursalDAO;
 import com.vendex.model.Sucursal;
 import com.vendex.service.AlertaService;
+import com.vendex.remote.ApiConfig;
+import com.vendex.offline.OfflineHelper;
+import com.vendex.offline.SyncService;
+import com.vendex.offline.LocalOperationQueue;
 import com.vendex.util.AboutDialog;
 import com.vendex.util.SucursalActual;
 import com.vendex.util.ThemeManager;
@@ -83,6 +87,12 @@ public class MainController implements Initializable {
     @FXML
     private Label lblBannerSri;
 
+    @FXML
+    private HBox bannerOffline;
+
+    @FXML
+    private Label lblBannerOffline;
+
     private final LogDAO logDAO;
     private final AlertaService alertaService;
 
@@ -100,6 +110,9 @@ public class MainController implements Initializable {
         }
         verificarCertificadoAsync();
         iniciarBannerSriPendientes();
+        actualizarBannerOffline();
+        iniciarBannerOffline();
+        SyncService.INSTANCE.iniciar();
     }
 
     public void abrirDashboard1() {
@@ -502,6 +515,45 @@ public class MainController implements Initializable {
     @FXML
     private void cerrarBannerSri() {
         if (bannerSri != null) { bannerSri.setVisible(false); bannerSri.setManaged(false); }
+    }
+
+    private void actualizarBannerOffline() {
+        if (bannerOffline == null || lblBannerOffline == null) return;
+        if (ApiConfig.isModoRemoto() && OfflineHelper.debeUsarModoOffline()) {
+            lblBannerOffline.setText("Modo OFFLINE — algunas operaciones se guardan en cola local.");
+            bannerOffline.setVisible(true);
+            bannerOffline.setManaged(true);
+        } else {
+            bannerOffline.setVisible(false);
+            bannerOffline.setManaged(false);
+        }
+    }
+
+    @FXML
+    private void cerrarBannerOffline() {
+        if (bannerOffline != null) { bannerOffline.setVisible(false); bannerOffline.setManaged(false); }
+    }
+
+    @FXML
+    private void sincronizarOffline() {
+        cerrarBannerOffline();
+        Task<Void> task = new Task<>() {
+            @Override protected Void call() {
+                SyncService.INSTANCE.intentarSincronizacion();
+                return null;
+            }
+        };
+        task.setOnSucceeded(e -> actualizarBannerOffline());
+        task.setOnFailed(e -> actualizarBannerOffline());
+        new Thread(task, "SyncManual").start();
+    }
+
+    private void iniciarBannerOffline() {
+        javafx.animation.Timeline tl = new javafx.animation.Timeline(
+                new javafx.animation.KeyFrame(javafx.util.Duration.seconds(15), e -> actualizarBannerOffline())
+        );
+        tl.setCycleCount(javafx.animation.Animation.INDEFINITE);
+        tl.play();
     }
 
     private void iniciarBannerSriPendientes() {

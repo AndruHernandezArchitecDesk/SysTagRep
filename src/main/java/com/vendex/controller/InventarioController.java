@@ -6,6 +6,10 @@ import com.vendex.dao.UbicacionDetalleDAO;
 import com.vendex.model.Empresa;
 import com.vendex.model.Inventario;
 import com.vendex.model.UbicacionDetalle;
+import com.vendex.remote.ApiConfig;
+import com.vendex.offline.OfflineHelper;
+import com.vendex.offline.LocalOperationQueue;
+import com.vendex.offline.OperacionOffline;
 import com.vendex.util.EtiquetaUtil;
 import com.vendex.util.SortTable;
 import com.vendex.util.ComboFilter;
@@ -355,6 +359,16 @@ public class InventarioController implements Initializable {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
                 "¿Eliminar el artículo seleccionado?", ButtonType.YES, ButtonType.NO);
         if (alert.showAndWait().orElse(ButtonType.NO) == ButtonType.YES) {
+            if (ApiConfig.isModoRemoto() && OfflineHelper.debeUsarModoOffline()) {
+                java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+                body.put("inventarioId", i.getId());
+                OperacionOffline op = new OperacionOffline("INVENTARIO_ELIMINAR", OfflineHelper.generarPayload(body));
+                LocalOperationQueue queue = new LocalOperationQueue();
+                queue.encolar(op);
+                new Alert(Alert.AlertType.WARNING, "Modo OFFLINE\n\nEliminación encolada para sincronizar cuando haya conexión.").showAndWait();
+                cargarDatos();
+                return;
+            }
             dao.eliminar(i.getId());
             cargarDatos();
         }

@@ -9,6 +9,10 @@ import com.vendex.model.Codigo;
 import com.vendex.model.Grupo;
 import com.vendex.model.Inventario;
 import com.vendex.model.Marca;
+import com.vendex.remote.ApiConfig;
+import com.vendex.offline.OfflineHelper;
+import com.vendex.offline.LocalOperationQueue;
+import com.vendex.offline.OperacionOffline;
 import com.vendex.util.ComboFilter;
 import com.vendex.util.EtiquetaUtil;
 import javafx.collections.FXCollections;
@@ -159,6 +163,11 @@ public class IngresoProductoController implements Initializable {
     @FXML
     private void guardar() {
         try {
+            if (ApiConfig.isModoRemoto() && OfflineHelper.debeUsarModoOffline()) {
+                guardarOffline();
+                return;
+            }
+
             String desc = txtDescripcion.getText() != null ? txtDescripcion.getText().trim() : "";
             if (desc.isEmpty()) { new Alert(Alert.AlertType.WARNING,"La descripción es obligatoria.").showAndWait(); return; }
             int cantidad = spCantidad.getValue() != null ? spCantidad.getValue() : 0;
@@ -214,6 +223,54 @@ public class IngresoProductoController implements Initializable {
 
     @FXML
     private void cancelar() { cerrarVentana(); }
+
+    private void guardarOffline() {
+        try {
+            String desc = txtDescripcion.getText() != null ? txtDescripcion.getText().trim() : "";
+            if (desc.isEmpty()) { new Alert(Alert.AlertType.WARNING,"La descripción es obligatoria.").showAndWait(); return; }
+            int cantidad = spCantidad.getValue() != null ? spCantidad.getValue() : 0;
+            if (cantidad <= 0) { new Alert(Alert.AlertType.WARNING,"La cantidad debe ser mayor a cero.").showAndWait(); return; }
+            String sPrecio = txtPrecioVenta.getText() != null ? txtPrecioVenta.getText().replace(",",".").trim() : "";
+            if (sPrecio.isEmpty()) { new Alert(Alert.AlertType.WARNING,"El precio de venta es obligatorio.").showAndWait(); return; }
+            BigDecimal precioVenta = new BigDecimal(sPrecio).setScale(2, RoundingMode.HALF_UP);
+            if (precioVenta.signum() <= 0) { new Alert(Alert.AlertType.WARNING,"El precio debe ser mayor a cero.").showAndWait(); return; }
+
+            String codigoManual = codigoSeleccionado();
+            registrarCodigoNuevo(codigoManual);
+
+            Grupo g = cmbGrupo.getValue();
+            Marca m = cmbMarca.getValue();
+            BigDecimal costoSinIva = precioVenta.divide(new BigDecimal("1.15"), 6, RoundingMode.HALF_UP).setScale(2, RoundingMode.HALF_UP);
+            if (costoSinIva.signum() <= 0) costoSinIva = precioVenta;
+
+            String tagCodigo = "";
+            try { tagCodigo = EtiquetaUtil.cifrarPrecio(precioVenta.toPlainString()); } catch (Exception ignored) {}
+
+            java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+            body.put("descripcion", desc);
+            body.put("grupoId", g != null ? g.getId() : null);
+            body.put("marcaId", m != null ? m.getId() : null);
+            body.put("codigo", codigoManual != null && !codigoManual.isEmpty() ? codigoManual : null);
+            body.put("tagCodigo", tagCodigo != null && !tagCodigo.isEmpty() ? tagCodigo : null);
+            body.put("cantidad", cantidad);
+            body.put("precioVenta", precioVenta.toString());
+            body.put("costoSinIva", costoSinIva.toString());
+            body.put("fechaIngreso", LocalDateTime.now().toString());
+            body.put("estado", true);
+
+            OperacionOffline op = new OperacionOffline("INVENTARIO", OfflineHelper.generarPayload(body));
+            LocalOperationQueue queue = new LocalOperationQueue();
+            queue.encolar(op);
+
+            new Alert(Alert.AlertType.WARNING, "Modo OFFLINE\n\nProducto encolado para sincronizar cuando haya conexión.\n\nEl ingreso se guardará localmente y se enviará al backend al reconectar.").showAndWait();
+            cerrarVentana();
+        } catch (NumberFormatException e) {
+            new Alert(Alert.AlertType.ERROR,"Precio inválido. Use formato 0.00").showAndWait();
+        } catch (Exception e) {
+            logDAO.guardar("IngresoProductoController","guardarOffline",e.getMessage(),e);
+            new Alert(Alert.AlertType.ERROR,"Error al guardar (offline): "+e.getMessage()).showAndWait();
+        }
+    }
 
     private void cerrarVentana() {
         Stage stage = (Stage) txtDescripcion.getScene().getWindow();

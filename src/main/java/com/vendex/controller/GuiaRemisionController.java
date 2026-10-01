@@ -6,6 +6,11 @@ import com.vendex.dao.*;
 import com.vendex.model.*;
 import com.vendex.service.GuiaRemisionService;
 import com.vendex.util.*;
+import com.vendex.remote.ApiConfig;
+import com.vendex.remote.RestClient;
+import com.vendex.offline.OfflineHelper;
+import com.vendex.offline.LocalOperationQueue;
+import com.vendex.offline.OperacionOffline;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -197,6 +202,11 @@ public class GuiaRemisionController implements Initializable {
     @FXML
     private void emitirGuiaRemision() {
         try {
+            if (ApiConfig.isModoRemoto() && OfflineHelper.debeUsarModoOffline()) {
+                emitirGuiaRemisionOffline();
+                return;
+            }
+
             if (destinatarios.isEmpty()) throw new IllegalArgumentException("Agregue al menos un destinatario.");
             for (var d : destinatarios) if (d.detalles == null || d.detalles.isEmpty()) throw new IllegalArgumentException("Destinatario "+d.razonSocialDestinatario+" sin ítems.");
             String dirPartida = txtDirPartida.getText();
@@ -254,6 +264,61 @@ public class GuiaRemisionController implements Initializable {
         ta.requestFocus();
         ta.selectAll();
         alert.showAndWait();
+    }
+
+    private void emitirGuiaRemisionOffline() {
+        try {
+            if (destinatarios.isEmpty()) throw new IllegalArgumentException("Agregue al menos un destinatario.");
+            String dirPartida = txtDirPartida.getText();
+            String razonTrans = txtRazonTransportista.getText();
+            String rucTrans = txtRucTransportista.getText();
+            String placa = txtPlaca.getText();
+            String tipoIdTrans = cmbTipoIdTransportista.getValue();
+            LocalDate ini = dpFechaIni.getValue();
+            LocalDate fin = dpFechaFin.getValue();
+            String ambiente = cmbAmbiente.getValue()!=null? cmbAmbiente.getValue(): AppConstants.AMBIENTE_PRUEBAS;
+
+            java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+            body.put("dirPartida", dirPartida);
+            body.put("razonTransportista", razonTrans);
+            body.put("rucTransportista", rucTrans);
+            body.put("placa", placa);
+            body.put("tipoIdentificacionTransportista", tipoIdTrans);
+            body.put("fechaIniTransporte", ini.toString());
+            body.put("fechaFinTransporte", fin.toString());
+            body.put("ambienteSri", ambiente);
+            java.util.List<java.util.Map<String, Object>> destinatariosJson = new java.util.ArrayList<>();
+            for (GuiaRemisionService.DestinatarioGRInput d : destinatarios) {
+                java.util.Map<String, Object> dest = new java.util.LinkedHashMap<>();
+                dest.put("identificacionDestinatario", d.identificacionDestinatario);
+                dest.put("razonSocialDestinatario", d.razonSocialDestinatario);
+                dest.put("direccionDestinatario", d.direccionDestinatario);
+                dest.put("motivoTraslado", d.motivoTraslado);
+                java.util.List<java.util.Map<String, Object>> detallesJson = new java.util.ArrayList<>();
+                for (GuiaRemisionService.DetalleGRInput det : d.detalles) {
+                    java.util.Map<String, Object> detMap = new java.util.LinkedHashMap<>();
+                    detMap.put("codigoInterno", det.codigoInterno);
+                    detMap.put("descripcion", det.descripcion);
+                    detMap.put("cantidad", det.cantidad);
+                    detMap.put("inventarioId", det.inventarioId);
+                    detallesJson.add(detMap);
+                }
+                dest.put("detalles", detallesJson);
+                destinatariosJson.add(dest);
+            }
+            body.put("destinatarios", destinatariosJson);
+
+            OperacionOffline op = new OperacionOffline("GUIA_REMISION", OfflineHelper.generarPayload(body));
+            LocalOperationQueue queue = new LocalOperationQueue();
+            queue.encolar(op);
+
+            mostrarAlertaCopiable(Alert.AlertType.WARNING, "Guía de Remisión", "GR encolada", "Guía de Remisión encolada para sincronizar cuando haya conexión.\n\nLa GR se guardará localmente y se enviará al backend al reconectar.");
+            destinatarios.clear(); detallesActual.clear(); txtRazonTransportista.clear(); txtRucTransportista.clear(); txtPlaca.clear();
+            actualizarSecuencial();
+        } catch (Exception ex) {
+            logDAO.guardar("GuiaRemisionController", "emitirGuiaRemisionOffline", ex.getMessage(), ex);
+            mostrarAlertaCopiable(Alert.AlertType.ERROR, "Error", "Error al emitir (offline)", ex.getMessage());
+        }
     }
 
     private void volcarErrorSRI(String detalle, SRIWebService.SRIResponse resp, GuiaRemisionService.ResultadoGuiaRemision res) {

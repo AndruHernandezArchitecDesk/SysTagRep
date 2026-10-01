@@ -110,6 +110,12 @@
                 <Button text="Ver Seguimiento SRI" onAction="#irSeguimientoSri" styleClass="btn-orden" style="-fx-font-size: 11px;"/>
                 <Button text="✕" onAction="#cerrarBannerSri" style="-fx-background-color: transparent; -fx-font-weight: bold;"/>
             </HBox>
+            <HBox fx:id="bannerOffline" visible="false" managed="false" alignment="CENTER_LEFT" spacing="10" style="-fx-background-color: #f8d7da; -fx-border-color: #dc3545; -fx-border-width: 0 0 1 0; -fx-padding: 8 12;">
+                <FontIcon iconLiteral="fas-wifi" iconSize="16" style="-fx-icon-color: #721c24;"/>
+                <Label fx:id="lblBannerOffline" HBox.hgrow="ALWAYS" wrapText="true" style="-fx-text-fill: #721c24; -fx-font-weight: bold;"/>
+                <Button text="Sincronizar ahora" onAction="#sincronizarOffline" styleClass="btn-orden" style="-fx-font-size: 11px;"/>
+                <Button text="✕" onAction="#cerrarBannerOffline" style="-fx-background-color: transparent; -fx-font-weight: bold;"/>
+            </HBox>
         </VBox>
     </top>
 

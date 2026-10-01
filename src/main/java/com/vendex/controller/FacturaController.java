@@ -3,6 +3,9 @@ package com.vendex.controller;
 import com.vendex.config.AppContext;
 import com.vendex.remote.ApiConfig;
 import com.vendex.remote.RestClient;
+import com.vendex.offline.OfflineHelper;
+import com.vendex.offline.LocalOperationQueue;
+import com.vendex.offline.OperacionOffline;
 import com.vendex.dao.EmpresaDAO;
 import com.vendex.dao.ClienteDAO;
 import com.vendex.dao.InventarioDAO;
@@ -484,7 +487,11 @@ public class FacturaController implements Initializable {
             File directorioEscritorio = obtenerDirectorioEscritorio();
 
             if (ApiConfig.isModoRemoto()) {
-                guardarRemoto(codigo, ambienteSri, directorioEscritorio);
+                if (OfflineHelper.debeUsarModoOffline()) {
+                    guardarOffline();
+                } else {
+                    guardarRemoto(codigo, ambienteSri, directorioEscritorio);
+                }
                 return;
             }
 
@@ -602,6 +609,45 @@ public class FacturaController implements Initializable {
             logDAO.guardar("FacturaController", "guardarRemoto", e.getMessage(), e);
             String mensaje = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
             new Alert(Alert.AlertType.ERROR, "Error al guardar (remoto): " + mensaje).showAndWait();
+        }
+    }
+
+    private void guardarOffline() {
+        try {
+            java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+            body.put("clienteId", cmbCliente.getValue() != null ? cmbCliente.getValue().getId() : null);
+            body.put("formaPago", cmbFormaPago.getValue());
+            body.put("ambienteSri", cmbAmbiente.getValue() != null ? cmbAmbiente.getValue() : AppConstants.AMBIENTE_PRUEBAS);
+            body.put("descuentoPct", obtenerDescuentoPct());
+            java.util.List<java.util.Map<String, Object>> items = new java.util.ArrayList<>();
+            for (FacturaDetalle d : itemsDetalle) {
+                java.util.Map<String, Object> it = new java.util.LinkedHashMap<>();
+                it.put("inventarioId", d.getInventarioId());
+                it.put("cantidad", d.getCantidad());
+                it.put("precioUnitario", d.getPrecioUnitario().toString());
+                items.add(it);
+            }
+            body.put("items", items);
+
+            OperacionOffline op = new OperacionOffline("FACTURA", OfflineHelper.generarPayload(body));
+            LocalOperationQueue queue = new LocalOperationQueue();
+            queue.encolar(op);
+
+            String codigo = lblNumFactura.getText();
+            new Alert(Alert.AlertType.WARNING, "Modo OFFLINE\n\nFactura " + codigo + " encolada para sincronizar cuando haya conexión.\n\nLa factura se guardará localmente y se enviará al backend al reconectar.").showAndWait();
+
+            itemsDetalle.clear();
+            tblDetalle.refresh();
+            if (txtDescuento != null) txtDescuento.setText("0.00");
+            cmbDescuento.setValue("0");
+            calcularTotales();
+            cmbCliente.getSelectionModel().clearSelection();
+            cmbCliente.getEditor().clear();
+            txtNombre.clear(); txtIdentificacion.clear(); txtDireccion.clear(); txtCorreo.clear(); txtTelefono.clear(); txtBuscarProducto.clear();
+            obtenerNumFactura();
+        } catch (Exception e) {
+            logDAO.guardar("FacturaController", "guardarOffline", e.getMessage(), e);
+            new Alert(Alert.AlertType.ERROR, "Error al guardar (offline): " + e.getMessage()).showAndWait();
         }
     }
 

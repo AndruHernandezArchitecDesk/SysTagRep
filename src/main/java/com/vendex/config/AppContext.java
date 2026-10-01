@@ -76,6 +76,7 @@ public class AppContext {
     public final TransferenciaInventarioDAO transferenciaInventarioDAO;
     public final VehiculoDAO vehiculoDAO;
     public final InventarioVehiculoDAO inventarioVehiculoDAO;
+    public final SecuenciaBloqueDAO secuenciaBloqueDAO;
 
     // Servicios
     public final FacturaService facturaService;
@@ -137,6 +138,7 @@ public class AppContext {
         this.codigoDAO = dao(() -> new CodigoDAOPostgres(), () -> new CodigoDAORest(restClient));
         this.repuestoChatbotDAO = dao(() -> new RepuestoChatbotDAOPostgres(), () -> new RepuestoChatbotDAORest(restClient));
         this.alertaDAO = dao(() -> new AlertaDAOPostgres(), () -> new AlertaDAORest(restClient));
+        this.secuenciaBloqueDAO = dao(() -> new SecuenciaBloqueDAOPostgres(), () -> new SecuenciaBloqueDAORest(restClient));
         this.loginIntentoLogDAO = dao(() -> new LoginIntentoLogDAOPostgres(), () -> new LoginIntentoLogDAORest(restClient));
         this.dashboardDAO = dao(() -> new DashboardDAOPostgres(), () -> new DashboardDAORest(restClient));
         this.sucursalDAO = dao(() -> new SucursalDAOPostgres(), () -> new SucursalDAORest(restClient));

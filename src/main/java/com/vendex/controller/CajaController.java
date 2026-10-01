@@ -7,6 +7,10 @@ import com.vendex.dao.UsuarioDAO;
 import com.vendex.model.CajaMovimiento;
 import com.vendex.model.CajaSesion;
 import com.vendex.service.CajaService;
+import com.vendex.remote.ApiConfig;
+import com.vendex.offline.OfflineHelper;
+import com.vendex.offline.LocalOperationQueue;
+import com.vendex.offline.OperacionOffline;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -269,6 +273,11 @@ public class CajaController implements Initializable {
     @FXML
     private void abrirCaja() {
         try {
+            if (ApiConfig.isModoRemoto() && OfflineHelper.debeUsarModoOffline()) {
+                abrirCajaOffline();
+                return;
+            }
+
             String montoStr = txtMontoInicial.getText().trim();
             if (montoStr.isEmpty()) {
                 new Alert(Alert.AlertType.WARNING, "Ingrese el monto inicial").showAndWait();
@@ -327,6 +336,10 @@ public class CajaController implements Initializable {
         logDAO.guardar("CajaController", "abrirCierreCaja", "ENTRO al metodo - sesionActual=" + sesionActual);
         if (sesionActual == null) {
             logDAO.guardar("CajaController", "abrirCierreCaja", "sesionActual es null, saliendo");
+            return;
+        }
+        if (ApiConfig.isModoRemoto() && OfflineHelper.debeUsarModoOffline()) {
+            cerrarCajaOffline();
             return;
         }
         TextInputDialog dialog = new TextInputDialog();
@@ -410,5 +423,81 @@ public class CajaController implements Initializable {
         Thread t = new Thread(task, "vendex-backup-cierre-caja");
         t.setDaemon(true);
         t.start();
+    }
+
+    private void abrirCajaOffline() {
+        try {
+            String montoStr = txtMontoInicial.getText().trim();
+            if (montoStr.isEmpty()) {
+                new Alert(Alert.AlertType.WARNING, "Ingrese el monto inicial").showAndWait();
+                return;
+            }
+            BigDecimal monto = new BigDecimal(montoStr);
+            if (monto.compareTo(BigDecimal.ZERO) < 0) {
+                new Alert(Alert.AlertType.WARNING, "El monto no puede ser negativo").showAndWait();
+                return;
+            }
+            int usuarioId = LoginController.usuarioAutenticado != null ? LoginController.usuarioAutenticado.getId() : 1;
+            java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+            body.put("montoInicial", monto.toString());
+            body.put("observaciones", txtObsApertura.getText());
+            body.put("usuarioId", usuarioId);
+            OperacionOffline op = new OperacionOffline("CAJA_ABRIR", OfflineHelper.generarPayload(body));
+            LocalOperationQueue queue = new LocalOperationQueue();
+            queue.encolar(op);
+            txtMontoInicial.clear();
+            txtObsApertura.clear();
+            new Alert(Alert.AlertType.WARNING, "Modo OFFLINE\n\nApertura de caja encolada para sincronizar cuando haya conexión.").showAndWait();
+            cargarEstado();
+        } catch (NumberFormatException ex) {
+            new Alert(Alert.AlertType.WARNING, "Monto inválido").showAndWait();
+        } catch (Exception ex) {
+            logDAO.guardar("CajaController", "abrirCajaOffline", ex.getMessage(), ex);
+            new Alert(Alert.AlertType.ERROR, "Error: " + ex.getMessage()).showAndWait();
+        }
+    }
+
+    private void cerrarCajaOffline() {
+        try {
+            if (sesionActual == null) {
+                new Alert(Alert.AlertType.WARNING, "No hay sesión abierta").showAndWait();
+                return;
+            }
+            TextInputDialog dialog = new TextInputDialog();
+            dialog.setTitle("Cerrar Caja (Offline)");
+            dialog.setHeaderText("Sesión #" + sesionActual.getId() + " — Arqueo de caja");
+            dialog.setContentText("Monto físico contado ($):");
+            dialog.showAndWait().ifPresent(montoStr -> {
+                try {
+                    String raw = montoStr.trim().replace(",", ".");
+                    if (raw.isEmpty()) {
+                        new Alert(Alert.AlertType.WARNING, "Ingrese el monto físico").showAndWait();
+                        return;
+                    }
+                    BigDecimal montoFisico = new BigDecimal(raw);
+                    if (montoFisico.compareTo(BigDecimal.ZERO) < 0) {
+                        new Alert(Alert.AlertType.WARNING, "El monto no puede ser negativo").showAndWait();
+                        return;
+                    }
+                    java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+                    body.put("sesionId", sesionActual.getId());
+                    body.put("montoFisico", montoFisico.toString());
+                    body.put("observaciones", "Cierre offline");
+                    OperacionOffline op = new OperacionOffline("CAJA_CERRAR", OfflineHelper.generarPayload(body));
+                    LocalOperationQueue queue = new LocalOperationQueue();
+                    queue.encolar(op);
+                    new Alert(Alert.AlertType.WARNING, "Modo OFFLINE\n\nCierre de caja encolado para sincronizar cuando haya conexión.").showAndWait();
+                    cargarEstado();
+                } catch (NumberFormatException ex) {
+                    new Alert(Alert.AlertType.WARNING, "Monto inválido").showAndWait();
+                } catch (Exception ex) {
+                    logDAO.guardar("CajaController", "cerrarCajaOffline", ex.getMessage(), ex);
+                    new Alert(Alert.AlertType.ERROR, "Error: " + ex.getMessage()).showAndWait();
+                }
+            });
+        } catch (Exception ex) {
+            logDAO.guardar("CajaController", "cerrarCajaOffline", ex.getMessage(), ex);
+            new Alert(Alert.AlertType.ERROR, "Error: " + ex.getMessage()).showAndWait();
+        }
     }
 }

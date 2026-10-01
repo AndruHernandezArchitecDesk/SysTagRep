@@ -18,6 +18,10 @@ import com.vendex.model.Inventario;
 import com.vendex.model.Marca;
 import com.vendex.model.Proveedor;
 import com.vendex.dao.LogDAO;
+import com.vendex.remote.ApiConfig;
+import com.vendex.offline.OfflineHelper;
+import com.vendex.offline.LocalOperationQueue;
+import com.vendex.offline.OperacionOffline;
 import com.vendex.util.ComboFilter;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
@@ -546,6 +550,11 @@ public class IngresoMercaderiaController implements Initializable {
     @FXML
     private void guardar() {
         try {
+            if (ApiConfig.isModoRemoto() && OfflineHelper.debeUsarModoOffline()) {
+                guardarOffline();
+                return;
+            }
+
             if (modoEdicion) {
                 guardarUnico();
                 return;
@@ -1117,6 +1126,108 @@ public class IngresoMercaderiaController implements Initializable {
         listaMarcas.setAll(marcaDAO.listar());
         listaProveedores.setAll(proveedorDAO.listar());
         listaCodigos.setAll(codigoDAO.listar());
+    }
+
+    private void guardarOffline() {
+        try {
+            if (modoEdicion) {
+                guardarUnicoOffline();
+                return;
+            }
+            if (listaProductos.isEmpty()) {
+                new Alert(Alert.AlertType.WARNING, "Agregue al menos un producto a la factura.").showAndWait();
+                return;
+            }
+            Proveedor p = proveedorSeleccionado();
+            String numFactura = txtNumeroFactura.getText() != null ? txtNumeroFactura.getText().trim() : "";
+
+            LocalDateTime fecha = dpFechaIngreso.getValue() != null
+                    ? dpFechaIngreso.getValue().atStartOfDay() : LocalDateTime.now();
+            String formaPago = cmbFormaPago.getValue();
+            int meses = 0;
+            BigDecimal interes = BigDecimal.ZERO;
+            if ("TAG Crédito".equals(formaPago)) {
+                meses = cmbMesesPlazo.getValue() != null ? cmbMesesPlazo.getValue() : 0;
+                interes = cmbInteres.getValue() != null ? new BigDecimal(cmbInteres.getValue()) : BigDecimal.ZERO;
+            }
+
+            java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+            body.put("proveedorId", p != null ? p.getId() : null);
+            body.put("numeroFactura", numFactura);
+            body.put("fecha", fecha.toString());
+            body.put("formaPago", formaPago);
+            body.put("mesesPlazo", meses);
+            body.put("interes", interes.toString());
+            java.util.List<java.util.Map<String, Object>> productos = new java.util.ArrayList<>();
+            for (FilaProducto fp : listaProductos) {
+                java.util.Map<String, Object> prod = new java.util.LinkedHashMap<>();
+                prod.put("codigo", fp.getCodigo());
+                prod.put("codigoManual", fp.getCodigoManual());
+                prod.put("descripcion", fp.getDescripcion());
+                prod.put("grupoId", fp.getGrupoId());
+                prod.put("marcaId", fp.getMarcaId());
+                prod.put("costoSinIVA", fp.getCostoSinIVA());
+                prod.put("cantidad", fp.getCantidad());
+                prod.put("precioVenta", fp.getPrecioVenta());
+                productos.add(prod);
+            }
+            body.put("productos", productos);
+
+            OperacionOffline op = new OperacionOffline("INGRESO_MERCADERIA", OfflineHelper.generarPayload(body));
+            LocalOperationQueue queue = new LocalOperationQueue();
+            queue.encolar(op);
+
+            new Alert(Alert.AlertType.WARNING, "Modo OFFLINE\n\nIngreso de mercadería encolado para sincronizar cuando haya conexión.\n\nLa factura se guardará localmente y se enviará al backend al reconectar.").showAndWait();
+            limpiarProducto();
+            limpiarFrm();
+        } catch (Exception e) {
+            logDAO.guardar("IngresoMercaderiaController", "guardarOffline", e.getMessage(), e);
+            new Alert(Alert.AlertType.ERROR, "Error al guardar (offline): " + e.getMessage()).showAndWait();
+        }
+    }
+
+    private void guardarUnicoOffline() {
+        try {
+            String formaPago = cmbFormaPago.getValue();
+            int meses = 0;
+            BigDecimal interes = BigDecimal.ZERO;
+            if ("TAG Crédito".equals(formaPago)) {
+                meses = cmbMesesPlazo.getValue() != null ? cmbMesesPlazo.getValue() : 0;
+                interes = cmbInteres.getValue() != null ? new BigDecimal(cmbInteres.getValue()) : BigDecimal.ZERO;
+            }
+            Proveedor p = proveedorSeleccionado();
+            String numFactura = txtNumeroFactura.getText() != null ? txtNumeroFactura.getText().trim() : "";
+            LocalDateTime fecha = dpFechaIngreso.getValue() != null
+                    ? dpFechaIngreso.getValue().atStartOfDay() : LocalDateTime.now();
+
+            java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+            body.put("modoEdicion", true);
+            body.put("inventarioId", txtId.getText());
+            body.put("proveedorId", p != null ? p.getId() : null);
+            body.put("numeroFactura", numFactura);
+            body.put("fecha", fecha.toString());
+            body.put("formaPago", formaPago);
+            body.put("mesesPlazo", meses);
+            body.put("interes", interes.toString());
+            body.put("descripcion", descripcionIngresada());
+            body.put("grupoId", cmbGrupo.getValue() != null ? cmbGrupo.getValue().getId() : null);
+            body.put("marcaId", cmbMarca.getValue() != null ? cmbMarca.getValue().getId() : null);
+            body.put("costoSinIVA", txtCostoSinIVA.getText().replace(",", "."));
+            body.put("cantidad", spCantidad.getValue());
+            body.put("precioVenta", txtPrecioVenta.getText().replace(",", "."));
+            body.put("codigo", txtCodigo.getText());
+            body.put("codigoManual", codigoSeleccionado());
+
+            OperacionOffline op = new OperacionOffline("INGRESO_MERCADERIA", OfflineHelper.generarPayload(body));
+            LocalOperationQueue queue = new LocalOperationQueue();
+            queue.encolar(op);
+
+            new Alert(Alert.AlertType.WARNING, "Modo OFFLINE\n\nIngreso de mercadería encolado para sincronizar cuando haya conexión.").showAndWait();
+            if (cerrarAlGuardar) cerrarVentana();
+        } catch (Exception e) {
+            logDAO.guardar("IngresoMercaderiaController", "guardarUnicoOffline", e.getMessage(), e);
+            new Alert(Alert.AlertType.ERROR, "Error al guardar (offline): " + e.getMessage()).showAndWait();
+        }
     }
 
     public static class FilaProducto {

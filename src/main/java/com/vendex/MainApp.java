@@ -5,6 +5,8 @@ import com.vendex.config.DatabaseConnection;
 import com.vendex.config.DbConfig;
 import com.vendex.config.VendexControllerFactory;
 import com.vendex.controller.LicenseActivatorController;
+import com.vendex.offline.OfflineModeManager;
+import com.vendex.offline.SyncService;
 import com.vendex.util.LicenseManager;
 import com.vendex.util.ThemeManager;
 import com.vendex.util.UpperCaseTextFormatter;
@@ -62,6 +64,11 @@ public class MainApp extends Application {
         AppContext appContext = AppContext.getInstance();
         // API REST multi-sucursal (opcional, -Dapi.enabled=true -Dapi.port=7070)
         try { com.vendex.config.ApiServer.startIfEnabled(); } catch (Exception e) { System.err.println("API no iniciada: " + e.getMessage()); }
+        // Fase 3: monitoreo offline + sync (solo en modo remoto)
+        if (com.vendex.remote.ApiConfig.isModoRemoto()) {
+            OfflineModeManager.INSTANCE.iniciarMonitoreo();
+            SyncService.INSTANCE.iniciar();
+        }
         VendexControllerFactory controllerFactory = new VendexControllerFactory(appContext);
         if (!esRemota && !LicenseManager.isActivated()) {
             FXMLLoader loader = new FXMLLoader(

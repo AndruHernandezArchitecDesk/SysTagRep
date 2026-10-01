@@ -5,6 +5,10 @@ import com.vendex.config.DatabaseConnection;
 import com.vendex.dao.*;
 import com.vendex.model.*;
 import com.vendex.service.NotaDebitoService;
+import com.vendex.remote.ApiConfig;
+import com.vendex.offline.OfflineHelper;
+import com.vendex.offline.LocalOperationQueue;
+import com.vendex.offline.OperacionOffline;
 import com.vendex.util.*;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
@@ -151,6 +155,11 @@ public class NotaDebitoController implements Initializable {
     @FXML
     private void emitirNotaDebito() {
         try {
+            if (ApiConfig.isModoRemoto() && OfflineHelper.debeUsarModoOffline()) {
+                emitirNotaDebitoOffline();
+                return;
+            }
+
             FacturaRegistro fr = cmbFactura.getValue();
             if (fr==null) throw new IllegalArgumentException("Seleccione una factura autorizada.");
             if (motivos.isEmpty()) throw new IllegalArgumentException("Agregue al menos un motivo.");
@@ -175,6 +184,40 @@ public class NotaDebitoController implements Initializable {
             try { if (Desktop.isDesktopSupported()) Desktop.getDesktop().open(new File(res.rutaPDF)); } catch (Exception ignore) {}
             motivos.clear(); txtRazon.clear(); txtValor.clear(); cargarFacturasAutorizadas(); actualizarSecuencial(); calcularTotales();
         } catch (Exception ex) { logDAO.guardar("NotaDebitoController","emitirNotaDebito", ex.getMessage(), ex); new Alert(Alert.AlertType.ERROR, "Error: "+ex.getMessage()).showAndWait(); }
+    }
+
+    private void emitirNotaDebitoOffline() {
+        try {
+            FacturaRegistro fr = cmbFactura.getValue();
+            if (fr==null) throw new IllegalArgumentException("Seleccione una factura autorizada.");
+            if (motivos.isEmpty()) throw new IllegalArgumentException("Agregue al menos un motivo.");
+            String formaPago = cmbFormaPago.getValue();
+            if (formaPago==null||formaPago.trim().isEmpty()) throw new IllegalArgumentException("Seleccione una forma de pago.");
+            String ambiente = cmbAmbiente.getValue()!=null? cmbAmbiente.getValue(): AppConstants.AMBIENTE_PRUEBAS;
+
+            java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+            body.put("facturaId", fr.getId());
+            body.put("formaPago", formaPago);
+            body.put("ambienteSri", ambiente);
+            java.util.List<java.util.Map<String, Object>> motivosJson = new java.util.ArrayList<>();
+            for (NotaDebitoService.MotivoNDInput m : motivos) {
+                java.util.Map<String, Object> mot = new java.util.LinkedHashMap<>();
+                mot.put("razon", m.razon);
+                mot.put("valor", m.valor);
+                motivosJson.add(mot);
+            }
+            body.put("motivos", motivosJson);
+
+            OperacionOffline op = new OperacionOffline("NOTA_DEBITO", OfflineHelper.generarPayload(body));
+            LocalOperationQueue queue = new LocalOperationQueue();
+            queue.encolar(op);
+
+            new Alert(Alert.AlertType.WARNING, "Modo OFFLINE\n\nNota de débito encolada para sincronizar cuando haya conexión.\n\nLa ND se guardará localmente y se enviará al backend al reconectar.").showAndWait();
+            motivos.clear(); txtRazon.clear(); txtValor.clear(); cargarFacturasAutorizadas(); actualizarSecuencial(); calcularTotales();
+        } catch (Exception ex) {
+            logDAO.guardar("NotaDebitoController","emitirNotaDebitoOffline", ex.getMessage(), ex);
+            new Alert(Alert.AlertType.ERROR, "Error: "+ex.getMessage()).showAndWait();
+        }
     }
 
     private File obtenerDirEscritorio(){ File h=new File(System.getProperty("user.home")); for(String n: new String[]{AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT, AppConstants.DIRECTORIO_ESCRITORIO_ALT}){ File d=new File(h,n); if(d.exists()&&d.isDirectory()) return d; } File d=new File(h, AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT); d.mkdirs(); return d; }
