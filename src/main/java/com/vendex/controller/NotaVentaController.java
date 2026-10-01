@@ -16,6 +16,7 @@ import com.vendex.remote.RestClient;
 import com.vendex.offline.OfflineHelper;
 import com.vendex.offline.LocalOperationQueue;
 import com.vendex.offline.OperacionOffline;
+import com.vendex.offline.OfflineUI;
 import com.vendex.model.*;
 import com.vendex.util.NotaVentaPDF;
 import com.vendex.util.SortTable;
@@ -868,7 +869,7 @@ public class NotaVentaController implements Initializable {
             LocalOperationQueue queue = new LocalOperationQueue();
             queue.encolar(op);
 
-            new Alert(Alert.AlertType.WARNING, "Modo OFFLINE\n\nProforma encolada para sincronizar cuando haya conexión.\n\nLa proforma se guardará localmente y se enviará al backend al reconectar.").showAndWait();
+            OfflineUI.mostrarAlertaEncoladaMensaje("Modo OFFLINE\n\nProforma encolada para sincronizar cuando haya conexión.\n\nLa proforma se guardará localmente y se enviará al backend al reconectar.");
 
             itemsDetalle.clear();
             tblDetalle.refresh();

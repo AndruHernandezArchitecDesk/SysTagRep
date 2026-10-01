@@ -9,6 +9,7 @@ import com.vendex.remote.ApiConfig;
 import com.vendex.offline.OfflineHelper;
 import com.vendex.offline.LocalOperationQueue;
 import com.vendex.offline.OperacionOffline;
+import com.vendex.offline.OfflineUI;
 import com.vendex.util.*;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
@@ -212,7 +213,7 @@ public class NotaDebitoController implements Initializable {
             LocalOperationQueue queue = new LocalOperationQueue();
             queue.encolar(op);
 
-            new Alert(Alert.AlertType.WARNING, "Modo OFFLINE\n\nNota de débito encolada para sincronizar cuando haya conexión.\n\nLa ND se guardará localmente y se enviará al backend al reconectar.").showAndWait();
+            OfflineUI.mostrarAlertaEncoladaMensaje("Modo OFFLINE\n\nNota de débito encolada para sincronizar cuando haya conexión.\n\nLa ND se guardará localmente y se enviará al backend al reconectar.");
             motivos.clear(); txtRazon.clear(); txtValor.clear(); cargarFacturasAutorizadas(); actualizarSecuencial(); calcularTotales();
         } catch (Exception ex) {
             logDAO.guardar("NotaDebitoController","emitirNotaDebitoOffline", ex.getMessage(), ex);

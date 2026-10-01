@@ -9,6 +9,7 @@ import com.vendex.remote.RestClient;
 import com.vendex.offline.OfflineHelper;
 import com.vendex.offline.LocalOperationQueue;
 import com.vendex.offline.OperacionOffline;
+import com.vendex.offline.OfflineUI;
 import com.vendex.service.NotaCreditoService;
 import com.vendex.util.*;
 import javafx.beans.property.ReadOnlyObjectWrapper;
@@ -299,7 +300,7 @@ public class NotaCreditoController implements Initializable {
             LocalOperationQueue queue = new LocalOperationQueue();
             queue.encolar(op);
 
-            new Alert(Alert.AlertType.WARNING, "Modo OFFLINE\n\nNota de crédito encolada para sincronizar cuando haya conexión.\n\nLa NC se guardará localmente y se enviará al backend al reconectar.").showAndWait();
+            OfflineUI.mostrarAlertaEncoladaMensaje("Modo OFFLINE\n\nNota de crédito encolada para sincronizar cuando haya conexión.\n\nLa NC se guardará localmente y se enviará al backend al reconectar.");
             detallesNc.clear(); txtMotivo.clear(); cargarFacturasAutorizadas(); actualizarSecuencial(); calcularTotales();
         } catch (Exception ex) {
             logDAO.guardar("NotaCreditoController", "emitirNotaCreditoOffline", ex.getMessage(), ex);

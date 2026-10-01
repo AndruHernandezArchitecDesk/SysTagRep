@@ -11,6 +11,7 @@ import com.vendex.remote.RestClient;
 import com.vendex.offline.OfflineHelper;
 import com.vendex.offline.LocalOperationQueue;
 import com.vendex.offline.OperacionOffline;
+import com.vendex.offline.OfflineUI;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -327,7 +328,7 @@ public class RetencionController implements Initializable {
             LocalOperationQueue queue = new LocalOperationQueue();
             queue.encolar(op);
 
-            mostrarAlertaCopiable(Alert.AlertType.WARNING, "Retención", "RET encolada", "Retención encolada para sincronizar cuando haya conexión.\n\nLa retención se guardará localmente y se enviará al backend al reconectar.");
+            OfflineUI.mostrarAlertaEncoladaMensaje("Modo OFFLINE\n\nRetención encolada para sincronizar cuando haya conexión.\n\nLa retención se guardará localmente y se enviará al backend al reconectar.");
             docs.clear(); retsActual.clear(); actualizarSecuencial();
         } catch (Exception ex) {
             logDAO.guardar("RetencionController", "emitirRetencionOffline", ex.getMessage(), ex);

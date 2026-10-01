@@ -11,6 +11,7 @@ import com.vendex.remote.ApiConfig;
 import com.vendex.offline.OfflineHelper;
 import com.vendex.offline.LocalOperationQueue;
 import com.vendex.offline.OperacionOffline;
+import com.vendex.offline.OfflineUI;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -447,7 +448,7 @@ public class CajaController implements Initializable {
             queue.encolar(op);
             txtMontoInicial.clear();
             txtObsApertura.clear();
-            new Alert(Alert.AlertType.WARNING, "Modo OFFLINE\n\nApertura de caja encolada para sincronizar cuando haya conexión.").showAndWait();
+            OfflineUI.mostrarAlertaEncoladaMensaje("Modo OFFLINE\n\nApertura de caja encolada para sincronizar cuando haya conexión.");
             cargarEstado();
         } catch (NumberFormatException ex) {
             new Alert(Alert.AlertType.WARNING, "Monto inválido").showAndWait();
@@ -486,7 +487,7 @@ public class CajaController implements Initializable {
                     OperacionOffline op = new OperacionOffline("CAJA_CERRAR", OfflineHelper.generarPayload(body));
                     LocalOperationQueue queue = new LocalOperationQueue();
                     queue.encolar(op);
-                    new Alert(Alert.AlertType.WARNING, "Modo OFFLINE\n\nCierre de caja encolado para sincronizar cuando haya conexión.").showAndWait();
+                    OfflineUI.mostrarAlertaEncoladaMensaje("Modo OFFLINE\n\nCierre de caja encolado para sincronizar cuando haya conexión.");
                     cargarEstado();
                 } catch (NumberFormatException ex) {
                     new Alert(Alert.AlertType.WARNING, "Monto inválido").showAndWait();

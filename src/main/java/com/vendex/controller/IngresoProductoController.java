@@ -13,6 +13,7 @@ import com.vendex.remote.ApiConfig;
 import com.vendex.offline.OfflineHelper;
 import com.vendex.offline.LocalOperationQueue;
 import com.vendex.offline.OperacionOffline;
+import com.vendex.offline.OfflineUI;
 import com.vendex.util.ComboFilter;
 import com.vendex.util.EtiquetaUtil;
 import javafx.collections.FXCollections;
@@ -262,7 +263,7 @@ public class IngresoProductoController implements Initializable {
             LocalOperationQueue queue = new LocalOperationQueue();
             queue.encolar(op);
 
-            new Alert(Alert.AlertType.WARNING, "Modo OFFLINE\n\nProducto encolado para sincronizar cuando haya conexión.\n\nEl ingreso se guardará localmente y se enviará al backend al reconectar.").showAndWait();
+            OfflineUI.mostrarAlertaEncoladaMensaje("Modo OFFLINE\n\nProducto encolado para sincronizar cuando haya conexión.\n\nEl ingreso se guardará localmente y se enviará al backend al reconectar.");
             cerrarVentana();
         } catch (NumberFormatException e) {
             new Alert(Alert.AlertType.ERROR,"Precio inválido. Use formato 0.00").showAndWait();

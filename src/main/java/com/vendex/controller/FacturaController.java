@@ -6,6 +6,7 @@ import com.vendex.remote.RestClient;
 import com.vendex.offline.OfflineHelper;
 import com.vendex.offline.LocalOperationQueue;
 import com.vendex.offline.OperacionOffline;
+import com.vendex.offline.OfflineUI;
 import com.vendex.dao.EmpresaDAO;
 import com.vendex.dao.ClienteDAO;
 import com.vendex.dao.InventarioDAO;
@@ -634,7 +635,7 @@ public class FacturaController implements Initializable {
             queue.encolar(op);
 
             String codigo = lblNumFactura.getText();
-            new Alert(Alert.AlertType.WARNING, "Modo OFFLINE\n\nFactura " + codigo + " encolada para sincronizar cuando haya conexión.\n\nLa factura se guardará localmente y se enviará al backend al reconectar.").showAndWait();
+            OfflineUI.mostrarAlertaEncoladaMensaje("Modo OFFLINE\n\nFactura " + codigo + " encolada para sincronizar cuando haya conexión.\n\nLa factura se guardará localmente y se enviará al backend al reconectar.");
 
             itemsDetalle.clear();
             tblDetalle.refresh();

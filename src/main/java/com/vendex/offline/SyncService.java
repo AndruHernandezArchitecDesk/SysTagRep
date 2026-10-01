@@ -21,12 +21,11 @@ public class SyncService {
 
     public static final SyncService INSTANCE = new SyncService();
 
-    private static final String BASE_URL = com.vendex.remote.ApiConfig.baseUrl();
     private static final long INTERVALO_SEGUNDOS = 30;
     private static final int MAX_INTENTOS = 5;
 
     private final LocalOperationQueue cola = new LocalOperationQueue();
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final com.vendex.remote.RestClient client = new com.vendex.remote.RestClient(com.vendex.remote.ApiConfig.baseUrl());
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private final AtomicBoolean sincronizando = new AtomicBoolean(false);
     private int enviadas = 0;
@@ -94,20 +93,15 @@ public class SyncService {
         sincronizando.set(false);
     }
 
-    private boolean enviarOperacion(OperacionOffline op) throws IOException {
+    private boolean enviarOperacion(OperacionOffline op) throws IOException, InterruptedException {
         String endpoint = resolverEndpoint(op.getTipo());
         if (endpoint == null) {
             throw new IOException("Tipo de operacion no soportado: " + op.getTipo());
         }
-        URL url = new URL(BASE_URL + endpoint);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("POST");
-        conn.setRequestProperty("Content-Type", "application/json");
-        conn.setDoOutput(true);
-        conn.setConnectTimeout(10000);
-        conn.setReadTimeout(10000);
-        conn.getOutputStream().write(op.getPayload().getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        int code = conn.getResponseCode();
+        int code = client.status(endpoint);
+        if (code >= 500 && code < 600) {
+            throw new IOException("Servidor en mantenimiento: " + endpoint + " -> " + code);
+        }
         return code >= 200 && code < 300;
     }
 
@@ -115,23 +109,8 @@ public class SyncService {
         String endpoint = resolverEndpoint(op.getTipo());
         if (endpoint == null) return "Endpoint no soportado";
         try {
-            URL url = new URL(BASE_URL + endpoint);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("Content-Type", "application/json");
-            conn.setDoOutput(true);
-            conn.setConnectTimeout(10000);
-            conn.setReadTimeout(10000);
-            conn.getOutputStream().write(op.getPayload().getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            int code = conn.getResponseCode();
-            if (code >= 400) {
-                try (BufferedReader br = new BufferedReader(new InputStreamReader(conn.getErrorStream()))) {
-                    return "HTTP " + code + ": " + br.lines().collect(Collectors.joining("\n"));
-                } catch (Exception e) {
-                    return "HTTP " + code;
-                }
-            }
-            return null;
+            int code = client.status(endpoint);
+            return "HTTP " + code;
         } catch (Exception e) {
             return e.getMessage();
         }

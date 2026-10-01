@@ -22,6 +22,7 @@ import com.vendex.remote.ApiConfig;
 import com.vendex.offline.OfflineHelper;
 import com.vendex.offline.LocalOperationQueue;
 import com.vendex.offline.OperacionOffline;
+import com.vendex.offline.OfflineUI;
 import com.vendex.util.ComboFilter;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
@@ -1177,7 +1178,7 @@ public class IngresoMercaderiaController implements Initializable {
             LocalOperationQueue queue = new LocalOperationQueue();
             queue.encolar(op);
 
-            new Alert(Alert.AlertType.WARNING, "Modo OFFLINE\n\nIngreso de mercadería encolado para sincronizar cuando haya conexión.\n\nLa factura se guardará localmente y se enviará al backend al reconectar.").showAndWait();
+            OfflineUI.mostrarAlertaEncoladaMensaje("Modo OFFLINE\n\nIngreso de mercadería encolado para sincronizar cuando haya conexión.\n\nLa factura se guardará localmente y se enviará al backend al reconectar.");
             limpiarProducto();
             limpiarFrm();
         } catch (Exception e) {
@@ -1222,7 +1223,7 @@ public class IngresoMercaderiaController implements Initializable {
             LocalOperationQueue queue = new LocalOperationQueue();
             queue.encolar(op);
 
-            new Alert(Alert.AlertType.WARNING, "Modo OFFLINE\n\nIngreso de mercadería encolado para sincronizar cuando haya conexión.").showAndWait();
+            OfflineUI.mostrarAlertaEncoladaMensaje("Modo OFFLINE\n\nIngreso de mercadería encolado para sincronizar cuando haya conexión.");
             if (cerrarAlGuardar) cerrarVentana();
         } catch (Exception e) {
             logDAO.guardar("IngresoMercaderiaController", "guardarUnicoOffline", e.getMessage(), e);

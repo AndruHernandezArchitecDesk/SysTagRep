@@ -10,6 +10,7 @@ import com.vendex.remote.ApiConfig;
 import com.vendex.offline.OfflineHelper;
 import com.vendex.offline.LocalOperationQueue;
 import com.vendex.offline.OperacionOffline;
+import com.vendex.offline.OfflineUI;
 import com.vendex.util.EtiquetaUtil;
 import com.vendex.util.SortTable;
 import com.vendex.util.ComboFilter;
@@ -365,7 +366,7 @@ public class InventarioController implements Initializable {
                 OperacionOffline op = new OperacionOffline("INVENTARIO_ELIMINAR", OfflineHelper.generarPayload(body));
                 LocalOperationQueue queue = new LocalOperationQueue();
                 queue.encolar(op);
-                new Alert(Alert.AlertType.WARNING, "Modo OFFLINE\n\nEliminación encolada para sincronizar cuando haya conexión.").showAndWait();
+                OfflineUI.mostrarAlertaEncoladaMensaje("Modo OFFLINE\n\nEliminación encolada para sincronizar cuando haya conexión.");
                 cargarDatos();
                 return;
             }
