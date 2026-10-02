@@ -128,7 +128,7 @@
     <bottom>
         <HBox alignment="CENTER" spacing="8" styleClass="footer-bar">
             <FontIcon iconLiteral="fas-copyright" iconSize="12"/>
-            <Label text="© 2026 Desync by AndruDesk — The Toy Maker — Developer Software" styleClass="footer-copy"/>
+            <Label text="© 2026 Vendex 2.0 — designed by AndruDesk" styleClass="footer-copy"/>
         </HBox>
     </bottom>
 </BorderPane>

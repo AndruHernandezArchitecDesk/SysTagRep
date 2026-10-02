@@ -253,7 +253,7 @@ public class LoginController implements Initializable {
             com.vendex.config.VendexControllerFactory.aplicar(homeLoader);
             Parent root = homeLoader.load();
             Stage stage = (Stage) txtUsuario.getScene().getWindow();
-            stage.setTitle("Tag Repuestos Automotrices");
+            stage.setTitle("Vendex 2.0");
             stage.getIcons().add(new Image(getClass().getResourceAsStream("/img/inventario.png")));
             Scene scene = new Scene(root);
             ThemeManager.aplicarTemaGuardado(scene);
