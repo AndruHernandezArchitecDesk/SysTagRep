@@ -14,9 +14,8 @@ import java.util.stream.Collectors;
 
 public class LocalOperationQueue {
 
-    private static final Path DIRECTORIO = Path.of(System.getProperty("user.home"), ".vendex", "offline_queue");
-    private static final Path ARCHIVO = DIRECTORIO.resolve("operaciones.json");
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = new ObjectMapper()
+            .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
     private static final AtomicInteger SECUENCIAL_ID = new AtomicInteger(calcularMaxId());
 
     private static int calcularMaxId() {
@@ -29,6 +28,14 @@ public class LocalOperationQueue {
         } catch (Exception e) {
             return 0;
         }
+    }
+
+    private static Path directorio = Path.of(System.getProperty("user.home"), ".vendex", "offline_queue");
+    private static Path archivo = directorio.resolve("operaciones.json");
+
+    public static void setDirectorioPrueba(Path nuevoDirectorio) {
+        directorio = nuevoDirectorio;
+        archivo = directorio.resolve("operaciones.json");
     }
 
     public synchronized void encolar(OperacionOffline op) {
@@ -89,10 +96,10 @@ public class LocalOperationQueue {
     }
 
     private static List<OperacionOffline> leerTodas() throws IOException {
-        if (!Files.exists(ARCHIVO)) {
+        if (!Files.exists(archivo)) {
             return new ArrayList<>();
         }
-        String json = Files.readString(ARCHIVO);
+        String json = Files.readString(archivo);
         if (json.isBlank()) {
             return new ArrayList<>();
         }
@@ -100,9 +107,9 @@ public class LocalOperationQueue {
     }
 
     private static void guardar(List<OperacionOffline> operaciones) throws IOException {
-        Files.createDirectories(DIRECTORIO);
+        Files.createDirectories(directorio);
         String json = MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(operaciones);
-        Files.writeString(ARCHIVO, json, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+        Files.writeString(archivo, json, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
     }
 
     private void actualizarEstado(int id, OperacionOffline.Estado estado, String error) {

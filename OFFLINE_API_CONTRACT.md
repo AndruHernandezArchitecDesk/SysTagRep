@@ -20,6 +20,8 @@ Este documento describe los endpoints que el backend debe exponer para que `Sync
 | `INGRESO_MERCADERIA` | POST | `/ingreso-mercaderia` | `{proveedorId, numeroFactura, productos, formaPago}` |
 | `CAJA_ABRIR` | POST | `/caja/abrir` | `{montoInicial, observaciones, usuarioId}` |
 | `CAJA_CERRAR` | POST | `/caja/cerrar` | `{sesionId, montoFisico, observaciones}` |
+| `CUENTA_POR_COBRAR` | POST | `/cuentas-por-cobrar/adelanto` | `{cuentaPorCobrarId, adelanto, pagado}` |
+| `CUENTA_POR_PAGAR` | POST | `/cuentas-por-pagar/adelanto` | `{cuentaPorPagarId, adelanto, pagado}` |
 
 ## Códigos esperados
 - `2xx`: éxito → `SyncService` marca `ENVIADA`.

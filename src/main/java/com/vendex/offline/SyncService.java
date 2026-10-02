@@ -25,14 +25,24 @@ public class SyncService {
     private static final int MAX_INTENTOS = 5;
 
     private final LocalOperationQueue cola = new LocalOperationQueue();
-    private final com.vendex.remote.RestClient client = new com.vendex.remote.RestClient(com.vendex.remote.ApiConfig.baseUrl());
+    private final com.vendex.remote.RestClient client;
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private final AtomicBoolean sincronizando = new AtomicBoolean(false);
     private int enviadas = 0;
     private int conflictos = 0;
     private int fallidas = 0;
 
-    private SyncService() {}
+    private SyncService() {
+        this(new com.vendex.remote.RestClient(com.vendex.remote.ApiConfig.baseUrl()));
+    }
+
+    private SyncService(com.vendex.remote.RestClient client) {
+        this.client = client;
+    }
+
+    static SyncService paraTesting(com.vendex.remote.RestClient client) {
+        return new SyncService(client);
+    }
 
     public synchronized void iniciar() {
         scheduler.scheduleAtFixedRate(this::intentarSincronizacion, 0, INTERVALO_SEGUNDOS, TimeUnit.SECONDS);
@@ -129,6 +139,8 @@ public class SyncService {
             case "INGRESO_MERCADERIA" -> "/ingreso-mercaderia";
             case "CAJA_ABRIR" -> "/caja/abrir";
             case "CAJA_CERRAR" -> "/caja/cerrar";
+            case "CUENTA_POR_COBRAR" -> "/cuentas-por-cobrar/adelanto";
+            case "CUENTA_POR_PAGAR" -> "/cuentas-por-pagar/adelanto";
             default -> null;
         };
     }

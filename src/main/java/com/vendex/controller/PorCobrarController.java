@@ -1,6 +1,11 @@
 package com.vendex.controller;
 
 import com.vendex.dao.CuentaPorCobrarDAO;
+import com.vendex.remote.ApiConfig;
+import com.vendex.offline.OfflineHelper;
+import com.vendex.offline.LocalOperationQueue;
+import com.vendex.offline.OperacionOffline;
+import com.vendex.offline.OfflineUI;
 import com.vendex.util.SortTable;
 import com.vendex.util.UpperCaseTextFormatter;
 import javafx.beans.property.ReadOnlyObjectWrapper;
@@ -200,6 +205,25 @@ public class PorCobrarController implements Initializable {
                         BigDecimal nuevoAdelanto = adelantoActual.add(monto);
                         if (nuevoAdelanto.compareTo(total) > 0) {
                             new Alert(Alert.AlertType.WARNING, "El adelanto excede el total pendiente.").showAndWait();
+                            return;
+                        }
+
+                        if (ApiConfig.isModoRemoto() && OfflineHelper.debeUsarModoOffline()) {
+                            java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+                            body.put("cuentaPorCobrarId", cpcId);
+                            body.put("adelanto", nuevoAdelanto.toString());
+                            body.put("pagado", nuevoAdelanto.compareTo(total) >= 0);
+                            OperacionOffline op = new OperacionOffline("CUENTA_POR_COBRAR", OfflineHelper.generarPayload(body));
+                            LocalOperationQueue queue = new LocalOperationQueue();
+                            queue.encolar(op);
+                            OfflineUI.mostrarAlertaEncolada("Adelanto por cobrar");
+                            fila[11] = nuevoAdelanto;
+                            if (nuevoAdelanto.compareTo(total) >= 0) {
+                                fila[12] = "Pagado";
+                            }
+                            txtAdelanto.clear();
+                            tblDetalleCredito.refresh();
+                            cargarCreditos();
                             return;
                         }
 

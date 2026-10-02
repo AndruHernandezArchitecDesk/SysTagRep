@@ -1,6 +1,11 @@
 package com.vendex.controller;
 
 import com.vendex.dao.CuentaPorPagarDAO;
+import com.vendex.remote.ApiConfig;
+import com.vendex.offline.OfflineHelper;
+import com.vendex.offline.LocalOperationQueue;
+import com.vendex.offline.OperacionOffline;
+import com.vendex.offline.OfflineUI;
 import com.vendex.util.SortTable;
 import com.vendex.util.UpperCaseTextFormatter;
 import javafx.beans.property.ReadOnlyObjectWrapper;
@@ -191,6 +196,25 @@ public class PorPagarController implements Initializable {
                         BigDecimal nuevoAdelanto = adelantoActual.add(monto);
                         if (nuevoAdelanto.compareTo(total) > 0) {
                             new Alert(Alert.AlertType.WARNING, "El abono excede el total pendiente.").showAndWait();
+                            return;
+                        }
+
+                        if (ApiConfig.isModoRemoto() && OfflineHelper.debeUsarModoOffline()) {
+                            java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+                            body.put("cuentaPorPagarId", cppId);
+                            body.put("adelanto", nuevoAdelanto.toString());
+                            body.put("pagado", nuevoAdelanto.compareTo(total) >= 0);
+                            OperacionOffline op = new OperacionOffline("CUENTA_POR_PAGAR", OfflineHelper.generarPayload(body));
+                            LocalOperationQueue queue = new LocalOperationQueue();
+                            queue.encolar(op);
+                            OfflineUI.mostrarAlertaEncolada("Adelanto por pagar");
+                            fila[11] = nuevoAdelanto;
+                            if (nuevoAdelanto.compareTo(total) >= 0) {
+                                fila[12] = "Pagado";
+                            }
+                            txtAdelanto.clear();
+                            tblDetalleCredito.refresh();
+                            cargarCreditos();
                             return;
                         }
 
