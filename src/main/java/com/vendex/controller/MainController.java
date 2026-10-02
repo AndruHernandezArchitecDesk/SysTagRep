@@ -346,6 +346,26 @@ public class MainController implements Initializable {
     }
 
     @FXML
+    private void irColaOffline() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/ColaOfflineView.fxml"));
+            VendexControllerFactory.aplicar(loader);
+            Parent root = loader.load();
+            ColaOfflineController ctrl = loader.getController();
+            ctrl.cargar();
+            Stage modal = new Stage();
+            modal.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+            modal.setTitle("Cola Offline");
+            modal.setScene(new Scene(root, 720, 420));
+            modal.showAndWait();
+            actualizarBannerOffline();
+        } catch (Exception e) {
+            logDAO.guardar("MainController", "irColaOffline", e.getMessage(), e);
+            new Alert(Alert.AlertType.ERROR, "No se pudo abrir la cola offline: " + e.getMessage()).showAndWait();
+        }
+    }
+
+    @FXML
     private void irAsistenteRepuestos() {
         try {
             javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/view/ChatWidget.fxml"));

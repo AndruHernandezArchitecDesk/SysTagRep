@@ -14,7 +14,6 @@ public class OfflineModeManager {
 
     public static final OfflineModeManager INSTANCE = new OfflineModeManager();
 
-    private static final String HEALTH_URL = ApiConfig.baseUrl() + "/health";
     private static final int MAX_FALLOS = 3;
     private static final long MONITOREO_SEGUNDOS = 15;
 
@@ -22,6 +21,7 @@ public class OfflineModeManager {
     private final ScheduledExecutorService monitor = Executors.newSingleThreadScheduledExecutor();
     private int fallosConsecutivos = 0;
     private volatile boolean monitoreando = false;
+    private final com.vendex.remote.RestClient healthClient = new com.vendex.remote.RestClient(com.vendex.remote.ApiConfig.baseUrl() + "/health");
 
     private OfflineModeManager() {}
 
@@ -50,22 +50,16 @@ public class OfflineModeManager {
 
     private void verificarConectividad() {
         try {
-            HttpURLConnection conn = (HttpURLConnection) new URL(HEALTH_URL).openConnection();
-            conn.setConnectTimeout(3000);
-            conn.setReadTimeout(3000);
-            conn.setRequestMethod("GET");
-            int code = conn.getResponseCode();
+            int code = healthClient.status("");
             if (code >= 200 && code < 300) {
                 fallosConsecutivos = 0;
                 if (modo.get() == ModoOperacion.OFFLINE) {
                     modo.set(ModoOperacion.SYNCING);
-                } else if (modo.get() == ModoOperacion.SYNCING) {
-                    // Mantener SYNCING hasta que la cola quede vacía (lo maneja SyncService)
                 }
             } else {
                 registrarFallo();
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             registrarFallo();
         }
     }

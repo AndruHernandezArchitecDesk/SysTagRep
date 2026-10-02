@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.vendex.controller.ColaOfflineController"
+            prefHeight="420.0" prefWidth="720.0">
+
+    <top>
+        <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-padding: 10 12 10 12;">
+            <Label text="Cola offline" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
+            <Label fx:id="lblPendientes" text="Pendientes: 0"/>
+            <HBox alignment="CENTER_RIGHT" HBox.hgrow="ALWAYS">
+                <Button fx:id="btnSincronizar" text="Sincronizar ahora"/>
+                <Button fx:id="btnCerrar" text="Cerrar"/>
+            </HBox>
+        </HBox>
+    </top>
+
+    <center>
+        <TableView fx:id="tabla" prefHeight="320.0" prefWidth="700.0">
+            <columns>
+                <TableColumn fx:id="colId" text="ID" prefWidth="60"/>
+                <TableColumn fx:id="colTipo" text="Tipo" prefWidth="160"/>
+                <TableColumn fx:id="colEstado" text="Estado" prefWidth="120"/>
+                <TableColumn fx:id="colCreado" text="Creado" prefWidth="180"/>
+                <TableColumn fx:id="colError" text="Error" prefWidth="180"/>
+            </columns>
+        </TableView>
+    </center>
+
+</BorderPane>

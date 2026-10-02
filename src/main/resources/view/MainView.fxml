@@ -70,6 +70,7 @@
                     <MenuItem text="Firma Electrónica" onAction="#irFirma"/>
                     <MenuItem text="Correo Electrónico" onAction="#irConfiguracionEmail"/>
                     <MenuItem text="Respaldos" onAction="#irRespaldos"/>
+                    <MenuItem text="Cola offline" onAction="#irColaOffline"/>
                     <MenuItem text="SRI Contingencia (email)" onAction="#irConfigurarContingenciaSRI"/>
                     <MenuItem text="Postgres migrador (Flyway)" onAction="#irConfigurarPostgres"/>
                 </Menu>
