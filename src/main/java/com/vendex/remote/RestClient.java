@@ -65,6 +65,21 @@ public class RestClient {
         return CLIENT.send(req, HttpResponse.BodyHandlers.ofString()).statusCode();
     }
 
+    public String postString(String path, String body, String idempotencyKey) throws IOException, InterruptedException {
+        HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(baseUrl + path))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body));
+        if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+            builder.header("Idempotency-Key", idempotencyKey);
+        }
+        HttpResponse<String> resp = CLIENT.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+        int code = resp.statusCode();
+        if (code >= 500 && code < 600) {
+            throw new IOException("Servidor en mantenimiento: " + path + " -> " + code);
+        }
+        return resp.body();
+    }
+
     private <T> T execute(HttpRequest req, Class<T> type) throws IOException, InterruptedException {
         HttpResponse<String> resp = CLIENT.send(req, HttpResponse.BodyHandlers.ofString());
         if (resp.statusCode() >= 400) throw new IOException(req.uri() + " -> " + resp.statusCode() + ": " + resp.body());

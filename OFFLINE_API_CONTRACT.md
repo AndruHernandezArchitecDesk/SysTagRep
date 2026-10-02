@@ -4,6 +4,7 @@ Este documento describe los endpoints que el backend debe exponer para que `Sync
 
 ## Headers comunes
 - `Content-Type: application/json`
+- `Idempotency-Key: {tipo}-{id}-{creadoEn}` (generado por `SyncService`; el backend debe usarlo para evitar duplicados)
 
 ## Endpoints
 
@@ -29,6 +30,6 @@ Este documento describe los endpoints que el backend debe exponer para que `Sync
 - `5xx`: reintentar → `SyncService` reintenta en el siguiente ciclo automático.
 
 ## Recomendaciones backend
-- Idempotencia por cliente si el endpoint soporta un identificador de operación.
+- Idempotencia por cliente usando el header `Idempotency-Key`.
 - Validación mínima y respuesta corta para reintentos rápidos.
 - Si hay reglas SRI/firma electrónica, mantenerlas igual que en el flujo online.

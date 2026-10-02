@@ -108,19 +108,22 @@ public class SyncService {
         if (endpoint == null) {
             throw new IOException("Tipo de operacion no soportado: " + op.getTipo());
         }
-        int code = client.status(endpoint);
-        if (code >= 500 && code < 600) {
-            throw new IOException("Servidor en mantenimiento: " + endpoint + " -> " + code);
+        String idempotencyKey = op.getTipo() + "-" + op.getId() + "-" + op.getCreadoEn();
+        String responseBody = client.postString(endpoint, op.getPayload(), idempotencyKey);
+        if (responseBody == null || responseBody.isBlank()) {
+            return true;
         }
-        return code >= 200 && code < 300;
+        return !responseBody.toLowerCase().contains("error");
     }
 
     private String leerRespuestaError(OperacionOffline op) {
         String endpoint = resolverEndpoint(op.getTipo());
         if (endpoint == null) return "Endpoint no soportado";
         try {
-            int code = client.status(endpoint);
-            return "HTTP " + code;
+            String idempotencyKey = op.getTipo() + "-" + op.getId() + "-" + op.getCreadoEn();
+            String body = client.postString(endpoint, op.getPayload(), idempotencyKey);
+            if (body == null || body.isBlank()) return "HTTP 200";
+            return body.length() > 200 ? body.substring(0, 200) : body;
         } catch (Exception e) {
             return e.getMessage();
         }

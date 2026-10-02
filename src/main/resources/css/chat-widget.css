@@ -1,3 +1,6 @@
+/* chat-widget.css - Tag Repuestos Automotrices */
+/* Usa variables definidas en base.css + theme-organic.css / theme-cyberpunk.css */
+
 .chat-bubble {
     -fx-background-radius: 50%;
     -fx-min-width: 64px;
@@ -5,7 +8,6 @@
     -fx-max-width: 64px;
     -fx-max-height: 64px;
     -fx-font-size: 22px;
-    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #C88B4A, #6B8E6B);
     -fx-text-fill: white;
     -fx-cursor: hand;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.45), 14, 0.3, 0, 6);
@@ -16,6 +18,7 @@
     -fx-alignment: center;
     -fx-content-display: graphic-only;
 }
+
 .chat-bubble:hover {
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.55), 18, 0.4, 0, 8);
     -fx-scale-x: 1.05;
@@ -23,120 +26,123 @@
 }
 
 .chat-bubble-assistant {
-    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #C88B4A, #6B8E6B);
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, -accent-primary, -gemini-blue);
 }
 
 .chat-bubble-pulse {
     -fx-fill: transparent;
-    -fx-stroke: #6B8E6B;
+    -fx-stroke: -gemini-blue;
     -fx-stroke-width: 2;
     -fx-opacity: 0.35;
 }
 
-.chat-bubble-icon {
-    -fx-icon-color: #4285F4;
-    -fx-icon-size: 26px;
-}
-
-.chat-header-icon {
-    -fx-icon-color: #6B8E6B;
-    -fx-icon-size: 18px;
-}
+.chat-bubble-icon { -fx-icon-color: -gemini-blue; -fx-icon-size: 26px; }
+.chat-header-icon { -fx-icon-color: -gemini-blue; -fx-icon-size: 18px; }
 
 .chat-panel {
-    -fx-background-color: white;
+    -fx-background-color: -bg-card;
     -fx-background-radius: 10;
-    -fx-border-color: #d0d0d0;
+    -fx-border-color: -border;
     -fx-border-radius: 10;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 12, 0, 0, 4);
     -fx-translate-x: -20;
     -fx-translate-y: -90;
 }
 
-.chat-header {
-    -fx-padding: 6 4 10 4;
-    -fx-border-color: transparent transparent #e0e0e0 transparent;
-}
+.chat-header { -fx-padding: 6 4 10 4; }
 .chat-header-label {
     -fx-font-weight: bold;
     -fx-font-size: 14px;
-    -fx-text-fill: #1a252f;
+    -fx-text-fill: -text-primary;
 }
+
 .btn-cerrar {
     -fx-background-color: transparent;
-    -fx-text-fill: #6b7280;
+    -fx-text-fill: -text-secondary;
     -fx-font-weight: bold;
     -fx-cursor: hand;
 }
-.btn-cerrar:hover { -fx-text-fill: #111827; }
+
+.btn-cerrar:hover { -fx-text-fill: -text-primary; }
 
 .badge-ia {
-    -fx-background-color: #dcfce7;
-    -fx-text-fill: #15803d;
+    -fx-background-color: -selection-bg;
+    -fx-text-fill: -selection-text;
     -fx-font-size: 10px;
     -fx-font-weight: bold;
     -fx-padding: 2 6;
     -fx-background-radius: 10;
 }
+
 .badge-sin-ia {
-    -fx-background-color: #fef3c7;
-    -fx-text-fill: #b45309;
+    -fx-background-color: #FEF3C7;
+    -fx-text-fill: #B45309;
     -fx-font-size: 10px;
     -fx-font-weight: bold;
     -fx-padding: 2 6;
     -fx-background-radius: 10;
 }
+
 .badge-local {
-    -fx-background-color: #f3f4f6;
-    -fx-text-fill: #6b7280;
+    -fx-background-color: -bg-card-alt;
+    -fx-text-fill: -text-secondary;
     -fx-font-size: 10px;
+    -fx-font-weight: bold;
     -fx-padding: 2 6;
     -fx-background-radius: 10;
 }
 
 .chat-scroll { -fx-background-color: transparent; }
-.mensajes-box { -fx-background-color: #fafafa; }
+.mensajes-box { -fx-background-color: -bg-card-alt; }
 
 .mensaje-usuario {
-    -fx-background-color: #2f6fed;
-    -fx-text-fill: white;
+    -fx-background-color: -accent-primary;
+    -fx-text-fill: #FFFFFF;
     -fx-background-radius: 12 12 2 12;
     -fx-padding: 8 12 8 12;
     -fx-max-width: 240px;
 }
+
 .mensaje-bot {
-    -fx-background-color: #eaeaea;
-    -fx-text-fill: #202020;
+    -fx-background-color: -bg-card-alt;
+    -fx-text-fill: -text-primary;
     -fx-background-radius: 12 12 12 2;
     -fx-padding: 8 12 8 12;
     -fx-max-width: 240px;
 }
+
 .mensaje-bot-sin-ia {
-    -fx-background-color: #fef3c7;
+    -fx-background-color: #FEF3C7;
     -fx-text-fill: #7c2d12;
     -fx-background-radius: 12 12 12 2;
     -fx-padding: 8 12 8 12;
     -fx-max-width: 240px;
-    -fx-border-color: #f59e0b;
+    -fx-border-color: -accent-warning;
     -fx-border-radius: 12 12 12 2;
 }
+
 .input-bar { -fx-padding: 8 0 0 0; }
+
 .veh-filter-bar {
-    -fx-background-color: #f7f8fa;
-    -fx-border-color: transparent transparent #e5e7eb transparent;
+    -fx-background-color: -bg-card-alt;
+    -fx-border-color: transparent transparent -border transparent;
 }
+
 .veh-filter-bar .combo-box {
-    -fx-background-color: white;
-    -fx-border-color: #d1d5db;
+    -fx-background-color: -bg-card;
+    -fx-border-color: -border;
     -fx-border-radius: 4;
     -fx-background-radius: 4;
     -fx-font-size: 11px;
 }
-.veh-filter-bar .ikonli-font-icon { -fx-icon-color: #6B8E6B; }
+
+.veh-filter-bar .ikonli-font-icon { -fx-icon-color: -accent-primary; }
+
 .btn-enviar {
-    -fx-background-color: #2f6fed;
-    -fx-text-fill: white;
+    -fx-background-color: -accent-primary;
+    -fx-text-fill: #FFFFFF;
     -fx-background-radius: 6;
     -fx-cursor: hand;
 }
-.btn-enviar:hover { -fx-background-color: #1a4fd6; }
+
+.btn-enviar:hover { -fx-background-color: -accent-hover; }
