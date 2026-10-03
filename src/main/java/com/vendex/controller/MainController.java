@@ -58,19 +58,10 @@ public class MainController implements Initializable {
     private StackPane contenedor;
 
     @FXML
-    private MenuItem lblUsuarioSesion;
+    private Label lblUsuarioSesion;
 
     @FXML
-    private MenuItem menuModoTema;
-
-    @FXML
-    private Button btnToggleTema;
-
-    @FXML
-    private FontIcon iconToggleTema;
-
-    @FXML
-    private MenuItem menuAlertas;
+    private FontIcon iconToggleTemaLateral;
 
     @FXML
     private ComboBox<Sucursal> cmbSucursal;
@@ -102,7 +93,6 @@ public class MainController implements Initializable {
     public void initialize(URL url, ResourceBundle rb) {
         mostrarUsuarioSesion();
         cargarSucursales();
-        actualizarBadgeAlertas();
         actualizarTextoModoTema();
         abrirDashboard1();
         if (contenedor.getScene() != null) {
@@ -127,7 +117,6 @@ public class MainController implements Initializable {
 
     public void abrirAlertas() {
         cargarVista("/view/AlertaView.fxml");
-        actualizarBadgeAlertas();
     }
 
     private void mostrarUsuarioSesion() {
@@ -172,16 +161,6 @@ public class MainController implements Initializable {
             logDAO.guardar("MainController", "cargarSucursales", e.getMessage(), e);
             cmbSucursal.setVisible(false);
             cmbSucursal.setManaged(false);
-        }
-    }
-
-    private void actualizarBadgeAlertas() {
-        if (menuAlertas == null) return;
-        int noLeidas = alertaService.obtenerCantidadNoLeidas();
-        if (noLeidas > 0) {
-            menuAlertas.setText("Ver Alertas (" + noLeidas + ")");
-        } else {
-            menuAlertas.setText("Ver Alertas");
         }
     }
 
@@ -484,9 +463,7 @@ public class MainController implements Initializable {
 
     private void actualizarTextoModoTema() {
         boolean dark = ThemeManager.esDarkMode();
-        if (menuModoTema != null) menuModoTema.setText(dark ? "Modo Light" : "Modo Dark");
-        if (iconToggleTema != null) iconToggleTema.setIconLiteral(dark ? "fas-sun" : "fas-moon");
-        if (btnToggleTema != null) btnToggleTema.setText(dark ? "Light" : "Dark");
+        if (iconToggleTemaLateral != null) iconToggleTemaLateral.setIconLiteral(dark ? "fas-sun" : "fas-moon");
     }
 
     private void verificarCertificadoAsync() {

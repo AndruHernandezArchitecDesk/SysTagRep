@@ -441,3 +441,38 @@
 
 /* ========== TEXT GLOBAL ========== */
 .text { -fx-fill: -text-primary; }
+
+/* ========== MENÚ LATERAL ========== */
+.sidebar {
+    -fx-background-color: -bg-card;
+    -fx-border-color: -border;
+    -fx-border-width: 0 1 0 0;
+}
+
+.nav-group {
+    -fx-background-color: transparent;
+    -fx-text-fill: -text-primary;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+
+.nav-group:hover {
+    -fx-background-color: -bg-card-alt;
+}
+
+.nav-item {
+    -fx-background-color: transparent;
+    -fx-text-fill: -text-primary;
+    -fx-cursor: hand;
+    -fx-font-size: 12px;
+}
+
+.nav-item:hover {
+    -fx-background-color: -bg-card-alt;
+}
+
+.nav-item:pressed, .nav-item:selected {
+    -fx-background-color: -selection-bg;
+    -fx-text-fill: -selection-text;
+}
