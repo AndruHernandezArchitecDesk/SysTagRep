@@ -32,37 +32,37 @@
                 <HBox spacing="4" alignment="CENTER_LEFT" styleClass="quick-access-bar">
                     <Button onAction="#irFactura" styleClass="quick-access-btn" style="-fx-min-width: 36; -fx-min-height: 36; -fx-max-width: 36; -fx-max-height: 36; -fx-background-radius: 8; -fx-border-radius: 8;">
                         <graphic>
-                            <FontIcon iconLiteral="fas-file-invoice-dollar" iconSize="16" style="-fx-icon-color: -accent-primary;"/>
+                            <FontIcon iconLiteral="fas-file-invoice-dollar" iconSize="16"/>
                         </graphic>
                         <Tooltip text="Facturas de Venta"/>
                     </Button>
                     <Button onAction="#irCaja" styleClass="quick-access-btn" style="-fx-min-width: 36; -fx-min-height: 36; -fx-max-width: 36; -fx-max-height: 36; -fx-background-radius: 8; -fx-border-radius: 8;">
                         <graphic>
-                            <FontIcon iconLiteral="fas-cash-register" iconSize="16" style="-fx-icon-color: -accent-primary;"/>
+                            <FontIcon iconLiteral="fas-cash-register" iconSize="16"/>
                         </graphic>
                         <Tooltip text="Caja"/>
                     </Button>
                     <Button onAction="#irClientes" styleClass="quick-access-btn" style="-fx-min-width: 36; -fx-min-height: 36; -fx-max-width: 36; -fx-max-height: 36; -fx-background-radius: 8; -fx-border-radius: 8;">
                         <graphic>
-                            <FontIcon iconLiteral="fas-user-friends" iconSize="16" style="-fx-icon-color: -accent-primary;"/>
+                            <FontIcon iconLiteral="fas-user-friends" iconSize="16"/>
                         </graphic>
                         <Tooltip text="Clientes"/>
                     </Button>
                     <Button onAction="#irInventario" styleClass="quick-access-btn" style="-fx-min-width: 36; -fx-min-height: 36; -fx-max-width: 36; -fx-max-height: 36; -fx-background-radius: 8; -fx-border-radius: 8;">
                         <graphic>
-                            <FontIcon iconLiteral="fas-box" iconSize="16" style="-fx-icon-color: -accent-primary;"/>
+                            <FontIcon iconLiteral="fas-box" iconSize="16"/>
                         </graphic>
                         <Tooltip text="Productos"/>
                     </Button>
                     <Button onAction="#irNotaCredito" styleClass="quick-access-btn" style="-fx-min-width: 36; -fx-min-height: 36; -fx-max-width: 36; -fx-max-height: 36; -fx-background-radius: 8; -fx-border-radius: 8;">
                         <graphic>
-                            <FontIcon iconLiteral="fas-undo-alt" iconSize="16" style="-fx-icon-color: -accent-primary;"/>
+                            <FontIcon iconLiteral="fas-undo-alt" iconSize="16"/>
                         </graphic>
                         <Tooltip text="Notas de Crédito"/>
                     </Button>
                     <Button onAction="#irAlertas" styleClass="quick-access-btn" style="-fx-min-width: 36; -fx-min-height: 36; -fx-max-width: 36; -fx-max-height: 36; -fx-background-radius: 8; -fx-border-radius: 8;">
                         <graphic>
-                            <FontIcon iconLiteral="fas-bell" iconSize="16" style="-fx-icon-color: -accent-primary;"/>
+                            <FontIcon iconLiteral="fas-bell" iconSize="16"/>
                         </graphic>
                         <Tooltip text="Alertas"/>
                     </Button>
@@ -109,12 +109,12 @@
                 <Label fx:id="lblUsuarioSesion" text="Bienvenido" style="-fx-font-weight: bold; -fx-font-size: 13px;"/>
                 <Button text="Inicio" onAction="#irHome" styleClass="btn-orden" style="-fx-font-size: 11px; -fx-alignment: CENTER_LEFT; -fx-padding: 6 8 6 8;">
                     <graphic>
-                        <FontIcon iconLiteral="fas-home" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                        <FontIcon iconLiteral="fas-home" iconSize="14"/>
                     </graphic>
                 </Button>
                 <Button text="Tema" onAction="#cambiarTema" styleClass="btn-orden" style="-fx-font-size: 11px; -fx-alignment: CENTER_LEFT; -fx-padding: 6 8 6 8;">
                     <graphic>
-                        <FontIcon iconLiteral="fas-moon" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                        <FontIcon iconLiteral="fas-moon" iconSize="14"/>
                     </graphic>
                 </Button>
                 <Separator style="-fx-padding: 4 0 0 0;"/>
@@ -126,7 +126,7 @@
                     <!-- Dashboard -->
                     <Button text="Dashboard" onAction="#irHome" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 10 12 10 12;">
                         <graphic>
-                            <FontIcon iconLiteral="fas-chart-line" iconSize="16" style="-fx-icon-color: -accent-primary;"/>
+                            <FontIcon iconLiteral="fas-chart-line" iconSize="16"/>
                         </graphic>
                         <Tooltip text="Panel principal con métricas y resumen del negocio"/>
                     </Button>
@@ -135,66 +135,66 @@
                     <VBox spacing="0" styleClass="nav-group-vbox">
                         <Button text="Comprobantes" styleClass="nav-group" style="-fx-alignment: CENTER_LEFT; -fx-padding: 10 12 4 12; -fx-font-weight: bold;" onAction="#irNotaVenta">
                             <graphic>
-                                <FontIcon iconLiteral="fas-file-invoice" iconSize="16" style="-fx-icon-color: -accent-primary;"/>
+                                <FontIcon iconLiteral="fas-file-invoice" iconSize="16"/>
                             </graphic>
                         </Button>
                         <Button text="Ingreso de Facturas" onAction="#irIngresoFactura" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-arrow-down" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-arrow-down" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Registro de facturas de compra/ingreso de mercadería desde proveedores"/>
                         </Button>
                         <Button text="Compras Registradas" onAction="#irFacturasIngresadas" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-list" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-list" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Listado y consulta de facturas de compra ya registradas en el sistema"/>
                         </Button>
                         <Button text="Proformas" onAction="#irNotaVenta" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-file-alt" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-file-alt" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Emisión de proformas/comprobantes de venta a clientes"/>
                         </Button>
                         <Button text="Facturas de Venta" onAction="#irFactura" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-file-invoice-dollar" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-file-invoice-dollar" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Emisión de facturas electrónicas de venta"/>
                         </Button>
                         <Button text="Notas de Crédito" onAction="#irNotaCredito" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-undo" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-undo" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Emisión de notas de crédito para devoluciones o ajustes"/>
                         </Button>
                         <Button text="Notas de Débito" onAction="#irNotaDebito" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-redo" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-redo" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Emisión de notas de débito para recargos o ajustes"/>
                         </Button>
                         <Button text="Guías de Remisión" onAction="#irGuiaRemision" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-truck" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-truck" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Generación y gestión de guías de remisión de transporte"/>
                         </Button>
                         <Button text="Retenciones" onAction="#irRetencion" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-percentage" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-percentage" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Emisión y gestión de retenciones de impuestos"/>
                         </Button>
                         <Button text="Seguimiento SRI" onAction="#irSeguimientoSri" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-satellite-dish" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-satellite-dish" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Consulta del estado de autorización de comprobantes en el SRI"/>
                         </Button>
                         <Button text="Reporte de Ventas" onAction="#irComprobanteVentaReporte" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 10 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-clipboard-list" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-clipboard-list" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Reporte y listado de comprobantes de venta emitidos"/>
                         </Button>
@@ -204,24 +204,24 @@
                     <VBox spacing="0" styleClass="nav-group-vbox">
                         <Button text="Inventario" styleClass="nav-group" style="-fx-alignment: CENTER_LEFT; -fx-padding: 10 12 4 12; -fx-font-weight: bold;" onAction="#irInventario">
                             <graphic>
-                                <FontIcon iconLiteral="fas-boxes" iconSize="16" style="-fx-icon-color: -accent-primary;"/>
+                                <FontIcon iconLiteral="fas-boxes" iconSize="16"/>
                             </graphic>
                         </Button>
                         <Button text="Ubicaciones" onAction="#irUbicacionPerchero" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-map-marker-alt" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-map-marker-alt" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Gestión física de ubicaciones en percheros/estanterías del depósito"/>
                         </Button>
                         <Button text="Productos" onAction="#irInventario" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-box" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-box" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Ingreso, edición, baja y consulta de productos en inventario"/>
                         </Button>
                         <Button text="Stock" onAction="#irGestionStock" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 10 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-chart-bar" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-chart-bar" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Control de stock mínimo, alertas de reposición y movimientos"/>
                         </Button>
@@ -231,18 +231,18 @@
                     <VBox spacing="0" styleClass="nav-group-vbox">
                         <Button text="Crédito" styleClass="nav-group" style="-fx-alignment: CENTER_LEFT; -fx-padding: 10 12 4 12; -fx-font-weight: bold;" onAction="#irPorCobrar">
                             <graphic>
-                                <FontIcon iconLiteral="fas-hand-holding-usd" iconSize="16" style="-fx-icon-color: -accent-primary;"/>
+                                <FontIcon iconLiteral="fas-hand-holding-usd" iconSize="16"/>
                             </graphic>
                         </Button>
                         <Button text="Cuentas por Cobrar" onAction="#irPorCobrar" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-users" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-users" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Gestión de cuentas corrientes de clientes y seguimiento de pagos"/>
                         </Button>
                         <Button text="Cuentas por Pagar" onAction="#irPorPagar" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 10 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-store" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-store" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Gestión de cuentas corrientes con proveedores y fechas de pago"/>
                         </Button>
@@ -251,7 +251,7 @@
                     <!-- Caja -->
                     <Button text="Caja" onAction="#irCaja" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 10 12 10 12;">
                         <graphic>
-                            <FontIcon iconLiteral="fas-cash-register" iconSize="16" style="-fx-icon-color: -accent-primary;"/>
+                            <FontIcon iconLiteral="fas-cash-register" iconSize="16"/>
                         </graphic>
                         <Tooltip text="Apertura, cierre y movimiento de caja diaria"/>
                     </Button>
@@ -260,24 +260,24 @@
                     <VBox spacing="0" styleClass="nav-group-vbox">
                         <Button text="Historial" styleClass="nav-group" style="-fx-alignment: CENTER_LEFT; -fx-padding: 10 12 4 12; -fx-font-weight: bold;" onAction="#irHistorialVentas">
                             <graphic>
-                                <FontIcon iconLiteral="fas-history" iconSize="16" style="-fx-icon-color: -accent-primary;"/>
+                                <FontIcon iconLiteral="fas-history" iconSize="16"/>
                             </graphic>
                         </Button>
                         <Button text="Historial de Productos" onAction="#irHistorialProductos" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-box-open" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-box-open" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Historial de movimientos, precios y modificaciones de productos"/>
                         </Button>
                         <Button text="Historial de Ventas" onAction="#irHistorialVentas" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-shopping-cart" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-shopping-cart" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Registro histórico de ventas y comprobantes emitidos"/>
                         </Button>
                         <Button text="Historial de Compras" onAction="#irHistorialCompras" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 10 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-truck-loading" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-truck-loading" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Registro histórico de compras y facturas de ingreso"/>
                         </Button>
@@ -286,7 +286,7 @@
                     <!-- Alertas -->
                     <Button text="Alertas" onAction="#irAlertas" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 10 12 10 12;">
                         <graphic>
-                            <FontIcon iconLiteral="fas-bell" iconSize="16" style="-fx-icon-color: -accent-primary;"/>
+                            <FontIcon iconLiteral="fas-bell" iconSize="16"/>
                         </graphic>
                         <Tooltip text="Visualización de alertas activas del sistema (stock, certificados, SRI)"/>
                     </Button>
@@ -295,90 +295,90 @@
                     <VBox spacing="0" styleClass="nav-group-vbox">
                         <Button text="Administración" styleClass="nav-group" style="-fx-alignment: CENTER_LEFT; -fx-padding: 10 12 4 12; -fx-font-weight: bold;" onAction="#irClientes">
                             <graphic>
-                                <FontIcon iconLiteral="fas-cogs" iconSize="16" style="-fx-icon-color: -accent-primary;"/>
+                                <FontIcon iconLiteral="fas-cogs" iconSize="16"/>
                             </graphic>
                         </Button>
                         <Button text="Clientes" onAction="#irClientes" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-user-friends" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-user-friends" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Alta, baja, modificación y consulta de clientes"/>
                         </Button>
                         <Button text="Usuarios" onAction="#irUsuarios" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-user-shield" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-user-shield" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Administración de usuarios del sistema y credenciales"/>
                         </Button>
                         <Button text="Roles y Permisos" onAction="#irGestionRoles" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-key" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-key" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Definición de roles, permisos y accesos por perfil"/>
                         </Button>
                         <Button text="Proveedores" onAction="#irProveedores" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-truck" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-truck" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Alta, baja, modificación y consulta de proveedores"/>
                         </Button>
                         <Button text="Códigos" onAction="#irCodigos" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-barcode" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-barcode" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Administración de códigos auxiliares del sistema"/>
                         </Button>
                         <Button text="Grupos" onAction="#irGrupos" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-layer-group" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-layer-group" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Administración de grupos de productos"/>
                         </Button>
                         <Button text="Marcas" onAction="#irMarcas" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-tag" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-tag" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Administración de marcas de productos"/>
                         </Button>
                         <Button text="Numeración" onAction="#irNumeracion" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-sort-numeric-up" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-sort-numeric-up" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Configuración de secuencias y numeración de comprobantes"/>
                         </Button>
                         <Button text="Firma Electrónica" onAction="#irFirma" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-certificate" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-certificate" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Administración del certificado de firma electrónica"/>
                         </Button>
                         <Button text="Correo Electrónico" onAction="#irConfiguracionEmail" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-envelope" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-envelope" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Configuración de cuenta SMTP para envío de correos"/>
                         </Button>
                         <Button text="Respaldos" onAction="#irRespaldos" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-database" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-database" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Generación y administración de respaldos de base de datos"/>
                         </Button>
                         <Button text="Cola Offline" onAction="#irColaOffline" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-wifi" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-wifi" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Visualización y gestión de la cola offline de operaciones"/>
                         </Button>
                         <Button text="Contingencia SRI" onAction="#irConfigurarContingenciaSRI" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-envelope-open-text" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-envelope-open-text" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Configuración de envío de comprobantes por email en contingencia SRI"/>
                         </Button>
                         <Button text="Migraciones DB" onAction="#irConfigurarPostgres" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 10 24;">
                             <graphic>
-                                <FontIcon iconLiteral="fas-download" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
+                                <FontIcon iconLiteral="fas-download" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Ejecución y control de migraciones Flyway de base de datos"/>
                         </Button>
@@ -387,7 +387,7 @@
                     <!-- Asistente IA -->
                     <Button text="Asistente IA" onAction="#irAsistenteRepuestos" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 10 12 10 12;">
                         <graphic>
-                            <FontIcon iconLiteral="fas-robot" iconSize="16" style="-fx-icon-color: -accent-primary;"/>
+                            <FontIcon iconLiteral="fas-robot" iconSize="16"/>
                         </graphic>
                         <Tooltip text="Chatbot/Asistente IA para consulta de repuestos"/>
                     </Button>
@@ -399,7 +399,7 @@
                 <Separator style="-fx-padding: 0 0 4 0;"/>
                 <Button text="Cerrar Sesión" onAction="#cerrarSesion" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 8 8 8 8;">
                     <graphic>
-                        <FontIcon iconLiteral="fas-sign-out-alt" iconSize="16" style="-fx-icon-color: -accent-danger;"/>
+                        <FontIcon iconLiteral="fas-sign-out-alt" iconSize="16"/>
                     </graphic>
                     <Tooltip text="Cierra la sesión actual del usuario"/>
                 </Button>

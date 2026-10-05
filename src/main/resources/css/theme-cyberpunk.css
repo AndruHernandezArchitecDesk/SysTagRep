@@ -341,12 +341,16 @@
     -fx-background-color: -bg-card-alt;
 }
 
+.nav-group .font-icon { -fx-icon-color: -accent-primary; }
+
 .nav-item {
     -fx-background-color: transparent;
     -fx-text-fill: -text-primary;
     -fx-cursor: hand;
     -fx-font-size: 12px;
 }
+
+.nav-item .font-icon { -fx-icon-color: -text-secondary; }
 
 .nav-item:hover {
     -fx-background-color: -bg-card-alt;
@@ -356,6 +360,8 @@
     -fx-background-color: -accent-primary;
     -fx-text-fill: -bg-page;
 }
+
+.nav-item .font-icon { -fx-icon-color: -text-secondary; }
 
 /* ========== BARRA DE ACCESOS RÁPIDOS ========== */
 .quick-access-bar {
@@ -383,6 +389,8 @@
     -fx-background-color: -accent-primary;
     -fx-text-fill: -bg-page;
 }
+
+.quick-access-btn .font-icon { -fx-icon-color: -accent-primary; }
 
 /* ========== SIDEBAR COLAPSADO ========== */
 .sidebar:collapsed {
