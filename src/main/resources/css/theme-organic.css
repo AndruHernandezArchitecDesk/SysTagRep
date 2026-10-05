@@ -33,6 +33,7 @@
     -selection-text: #134E4A;
     -placeholder:    #94A3B8;
     -gemini-blue:    #4285F4;
+    -sidebar-text:   #3F3A34;
 
     /* Fuente */
     -fx-font-family: "Segoe UI";
@@ -475,4 +476,49 @@
 .nav-item:pressed, .nav-item:selected {
     -fx-background-color: -selection-bg;
     -fx-text-fill: -selection-text;
+}
+
+/* ========== BARRA DE ACCESOS RÁPIDOS ========== */
+.quick-access-bar {
+    -fx-padding: 0 8 0 4;
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.quick-access-btn {
+    -fx-background-color: -bg-card;
+    -fx-border-color: -border;
+    -fx-border-width: 1;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-cursor: hand;
+    -fx-padding: 4;
+}
+
+.quick-access-btn:hover {
+    -fx-background-color: -bg-card-alt;
+    -fx-border-color: -accent-primary;
+}
+
+.quick-access-btn:pressed {
+    -fx-background-color: -selection-bg;
+}
+
+/* ========== SIDEBAR COLAPSADO ========== */
+.sidebar:collapsed {
+    -fx-min-width: 56;
+    -fx-max-width: 56;
+}
+
+.sidebar:collapsed .nav-item,
+.sidebar:collapsed .nav-group,
+.sidebar:collapsed .nav-group-vbox {
+    -fx-padding: 0;
+    -fx-max-width: 56;
+    -fx-min-width: 56;
+}
+
+.sidebar:collapsed .nav-item .text,
+.sidebar:collapsed .nav-group .text {
+    -fx-display: none;
 }

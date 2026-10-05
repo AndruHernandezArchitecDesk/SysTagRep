@@ -30,6 +30,8 @@ import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -41,6 +43,7 @@ import org.kordamp.ikonli.javafx.FontIcon;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.prefs.Preferences;
 import com.vendex.dao.LogDAOPostgres;
 
 public class MainController implements Initializable {
@@ -84,10 +87,20 @@ public class MainController implements Initializable {
     @FXML
     private Label lblBannerOffline;
 
+    @FXML
+    private VBox sidebarRoot;
+
+    @FXML
+    private Button btnToggleSidebar;
+
     private final LogDAO logDAO;
     private final AlertaService alertaService;
 
     private boolean mostrandoDashboard2 = false;
+    private boolean sidebarExpandido = true;
+    private static final String KEY_SIDEBAR = "sidebar.collapsed";
+    private static final double SIDEBAR_ANCHO_ABIERTO = 220;
+    private static final double SIDEBAR_ANCHO_CERRADO = 56;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -103,6 +116,11 @@ public class MainController implements Initializable {
         actualizarBannerOffline();
         iniciarBannerOffline();
         SyncService.INSTANCE.iniciar();
+
+        // Estado del sidebar
+        Preferences prefs = Preferences.userRoot().node("/com/tag/vendex");
+        sidebarExpandido = !prefs.getBoolean(KEY_SIDEBAR, false);
+        aplicarEstadoSidebar();
     }
 
     public void abrirDashboard1() {
@@ -464,6 +482,79 @@ public class MainController implements Initializable {
     private void actualizarTextoModoTema() {
         boolean dark = ThemeManager.esDarkMode();
         if (iconToggleTemaLateral != null) iconToggleTemaLateral.setIconLiteral(dark ? "fas-sun" : "fas-moon");
+    }
+
+    @FXML
+    private void toggleSidebar() {
+        sidebarExpandido = !sidebarExpandido;
+        Preferences.userRoot().node("/com/tag/vendex").putBoolean(KEY_SIDEBAR, !sidebarExpandido);
+        aplicarEstadoSidebar();
+    }
+
+    private void aplicarEstadoSidebar() {
+        if (sidebarRoot == null) return;
+        double ancho = sidebarExpandido ? SIDEBAR_ANCHO_ABIERTO : SIDEBAR_ANCHO_CERRADO;
+        sidebarRoot.setPrefWidth(ancho);
+        sidebarRoot.setMinWidth(ancho);
+        sidebarRoot.setMaxWidth(ancho);
+
+        // Ocultar textos en modo colapsado
+        boolean colapsado = !sidebarExpandido;
+        for (javafx.scene.Node n : sidebarRoot.lookupAll(".nav-item")) {
+            if (n instanceof Button b) {
+                b.setVisible(!colapsado);
+                b.setManaged(!colapsado);
+            }
+        }
+        for (javafx.scene.Node n : sidebarRoot.lookupAll(".nav-group")) {
+            if (n instanceof Button b) {
+                b.setVisible(!colapsado);
+                b.setManaged(!colapsado);
+            }
+        }
+        for (javafx.scene.Node n : sidebarRoot.lookupAll(".nav-group-vbox")) {
+            if (n instanceof VBox v) {
+                v.setVisible(!colapsado);
+                v.setManaged(!colapsado);
+            }
+        }
+        // En modo expandido, mostrar todo
+        if (!colapsado) {
+            for (javafx.scene.Node n : sidebarRoot.lookupAll(".nav-item")) {
+                if (n instanceof Button b) {
+                    b.setVisible(true);
+                    b.setManaged(true);
+                }
+            }
+            for (javafx.scene.Node n : sidebarRoot.lookupAll(".nav-group")) {
+                if (n instanceof Button b) {
+                    b.setVisible(true);
+                    b.setManaged(true);
+                }
+            }
+            for (javafx.scene.Node n : sidebarRoot.lookupAll(".nav-group-vbox")) {
+                if (n instanceof VBox v) {
+                    v.setVisible(true);
+                    v.setManaged(true);
+                }
+            }
+        }
+        // Ajustar padding del usuario
+        javafx.scene.Node usuarioBox = sidebarRoot.lookup(".header");
+        if (usuarioBox instanceof VBox vb && vb.getChildren().size() > 0) {
+            // mantener visible el usuario
+        }
+    }
+
+    private ContextMenu crearFlyoutGrupo(String... items) {
+        ContextMenu menu = new ContextMenu();
+        menu.setStyle("-fx-background-color: -bg-card; -fx-border-color: -border; -fx-border-width: 1; -fx-background-radius: 6; -fx-border-radius: 6;");
+        for (String item : items) {
+            MenuItem mi = new MenuItem(item);
+            mi.setStyle("-fx-text-fill: -text-primary; -fx-padding: 6 12 6 12; -fx-font-size: 12px;");
+            menu.getItems().add(mi);
+        }
+        return menu;
     }
 
     private void verificarCertificadoAsync() {

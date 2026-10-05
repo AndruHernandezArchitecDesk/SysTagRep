@@ -15,41 +15,95 @@
 
     <!-- ENCABEZADO SUPERIOR -->
     <top>
-        <HBox alignment="CENTER_LEFT" spacing="12" styleClass="header" style="-fx-padding: 10 16 10 16;">
-            <FontIcon iconLiteral="fas-boxes" iconSize="22" styleClass="titulo-icono"/>
-            <Label text="Vendex 2.0" styleClass="screen-title" style="-fx-font-size: 18px;"/>
-            <HBox HBox.hgrow="ALWAYS"/>
-            <Label text="Sucursal:" style="-fx-font-weight: bold; -fx-font-size: 11px;"/>
-            <ComboBox fx:id="cmbSucursal" prefWidth="160" style="-fx-font-size: 11px;"/>
-            <Button onAction="#cambiarTema" styleClass="btn-orden" prefHeight="28" prefWidth="42">
-                <graphic>
-                    <FontIcon fx:id="iconToggleTemaLateral" iconLiteral="fas-moon" iconSize="16"/>
-                </graphic>
-            </Button>
-        </HBox>
-        <HBox fx:id="bannerCertificado" visible="false" managed="false" alignment="CENTER_LEFT" spacing="10" styleClass="banner-warning">
-            <FontIcon iconLiteral="fas-exclamation-triangle" iconSize="16"/>
-            <Label fx:id="lblBannerCertificado" HBox.hgrow="ALWAYS" wrapText="true"/>
-            <Button text="Ver Certificado" onAction="#irFirma" styleClass="btn-orden" style="-fx-font-size: 11px;"/>
-            <Button text="✕" onAction="#cerrarBannerCertificado" style="-fx-background-color: transparent; -fx-font-weight: bold;"/>
-        </HBox>
-        <HBox fx:id="bannerSri" visible="false" managed="false" alignment="CENTER_LEFT" spacing="10" styleClass="banner-warning">
-            <FontIcon iconLiteral="fas-clock" iconSize="16"/>
-            <Label fx:id="lblBannerSri" HBox.hgrow="ALWAYS" wrapText="true"/>
-            <Button text="Ver Seguimiento SRI" onAction="#irSeguimientoSri" styleClass="btn-orden" style="-fx-font-size: 11px;"/>
-            <Button text="✕" onAction="#cerrarBannerSri" style="-fx-background-color: transparent; -fx-font-weight: bold;"/>
-        </HBox>
-        <HBox fx:id="bannerOffline" visible="false" managed="false" alignment="CENTER_LEFT" spacing="10" styleClass="banner-danger">
-            <FontIcon iconLiteral="fas-wifi" iconSize="16"/>
-            <Label fx:id="lblBannerOffline" HBox.hgrow="ALWAYS" wrapText="true"/>
-            <Button text="Sincronizar ahora" onAction="#sincronizarOffline" styleClass="btn-orden" style="-fx-font-size: 11px;"/>
-            <Button text="✕" onAction="#cerrarBannerOffline" style="-fx-background-color: transparent; -fx-font-weight: bold;"/>
-        </HBox>
+        <VBox spacing="0">
+            <!-- Fila principal: colapsar + logo + accesos rápidos + sucursal + tema -->
+            <HBox alignment="CENTER_LEFT" spacing="10" styleClass="header" style="-fx-padding: 10 12 10 12;">
+                <!-- Botón colapsar menú -->
+                <Button fx:id="btnToggleSidebar" onAction="#toggleSidebar" styleClass="btn-orden" prefHeight="28" prefWidth="32" style="-fx-font-size: 16px;">
+                    <graphic>
+                        <FontIcon iconLiteral="fas-bars" iconSize="16"/>
+                    </graphic>
+                </Button>
+
+                <FontIcon iconLiteral="fas-boxes" iconSize="20" styleClass="titulo-icono"/>
+                <Label text="Vendex 2.0" styleClass="screen-title" style="-fx-font-size: 17px;"/>
+
+                <!-- Accesos rápidos -->
+                <HBox spacing="4" alignment="CENTER_LEFT" styleClass="quick-access-bar">
+                    <Button onAction="#irFactura" styleClass="quick-access-btn" style="-fx-min-width: 36; -fx-min-height: 36; -fx-max-width: 36; -fx-max-height: 36; -fx-background-radius: 8; -fx-border-radius: 8;">
+                        <graphic>
+                            <FontIcon iconLiteral="fas-file-invoice-dollar" iconSize="16" style="-fx-icon-color: -accent-primary;"/>
+                        </graphic>
+                        <Tooltip text="Facturas de Venta"/>
+                    </Button>
+                    <Button onAction="#irCaja" styleClass="quick-access-btn" style="-fx-min-width: 36; -fx-min-height: 36; -fx-max-width: 36; -fx-max-height: 36; -fx-background-radius: 8; -fx-border-radius: 8;">
+                        <graphic>
+                            <FontIcon iconLiteral="fas-cash-register" iconSize="16" style="-fx-icon-color: -accent-primary;"/>
+                        </graphic>
+                        <Tooltip text="Caja"/>
+                    </Button>
+                    <Button onAction="#irClientes" styleClass="quick-access-btn" style="-fx-min-width: 36; -fx-min-height: 36; -fx-max-width: 36; -fx-max-height: 36; -fx-background-radius: 8; -fx-border-radius: 8;">
+                        <graphic>
+                            <FontIcon iconLiteral="fas-user-friends" iconSize="16" style="-fx-icon-color: -accent-primary;"/>
+                        </graphic>
+                        <Tooltip text="Clientes"/>
+                    </Button>
+                    <Button onAction="#irInventario" styleClass="quick-access-btn" style="-fx-min-width: 36; -fx-min-height: 36; -fx-max-width: 36; -fx-max-height: 36; -fx-background-radius: 8; -fx-border-radius: 8;">
+                        <graphic>
+                            <FontIcon iconLiteral="fas-box" iconSize="16" style="-fx-icon-color: -accent-primary;"/>
+                        </graphic>
+                        <Tooltip text="Productos"/>
+                    </Button>
+                    <Button onAction="#irNotaCredito" styleClass="quick-access-btn" style="-fx-min-width: 36; -fx-min-height: 36; -fx-max-width: 36; -fx-max-height: 36; -fx-background-radius: 8; -fx-border-radius: 8;">
+                        <graphic>
+                            <FontIcon iconLiteral="fas-undo-alt" iconSize="16" style="-fx-icon-color: -accent-primary;"/>
+                        </graphic>
+                        <Tooltip text="Notas de Crédito"/>
+                    </Button>
+                    <Button onAction="#irAlertas" styleClass="quick-access-btn" style="-fx-min-width: 36; -fx-min-height: 36; -fx-max-width: 36; -fx-max-height: 36; -fx-background-radius: 8; -fx-border-radius: 8;">
+                        <graphic>
+                            <FontIcon iconLiteral="fas-bell" iconSize="16" style="-fx-icon-color: -accent-primary;"/>
+                        </graphic>
+                        <Tooltip text="Alertas"/>
+                    </Button>
+                </HBox>
+
+                <HBox HBox.hgrow="ALWAYS"/>
+
+                <Label text="Sucursal:" style="-fx-font-weight: bold; -fx-font-size: 11px;"/>
+                <ComboBox fx:id="cmbSucursal" prefWidth="160" style="-fx-font-size: 11px;"/>
+                <Button onAction="#cambiarTema" styleClass="btn-orden" prefHeight="28" prefWidth="42">
+                    <graphic>
+                        <FontIcon fx:id="iconToggleTemaLateral" iconLiteral="fas-moon" iconSize="16"/>
+                    </graphic>
+                </Button>
+            </HBox>
+
+            <!-- Banners -->
+            <HBox fx:id="bannerCertificado" visible="false" managed="false" alignment="CENTER_LEFT" spacing="10" styleClass="banner-warning">
+                <FontIcon iconLiteral="fas-exclamation-triangle" iconSize="16"/>
+                <Label fx:id="lblBannerCertificado" HBox.hgrow="ALWAYS" wrapText="true"/>
+                <Button text="Ver Certificado" onAction="#irFirma" styleClass="btn-orden" style="-fx-font-size: 11px;"/>
+                <Button text="✕" onAction="#cerrarBannerCertificado" style="-fx-background-color: transparent; -fx-font-weight: bold;"/>
+            </HBox>
+            <HBox fx:id="bannerSri" visible="false" managed="false" alignment="CENTER_LEFT" spacing="10" styleClass="banner-warning">
+                <FontIcon iconLiteral="fas-clock" iconSize="16"/>
+                <Label fx:id="lblBannerSri" HBox.hgrow="ALWAYS" wrapText="true"/>
+                <Button text="Ver Seguimiento SRI" onAction="#irSeguimientoSri" styleClass="btn-orden" style="-fx-font-size: 11px;"/>
+                <Button text="✕" onAction="#cerrarBannerSri" style="-fx-background-color: transparent; -fx-font-weight: bold;"/>
+            </HBox>
+            <HBox fx:id="bannerOffline" visible="false" managed="false" alignment="CENTER_LEFT" spacing="10" styleClass="banner-danger">
+                <FontIcon iconLiteral="fas-wifi" iconSize="16"/>
+                <Label fx:id="lblBannerOffline" HBox.hgrow="ALWAYS" wrapText="true"/>
+                <Button text="Sincronizar ahora" onAction="#sincronizarOffline" styleClass="btn-orden" style="-fx-font-size: 11px;"/>
+                <Button text="✕" onAction="#cerrarBannerOffline" style="-fx-background-color: transparent; -fx-font-weight: bold;"/>
+            </HBox>
+        </VBox>
     </top>
 
     <!-- MENÚ LATERAL IZQUIERDO -->
     <left>
-        <VBox spacing="0" styleClass="sidebar" style="-fx-min-width: 220; -fx-max-width: 220;">
+        <VBox fx:id="sidebarRoot" spacing="0" styleClass="sidebar" style="-fx-min-width: 220; -fx-max-width: 220;">
             <!-- Usuario y tema -->
             <VBox spacing="6" style="-fx-padding: 16 12 12 12; -fx-background-color: -bg-card-alt;">
                 <Label fx:id="lblUsuarioSesion" text="Bienvenido" style="-fx-font-weight: bold; -fx-font-size: 13px;"/>
@@ -78,8 +132,8 @@
                     </Button>
 
                     <!-- Comprobantes -->
-                    <VBox spacing="0">
-                        <Button text="Comprobantes" styleClass="nav-group" style="-fx-alignment: CENTER_LEFT; -fx-padding: 10 12 4 12; -fx-font-weight: bold;">
+                    <VBox spacing="0" styleClass="nav-group-vbox">
+                        <Button text="Comprobantes" styleClass="nav-group" style="-fx-alignment: CENTER_LEFT; -fx-padding: 10 12 4 12; -fx-font-weight: bold;" onAction="#irNotaVenta">
                             <graphic>
                                 <FontIcon iconLiteral="fas-file-invoice" iconSize="16" style="-fx-icon-color: -accent-primary;"/>
                             </graphic>
@@ -90,7 +144,7 @@
                             </graphic>
                             <Tooltip text="Registro de facturas de compra/ingreso de mercadería desde proveedores"/>
                         </Button>
-                        <Button text="Facturas Registradas" onAction="#irFacturasIngresadas" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
+                        <Button text="Compras Registradas" onAction="#irFacturasIngresadas" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-list" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
                             </graphic>
@@ -138,7 +192,7 @@
                             </graphic>
                             <Tooltip text="Consulta del estado de autorización de comprobantes en el SRI"/>
                         </Button>
-                        <Button text="Comprobantes Emitidos" onAction="#irComprobanteVentaReporte" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 10 24;">
+                        <Button text="Reporte de Ventas" onAction="#irComprobanteVentaReporte" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 10 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-clipboard-list" iconSize="14" style="-fx-icon-color: -text-secondary;"/>
                             </graphic>
@@ -147,8 +201,8 @@
                     </VBox>
 
                     <!-- Inventario -->
-                    <VBox spacing="0">
-                        <Button text="Inventario" styleClass="nav-group" style="-fx-alignment: CENTER_LEFT; -fx-padding: 10 12 4 12; -fx-font-weight: bold;">
+                    <VBox spacing="0" styleClass="nav-group-vbox">
+                        <Button text="Inventario" styleClass="nav-group" style="-fx-alignment: CENTER_LEFT; -fx-padding: 10 12 4 12; -fx-font-weight: bold;" onAction="#irInventario">
                             <graphic>
                                 <FontIcon iconLiteral="fas-boxes" iconSize="16" style="-fx-icon-color: -accent-primary;"/>
                             </graphic>
@@ -174,8 +228,8 @@
                     </VBox>
 
                     <!-- Crédito -->
-                    <VBox spacing="0">
-                        <Button text="Crédito" styleClass="nav-group" style="-fx-alignment: CENTER_LEFT; -fx-padding: 10 12 4 12; -fx-font-weight: bold;">
+                    <VBox spacing="0" styleClass="nav-group-vbox">
+                        <Button text="Crédito" styleClass="nav-group" style="-fx-alignment: CENTER_LEFT; -fx-padding: 10 12 4 12; -fx-font-weight: bold;" onAction="#irPorCobrar">
                             <graphic>
                                 <FontIcon iconLiteral="fas-hand-holding-usd" iconSize="16" style="-fx-icon-color: -accent-primary;"/>
                             </graphic>
@@ -203,8 +257,8 @@
                     </Button>
 
                     <!-- Historial -->
-                    <VBox spacing="0">
-                        <Button text="Historial" styleClass="nav-group" style="-fx-alignment: CENTER_LEFT; -fx-padding: 10 12 4 12; -fx-font-weight: bold;">
+                    <VBox spacing="0" styleClass="nav-group-vbox">
+                        <Button text="Historial" styleClass="nav-group" style="-fx-alignment: CENTER_LEFT; -fx-padding: 10 12 4 12; -fx-font-weight: bold;" onAction="#irHistorialVentas">
                             <graphic>
                                 <FontIcon iconLiteral="fas-history" iconSize="16" style="-fx-icon-color: -accent-primary;"/>
                             </graphic>
@@ -238,8 +292,8 @@
                     </Button>
 
                     <!-- Administración -->
-                    <VBox spacing="0">
-                        <Button text="Administración" styleClass="nav-group" style="-fx-alignment: CENTER_LEFT; -fx-padding: 10 12 4 12; -fx-font-weight: bold;">
+                    <VBox spacing="0" styleClass="nav-group-vbox">
+                        <Button text="Administración" styleClass="nav-group" style="-fx-alignment: CENTER_LEFT; -fx-padding: 10 12 4 12; -fx-font-weight: bold;" onAction="#irClientes">
                             <graphic>
                                 <FontIcon iconLiteral="fas-cogs" iconSize="16" style="-fx-icon-color: -accent-primary;"/>
                             </graphic>
