@@ -5,6 +5,9 @@ import com.vendex.config.GeminiConfig;
 import com.vendex.config.VendexControllerFactory;
 import com.vendex.dao.LogDAO;
 import com.vendex.dao.SucursalDAO;
+import com.vendex.dao.AccesoDirectoDAO;
+import com.vendex.dao.AccesoDirectoDAOPostgres;
+import com.vendex.model.AccesoDirecto;
 import com.vendex.model.Sucursal;
 import com.vendex.service.AlertaService;
 import com.vendex.remote.ApiConfig;
@@ -12,6 +15,8 @@ import com.vendex.offline.OfflineHelper;
 import com.vendex.offline.SyncService;
 import com.vendex.offline.LocalOperationQueue;
 import com.vendex.util.AboutDialog;
+import com.vendex.util.CatalogoVistas;
+import com.vendex.util.SesionActual;
 import com.vendex.util.SucursalActual;
 import com.vendex.util.ThemeManager;
 import com.vendex.util.UpperCaseTextFormatter;
@@ -31,8 +36,14 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.DataFormat;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
@@ -42,6 +53,8 @@ import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.prefs.Preferences;
 import com.vendex.dao.LogDAOPostgres;
@@ -93,6 +106,20 @@ public class MainController implements Initializable {
     @FXML
     private Button btnToggleSidebar;
 
+    @FXML
+    private ImageView imgLogoHeader;
+
+    @FXML
+    private HBox quickAccessBar;
+
+    @FXML
+    private HBox headerBar;
+
+    private final AccesoDirectoDAO accesoDirectoDAO = new AccesoDirectoDAOPostgres();
+    private static final int MAX_ACCESOS_DIRECTOS = 8;
+    private static final DataFormat FORMATO_ACCESO_NUEVO = new DataFormat("vendex/acceso-nuevo");
+    private static final DataFormat FORMATO_ACCESO_MOVER = new DataFormat("vendex/acceso-mover");
+
     private final LogDAO logDAO;
     private final AlertaService alertaService;
 
@@ -100,7 +127,7 @@ public class MainController implements Initializable {
     private boolean sidebarExpandido = true;
     private static final String KEY_SIDEBAR = "sidebar.collapsed";
     private static final double SIDEBAR_ANCHO_ABIERTO = 220;
-    private static final double SIDEBAR_ANCHO_CERRADO = 56;
+    private static final double SIDEBAR_ANCHO_CERRADO = 0;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -121,6 +148,7 @@ public class MainController implements Initializable {
         Preferences prefs = Preferences.userRoot().node("/com/tag/vendex");
         sidebarExpandido = !prefs.getBoolean(KEY_SIDEBAR, false);
         aplicarEstadoSidebar();
+        configurarAccesosDirectos();
     }
 
     public void abrirDashboard1() {
@@ -482,6 +510,12 @@ public class MainController implements Initializable {
     private void actualizarTextoModoTema() {
         boolean dark = ThemeManager.esDarkMode();
         if (iconToggleTemaLateral != null) iconToggleTemaLateral.setIconLiteral(dark ? "fas-sun" : "fas-moon");
+        if (imgLogoHeader != null) {
+            String recurso = dark ? "/img/VendexLogoDark.png" : "/img/logoVendex.png";
+            try (java.io.InputStream is = getClass().getResourceAsStream(recurso)) {
+                if (is != null) imgLogoHeader.setImage(new javafx.scene.image.Image(is));
+            } catch (Exception ignore) {}
+        }
     }
 
     @FXML
@@ -490,61 +524,280 @@ public class MainController implements Initializable {
         Preferences.userRoot().node("/com/tag/vendex").putBoolean(KEY_SIDEBAR, !sidebarExpandido);
         aplicarEstadoSidebar();
     }
-
     private void aplicarEstadoSidebar() {
         if (sidebarRoot == null) return;
-        double ancho = sidebarExpandido ? SIDEBAR_ANCHO_ABIERTO : SIDEBAR_ANCHO_CERRADO;
-        sidebarRoot.setPrefWidth(ancho);
-        sidebarRoot.setMinWidth(ancho);
-        sidebarRoot.setMaxWidth(ancho);
-
-        // Ocultar textos en modo colapsado
-        boolean colapsado = !sidebarExpandido;
-        for (javafx.scene.Node n : sidebarRoot.lookupAll(".nav-item")) {
-            if (n instanceof Button b) {
-                b.setVisible(!colapsado);
-                b.setManaged(!colapsado);
-            }
-        }
-        for (javafx.scene.Node n : sidebarRoot.lookupAll(".nav-group")) {
-            if (n instanceof Button b) {
-                b.setVisible(!colapsado);
-                b.setManaged(!colapsado);
-            }
-        }
-        for (javafx.scene.Node n : sidebarRoot.lookupAll(".nav-group-vbox")) {
-            if (n instanceof VBox v) {
-                v.setVisible(!colapsado);
-                v.setManaged(!colapsado);
-            }
-        }
-        // En modo expandido, mostrar todo
-        if (!colapsado) {
-            for (javafx.scene.Node n : sidebarRoot.lookupAll(".nav-item")) {
-                if (n instanceof Button b) {
-                    b.setVisible(true);
-                    b.setManaged(true);
-                }
-            }
-            for (javafx.scene.Node n : sidebarRoot.lookupAll(".nav-group")) {
-                if (n instanceof Button b) {
-                    b.setVisible(true);
-                    b.setManaged(true);
-                }
-            }
-            for (javafx.scene.Node n : sidebarRoot.lookupAll(".nav-group-vbox")) {
-                if (n instanceof VBox v) {
-                    v.setVisible(true);
-                    v.setManaged(true);
-                }
-            }
-        }
-        // Ajustar padding del usuario
-        javafx.scene.Node usuarioBox = sidebarRoot.lookup(".header");
-        if (usuarioBox instanceof VBox vb && vb.getChildren().size() > 0) {
-            // mantener visible el usuario
+        if (sidebarExpandido) {
+            sidebarRoot.setVisible(true);
+            sidebarRoot.setManaged(true);
+            sidebarRoot.setPrefWidth(220);
+            sidebarRoot.setMinWidth(220);
+            sidebarRoot.setMaxWidth(220);
+        } else {
+            sidebarRoot.setVisible(false);
+            sidebarRoot.setManaged(false);
+            sidebarRoot.setPrefWidth(0);
+            sidebarRoot.setMinWidth(0);
+            sidebarRoot.setMaxWidth(0);
         }
     }
+
+    // ========== ACCESOS DIRECTOS (sidebar -> barra superior, por usuario) ==========
+
+    /** Recolecta botones .nav-item/.nav-group bajo un contenedor, sin usar lookupAll. */
+    static List<Button> recolectarBotonesSidebar(javafx.scene.Parent raiz) {
+        List<Button> botones = new ArrayList<>();
+        recolectarBotones(raiz, botones);
+        return botones;
+    }
+
+    private static void recolectarBotones(Node nodo, List<Button> destino) {
+        if (nodo instanceof Button b
+                && (b.getStyleClass().contains("nav-item") || b.getStyleClass().contains("nav-group"))
+                && CatalogoVistas.esArrastrable(b.getText())) {
+            destino.add(b);
+        }
+        // El contenido de ScrollPane/TitledPane no está en getChildrenUnmodifiable (lo gestiona el skin).
+        if (nodo instanceof javafx.scene.control.ScrollPane sp && sp.getContent() != null) {
+            recolectarBotones(sp.getContent(), destino);
+        }
+        if (nodo instanceof javafx.scene.control.TitledPane tp && tp.getContent() != null) {
+            recolectarBotones(tp.getContent(), destino);
+        }
+        if (nodo instanceof javafx.scene.Parent p) {
+            for (Node hijo : p.getChildrenUnmodifiable()) recolectarBotones(hijo, destino);
+        }
+    }
+
+    private int usuarioActualId() {
+        try {
+            if (SesionActual.getUsuario() != null) return SesionActual.getUsuario().getId();
+        } catch (Exception ignored) {}
+        try {
+            if (LoginController.usuarioAutenticado != null) return LoginController.usuarioAutenticado.getId();
+        } catch (Exception ignored) {}
+        return -1;
+    }
+
+    private void configurarAccesosDirectos() {
+        if (quickAccessBar == null) return;
+        Tooltip.install(quickAccessBar, new Tooltip("Arrastra aquí iconos del menú lateral (máx. " + MAX_ACCESOS_DIRECTOS + "). Arrastra un acceso fuera de la barra para quitarlo."));
+        if (sidebarRoot != null) {
+            // Recorrido manual: no depende del motor de selectores CSS (lookupAll con
+            // coma devuelve vacío y un selector simple tampoco es fiable aquí).
+            List<Button> botones = recolectarBotonesSidebar(sidebarRoot);
+            int cableados = 0;
+            for (Button btn : botones) {
+                String ruta = CatalogoVistas.rutaDe(btn.getText());
+                btn.setOnDragDetected(e -> {
+                    Dragboard db = btn.startDragAndDrop(TransferMode.COPY);
+                    ClipboardContent cc = new ClipboardContent();
+                    cc.put(FORMATO_ACCESO_NUEVO, ruta + "|" + btn.getText().trim() + "|" + iconoDe(btn));
+                    db.setContent(cc);
+                    e.consume();
+                });
+                MenuItem miAnadir = new MenuItem("Añadir a accesos directos");
+                miAnadir.setOnAction(e -> agregarAcceso(ruta + "|" + btn.getText().trim() + "|" + iconoDe(btn), Double.MAX_VALUE));
+                ContextMenu menuAnadir = new ContextMenu(miAnadir);
+                btn.setOnContextMenuRequested(e -> {
+                    menuAnadir.show(btn, e.getScreenX(), e.getScreenY());
+                    e.consume();
+                });
+                cableados++;
+            }
+            logDAO.guardar("MainController", "configurarAccesosDirectos", "botones sidebar cableados: " + cableados);
+        }
+        configurarZonaDrop(quickAccessBar, true);
+        if (headerBar != null && headerBar != quickAccessBar) configurarZonaDrop(headerBar, false);
+        cargarAccesosDirectos();
+    }
+
+    private boolean esDropAcceso(Dragboard db) {
+        return db.hasContent(FORMATO_ACCESO_NUEVO) || db.hasContent(FORMATO_ACCESO_MOVER);
+    }
+
+    private void configurarZonaDrop(HBox zona, boolean conResaltado) {
+        if (zona == null) return;
+        zona.setOnDragOver(e -> {
+            if (esDropAcceso(e.getDragboard())) {
+                e.acceptTransferModes(TransferMode.COPY_OR_MOVE);
+            }
+            e.consume();
+        });
+        if (conResaltado) {
+            zona.setOnDragEntered(e -> {
+                if (esDropAcceso(e.getDragboard()) && !zona.getStyleClass().contains("drop-hint")) {
+                    zona.getStyleClass().add("drop-hint");
+                }
+                e.consume();
+            });
+            zona.setOnDragExited(e -> {
+                zona.getStyleClass().remove("drop-hint");
+                e.consume();
+            });
+        }
+        zona.setOnDragDropped(e -> {
+            Dragboard db = e.getDragboard();
+            // En el header la coordenada X no es relativa a la barra: se agrega/mueve al final.
+            double x = (zona == quickAccessBar) ? e.getX() : Double.MAX_VALUE;
+            boolean ok = false;
+            if (db.hasContent(FORMATO_ACCESO_MOVER)) {
+                ok = moverAcceso(String.valueOf(db.getContent(FORMATO_ACCESO_MOVER)), e.getX());
+            } else if (db.hasContent(FORMATO_ACCESO_NUEVO)) {
+                ok = agregarAcceso(String.valueOf(db.getContent(FORMATO_ACCESO_NUEVO)), e.getX());
+            }
+            if (quickAccessBar != null) quickAccessBar.getStyleClass().remove("drop-hint");
+            e.setDropCompleted(ok);
+            e.consume();
+        });
+    }
+
+    private String iconoDe(Button btn) {
+        if (btn.getGraphic() instanceof FontIcon fi && fi.getIconLiteral() != null && !fi.getIconLiteral().isBlank()) {
+            return fi.getIconLiteral();
+        }
+        return "fas-link";
+    }
+
+    private int indiceInsercion(double x) {
+        // Solo cuenta botones (ignora el placeholder).
+        int idx = 0;
+        for (Node n : quickAccessBar.getChildren()) {
+            if (!(n instanceof Button)) continue;
+            double mid = n.getBoundsInParent().getMinX() + n.getBoundsInParent().getWidth() / 2;
+            if (x < mid) return idx;
+            idx++;
+        }
+        return idx;
+    }
+
+    private boolean agregarAcceso(String contenido, double x) {
+        int uid = usuarioActualId();
+        if (uid < 0) return false;
+        String[] p = contenido.split("\\|", 3);
+        if (p.length < 3 || p[0].isBlank()) return false;
+        String ruta = p[0], titulo = p[1], icono = p[2];
+        if (!tienePermisoParaRuta(ruta)) return false;
+        try {
+            if (accesoDirectoDAO.existe(uid, ruta)) {
+                new Alert(Alert.AlertType.INFORMATION, "\"" + titulo + "\" ya está en accesos directos.", ButtonType.OK).showAndWait();
+                return false;
+            }
+            if (accesoDirectoDAO.contarPorUsuario(uid) >= MAX_ACCESOS_DIRECTOS) {
+                new Alert(Alert.AlertType.WARNING, "Máximo " + MAX_ACCESOS_DIRECTOS + " accesos directos. Arrastra uno fuera de la barra para quitarlo.", ButtonType.OK).showAndWait();
+                return false;
+            }
+            List<AccesoDirecto> actuales = accesoDirectoDAO.listarPorUsuario(uid);
+            int idx = Math.min(Math.max(indiceInsercion(x), 0), actuales.size());
+            int id = accesoDirectoDAO.agregar(new AccesoDirecto(uid, ruta, titulo, icono, idx));
+            if (id < 0) return false;
+            List<Integer> ids = new ArrayList<>();
+            for (AccesoDirecto a : actuales) ids.add(a.getId());
+            ids.add(idx, id);
+            accesoDirectoDAO.reordenar(uid, ids);
+            cargarAccesosDirectos();
+            return true;
+        } catch (Exception ex) {
+            logDAO.guardar("MainController", "agregarAcceso", ex.getMessage(), ex);
+            return false;
+        }
+    }
+
+    private boolean moverAcceso(String contenido, double x) {
+        int uid = usuarioActualId();
+        if (uid < 0) return false;
+        String ruta = contenido.split("\\|", 2)[0];
+        Button arrastrado = null;
+        for (Node n : quickAccessBar.getChildren()) {
+            if (n instanceof Button b && ruta.equals(b.getProperties().get("vistaRuta"))) {
+                arrastrado = b;
+                break;
+            }
+        }
+        if (arrastrado == null) {
+            cargarAccesosDirectos();
+            return false;
+        }
+        quickAccessBar.getChildren().remove(arrastrado);
+        int idx = Math.min(Math.max(indiceInsercion(x), 0), quickAccessBar.getChildren().size());
+        quickAccessBar.getChildren().add(idx, arrastrado);
+        List<Integer> ids = new ArrayList<>();
+        for (Node n : quickAccessBar.getChildren()) {
+            if (n instanceof Button b && b.getProperties().get("accesoId") instanceof Integer id) ids.add(id);
+        }
+        try {
+            accesoDirectoDAO.reordenar(uid, ids);
+        } catch (Exception ex) {
+            logDAO.guardar("MainController", "moverAcceso", ex.getMessage(), ex);
+        }
+        return true;
+    }
+
+    private void quitarAcceso(String vistaRuta) {
+        int uid = usuarioActualId();
+        if (uid < 0) return;
+        try {
+            accesoDirectoDAO.eliminarPorVista(uid, vistaRuta);
+        } catch (Exception ex) {
+            logDAO.guardar("MainController", "quitarAcceso", ex.getMessage(), ex);
+        }
+        cargarAccesosDirectos();
+    }
+
+    private void cargarAccesosDirectos() {
+        if (quickAccessBar == null) return;
+        quickAccessBar.getChildren().clear();
+        quickAccessBar.getStyleClass().remove("drop-hint");
+        int uid = usuarioActualId();
+        if (uid < 0) return;
+        List<AccesoDirecto> lista;
+        try {
+            lista = accesoDirectoDAO.listarPorUsuario(uid);
+        } catch (Exception ex) {
+            logDAO.guardar("MainController", "cargarAccesosDirectos", ex.getMessage(), ex);
+            return;
+        }
+        int agregados = 0;
+        for (AccesoDirecto a : lista) {
+            if (!tienePermisoParaRuta(a.getVistaRuta())) continue;
+            Button b = new Button();
+            b.getStyleClass().add("quick-access-btn");
+            b.setGraphic(new FontIcon(a.getIconoLiteral()));
+            b.setTooltip(new Tooltip(a.getTitulo() + " — arrastra fuera de la barra para quitar"));
+            b.getProperties().put("vistaRuta", a.getVistaRuta());
+            b.getProperties().put("accesoId", a.getId());
+            b.setOnAction(e -> {
+                if (tienePermisoParaRuta(a.getVistaRuta())) cargarVista(a.getVistaRuta());
+            });
+            String payload = a.getVistaRuta() + "|" + a.getTitulo() + "|" + a.getIconoLiteral();
+            b.setOnDragDetected(e -> {
+                Dragboard db = b.startDragAndDrop(TransferMode.MOVE);
+                ClipboardContent cc = new ClipboardContent();
+                cc.put(FORMATO_ACCESO_MOVER, payload);
+                db.setContent(cc);
+                e.consume();
+            });
+            b.setOnDragDone(e -> {
+                if (!e.isDropCompleted()) quitarAcceso(a.getVistaRuta());
+                e.consume();
+            });
+            MenuItem miQuitar = new MenuItem("Quitar de accesos directos");
+            miQuitar.setOnAction(e -> quitarAcceso(a.getVistaRuta()));
+            ContextMenu menuQuitar = new ContextMenu(miQuitar);
+            b.setOnContextMenuRequested(e -> {
+                menuQuitar.show(b, e.getScreenX(), e.getScreenY());
+                e.consume();
+            });
+            quickAccessBar.getChildren().add(b);
+            agregados++;
+        }
+        if (agregados == 0) {
+            Label hint = new Label("＋ Arrastra accesos aquí");
+            hint.getStyleClass().add("drop-placeholder");
+            hint.setMouseTransparent(true);
+            quickAccessBar.getChildren().add(hint);
+        }
+    }
+
 
     private ContextMenu crearFlyoutGrupo(String... items) {
         ContextMenu menu = new ContextMenu();

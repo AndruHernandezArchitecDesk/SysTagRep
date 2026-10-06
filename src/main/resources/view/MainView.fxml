@@ -16,8 +16,8 @@
     <!-- ENCABEZADO SUPERIOR -->
     <top>
         <VBox spacing="0">
-            <!-- Fila principal: colapsar + logo + accesos rápidos + sucursal + tema -->
-            <HBox alignment="CENTER_LEFT" spacing="10" styleClass="header" style="-fx-padding: 10 12 10 12;">
+            <!-- Fila principal: colapsar + logo + notificaciones + tema + usuario -->
+            <HBox fx:id="headerBar" alignment="CENTER_LEFT" spacing="10" styleClass="header" style="-fx-padding: 10 12 10 12;">
                 <!-- Botón colapsar menú -->
                 <Button fx:id="btnToggleSidebar" onAction="#toggleSidebar" styleClass="btn-orden" prefHeight="28" prefWidth="32" style="-fx-font-size: 16px;">
                     <graphic>
@@ -25,57 +25,37 @@
                     </graphic>
                 </Button>
 
-                <FontIcon iconLiteral="fas-boxes" iconSize="20" styleClass="titulo-icono"/>
+                <ImageView fx:id="imgLogoHeader" fitWidth="28" fitHeight="28" preserveRatio="true" smooth="true">
+                    <image>
+                        <Image url="@/img/logoVendex.png"/>
+                    </image>
+                </ImageView>
                 <Label text="Vendex 2.0" styleClass="screen-title" style="-fx-font-size: 17px;"/>
-
-                <!-- Accesos rápidos -->
-                <HBox spacing="4" alignment="CENTER_LEFT" styleClass="quick-access-bar">
-                    <Button onAction="#irFactura" styleClass="quick-access-btn" style="-fx-min-width: 36; -fx-min-height: 36; -fx-max-width: 36; -fx-max-height: 36; -fx-background-radius: 8; -fx-border-radius: 8;">
-                        <graphic>
-                            <FontIcon iconLiteral="fas-file-invoice-dollar" iconSize="16"/>
-                        </graphic>
-                        <Tooltip text="Facturas de Venta"/>
-                    </Button>
-                    <Button onAction="#irCaja" styleClass="quick-access-btn" style="-fx-min-width: 36; -fx-min-height: 36; -fx-max-width: 36; -fx-max-height: 36; -fx-background-radius: 8; -fx-border-radius: 8;">
-                        <graphic>
-                            <FontIcon iconLiteral="fas-cash-register" iconSize="16"/>
-                        </graphic>
-                        <Tooltip text="Caja"/>
-                    </Button>
-                    <Button onAction="#irClientes" styleClass="quick-access-btn" style="-fx-min-width: 36; -fx-min-height: 36; -fx-max-width: 36; -fx-max-height: 36; -fx-background-radius: 8; -fx-border-radius: 8;">
-                        <graphic>
-                            <FontIcon iconLiteral="fas-user-friends" iconSize="16"/>
-                        </graphic>
-                        <Tooltip text="Clientes"/>
-                    </Button>
-                    <Button onAction="#irInventario" styleClass="quick-access-btn" style="-fx-min-width: 36; -fx-min-height: 36; -fx-max-width: 36; -fx-max-height: 36; -fx-background-radius: 8; -fx-border-radius: 8;">
-                        <graphic>
-                            <FontIcon iconLiteral="fas-box" iconSize="16"/>
-                        </graphic>
-                        <Tooltip text="Productos"/>
-                    </Button>
-                    <Button onAction="#irNotaCredito" styleClass="quick-access-btn" style="-fx-min-width: 36; -fx-min-height: 36; -fx-max-width: 36; -fx-max-height: 36; -fx-background-radius: 8; -fx-border-radius: 8;">
-                        <graphic>
-                            <FontIcon iconLiteral="fas-undo-alt" iconSize="16"/>
-                        </graphic>
-                        <Tooltip text="Notas de Crédito"/>
-                    </Button>
-                    <Button onAction="#irAlertas" styleClass="quick-access-btn" style="-fx-min-width: 36; -fx-min-height: 36; -fx-max-width: 36; -fx-max-height: 36; -fx-background-radius: 8; -fx-border-radius: 8;">
-                        <graphic>
-                            <FontIcon iconLiteral="fas-bell" iconSize="16"/>
-                        </graphic>
-                        <Tooltip text="Alertas"/>
-                    </Button>
-                </HBox>
 
                 <HBox HBox.hgrow="ALWAYS"/>
 
+                <HBox fx:id="quickAccessBar" alignment="CENTER_LEFT" spacing="4" styleClass="quick-access-bar" style="-fx-min-width: 220; -fx-min-height: 30;"/>
+                <Separator orientation="VERTICAL"/>
+
                 <Label text="Sucursal:" style="-fx-font-weight: bold; -fx-font-size: 11px;"/>
                 <ComboBox fx:id="cmbSucursal" prefWidth="160" style="-fx-font-size: 11px;"/>
+
+                <Button onAction="#irAlertas" styleClass="btn-orden" prefHeight="28" prefWidth="32">
+                    <graphic>
+                        <FontIcon iconLiteral="fas-bell" iconSize="16"/>
+                    </graphic>
+                    <Tooltip text="Alertas"/>
+                </Button>
                 <Button onAction="#cambiarTema" styleClass="btn-orden" prefHeight="28" prefWidth="42">
                     <graphic>
                         <FontIcon fx:id="iconToggleTemaLateral" iconLiteral="fas-moon" iconSize="16"/>
                     </graphic>
+                </Button>
+                <Button onAction="#irHome" styleClass="btn-orden" prefHeight="28" prefWidth="42">
+                    <graphic>
+                        <FontIcon iconLiteral="fas-user" iconSize="16"/>
+                    </graphic>
+                    <Tooltip text="Inicio"/>
                 </Button>
             </HBox>
 

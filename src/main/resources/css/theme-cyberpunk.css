@@ -341,7 +341,7 @@
     -fx-background-color: -bg-card-alt;
 }
 
-.nav-group .font-icon { -fx-icon-color: -accent-primary; }
+.nav-group .font-icon { -fx-icon-color: #FFFFFF; }
 
 .nav-item {
     -fx-background-color: transparent;
@@ -350,7 +350,7 @@
     -fx-font-size: 12px;
 }
 
-.nav-item .font-icon { -fx-icon-color: -text-secondary; }
+.nav-item .font-icon { -fx-icon-color: #FFFFFF; }
 
 .nav-item:hover {
     -fx-background-color: -bg-card-alt;
@@ -361,7 +361,77 @@
     -fx-text-fill: -bg-page;
 }
 
-.nav-item .font-icon { -fx-icon-color: -text-secondary; }
+/* ========== SIDEBAR OCULTO ========== */
+.sidebar:hidden {
+    -fx-min-width: 0;
+    -fx-max-width: 0;
+    -fx-padding: 0;
+    -fx-border-width: 0;
+}
+
+.sidebar-item-active {
+    -fx-background-color: #CCFBF1;
+    -fx-text-fill: #0F766E;
+    -fx-font-weight: bold;
+}
+
+.sidebar-item-active .font-icon {
+    -fx-icon-color: #0F766E;
+}
+
+.quick-access-btn .font-icon { -fx-icon-color: #FFFFFF; }
+
+/* ========== SIDEBAR OCULTO ========== */
+.sidebar:hidden {
+    -fx-min-width: 0;
+    -fx-max-width: 0;
+    -fx-padding: 0;
+    -fx-border-width: 0;
+}
+
+/* ========== DARK MODE CLASS ========== */
+.dark-mode { -fx-background-color: -bg-page; }
+
+/* ========== HEADER ICONS DARK ========== */
+.header .font-icon,
+.header .titulo-icono {
+    -fx-icon-color: #FFFFFF;
+}
+
+.btn-orden .font-icon {
+    -fx-icon-color: #FFFFFF;
+}
+
+/* ========== ICONOS DECORATIVOS BLANCOS EN DARK ========== */
+.dark-mode .titulo-icono {
+    -fx-icon-color: #FFFFFF;
+}
+
+.dark-mode FontIcon {
+    -fx-icon-color: #FFFFFF;
+}
+
+.dark-mode .font-icon {
+    -fx-icon-color: #FFFFFF;
+}
+
+.dark-mode .button FontIcon,
+.dark-mode Button FontIcon {
+    -fx-icon-color: #FFFFFF;
+}
+
+.dark-mode .footer-bar FontIcon {
+    -fx-icon-color: #FFFFFF;
+}
+
+/* Excepciones: mantener semantica de banners */
+.dark-mode .banner-warning FontIcon {
+    -fx-icon-color: #B45309;
+}
+
+.dark-mode .banner-danger FontIcon {
+    -fx-icon-color: #B91C1C;
+}
 
 /* ========== BARRA DE ACCESOS RÁPIDOS ========== */
 .quick-access-bar {
@@ -390,26 +460,18 @@
     -fx-text-fill: -bg-page;
 }
 
-.quick-access-btn .font-icon { -fx-icon-color: -accent-primary; }
-
-/* ========== SIDEBAR COLAPSADO ========== */
-.sidebar:collapsed {
-    -fx-min-width: 56;
-    -fx-max-width: 56;
+.quick-access-bar.drop-hint {
+    -fx-border-color: -accent-primary;
+    -fx-border-width: 1.5;
+    -fx-border-style: dashed;
+    -fx-border-radius: 6;
+    -fx-background-color: -bg-card-alt;
+    -fx-background-radius: 6;
 }
 
-.sidebar:collapsed .nav-item,
-.sidebar:collapsed .nav-group,
-.sidebar:collapsed .nav-group-vbox {
-    -fx-padding: 0;
-    -fx-max-width: 56;
-    -fx-min-width: 56;
+.drop-placeholder {
+    -fx-text-fill: -text-secondary;
+    -fx-font-size: 11px;
+    -fx-font-style: italic;
+    -fx-padding: 4 8;
 }
-
-.sidebar:collapsed .nav-item .text,
-.sidebar:collapsed .nav-group .text {
-    -fx-display: none;
-}
-
-/* ========== DARK MODE CLASS ========== */
-.dark-mode { -fx-background-color: -bg-page; }

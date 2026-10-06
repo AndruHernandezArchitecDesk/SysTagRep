@@ -23,6 +23,7 @@ import com.vendex.util.SRIWebService;
 import com.vendex.util.SortTable;
 import com.vendex.util.ComboFilter;
 import com.vendex.util.AppConstants;
+import com.vendex.util.ThemeManager;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -451,7 +452,7 @@ public class FacturaController implements Initializable {
     }
 
     private void cargarLogo() {
-        try { imgLogo.setImage(new Image(getClass().getResourceAsStream("/img/logoVendex.png"))); } catch (Exception ignored) {}
+        try { imgLogo.setImage(new Image(getClass().getResourceAsStream(ThemeManager.getLogoPath()))); } catch (Exception ignored) {}
     }
 
     private void obtenerDatosEmpresa() {
