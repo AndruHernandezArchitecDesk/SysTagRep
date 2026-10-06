@@ -37,9 +37,6 @@
                 <HBox fx:id="quickAccessBar" alignment="CENTER_LEFT" spacing="4" styleClass="quick-access-bar" style="-fx-min-width: 220; -fx-min-height: 30;"/>
                 <Separator orientation="VERTICAL"/>
 
-                <Label text="Sucursal:" style="-fx-font-weight: bold; -fx-font-size: 11px;"/>
-                <ComboBox fx:id="cmbSucursal" prefWidth="160" style="-fx-font-size: 11px;"/>
-
                 <Button onAction="#irAlertas" styleClass="btn-orden" prefHeight="28" prefWidth="32">
                     <graphic>
                         <FontIcon iconLiteral="fas-bell" iconSize="16"/>

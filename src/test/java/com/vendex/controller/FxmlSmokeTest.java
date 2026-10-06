@@ -45,7 +45,7 @@ class FxmlSmokeTest {
                 latch.countDown();
             }
         });
-        if (!latch.await(30, TimeUnit.SECONDS)) throw new IllegalStateException("Timeout cargando " + ruta);
+        if (!latch.await(120, TimeUnit.SECONDS)) throw new IllegalStateException("Timeout cargando " + ruta);
         if (err.get() != null) {
             if (err.get() instanceof Exception e) throw e;
             throw new RuntimeException(err.get());

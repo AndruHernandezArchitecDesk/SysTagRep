@@ -4,11 +4,9 @@ import com.vendex.config.AppContext;
 import com.vendex.config.GeminiConfig;
 import com.vendex.config.VendexControllerFactory;
 import com.vendex.dao.LogDAO;
-import com.vendex.dao.SucursalDAO;
 import com.vendex.dao.AccesoDirectoDAO;
 import com.vendex.dao.AccesoDirectoDAOPostgres;
 import com.vendex.model.AccesoDirecto;
-import com.vendex.model.Sucursal;
 import com.vendex.service.AlertaService;
 import com.vendex.remote.ApiConfig;
 import com.vendex.offline.OfflineHelper;
@@ -17,7 +15,6 @@ import com.vendex.offline.LocalOperationQueue;
 import com.vendex.util.AboutDialog;
 import com.vendex.util.CatalogoVistas;
 import com.vendex.util.SesionActual;
-import com.vendex.util.SucursalActual;
 import com.vendex.util.ThemeManager;
 import com.vendex.util.UpperCaseTextFormatter;
 import javafx.fxml.FXML;
@@ -30,7 +27,6 @@ import javafx.concurrent.Task;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
-import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextArea;
@@ -78,9 +74,6 @@ public class MainController implements Initializable {
 
     @FXML
     private FontIcon iconToggleTemaLateral;
-
-    @FXML
-    private ComboBox<Sucursal> cmbSucursal;
 
     @FXML
     private HBox bannerCertificado;
@@ -132,7 +125,6 @@ public class MainController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         mostrarUsuarioSesion();
-        cargarSucursales();
         actualizarTextoModoTema();
         abrirDashboard1();
         if (contenedor.getScene() != null) {
@@ -172,42 +164,6 @@ public class MainController implements Initializable {
         String nombreCompleto = (apellido != null ? apellido.trim() : "")
                 + (nombre != null && !nombre.trim().isEmpty() ? " " + nombre.trim() : "");
         lblUsuarioSesion.setText("Bienvenido " + nombreCompleto);
-    }
-
-    private void cargarSucursales() {
-        if (cmbSucursal == null) return;
-        try {
-            SucursalDAO dao = AppContext.getInstance().sucursalDAO;
-            var lista = dao.listarActivas();
-            if (lista.isEmpty()) {
-                cmbSucursal.setVisible(false);
-                cmbSucursal.setManaged(false);
-                return;
-            }
-            cmbSucursal.getItems().setAll(lista);
-            cmbSucursal.setConverter(new javafx.util.StringConverter<Sucursal>() {
-                @Override public String toString(Sucursal s) { return s == null ? "" : s.getCodigo() + " - " + s.getNombre(); }
-                @Override public Sucursal fromString(String string) { return null; }
-            });
-            int idPref = SucursalActual.getIdPersistido();
-            Sucursal sel = lista.stream().filter(s -> s.getId() == idPref).findFirst()
-                    .orElse(lista.stream().filter(Sucursal::isEsCentral).findFirst().orElse(lista.get(0)));
-            cmbSucursal.setValue(sel);
-            SucursalActual.set(sel);
-            cmbSucursal.valueProperty().addListener((obs, old, val) -> {
-                if (val != null) {
-                    SucursalActual.set(val);
-                    logDAO.guardar("MainController", "cambiarSucursal", "Sucursal cambiada a " + val.getCodigo() + " - " + val.getNombre());
-                }
-            });
-            boolean multi = lista.size() > 1;
-            cmbSucursal.setVisible(multi);
-            cmbSucursal.setManaged(multi);
-        } catch (Exception e) {
-            logDAO.guardar("MainController", "cargarSucursales", e.getMessage(), e);
-            cmbSucursal.setVisible(false);
-            cmbSucursal.setManaged(false);
-        }
     }
 
     @FXML
