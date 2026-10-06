@@ -24,11 +24,14 @@ public class MainApp extends Application {
     @Override
     public void start(Stage stage) throws Exception {
         cargarFuentes();
-        // Cargar ~/.vendex/db.properties antes de cualquier DAO (soporte multi-PC: host=localhost, clientes=vendex-db via hosts — IP varía por cliente)
-        // Si no existe archivo y no hay override por env/property (headless/docker), mostrar wizard integrado
+        // Instalador producción SIN BD: el MSI no crea PostgreSQL. El wizard solo conecta
+        // a la BD existente (Host/IP + puerto + BD + usuario + clave) con prueba obligatoria.
+        // Si no existe archivo y no hay override por env/property (headless/docker), mostrar wizard integrado.
+        // -Dvendex.configDb=true fuerza reapertura (Reconfigurar conexión) aunque exista archivo.
         boolean envOverride = System.getenv("DB_PASSWORD") != null && !System.getenv("DB_PASSWORD").isBlank()
                 || System.getProperty("db.password") != null && !System.getProperty("db.password").isBlank();
-        if (!DbConfig.getArchivo().exists() && !envOverride) {
+        boolean forzarConfig = "true".equalsIgnoreCase(System.getProperty("vendex.configDb"));
+        if ((!DbConfig.getArchivo().exists() && !envOverride) || forzarConfig) {
             mostrarWizardDb(true);
         }
         DatabaseConnection.initFromConfig();

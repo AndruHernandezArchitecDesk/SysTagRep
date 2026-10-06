@@ -9,8 +9,11 @@ set NOMBRE=Vendex
 set ICON=src\main\resources\img\app.ico
 
 echo ============================================
-echo  Vendex - Generador de instalador Windows
+echo  Vendex - Instalador PRODUCCION (sin base de datos)
 echo ============================================
+echo  Este MSI solo instala la app. La BD ya existe en el servidor.
+echo  Al primer arranque pide Servidor/IP + puerto + BD + usuario + clave
+echo  con boton Probar conexion. No crea tablas ni roles.
 echo.
 
 where jpackage >nul 2>nul
@@ -32,10 +35,12 @@ if not exist target\%JAR% (
     exit /b 1
 )
 
-echo [1/2] Generando instalador MSI (requiere WiX Toolset 3.11+)...
+echo [1/2] Generando instalador MSI PRODUCCION sin BD (requiere WiX Toolset 3.11+)...
 jpackage --input target ^
   --name "%NOMBRE%" ^
   --app-version %VERSION% ^
+  --vendor "Vendex Repuestos" ^
+  --description "Vendex - cliente produccion. Se conecta a la BD existente del servidor (sin instalar PostgreSQL)." ^
   --main-jar %JAR% ^
   --main-class com.vendex.Launcher ^
   --icon "%ICON%" ^
@@ -48,7 +53,10 @@ jpackage --input target ^
 if errorlevel 1 goto fallback
 
 echo [OK] Instalador generado: dist\%NOMBRE%-%VERSION%.msi
-echo      Instalalo en el equipo del cliente: doble clic y sigue el asistente.
+echo      Produccion sin BD: instalalo en cada PC cliente.
+echo      Primer arranque: ingresa IP del servidor + Probar conexion + Guardar.
+echo      Para cambiar de servidor luego: ejecuta Reconfigurar-Vendex-BD.bat
+echo      (abre la app con el asistente de conexion).
 exit /b 0
 
 :fallback

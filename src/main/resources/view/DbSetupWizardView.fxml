@@ -3,55 +3,45 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Font?>
-<VBox alignment="TOP_LEFT" spacing="12" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.vendex.controller.DbSetupWizardController" prefWidth="640" prefHeight="520" style="-fx-background-color: #1e1e2f;">
+<VBox alignment="TOP_LEFT" spacing="12" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.vendex.controller.DbSetupWizardController" prefWidth="640" prefHeight="560" style="-fx-background-color: #1e1e2f;">
     <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
 
-    <Label text="Configuración de Base de Datos" style="-fx-font-weight: bold; -fx-text-fill: white;"> <font><Font size="18"/></font> </Label>
-    <Label text="Vendex necesita conectarse a PostgreSQL (host vendex-db o localhost). En clientes use vendex-db (resuelve a la IP del servidor via hosts, ej. 192.168.1.7 — varía por cliente; ver docs/hosts_setup.md). La contraseña se guardará cifrada (AES/GCM) en ~/.vendex/db.properties." wrapText="true" style="-fx-text-fill: #cccccc;" />
+    <Label text="Conectar a Base de Datos existente (producción)" style="-fx-font-weight: bold; -fx-text-fill: white;"> <font><Font size="18"/></font> </Label>
+    <Label text="Este instalador NO crea ni modifica la base de datos. Solo configura la conexión a la BD que ya existe en el servidor de tu red (ej. 192.168.1.7). Completa los datos, pulsa Probar conexión y luego Guardar. La contraseña se guardará cifrada en ~/.vendex/db.properties." wrapText="true" style="-fx-text-fill: #cccccc;" />
 
     <Separator />
 
-    <HBox spacing="20" alignment="CENTER_LEFT">
-        <RadioButton fx:id="rbNueva" text="Instalación nueva — generar contraseña fuerte" style="-fx-text-fill: white;" />
-        <RadioButton fx:id="rbExistente" text="PC adicional — pegar contraseña existente" style="-fx-text-fill: white;" />
-    </HBox>
-
-    <Label fx:id="lblInfo" wrapText="true" style="-fx-text-fill: #ffcc80; -fx-font-size: 11px;" />
+    <Label fx:id="lblInfo" wrapText="true" style="-fx-text-fill: #ffcc80; -fx-font-size: 11px;" text="Cliente nuevo: pide al encargado la IP del servidor, el usuario (app_vendex) y la contraseña actual." />
 
     <GridPane hgap="10" vgap="10">
-        <columnConstraints><ColumnConstraints hgrow="NEVER" minWidth="90"/><ColumnConstraints hgrow="ALWAYS"/></columnConstraints>
-        <Label text="JDBC URL:" GridPane.rowIndex="0" GridPane.columnIndex="0" style="-fx-text-fill: white;"/>
-        <TextField fx:id="txtUrl" promptText="jdbc:postgresql://vendex-db:5432/dbVendex" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
-        <Label text="Usuario:" GridPane.rowIndex="1" GridPane.columnIndex="0" style="-fx-text-fill: white;"/>
-        <TextField fx:id="txtUser" promptText="postgres" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
-        <Label text="Generada:" GridPane.rowIndex="2" GridPane.columnIndex="0" style="-fx-text-fill: white;"/>
-        <HBox spacing="8" GridPane.rowIndex="2" GridPane.columnIndex="1" alignment="CENTER_LEFT">
-            <TextField fx:id="txtPasswordGenerada" promptText="24 chars" HBox.hgrow="ALWAYS" style="-fx-font-family: monospace;"/>
-            <Button fx:id="btnGenerar" text="Regenerar"/>
-            <Button fx:id="btnCopiar" text="Copiar"/>
-        </HBox>
-        <Label text="Existente:" GridPane.rowIndex="3" GridPane.columnIndex="0" style="-fx-text-fill: white;"/>
-        <HBox spacing="8" GridPane.rowIndex="3" GridPane.columnIndex="1" alignment="CENTER_LEFT">
-            <PasswordField fx:id="txtPasswordExistente" promptText="Pega la contraseña compartida" HBox.hgrow="ALWAYS"/>
-            <TextField fx:id="txtPasswordExistenteVisible" promptText="Pega la contraseña compartida" HBox.hgrow="ALWAYS"/>
+        <columnConstraints><ColumnConstraints hgrow="NEVER" minWidth="130"/><ColumnConstraints hgrow="ALWAYS"/></columnConstraints>
+        <Label text="Servidor (IP o nombre):" GridPane.rowIndex="0" GridPane.columnIndex="0" style="-fx-text-fill: white;"/>
+        <TextField fx:id="txtHost" promptText="192.168.1.7  o  vendex-db  o  localhost" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+        <Label text="Puerto:" GridPane.rowIndex="1" GridPane.columnIndex="0" style="-fx-text-fill: white;"/>
+        <TextField fx:id="txtPuerto" promptText="5432" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+        <Label text="Base de datos:" GridPane.rowIndex="2" GridPane.columnIndex="0" style="-fx-text-fill: white;"/>
+        <TextField fx:id="txtBase" promptText="dbVendex" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+        <Label text="Usuario BD:" GridPane.rowIndex="3" GridPane.columnIndex="0" style="-fx-text-fill: white;"/>
+        <TextField fx:id="txtUser" promptText="app_vendex" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+        <Label text="Contraseña BD:" GridPane.rowIndex="4" GridPane.columnIndex="0" style="-fx-text-fill: white;"/>
+        <HBox spacing="8" GridPane.rowIndex="4" GridPane.columnIndex="1" alignment="CENTER_LEFT">
+            <PasswordField fx:id="txtPasswordExistente" promptText="Contraseña actual de la BD en producción" HBox.hgrow="ALWAYS"/>
+            <TextField fx:id="txtPasswordExistenteVisible" promptText="Contraseña actual de la BD en producción" HBox.hgrow="ALWAYS"/>
             <CheckBox fx:id="chkMostrarPassword" text="Mostrar" style="-fx-text-fill: white;"/>
         </HBox>
+        <Label text="JDBC generada:" GridPane.rowIndex="5" GridPane.columnIndex="0" style="-fx-text-fill: white;"/>
+        <TextField fx:id="txtUrlPreview" editable="false" GridPane.rowIndex="5" GridPane.columnIndex="1" style="-fx-font-family: monospace; -fx-font-size: 11px;" promptText="jdbc:postgresql://192.168.1.7:5432/dbVendex"/>
     </GridPane>
 
     <Separator />
-    <Label text="Clave maestra de instalación (Tier 2 — SMTP / Gemini / Nvidia compartidos)" style="-fx-text-fill: #80cbc4; -fx-font-weight: bold; -fx-font-size: 11px;"/>
-    <Label text="Se genera una vez y se copia manualmente a cada PC adicional (igual que la contraseña BD). Sin esta clave, los secretos compartidos (correo) no se pueden descifrar en otras PCs." wrapText="true" style="-fx-text-fill: #aaaaaa; -fx-font-size: 10px;"/>
+    <Label text="Clave maestra (opcional — solo si usas correo/SMTP compartido)" style="-fx-text-fill: #80cbc4; -fx-font-weight: bold; -fx-font-size: 11px;"/>
+    <Label text="Si tu instalación usa correo, pega aquí la clave maestra generada en la primera PC. Si no usas correo, déjala vacía." wrapText="true" style="-fx-text-fill: #aaaaaa; -fx-font-size: 10px;"/>
     <HBox spacing="8" alignment="CENTER_LEFT">
-        <Label text="Master:" style="-fx-text-fill: white; -fx-min-width: 90;"/>
-        <TextField fx:id="txtMasterKey" promptText="Base64 44 chars (se genera automática)" HBox.hgrow="ALWAYS" style="-fx-font-family: monospace; -fx-font-size: 11px;"/>
-        <Button fx:id="btnGenerarMaster" text="Generar"/>
+        <Label text="Master:" style="-fx-text-fill: white; -fx-min-width: 130;"/>
+        <TextField fx:id="txtMasterKey" promptText="(opcional) Base64 de la primera PC" HBox.hgrow="ALWAYS" style="-fx-font-family: monospace; -fx-font-size: 11px;"/>
         <Button fx:id="btnCopiarMaster" text="Copiar"/>
     </HBox>
-    <HBox spacing="8" alignment="CENTER_LEFT">
-        <CheckBox fx:id="chkMasterRespaldo" text="Ya guardé la clave maestra en un lugar seguro fuera de las PCs (gestor de contraseñas/impreso)" style="-fx-text-fill: #ffab91; -fx-font-size: 10px;"/>
-    </HBox>
     <Label fx:id="lblMasterInfo" wrapText="true" style="-fx-text-fill: #ffcc80; -fx-font-size: 10px;"/>
-    <Label fx:id="lblCopiadoAviso" text="✓ Copiado" style="-fx-text-fill: #66bb6a; -fx-font-size: 11px;" />
 
     <Label fx:id="lblStatus" wrapText="true" style="-fx-font-size: 12px;"/>
 
@@ -61,8 +51,8 @@
         <Button fx:id="btnProbar" text="Probar conexión" style="-fx-font-weight: bold;"/>
         <Region HBox.hgrow="ALWAYS"/>
         <Button fx:id="btnCancelar" text="Cancelar"/>
-        <Button fx:id="btnGuardar" text="Guardar (cifrado)" style="-fx-font-weight: bold; -fx-background-color: #4caf50; -fx-text-fill: white;"/>
+        <Button fx:id="btnGuardar" text="Probar y Guardar" disable="true" style="-fx-font-weight: bold; -fx-background-color: #4caf50; -fx-text-fill: white;"/>
     </HBox>
 
-    <Label text="Nota: db.password se cifra con AES/GCM + PBKDF2 (Fase 1). Futuro: keyring OS (DPAPI/Keychain/libsecret). Rotación: repite este wizard en cada PC de la instalación." wrapText="true" style="-fx-text-fill: #888888; -fx-font-size: 10px;"/>
+    <Label text="Sin BD incluida: el instalador no instala PostgreSQL ni crea tablas. Si la prueba falla, verifica IP/puerto, firewall TCP 5432 y pg_hba del servidor. Licencia: solo el servidor (localhost) la pide; los clientes remotos entran directo." wrapText="true" style="-fx-text-fill: #888888; -fx-font-size: 10px;"/>
 </VBox>

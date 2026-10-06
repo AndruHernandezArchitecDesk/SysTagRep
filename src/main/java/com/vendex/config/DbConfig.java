@@ -12,8 +12,13 @@ import java.util.Properties;
  * Persiste la configuracion de conexion a PostgreSQL en ~/.vendex/db.properties
  * para soportar despliegue multi-PC con BD compartida.
  *
+ * <p><b>Instalador producción (sin BD):</b> el MSI no instala ni crea PostgreSQL.
+ * La BD ya existe en el servidor. Cada cliente solo configura Host/IP + puerto + BD
+ * + usuario + clave existentes y prueba la conexión antes de guardar.</p>
+ *
  * PC host:  db.url=jdbc:postgresql://localhost:5432/dbVendex
- * PC cliente: db.url=jdbc:postgresql://vendex-db:5432/dbVendex  (vendex-db resuelve via hosts/DNS a la IP del host central, ej. 192.168.1.7 — varía por cliente; ver docs/hosts_setup.md)
+ * PC cliente: db.url=jdbc:postgresql://192.168.1.7:5432/dbVendex (IP directa del servidor
+ *   en la misma LAN) o jdbc:postgresql://vendex-db:5432/dbVendex (hostname via hosts/DNS).
  *
  * <p>Mínimo privilegio (2026-09-20): rol recomendado {@code app_vendex} con grants explícitos
  * por tabla/sequence (ver {@code sql/migracion_minimo_privilegio_20260920.sql} y {@code docs/permisos_bd.md}).
@@ -35,6 +40,11 @@ public final class DbConfig {
     private static final File ARCHIVO = new File(DIR, "db.properties");
 
     public static final String DEFAULT_URL = "jdbc:postgresql://localhost:5432/dbVendex";
+    public static final String DEFAULT_HOST = "192.168.1.7";
+    public static final int DEFAULT_PORT = 5432;
+    public static final String DEFAULT_DB = "dbVendex";
+    /** Usuario de producción con mínimo privilegio (clientes nuevos). */
+    public static final String DEFAULT_PROD_USER = "app_vendex";
     /** Usuario por defecto para instalaciones legacy (compatibilidad). Para mínimo privilegio ejecutar sql/migracion_minimo_privilegio_20260920.sql y luego configurar wizard con app_vendex. */
     public static final String DEFAULT_USER = "postgres";
     /** Rol con mínimo privilegio (GRANT explícito por tabla). Requiere migración previa como postgres. */
@@ -148,5 +158,64 @@ public final class DbConfig {
     public static boolean esRemota() {
         String[] c = cargar();
         return !c[0].contains("localhost") && !c[0].contains("127.0.0.1");
+    }
+
+    /** Arma jdbc:postgresql://host:puerto/bd a partir de campos separados (wizard producción). */
+    public static String construirUrl(String host, int puerto, String baseDatos) {
+        String h = host == null || host.isBlank() ? DEFAULT_HOST : host.trim();
+        int p = (puerto <= 0 || puerto > 65535) ? DEFAULT_PORT : puerto;
+        String b = baseDatos == null || baseDatos.isBlank() ? DEFAULT_DB : baseDatos.trim();
+        // quitar prefijo jdbc si el usuario lo pegó por error en el campo host
+        if (h.startsWith("jdbc:")) {
+            try {
+                String[] partes = parsear(h);
+                return construirUrl(partes[0], Integer.parseInt(partes[1]), partes[2]);
+            } catch (Exception ignored) { /* cae al armado simple */ }
+        }
+        // quitar "/" inicial de la bd si viene con slash
+        while (b.startsWith("/")) b = b.substring(1);
+        // cortar query params accidentales
+        int q = b.indexOf('?');
+        if (q >= 0) b = b.substring(0, q);
+        if (b.isEmpty()) b = DEFAULT_DB;
+        return "jdbc:postgresql://" + h + ":" + p + "/" + b;
+    }
+
+    /**
+     * Parsea una JDBC URL existente a [host, puerto, baseDatos].
+     * Acepta jdbc:postgresql://host:port/bd[?params]. Si no parsea, retorna defaults.
+     */
+    public static String[] parsear(String jdbcUrl) {
+        String host = DEFAULT_HOST;
+        String puerto = String.valueOf(DEFAULT_PORT);
+        String base = DEFAULT_DB;
+        if (jdbcUrl != null) {
+            try {
+                String s = jdbcUrl.trim();
+                String pref = "jdbc:postgresql://";
+                if (s.startsWith(pref)) {
+                    String resto = s.substring(pref.length());
+                    int slash = resto.indexOf('/');
+                    String hostPort = slash >= 0 ? resto.substring(0, slash) : resto;
+                    String bd = slash >= 0 ? resto.substring(slash + 1) : "";
+                    int q = bd.indexOf('?');
+                    if (q >= 0) bd = bd.substring(0, q);
+                    if (!bd.isBlank()) base = bd.trim();
+                    int dos = hostPort.lastIndexOf(':');
+                    if (dos >= 0) {
+                        String h = hostPort.substring(0, dos).trim();
+                        String po = hostPort.substring(dos + 1).trim();
+                        if (!h.isEmpty()) host = h;
+                        try {
+                            int pi = Integer.parseInt(po);
+                            if (pi > 0 && pi <= 65535) puerto = String.valueOf(pi);
+                        } catch (NumberFormatException ignored) {}
+                    } else if (!hostPort.isBlank()) {
+                        host = hostPort.trim();
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+        return new String[]{host, puerto, base};
     }
 }
