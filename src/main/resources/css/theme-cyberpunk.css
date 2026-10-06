@@ -379,7 +379,7 @@
     -fx-icon-color: #0F766E;
 }
 
-.quick-access-btn .font-icon { -fx-icon-color: #FFFFFF; }
+.quick-access-btn .font-icon { -fx-icon-color: #0F766E; -fx-icon-size: 22px; }
 
 /* ========== SIDEBAR OCULTO ========== */
 .sidebar:hidden {
@@ -447,7 +447,10 @@
     -fx-background-radius: 4;
     -fx-border-radius: 4;
     -fx-cursor: hand;
-    -fx-padding: 4;
+    -fx-padding: 6 8;
+    -fx-font-size: 10px;
+    -fx-text-fill: -text-primary;
+    -fx-text-alignment: center;
 }
 
 .quick-access-btn:hover {

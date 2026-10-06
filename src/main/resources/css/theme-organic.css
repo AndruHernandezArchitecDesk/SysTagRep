@@ -526,7 +526,10 @@
     -fx-background-radius: 4;
     -fx-border-radius: 4;
     -fx-cursor: hand;
-    -fx-padding: 4;
+    -fx-padding: 6 8;
+    -fx-font-size: 10px;
+    -fx-text-fill: -text-primary;
+    -fx-text-alignment: center;
 }
 
 .quick-access-btn:hover {
@@ -539,7 +542,7 @@
     -fx-text-fill: #FFFFFF;
 }
 
-.quick-access-btn .font-icon { -fx-icon-color: -accent-primary; }
+.quick-access-btn .font-icon { -fx-icon-color: -accent-primary; -fx-icon-size: 22px; }
 
 .quick-access-bar.drop-hint {
     -fx-border-color: -accent-primary;

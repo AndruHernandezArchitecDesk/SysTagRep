@@ -32,6 +32,7 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ContextMenu;
+import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
@@ -715,10 +716,11 @@ public class MainController implements Initializable {
         int agregados = 0;
         for (AccesoDirecto a : lista) {
             if (!tienePermisoParaRuta(a.getVistaRuta())) continue;
-            Button b = new Button();
+            Button b = new Button(a.getTitulo());
             b.getStyleClass().add("quick-access-btn");
             b.setGraphic(new FontIcon(a.getIconoLiteral()));
-            b.setTooltip(new Tooltip(a.getTitulo() + " — arrastra fuera de la barra para quitar"));
+            b.setContentDisplay(ContentDisplay.TOP);
+            b.setTooltip(new Tooltip("Arrastra fuera de la barra para quitar"));
             b.getProperties().put("vistaRuta", a.getVistaRuta());
             b.getProperties().put("accesoId", a.getId());
             b.setOnAction(e -> {
