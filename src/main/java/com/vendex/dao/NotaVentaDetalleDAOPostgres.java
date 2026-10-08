@@ -14,6 +14,11 @@ import java.util.List;
 public class NotaVentaDetalleDAOPostgres implements NotaVentaDetalleDAO {
 
     public void insertarDetalle(int notaVentaRegistroId, List<DetalleVenta> detalles) {
+        insertarDetalle(notaVentaRegistroId, detalles, true);
+    }
+
+    @Override
+    public void insertarDetalle(int notaVentaRegistroId, List<DetalleVenta> detalles, boolean conIva) {
         String sql = "INSERT INTO nota_venta_detalle(nota_venta_registro_id, descripcion, cantidad, precio_unitario, precio_total, subtotal, iva, descuento, total, fecha_registro) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
@@ -22,7 +27,9 @@ public class NotaVentaDetalleDAOPostgres implements NotaVentaDetalleDAO {
 
             for (DetalleVenta d : detalles) {
                 BigDecimal subtotal = d.getPrecioUnitario().multiply(new BigDecimal(d.getCantidad()));
-                BigDecimal iva = subtotal.multiply(new BigDecimal("0.15")).setScale(2, RoundingMode.HALF_UP);
+                BigDecimal iva = conIva
+                        ? subtotal.multiply(new BigDecimal("0.15")).setScale(2, RoundingMode.HALF_UP)
+                        : BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
                 BigDecimal total = subtotal.add(iva).setScale(2, RoundingMode.HALF_UP);
 
                 ps.setInt(1, notaVentaRegistroId);

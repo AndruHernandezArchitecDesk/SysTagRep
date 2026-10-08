@@ -107,12 +107,7 @@ public class XmlNotaDebitoBuilder {
                 campo.setTextContent(motivoStr.length() > 300 ? motivoStr.substring(0,300) : motivoStr);
                 infoAdicional.appendChild(campo);
             }
-            {
-                Element campoProv = doc.createElement("campoAdicional");
-                campoProv.setAttribute("nombre", "RUC Proveedor");
-                campoProv.setTextContent(AppConstants.RUC_PROVEEDOR_SISTEMA);
-                infoAdicional.appendChild(campoProv);
-            }
+            XmlInfoAdicional.agregarRucProveedor(doc, infoAdicional);
             notaDebito.appendChild(infoAdicional);
 
             TransformerFactory tf = TransformerFactory.newInstance();

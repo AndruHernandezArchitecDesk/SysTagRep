@@ -120,4 +120,9 @@ public class ComprobanteDAORest implements ComprobanteDAO {
     public String[] obtenerDatosAutorizacion(String claveAcceso) {
         throw new UnsupportedOperationException("Comprobante.obtenerDatosAutorizacion rest");
     }
+
+    @Override
+    public String obtenerXmlFirmado(String claveAcceso) {
+        throw new UnsupportedOperationException("Comprobante.obtenerXmlFirmado rest");
+    }
 }

@@ -28,4 +28,9 @@ public interface CuentaPorCobrarDAO {
 
     List<String[]> obtenerDetallesVenta(int notaVentaId);
 
+    /** Detalle de factura a credito para el modal PorCobrar (filas FACTURA). */
+    default List<String[]> obtenerDetallesFactura(int facturaRegistroId) {
+        return List.of();
+    }
+
 }

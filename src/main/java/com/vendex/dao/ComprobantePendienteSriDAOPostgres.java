@@ -126,7 +126,7 @@ public class ComprobantePendienteSriDAOPostgres implements ComprobantePendienteS
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, estado);
-            ps.setString(2, mensaje);
+            ps.setString(2, truncar(mensaje));
             if (proximoIntento == null) ps.setNull(3, Types.TIMESTAMP); else ps.setTimestamp(3, Timestamp.valueOf(proximoIntento));
             ps.setInt(4, intentos);
             ps.setInt(5, id);
@@ -168,5 +168,11 @@ public class ComprobantePendienteSriDAOPostgres implements ComprobantePendienteS
         c.setEstado(rs.getString("estado"));
         c.setUltimoMensajeSri(rs.getString("ultimo_mensaje_sri"));
         return c;
+    }
+
+    /** Cinturon para ultimo_mensaje_sri VARCHAR(500) en BDs aun sin migrar a TEXT. */
+    private static String truncar(String mensaje) {
+        if (mensaje == null) return null;
+        return mensaje.length() <= 450 ? mensaje : mensaje.substring(0, 450) + "...[truncado]";
     }
 }

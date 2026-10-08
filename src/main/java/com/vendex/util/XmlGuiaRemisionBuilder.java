@@ -97,12 +97,7 @@ public class XmlGuiaRemisionBuilder {
             guia.appendChild(destinatariosEl);
 
             Element infoAdicional = doc.createElement("infoAdicional");
-            {
-                Element campoProv = doc.createElement("campoAdicional");
-                campoProv.setAttribute("nombre", "RUC Proveedor");
-                campoProv.setTextContent(AppConstants.RUC_PROVEEDOR_SISTEMA);
-                infoAdicional.appendChild(campoProv);
-            }
+            XmlInfoAdicional.agregarRucProveedor(doc, infoAdicional);
             guia.appendChild(infoAdicional);
 
             TransformerFactory tf = TransformerFactory.newInstance();

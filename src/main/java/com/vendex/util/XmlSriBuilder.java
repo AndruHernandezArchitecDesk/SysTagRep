@@ -79,12 +79,14 @@ public class XmlSriBuilder {
             agregarElemento(infoFactura, "totalSinImpuestos", totalSinImpuestos);
             agregarElemento(infoFactura, "totalDescuento", totalDescuento);
 
-            // totalConImpuestos
+            // totalConImpuestos — baseImponible = suma de totales NETOS de lineas
+            // (regla SRI: base == suma de precioTotalSinImpuesto). Fallback al subtotal
+            // del header si las lineas no son parseables (callers legacy sin descuento).
             Element totalConImpuestosEl = doc.createElement("totalConImpuestos");
             Element impuesto = doc.createElement("totalImpuesto");
             agregarElemento(impuesto, "codigo", "2"); // 2=IVA
             agregarElemento(impuesto, "codigoPorcentaje", "4"); // 4=IVA 15%
-            agregarElemento(impuesto, "baseImponible", totalSinImpuestos);
+            agregarElemento(impuesto, "baseImponible", baseImponibleIva(detalles, totalSinImpuestos));
             agregarElemento(impuesto, "valor", totalImpuesto);
             totalConImpuestosEl.appendChild(impuesto);
             infoFactura.appendChild(totalConImpuestosEl);
@@ -139,12 +141,7 @@ public class XmlSriBuilder {
                 infoAdicional.appendChild(campoAdic);
             }
             // RUC Proveedor sistema - obligatorio desde 26-sep-2026 si software es de terceros
-            {
-                Element campoProv = doc.createElement("campoAdicional");
-                campoProv.setAttribute("nombre", "RUC Proveedor");
-                campoProv.setTextContent(AppConstants.RUC_PROVEEDOR_SISTEMA);
-                infoAdicional.appendChild(campoProv);
-            }
+            XmlInfoAdicional.agregarRucProveedor(doc, infoAdicional);
             factura.appendChild(infoAdicional);
 
             // Transform to String
@@ -169,8 +166,26 @@ public class XmlSriBuilder {
         padre.appendChild(el);
     }
 
-    private static boolean esNumeroValido(String valor, int maxLength) {
-        if (valor == null || valor.trim().isEmpty()) {
+    /**
+     * Base imponible IVA = suma de precioTotalSinImpuesto de las lineas (NETOS).
+     * Si no se puede calcular (lineas legacy), fallback al subtotal del header.
+     */
+    private static String baseImponibleIva(java.util.List<Object[]> detalles, String totalSinImpuestos) {
+        try {
+            if (detalles != null && !detalles.isEmpty()) {
+                java.math.BigDecimal suma = java.math.BigDecimal.ZERO;
+                for (Object[] det : detalles) {
+                    if (det != null && det.length > 5 && det[5] != null) {
+                        suma = suma.add(new java.math.BigDecimal(det[5].toString().trim()));
+                    }
+                }
+                return suma.setScale(2, java.math.RoundingMode.HALF_UP).toString();
+            }
+        } catch (Exception ignored) {}
+        return totalSinImpuestos;
+    }
+
+    private static boolean esNumeroValido(String valor, int maxLength) {        if (valor == null || valor.trim().isEmpty()) {
             return false;
         }
         return valor.trim().matches("[0-9]+") && valor.trim().length() <= maxLength;

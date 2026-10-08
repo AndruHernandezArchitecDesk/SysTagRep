@@ -188,7 +188,7 @@ public class ChatWidgetController {
         if (!tieneKey) {
             badgeIA.setText("○ Local");
             badgeIA.getStyleClass().setAll("badge-local");
-            badgeIA.setTooltip(new javafx.scene.control.Tooltip("Sin IA: configura API key en Ayuda > Configurar IA"));
+            badgeIA.setTooltip(new javafx.scene.control.Tooltip("Sin IA: configura API key en Configurar IA (menú lateral)"));
             return;
         }
         switch (e) {

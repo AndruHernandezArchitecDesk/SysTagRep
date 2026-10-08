@@ -58,6 +58,9 @@ import com.vendex.dao.LogDAOPostgres;
 
 public class MainController implements Initializable {
 
+    private static final java.util.logging.Logger LOG =
+            java.util.logging.Logger.getLogger(MainController.class.getName());
+
     public MainController() {
         this(com.vendex.config.AppContext.getInstance());
     }
@@ -468,7 +471,7 @@ public class MainController implements Initializable {
         boolean dark = ThemeManager.esDarkMode();
         if (iconToggleTemaLateral != null) iconToggleTemaLateral.setIconLiteral(dark ? "fas-sun" : "fas-moon");
         if (imgLogoHeader != null) {
-            String recurso = dark ? "/img/VendexLogoDark.png" : "/img/logoVendex.png";
+            String recurso = "/img/logoTAG.png";
             try (java.io.InputStream is = getClass().getResourceAsStream(recurso)) {
                 if (is != null) imgLogoHeader.setImage(new javafx.scene.image.Image(is));
             } catch (Exception ignore) {}
@@ -561,7 +564,8 @@ public class MainController implements Initializable {
                 });
                 cableados++;
             }
-            logDAO.guardar("MainController", "configurarAccesosDirectos", "botones sidebar cableados: " + cableados);
+            // traza de exito solo a consola (FINE): la tabla logs es para errores
+            LOG.fine("configurarAccesosDirectos botones sidebar cableados: " + cableados);
         }
         configurarZonaDrop(quickAccessBar, true);
         if (headerBar != null && headerBar != quickAccessBar) configurarZonaDrop(headerBar, false);

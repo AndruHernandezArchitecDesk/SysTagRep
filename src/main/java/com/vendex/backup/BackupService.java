@@ -264,12 +264,12 @@ public class BackupService {
         try {
             String withoutPrefix = url.replace("jdbc:postgresql://", "");
             String[] parts = withoutPrefix.split("/", 2);
-            if (parts.length < 2) return "dbVendex";
+            if (parts.length < 2) return "dbTag";
             String dbAndParams = parts[1];
             String db = dbAndParams.split("\\?")[0];
-            if (db.isBlank()) return "dbVendex";
+            if (db.isBlank()) return "dbTag";
             return db;
-        } catch (Exception e) { return "dbVendex"; }
+        } catch (Exception e) { return "dbTag"; }
     }
 
     private String formatSize(long bytes) {

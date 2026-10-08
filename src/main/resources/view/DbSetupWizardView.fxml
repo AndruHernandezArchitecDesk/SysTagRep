@@ -20,7 +20,7 @@
         <Label text="Puerto:" GridPane.rowIndex="1" GridPane.columnIndex="0" style="-fx-text-fill: white;"/>
         <TextField fx:id="txtPuerto" promptText="5432" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
         <Label text="Base de datos:" GridPane.rowIndex="2" GridPane.columnIndex="0" style="-fx-text-fill: white;"/>
-        <TextField fx:id="txtBase" promptText="dbVendex" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+        <TextField fx:id="txtBase" promptText="dbTag" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
         <Label text="Usuario BD:" GridPane.rowIndex="3" GridPane.columnIndex="0" style="-fx-text-fill: white;"/>
         <TextField fx:id="txtUser" promptText="app_vendex" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
         <Label text="Contraseña BD:" GridPane.rowIndex="4" GridPane.columnIndex="0" style="-fx-text-fill: white;"/>
@@ -30,7 +30,7 @@
             <CheckBox fx:id="chkMostrarPassword" text="Mostrar" style="-fx-text-fill: white;"/>
         </HBox>
         <Label text="JDBC generada:" GridPane.rowIndex="5" GridPane.columnIndex="0" style="-fx-text-fill: white;"/>
-        <TextField fx:id="txtUrlPreview" editable="false" GridPane.rowIndex="5" GridPane.columnIndex="1" style="-fx-font-family: monospace; -fx-font-size: 11px;" promptText="jdbc:postgresql://192.168.1.7:5432/dbVendex"/>
+        <TextField fx:id="txtUrlPreview" editable="false" GridPane.rowIndex="5" GridPane.columnIndex="1" style="-fx-font-family: monospace; -fx-font-size: 11px;" promptText="jdbc:postgresql://192.168.1.7:5432/dbTag"/>
     </GridPane>
 
     <Separator />

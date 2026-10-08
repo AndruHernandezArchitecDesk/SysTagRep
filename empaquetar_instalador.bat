@@ -19,19 +19,34 @@ echo.
 where jpackage >nul 2>nul
 if errorlevel 1 (
     echo [ERROR] jpackage no encontrado.
-    echo   Instala un JDK 17+ y asegurate de que su carpeta bin este en el PATH.
+    echo   Instala un JDK 17+ ^(JDK, no solo JRE^) y asegurate de que su carpeta bin este en el PATH.
+    echo   Verifica con: java -version  y  jpackage --version
+    echo.
+    java -version 2>&1
+    echo.
+    pause
     exit /b 1
 )
+echo   jpackage OK:
+jpackage --version
+echo.
+java -version 2>&1
+echo.
 
-echo [0/2] Compilando el proyecto...
-call mvnw.cmd clean package -DskipTests -q
+echo [0/2] Compilando el proyecto... (se muestra el progreso de Maven abajo)
+call mvnw.cmd clean package -DskipTests -B
 if errorlevel 1 (
     echo [ERROR] Fallo la compilacion de Maven.
+    echo   Revisa tu conexion a internet ^(descarga dependencias^) y que JAVA_HOME apunte a JDK 17+.
+    echo.
+    pause
     exit /b 1
 )
 
 if not exist target\%JAR% (
     echo [ERROR] No se genero %JAR% en target.
+    echo.
+    pause
     exit /b 1
 )
 
@@ -47,7 +62,8 @@ jpackage --input target ^
   --type msi ^
   --win-menu --win-menu-group "Vendex Repuestos" ^
   --win-shortcut ^
-  --java-options "-Xmx1024m -Xms128m" ^
+  --java-options "-Xmx1024m" ^
+  --java-options "-Xms128m" ^
   --java-options "--enable-native-access=ALL-UNNAMED" ^
   --dest dist
 if errorlevel 1 goto fallback
@@ -57,6 +73,8 @@ echo      Produccion sin BD: instalalo en cada PC cliente.
 echo      Primer arranque: ingresa IP del servidor + Probar conexion + Guardar.
 echo      Para cambiar de servidor luego: ejecuta Reconfigurar-Vendex-BD.bat
 echo      (abre la app con el asistente de conexion).
+echo.
+pause
 exit /b 0
 
 :fallback
@@ -69,16 +87,19 @@ jpackage --input target ^
   --main-class com.vendex.Launcher ^
   --icon "%ICON%" ^
   --type app-image ^
-  --win-menu ^
-  --win-shortcut ^
-  --java-options "-Xmx1024m -Xms128m" ^
+  --java-options "-Xmx1024m" ^
+  --java-options "-Xms128m" ^
   --java-options "--enable-native-access=ALL-UNNAMED" ^
   --dest dist
 if errorlevel 1 (
     echo [ERROR] jpackage fallo en la app-image.
+    echo.
+    pause
     exit /b 1
 )
 powershell -Command "Compress-Archive -Path 'dist\%NOMBRE%' -DestinationPath 'dist\%NOMBRE%-portable.zip' -Force"
 echo [OK] Portable generado: dist\%NOMBRE%-portable.zip
 echo      Envia el zip al cliente; el descomprime y abre %NOMBRE%\%NOMBRE%.exe
+echo.
+pause
 exit /b 0

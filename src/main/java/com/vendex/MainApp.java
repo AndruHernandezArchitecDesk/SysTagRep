@@ -116,9 +116,24 @@ public class MainApp extends Application {
     }
 
     private void mostrarWizardDb(boolean obligatorio) throws Exception {
+        // El wizard NO usa VendexControllerFactory a proposito: la factory construye
+        // el AppContext completo (todos los DAOs abren conexion en su constructor).
+        // Sin db.properties aun no hay conexion valida y eso tumbaba la app con
+        // HikariPool$PoolInitializationException antes de mostrar el wizard.
+        // DbSetupWizardController es no-arg (solo DbConfig/SecureConfigStore estaticos).
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/DbSetupWizardView.fxml"));
-        com.vendex.config.VendexControllerFactory.aplicar(loader);
-        Parent root = loader.load();
+        Parent root;
+        try {
+            root = loader.load();
+        } catch (Exception e) {
+            javafx.scene.control.Alert a = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
+            a.setTitle("Vendex - Configuración de Base de Datos");
+            a.setHeaderText("No se pudo abrir el asistente de conexión");
+            a.setContentText("Detalle: " + (e.getMessage() != null ? e.getMessage() : e.toString())
+                    + "\n\nVerifica que el archivo DbSetupWizardView.fxml esté incluido en la instalación.");
+            a.showAndWait();
+            throw e;
+        }
         Stage wizard = new Stage();
         wizard.setTitle("Vendex - Configuración de Base de Datos");
         wizard.setScene(new Scene(root));

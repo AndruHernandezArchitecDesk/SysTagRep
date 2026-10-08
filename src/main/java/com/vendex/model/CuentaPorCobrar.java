@@ -5,7 +5,10 @@ import java.time.LocalDateTime;
 
 public class CuentaPorCobrar {
     private int id;
-    private int notaVentaId;
+    /** Origen proforma. NULL cuando el credito es de FACTURA (ver facturaRegistroId). */
+    private Integer notaVentaId;
+    /** Origen factura electronica. NULL cuando el credito es de proforma. */
+    private Integer facturaRegistroId;
     private int clienteId;
     private BigDecimal total;
     private int mesesPlazo;
@@ -28,8 +31,14 @@ public class CuentaPorCobrar {
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
 
-    public int getNotaVentaId() { return notaVentaId; }
-    public void setNotaVentaId(int notaVentaId) { this.notaVentaId = notaVentaId; }
+    public Integer getNotaVentaId() { return notaVentaId; }
+    public void setNotaVentaId(Integer notaVentaId) { this.notaVentaId = notaVentaId; }
+
+    public Integer getFacturaRegistroId() { return facturaRegistroId; }
+    public void setFacturaRegistroId(Integer facturaRegistroId) { this.facturaRegistroId = facturaRegistroId; }
+
+    /** Origen del credito para UI/reportes. */
+    public String getTipoDocumento() { return facturaRegistroId != null ? "FACTURA" : "PROFORMA"; }
 
     public int getClienteId() { return clienteId; }
     public void setClienteId(int clienteId) { this.clienteId = clienteId; }

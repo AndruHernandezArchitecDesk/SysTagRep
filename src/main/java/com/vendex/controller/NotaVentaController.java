@@ -119,6 +119,7 @@ public class NotaVentaController implements Initializable {
 
     // Totales
     @FXML private Label lblSubtotal, lblIva, lblDescuento, lblTotal;
+    @FXML private CheckBox chkIva;
     @FXML private TextField txtDescuento;
     @FXML private ComboBox<String> cmbFormaPago;
     @FXML private ComboBox<String> cmbDescuento;
@@ -149,6 +150,17 @@ public class NotaVentaController implements Initializable {
     private java.util.Set<Integer> idsVehProd;
     private static final String TODAS = "Todas";
     private static final String TODOS = "Todos";
+    private static final BigDecimal TASA_IVA = new BigDecimal("0.15");
+
+    /** Check IVA: inicia desactivado; null-safe por si el FXML no lo trae. */
+    private boolean esConIva() {
+        return chkIva != null && chkIva.isSelected();
+    }
+
+    private BigDecimal calcularIva(BigDecimal subtotal) {
+        if (!esConIva()) return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+        return subtotal.multiply(TASA_IVA).setScale(2, RoundingMode.HALF_UP);
+    }
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -161,6 +173,10 @@ public class NotaVentaController implements Initializable {
         cargarFormasPago();
         cargarCredito();
         cargarDescuento();
+        if (chkIva != null) {
+            chkIva.setSelected(false);
+            chkIva.setOnAction(e -> calcularTotales());
+        }
         
         iniciarTablaInventario();
         iniciarTablaDetalle();
@@ -559,7 +575,7 @@ public class NotaVentaController implements Initializable {
 
     private void calcularTotales() {
         BigDecimal subtotal = itemsDetalle.stream().map(DetalleVenta::getPrecioTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal iva = subtotal.multiply(new BigDecimal("0.15")).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal iva = calcularIva(subtotal);
         BigDecimal totalBruto = subtotal.add(iva);
         BigDecimal descuento = calcularDescuento(totalBruto);
         BigDecimal total = totalBruto.subtract(descuento).setScale(2, RoundingMode.HALF_UP);
@@ -660,7 +676,7 @@ public class NotaVentaController implements Initializable {
             return;
         }
 
-        daoNotaVentaDetalle.insertarDetalle(notaVentaId, itemsDetalle);
+        daoNotaVentaDetalle.insertarDetalle(notaVentaId, itemsDetalle, esConIva());
 
         // Guardar productos temporales (fantasma) en comprobante_temp — campos resumen venta
         for (DetalleVenta d : itemsDetalle) {
@@ -685,7 +701,7 @@ public class NotaVentaController implements Initializable {
 
         // Generar PDF
         BigDecimal sub = itemsDetalle.stream().map(DetalleVenta::getPrecioTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal ivaCalc = sub.multiply(new BigDecimal("0.15")).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal ivaCalc = calcularIva(sub);
         BigDecimal totalBruto = sub.add(ivaCalc);
         BigDecimal descCalc = calcularDescuento(totalBruto);
         BigDecimal totCalc = totalBruto.subtract(descCalc).setScale(2, RoundingMode.HALF_UP);
@@ -725,7 +741,7 @@ public class NotaVentaController implements Initializable {
                 empresaActual.getTelefono() + " / " + empresaActual.getCelular(), empresaActual.getCorreo(),
                 cmbCliente.getValue().getNombre(), cmbCliente.getValue().getIdentificacion(),
                 txtDireccion.getText(), txtTelefono.getText(), txtCorreo.getText(),
-                cmbFormaPago.getValue(), detallesPDF, sub, ivaCalc, descCalc, totCalc);
+                cmbFormaPago.getValue(), detallesPDF, sub, ivaCalc, descCalc, totCalc, esConIva());
 
         Alert alertExito = new Alert(Alert.AlertType.INFORMATION);
         alertExito.setTitle("Proforma registrada");
@@ -764,6 +780,7 @@ public class NotaVentaController implements Initializable {
         tblDetalle.refresh();
         if (txtDescuento != null) txtDescuento.setText("0.00");
         cmbDescuento.setValue("0");
+        if (chkIva != null) chkIva.setSelected(false);
         calcularTotales();
         cmbCliente.getSelectionModel().clearSelection();
         cmbCliente.getEditor().clear();
@@ -786,6 +803,7 @@ public class NotaVentaController implements Initializable {
             java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
             body.put("clienteId", cmbCliente.getValue() != null ? cmbCliente.getValue().getId() : null);
             body.put("formaPago", cmbFormaPago.getValue());
+            body.put("conIva", esConIva());
             java.util.List<java.util.Map<String, Object>> items = new java.util.ArrayList<>();
             for (DetalleVenta d : itemsDetalle) {
                 java.util.Map<String, Object> it = new java.util.LinkedHashMap<>();
@@ -803,7 +821,7 @@ public class NotaVentaController implements Initializable {
             int notaVentaId = ((Number) resp.get("id")).intValue();
 
             BigDecimal sub = itemsDetalle.stream().map(DetalleVenta::getPrecioTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
-            BigDecimal ivaCalc = sub.multiply(new BigDecimal("0.15")).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal ivaCalc = calcularIva(sub);
             BigDecimal totalBruto = sub.add(ivaCalc);
             BigDecimal descCalc = calcularDescuento(totalBruto);
             BigDecimal totCalc = totalBruto.subtract(descCalc).setScale(2, RoundingMode.HALF_UP);
@@ -828,7 +846,7 @@ public class NotaVentaController implements Initializable {
                     empresaActual.getTelefono() + " / " + empresaActual.getCelular(), empresaActual.getCorreo(),
                     cmbCliente.getValue().getNombre(), cmbCliente.getValue().getIdentificacion(),
                     txtDireccion.getText(), txtTelefono.getText(), txtCorreo.getText(),
-                    cmbFormaPago.getValue(), detallesPDF, sub, ivaCalc, descCalc, totCalc);
+                    cmbFormaPago.getValue(), detallesPDF, sub, ivaCalc, descCalc, totCalc, esConIva());
 
             Alert alertExito = new Alert(Alert.AlertType.INFORMATION);
             alertExito.setTitle("Proforma registrada");
@@ -840,6 +858,7 @@ public class NotaVentaController implements Initializable {
             tblDetalle.refresh();
             if (txtDescuento != null) txtDescuento.setText("0.00");
             cmbDescuento.setValue("0");
+            if (chkIva != null) chkIva.setSelected(false);
             calcularTotales();
             cmbCliente.getSelectionModel().clearSelection();
             cmbCliente.getEditor().clear();
@@ -856,6 +875,7 @@ public class NotaVentaController implements Initializable {
             java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
             body.put("clienteId", cmbCliente.getValue() != null ? cmbCliente.getValue().getId() : null);
             body.put("formaPago", cmbFormaPago.getValue());
+            body.put("conIva", esConIva());
             java.util.List<java.util.Map<String, Object>> items = new java.util.ArrayList<>();
             for (DetalleVenta d : itemsDetalle) {
                 java.util.Map<String, Object> it = new java.util.LinkedHashMap<>();
@@ -876,6 +896,7 @@ public class NotaVentaController implements Initializable {
             tblDetalle.refresh();
             if (txtDescuento != null) txtDescuento.setText("0.00");
             cmbDescuento.setValue("0");
+            if (chkIva != null) chkIva.setSelected(false);
             calcularTotales();
             cmbCliente.getSelectionModel().clearSelection();
             cmbCliente.getEditor().clear();

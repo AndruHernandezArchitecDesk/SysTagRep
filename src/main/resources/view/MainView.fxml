@@ -27,7 +27,7 @@
 
                 <ImageView fx:id="imgLogoHeader" fitWidth="28" fitHeight="28" preserveRatio="true" smooth="true">
                     <image>
-                        <Image url="@/img/logoVendex.png"/>
+                        <Image url="@/img/logoTAG.png"/>
                     </image>
                 </ImageView>
                 <Label text="Vendex 2.0" styleClass="screen-title" style="-fx-font-size: 17px;"/>
@@ -367,6 +367,12 @@
                             <FontIcon iconLiteral="fas-robot" iconSize="16"/>
                         </graphic>
                         <Tooltip text="Chatbot/Asistente IA para consulta de repuestos"/>
+                    </Button>
+                    <Button text="Configurar IA" onAction="#irConfigurarIA" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
+                        <graphic>
+                            <FontIcon iconLiteral="fas-key" iconSize="16"/>
+                        </graphic>
+                        <Tooltip text="Guardar API key de Gemini/NVIDIA (cifrada) para el asistente IA"/>
                     </Button>
                 </VBox>
             </ScrollPane>

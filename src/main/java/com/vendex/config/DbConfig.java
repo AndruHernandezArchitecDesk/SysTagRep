@@ -16,9 +16,9 @@ import java.util.Properties;
  * La BD ya existe en el servidor. Cada cliente solo configura Host/IP + puerto + BD
  * + usuario + clave existentes y prueba la conexión antes de guardar.</p>
  *
- * PC host:  db.url=jdbc:postgresql://localhost:5432/dbVendex
- * PC cliente: db.url=jdbc:postgresql://192.168.1.7:5432/dbVendex (IP directa del servidor
- *   en la misma LAN) o jdbc:postgresql://vendex-db:5432/dbVendex (hostname via hosts/DNS).
+ * PC host:  db.url=jdbc:postgresql://localhost:5432/dbTag
+ * PC cliente: db.url=jdbc:postgresql://192.168.1.7:5432/dbTag (IP directa del servidor
+  *   en la misma LAN) o jdbc:postgresql://vendex-db:5432/dbTag (hostname via hosts/DNS).
  *
  * <p>Mínimo privilegio (2026-09-20): rol recomendado {@code app_vendex} con grants explícitos
  * por tabla/sequence (ver {@code sql/migracion_minimo_privilegio_20260920.sql} y {@code docs/permisos_bd.md}).
@@ -39,10 +39,10 @@ public final class DbConfig {
     private static final File DIR = new File(System.getProperty("user.home"), ".vendex");
     private static final File ARCHIVO = new File(DIR, "db.properties");
 
-    public static final String DEFAULT_URL = "jdbc:postgresql://localhost:5432/dbVendex";
+    public static final String DEFAULT_URL = "jdbc:postgresql://localhost:5432/dbTag";
     public static final String DEFAULT_HOST = "192.168.1.7";
     public static final int DEFAULT_PORT = 5432;
-    public static final String DEFAULT_DB = "dbVendex";
+    public static final String DEFAULT_DB = "dbTag";
     /** Usuario de producción con mínimo privilegio (clientes nuevos). */
     public static final String DEFAULT_PROD_USER = "app_vendex";
     /** Usuario por defecto para instalaciones legacy (compatibilidad). Para mínimo privilegio ejecutar sql/migracion_minimo_privilegio_20260920.sql y luego configurar wizard con app_vendex. */
@@ -138,7 +138,7 @@ public final class DbConfig {
             if (password == null || password.isBlank()) {
                 p.remove("db.password");
                 try (FileOutputStream fos = new FileOutputStream(ARCHIVO)) {
-                    p.store(fos, "Vendex - Conexion PostgreSQL. Editar db.url para BD remota. Ej: jdbc:postgresql://vendex-db:5432/dbVendex (vendex-db via hosts, ver docs/hosts_setup.md)");
+                    p.store(fos, "Vendex - Conexion PostgreSQL. Editar db.url para BD remota. Ej: jdbc:postgresql://vendex-db:5432/dbTag (vendex-db via hosts, ver docs/hosts_setup.md)");
                 }
             } else {
                 // guardar url/user directos y password cifrado (SecureConfigStore maneja cifrado)
@@ -146,7 +146,7 @@ public final class DbConfig {
                 String cifrado = SecureConfigStore.cifrar(password);
                 p.setProperty("db.password", cifrado);
                 try (FileOutputStream fos = new FileOutputStream(ARCHIVO)) {
-                    p.store(fos, "Vendex - Conexion PostgreSQL. Editar db.url para BD remota. Ej: jdbc:postgresql://vendex-db:5432/dbVendex (vendex-db via hosts) - db.password cifrado AES/GCM");
+                    p.store(fos, "Vendex - Conexion PostgreSQL. Editar db.url para BD remota. Ej: jdbc:postgresql://vendex-db:5432/dbTag (vendex-db via hosts) - db.password cifrado AES/GCM");
                 }
             }
         } catch (IOException ignored) {}

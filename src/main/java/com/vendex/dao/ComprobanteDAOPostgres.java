@@ -78,7 +78,7 @@ public class ComprobanteDAOPostgres implements ComprobanteDAO {
                      "xml_autorizado = ?, numero_autorizacion = ?, fecha_autorizacion = ? WHERE clave_acceso = ?";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, estado);
-            ps.setString(2, mensaje);
+            ps.setString(2, truncar(mensaje));
             ps.setString(3, xmlAutorizado);
             ps.setString(4, numeroAutorizacion);
             ps.setTimestamp(5, parsearFechaAutorizacion(fechaAutorizacion));
@@ -118,7 +118,7 @@ public class ComprobanteDAOPostgres implements ComprobanteDAO {
             ps.setString(6, respuestaRecepcion);
             ps.setString(7, respuestaAutorizacion);
             ps.setString(8, estado);
-            ps.setString(9, mensaje);
+            ps.setString(9, truncar(mensaje));
             ps.setString(10, numeroAutorizacion);
             ps.setTimestamp(11, parsearFechaAutorizacion(fechaAutorizacion));
             ps.executeUpdate();
@@ -185,5 +185,29 @@ public class ComprobanteDAOPostgres implements ComprobanteDAO {
             LOGGER.log(Level.SEVERE, "Error en operacion de ComprobanteDAO", e);
         }
         return null;
+    }
+
+    @Override
+    public String obtenerXmlFirmado(String claveAcceso) {
+        String sql = "SELECT xml_generado FROM comprobantes_electronicos WHERE clave_acceso = ? LIMIT 1";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, claveAcceso);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String xml = rs.getString(1);
+                    return (xml != null && !xml.isBlank()) ? xml : null;
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Error en operacion de ComprobanteDAO", e);
+        }
+        return null;
+    }
+
+    /** Cinturon para columnas mensaje VARCHAR(500) en BDs aun sin migrar a TEXT. */
+    private static String truncar(String mensaje) {
+        if (mensaje == null) return null;
+        return mensaje.length() <= 450 ? mensaje : mensaje.substring(0, 450) + "...[truncado]";
     }
 }

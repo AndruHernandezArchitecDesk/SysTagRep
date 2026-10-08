@@ -79,6 +79,9 @@ import com.vendex.dao.CodigoDAOPostgres;
  */
 public class IngresoMercaderiaController implements Initializable {
 
+    private static final java.util.logging.Logger LOG =
+            java.util.logging.Logger.getLogger(IngresoMercaderiaController.class.getName());
+
     public IngresoMercaderiaController() {
         this(com.vendex.config.AppContext.getInstance());
     }
@@ -620,10 +623,10 @@ public class IngresoMercaderiaController implements Initializable {
             Runnable generarHojaAsync = () -> {
                 Thread t = new Thread(() -> {
                     long t0 = System.currentTimeMillis();
-                    logDAO.guardar("IngresoMercaderiaController", "generarHoja", "INICIO factura=" + facturaNumFinal + " prov=" + (provFinal != null ? provFinal.getId() : 0));
+                    LOG.fine(() -> "generarHoja INICIO factura=" + facturaNumFinal + " prov=" + (provFinal != null ? provFinal.getId() : 0));
                     try {
                         List<Inventario> recien = dao.listarPorNumeroFactura(facturaNumFinal, provFinal != null ? provFinal.getId() : 0);
-                        logDAO.guardar("IngresoMercaderiaController", "generarHoja", "listarPorNumeroFactura OK size=" + recien.size() + " en " + (System.currentTimeMillis()-t0) + "ms");
+                        LOG.fine(() -> "generarHoja listarPorNumeroFactura OK size=" + recien.size() + " en " + (System.currentTimeMillis()-t0) + "ms");
                         if (recien.isEmpty()) {
                             javafx.application.Platform.runLater(() -> new Alert(Alert.AlertType.WARNING, "No se encontraron productos para hoja A4 (factura " + facturaNumFinal + ")").showAndWait());
                             return;
@@ -635,7 +638,7 @@ public class IngresoMercaderiaController implements Initializable {
                         }
                         File hoja = com.vendex.util.HojaEtiquetasPDF.generarHojaA4(recien, facturaNumFinal);
                         long dt = System.currentTimeMillis()-t0;
-                        logDAO.guardar("IngresoMercaderiaController", "generarHoja", "PDF OK " + hoja.getAbsolutePath() + " (" + hoja.length()/1024 + "KB) en " + dt + "ms");
+                        LOG.fine(() -> "generarHoja PDF OK " + hoja.getAbsolutePath() + " (" + hoja.length()/1024 + "KB) en " + dt + "ms");
                         // Auto-abrir PDF sin bloquear UI (background)
                         try {
                             String os2 = System.getProperty("os.name").toLowerCase();
@@ -1108,6 +1111,7 @@ public class IngresoMercaderiaController implements Initializable {
 
     private void abrirModal(String fxml, String titulo, double ancho, double alto) {
         try {
+            com.vendex.util.ComboPopupGuard.ocultarAntesDeModal();
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxml));
             com.vendex.config.VendexControllerFactory.aplicar(loader);
             Parent vista = loader.load();

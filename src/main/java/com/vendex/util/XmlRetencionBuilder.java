@@ -116,12 +116,7 @@ public class XmlRetencionBuilder {
             compRet.appendChild(docsEl);
 
             Element infoAdicional = doc.createElement("infoAdicional");
-            {
-                Element campoProv = doc.createElement("campoAdicional");
-                campoProv.setAttribute("nombre", "RUC Proveedor");
-                campoProv.setTextContent(AppConstants.RUC_PROVEEDOR_SISTEMA);
-                infoAdicional.appendChild(campoProv);
-            }
+            XmlInfoAdicional.agregarRucProveedor(doc, infoAdicional);
             compRet.appendChild(infoAdicional);
 
             TransformerFactory tf = TransformerFactory.newInstance();

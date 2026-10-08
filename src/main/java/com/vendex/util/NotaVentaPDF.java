@@ -29,6 +29,19 @@ public class NotaVentaPDF {
                                String formaPago,
                                List<String[]> detalles,
                                BigDecimal subtotal, BigDecimal iva, BigDecimal descuento, BigDecimal total) {
+        generar(rutaArchivo, numNota, fecha, razonSocial, ruc, direccion, telefono, correo,
+                clienteNombre, clienteIdentificacion, clienteDireccion, clienteTelefono, clienteCorreo,
+                formaPago, detalles, subtotal, iva, descuento, total,
+                iva != null && iva.compareTo(BigDecimal.ZERO) > 0);
+    }
+
+    public static void generar(String rutaArchivo, String numNota, String fecha,
+                               String razonSocial, String ruc, String direccion, String telefono, String correo,
+                               String clienteNombre, String clienteIdentificacion, String clienteDireccion, String clienteTelefono, String clienteCorreo,
+                               String formaPago,
+                               List<String[]> detalles,
+                               BigDecimal subtotal, BigDecimal iva, BigDecimal descuento, BigDecimal total,
+                               boolean mostrarIva) {
 
         Document doc = new Document(new Rectangle(PageSize.A4.getWidth(), PageSize.A4.getHeight() / 2), 15, 15, 10, 10);
 
@@ -51,7 +64,7 @@ public class NotaVentaPDF {
             celdaLogo.setBorder(PdfPCell.NO_BORDER);
             celdaLogo.setVerticalAlignment(Element.ALIGN_MIDDLE);
             try {
-                java.io.InputStream logoStream = NotaVentaPDF.class.getResourceAsStream("/img/logoVendex.png");
+                java.io.InputStream logoStream = NotaVentaPDF.class.getResourceAsStream("/img/logoTAG.png");
                 if (logoStream != null) {
                     Image logo = Image.getInstance(logoStream.readAllBytes());
                     logo.scaleToFit(50, 50);
@@ -162,7 +175,9 @@ public class NotaVentaPDF {
             tablaTotales.setWidths(new float[]{60, 40});
 
             addFilaTotal(tablaTotales, "Subtotal:", subtotal.setScale(2, RoundingMode.HALF_UP).toString(), fontPequena, fontPequenaNegrita);
-            addFilaTotal(tablaTotales, "IVA (15%):", iva.setScale(2, RoundingMode.HALF_UP).toString(), fontPequena, fontPequenaNegrita);
+            if (mostrarIva) {
+                addFilaTotal(tablaTotales, "IVA (15%):", iva.setScale(2, RoundingMode.HALF_UP).toString(), fontPequena, fontPequenaNegrita);
+            }
             if (descuento.compareTo(BigDecimal.ZERO) > 0) {
                 addFilaTotal(tablaTotales, "Descuento:", "-" + descuento.setScale(2, RoundingMode.HALF_UP).toString(), fontPequena, fontPequenaNegrita);
             }

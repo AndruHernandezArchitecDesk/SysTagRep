@@ -157,8 +157,13 @@ public class PorCobrarController implements Initializable {
             return new ReadOnlyObjectWrapper<>(ts != null ? ts.toLocalDateTime().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "");
         });
         colDetArticulos.setCellValueFactory(data -> {
-            int notaVentaId = (int) data.getValue()[1];
-            List<String[]> detalles = dao.obtenerDetallesVenta(notaVentaId);
+            Object[] fila = data.getValue();
+            List<String[]> detalles;
+            if ("FACTURA".equals(fila.length > 15 ? fila[15] : null) && fila[14] != null) {
+                detalles = dao.obtenerDetallesFactura(((Number) fila[14]).intValue());
+            } else {
+                detalles = dao.obtenerDetallesVenta((int) fila[1]);
+            }
             StringBuilder sb = new StringBuilder();
             for (String[] d : detalles) {
                 if (sb.length() > 0) sb.append(", ");
@@ -269,7 +274,8 @@ public class PorCobrarController implements Initializable {
     }
 
     private void mostrarDetalleNota(Object[] fila) {
-        int notaVentaId = (int) fila[1];
+        boolean esFactura = "FACTURA".equals(fila.length > 15 ? fila[15] : null) && fila[14] != null;
+        int docId = esFactura ? ((Number) fila[14]).intValue() : (int) fila[1];
         String cliente = (String) fila[3];
         String factura = (String) fila[5];
         Timestamp fecha = (Timestamp) fila[6];
@@ -280,18 +286,20 @@ public class PorCobrarController implements Initializable {
         BigDecimal adelanto = (BigDecimal) fila[11];
         if (adelanto == null) adelanto = BigDecimal.ZERO;
 
-        List<String[]> detalles = dao.obtenerDetallesVenta(notaVentaId);
+        List<String[]> detalles = esFactura
+                ? dao.obtenerDetallesFactura(docId)
+                : dao.obtenerDetallesVenta(docId);
 
         Stage modal = new Stage();
         modal.initModality(Modality.APPLICATION_MODAL);
-        modal.setTitle("Detalle Proforma " + factura);
+        modal.setTitle((esFactura ? "Detalle Factura " : "Detalle Proforma ") + factura);
         modal.setResizable(true);
 
         VBox contenido = new VBox(12);
         contenido.setPadding(new Insets(20));
         contenido.setStyle("");
 
-        Label lblTitulo = new Label("Detalle de Proforma");
+        Label lblTitulo = new Label(esFactura ? "Detalle de Factura" : "Detalle de Proforma");
         lblTitulo.setFont(Font.font("System", FontWeight.BOLD, 16));
 
         GridPane info = new GridPane();

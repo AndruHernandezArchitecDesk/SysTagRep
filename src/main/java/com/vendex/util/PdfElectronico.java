@@ -26,6 +26,9 @@ public class PdfElectronico {
     private static final java.awt.Color GRIS_ENCABEZADO = new java.awt.Color(225, 225, 225);
     private static final java.awt.Color GRIS_LINEA = new java.awt.Color(190, 190, 190);
     private static final java.awt.Color GRIS_OSCURO = new java.awt.Color(205, 205, 205);
+    private static final java.awt.Color ROJO_FONDO = new java.awt.Color(253, 236, 234);
+    private static final java.awt.Color ROJO_BORDE = new java.awt.Color(197, 40, 40);
+    private static final java.awt.Color ROJO_TEXTO = new java.awt.Color(140, 20, 20);
 
     private static final Font FONT_TITULO = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 15);
     private static final Font FONT_SUBTITULO = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11);
@@ -70,7 +73,7 @@ public class PdfElectronico {
             celdaIzq.setPadding(0);
 
             try {
-                java.io.InputStream logoStream = PdfElectronico.class.getResourceAsStream("/img/logoVendex.png");
+                java.io.InputStream logoStream = PdfElectronico.class.getResourceAsStream("/img/logoTAG.png");
                 if (logoStream != null) {
                     Image logo = Image.getInstance(logoStream.readAllBytes());
                     logo.scaleToFit(110, 110);
@@ -180,6 +183,27 @@ public class PdfElectronico {
 
             doc.add(encabezado);
             doc.add(new Paragraph(" "));
+
+            // === BANDA PENDIENTE SRI: solo cuando aun no hay numero de autorizacion ===
+            // El RIDE provisional se entrega en mostrador antes de autorizar; la banda deja
+            // claro que aun no tiene validez tributaria. Al autorizar, regenerarRide()
+            // sobrescribe el archivo con los datos reales y la banda desaparece.
+            boolean sinAutorizar = numeroAutorizacion == null || numeroAutorizacion.trim().isEmpty();
+            if (sinAutorizar) {
+                PdfPTable bandaPendiente = new PdfPTable(1);
+                bandaPendiente.setWidthPercentage(100);
+                PdfPCell celdaPendiente = new PdfPCell(new Phrase(
+                        "PENDIENTE DE AUTORIZACIÓN SRI — documento aún sin validez tributaria. "
+                        + "Será actualizado automáticamente al autorizarse.",
+                        FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, ROJO_TEXTO)));
+                celdaPendiente.setBackgroundColor(ROJO_FONDO);
+                celdaPendiente.setBorderColor(ROJO_BORDE);
+                celdaPendiente.setHorizontalAlignment(Element.ALIGN_CENTER);
+                celdaPendiente.setPadding(6);
+                bandaPendiente.addCell(celdaPendiente);
+                doc.add(bandaPendiente);
+                doc.add(new Paragraph(" "));
+            }
 
             // === BANDA GRIS DEL COMPRADOR (2 columnas) ===
             PdfPTable bandaCliente = new PdfPTable(new float[]{50, 50});

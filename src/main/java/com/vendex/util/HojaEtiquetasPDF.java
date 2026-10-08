@@ -29,7 +29,7 @@ import com.vendex.dao.UbicacionDetalleDAOPostgres;
  */
 public class HojaEtiquetasPDF {
 
-    private static final String RUTA_LOGO = "/img/logoVendex.png";
+    private static final String RUTA_LOGO = "/img/logoTAG.png";
 
     public static File generarHojaA4(List<Inventario> productos, String numeroFactura) throws Exception {
         if (productos == null || productos.isEmpty()) throw new IllegalArgumentException("Lista de productos vacía");

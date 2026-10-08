@@ -46,7 +46,8 @@ if jpackage --input target \
   --type deb \
   --linux-menu-group "Office" \
   --linux-shortcut \
-  --java-options "-Xmx1024m -Xms128m" \
+  --java-options "-Xmx1024m" \
+  --java-options "-Xms128m" \
   --java-options "--enable-native-access=ALL-UNNAMED" \
   --dest dist; then
   DEB=$(ls -t dist/*.deb 2>/dev/null | head -n 1)
@@ -69,7 +70,8 @@ jpackage --input target \
   --main-class com.vendex.Launcher \
   --icon "$ICON_PNG" \
   --type app-image \
-  --java-options "-Xmx1024m -Xms128m" \
+  --java-options "-Xmx1024m" \
+  --java-options "-Xms128m" \
   --java-options "--enable-native-access=ALL-UNNAMED" \
   --dest dist
 

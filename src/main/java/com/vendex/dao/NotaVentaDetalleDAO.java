@@ -14,4 +14,9 @@ public interface NotaVentaDetalleDAO {
 
     void insertarDetalle(int notaVentaRegistroId, List<DetalleVenta> detalles);
 
+    /** Variante con IVA opcional (proforma sin IVA guarda iva=0). Por defecto con IVA (comportamiento legacy). */
+    default void insertarDetalle(int notaVentaRegistroId, List<DetalleVenta> detalles, boolean conIva) {
+        insertarDetalle(notaVentaRegistroId, detalles);
+    }
+
 }

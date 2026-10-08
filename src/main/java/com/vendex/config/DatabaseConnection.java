@@ -22,6 +22,14 @@ public class DatabaseConnection {
     private static final ThreadLocal<String> USER = new ThreadLocal<>();
     private static final ThreadLocal<String> PASSWORD = new ThreadLocal<>();
 
+    // Config global por JVM: los hilos de fondo (login-task, sri-reintento, sync)
+    // nacen con ThreadLocal vacio; sin esto caian al DEFAULT localhost aunque el
+    // wizard hubiera guardado una URL remota. El ThreadLocal queda solo como
+    // override por-hilo (tests aislados); si es null se usa lo global.
+    private static volatile String globalUrl = DEFAULT_URL;
+    private static volatile String globalUser = DEFAULT_USER;
+    private static volatile String globalPass = DEFAULT_PASSWORD;
+
     private static volatile boolean configLoaded = false;
 
     // HikariCP pool — singleton por JVM (una instancia de app por PC)
@@ -31,9 +39,25 @@ public class DatabaseConnection {
     private static volatile String poolUser;
 
     static {
-        URL.set(DEFAULT_URL);
-        USER.set(DEFAULT_USER);
-        PASSWORD.set(DEFAULT_PASSWORD);
+        aplicarParams(DEFAULT_URL, DEFAULT_USER, DEFAULT_PASSWORD);
+    }
+
+    /** Fija config global + hilo actual. */
+    private static void aplicarParams(String url, String user, String password) {
+        globalUrl = url;
+        globalUser = user;
+        globalPass = password;
+        URL.set(url);
+        USER.set(user);
+        PASSWORD.set(password);
+    }
+
+    /** Resuelve param efectivo: override del hilo si existe, si no lo global. */
+    private static String efectivo(ThreadLocal<String> hilo, String global, String defecto) {
+        String v = hilo.get();
+        if (v != null) return v;
+        if (global != null) return global;
+        return defecto;
     }
 
     /**
@@ -45,9 +69,7 @@ public class DatabaseConnection {
         if (configLoaded) return;
         try {
             String[] cfg = DbConfig.cargar();
-            URL.set(cfg[0]);
-            USER.set(cfg[1]);
-            PASSWORD.set(cfg[2]);
+            aplicarParams(cfg[0], cfg[1], cfg[2]);
             configLoaded = true;
             validarPasswordDebil(cfg[2]);
             // Inicializar pool si es PostgreSQL
@@ -55,9 +77,7 @@ public class DatabaseConnection {
         } catch (Exception e) {
             // fallback a defaults si el archivo esta corrupto — no loguear password ni connection string
             LOG.log(Level.WARNING, "No se pudo cargar db.properties, usando defaults en memoria", e);
-            URL.set(DEFAULT_URL);
-            USER.set(DEFAULT_USER);
-            PASSWORD.set(DEFAULT_PASSWORD);
+            aplicarParams(DEFAULT_URL, DEFAULT_USER, DEFAULT_PASSWORD);
             configLoaded = true;
             validarPasswordDebil(DEFAULT_PASSWORD);
             try { ensurePool(DEFAULT_URL, DEFAULT_USER, DEFAULT_PASSWORD); } catch (Exception ex) {
@@ -76,8 +96,7 @@ public class DatabaseConnection {
 
     /** Solo warning+log, no bloquea. Para uso desde UI si se quiere mostrar dialog. */
     public static boolean esPasswordDebilActual() {
-        String p = PASSWORD.get();
-        if (p == null) p = DEFAULT_PASSWORD;
+        String p = efectivo(PASSWORD, globalPass, DEFAULT_PASSWORD);
         return PasswordDebilValidator.esDebil(p);
     }
 
@@ -174,17 +193,9 @@ public class DatabaseConnection {
                 if (!configLoaded) initFromConfig();
             }
         }
-        String url = URL.get();
-        if (url == null) {
-            url = DEFAULT_URL;
-            URL.set(url);
-            USER.set(DEFAULT_USER);
-            PASSWORD.set(DEFAULT_PASSWORD);
-        }
-        String user = USER.get();
-        String pass = PASSWORD.get();
-        if (user == null) user = DEFAULT_USER;
-        if (pass == null) pass = DEFAULT_PASSWORD;
+        String url = efectivo(URL, globalUrl, DEFAULT_URL);
+        String user = efectivo(USER, globalUser, DEFAULT_USER);
+        String pass = efectivo(PASSWORD, globalPass, DEFAULT_PASSWORD);
 
         // HSQLDB / tc: bypass pool, DriverManager directo (tests aislados)
         if (isHsqldbUrl(url)) {
@@ -225,7 +236,7 @@ public class DatabaseConnection {
             "fecha_emision TIMESTAMP NOT NULL DEFAULT now(), cliente_id INTEGER NOT NULL REFERENCES cliente(id), motivo VARCHAR(300) NOT NULL,"+
             "tipo_motivo VARCHAR(20) NOT NULL CHECK (tipo_motivo IN ('DEVOLUCION','DESCUENTO','ANULACION')),"+
             "total_sin_impuestos NUMERIC(12,2) NOT NULL, valor_iva NUMERIC(12,2) NOT NULL, valor_modificacion NUMERIC(12,2) NOT NULL,"+
-            "reingresa_stock BOOLEAN NOT NULL DEFAULT false, estado_sri VARCHAR(15) NOT NULL DEFAULT 'PENDIENTE', mensaje_sri VARCHAR(500),"+
+            "reingresa_stock BOOLEAN NOT NULL DEFAULT false, estado_sri VARCHAR(15) NOT NULL DEFAULT 'PENDIENTE', mensaje_sri TEXT,"+
             "numero_autorizacion VARCHAR(49), fecha_autorizacion TIMESTAMP, xml_firmado TEXT, usuario_id INTEGER NOT NULL REFERENCES usuarios(id), creado_en TIMESTAMP NOT NULL DEFAULT now())",
             "CREATE TABLE IF NOT EXISTS nota_credito_detalle ("+
             "id SERIAL PRIMARY KEY, nota_credito_id INTEGER NOT NULL REFERENCES nota_credito_registro(id) ON DELETE CASCADE,"+
@@ -245,7 +256,7 @@ public class DatabaseConnection {
              "establecimiento VARCHAR(3) NOT NULL DEFAULT '001', punto_emision VARCHAR(3) NOT NULL DEFAULT '001', secuencial VARCHAR(9) NOT NULL,"+
              "fecha_emision TIMESTAMP NOT NULL DEFAULT now(), cliente_id INTEGER NOT NULL REFERENCES cliente(id), forma_pago VARCHAR(2) NOT NULL,"+
              "total_sin_impuestos NUMERIC(12,2) NOT NULL, valor_iva NUMERIC(12,2) NOT NULL DEFAULT 0, valor_total NUMERIC(12,2) NOT NULL,"+
-             "estado_sri VARCHAR(15) NOT NULL DEFAULT 'PENDIENTE', mensaje_sri VARCHAR(500), numero_autorizacion VARCHAR(49),"+
+             "estado_sri VARCHAR(15) NOT NULL DEFAULT 'PENDIENTE', mensaje_sri TEXT, numero_autorizacion VARCHAR(49),"+
              "fecha_autorizacion TIMESTAMP, xml_firmado TEXT, usuario_id INTEGER NOT NULL REFERENCES usuarios(id), creado_en TIMESTAMP NOT NULL DEFAULT now())",
              "CREATE TABLE IF NOT EXISTS nota_debito_motivo ("+
              "id SERIAL PRIMARY KEY, nota_debito_id INTEGER NOT NULL REFERENCES nota_debito_registro(id) ON DELETE CASCADE,"+
@@ -269,7 +280,7 @@ public class DatabaseConnection {
             "punto_emision VARCHAR(3) NOT NULL DEFAULT '001', secuencial VARCHAR(9) NOT NULL, fecha_emision TIMESTAMP NOT NULL DEFAULT now(),"+
             "dir_partida VARCHAR(300) NOT NULL, razon_social_transportista VARCHAR(300) NOT NULL, tipo_identificacion_transportista VARCHAR(2) NOT NULL,"+
             "ruc_transportista VARCHAR(13) NOT NULL, placa VARCHAR(10) NOT NULL, fecha_ini_transporte DATE NOT NULL, fecha_fin_transporte DATE NOT NULL,"+
-            "estado_sri VARCHAR(15) NOT NULL DEFAULT 'PENDIENTE', mensaje_sri VARCHAR(500), numero_autorizacion VARCHAR(49),"+
+            "estado_sri VARCHAR(15) NOT NULL DEFAULT 'PENDIENTE', mensaje_sri TEXT, numero_autorizacion VARCHAR(49),"+
             "fecha_autorizacion TIMESTAMP, xml_firmado TEXT, usuario_id INTEGER NOT NULL REFERENCES usuarios(id), creado_en TIMESTAMP NOT NULL DEFAULT now())",
             "CREATE TABLE IF NOT EXISTS guia_remision_destinatario ("+
             "id SERIAL PRIMARY KEY, guia_remision_id INTEGER NOT NULL REFERENCES guia_remision_registro(id) ON DELETE CASCADE,"+
@@ -299,7 +310,7 @@ public class DatabaseConnection {
             "punto_emision VARCHAR(3) NOT NULL DEFAULT '001', secuencial VARCHAR(9) NOT NULL, fecha_emision TIMESTAMP NOT NULL DEFAULT now(),"+
             "periodo_fiscal VARCHAR(7) NOT NULL, proveedor_id INTEGER REFERENCES proveedor(id), tipo_identificacion_sujeto VARCHAR(2) NOT NULL,"+
             "razon_social_sujeto VARCHAR(300) NOT NULL, identificacion_sujeto VARCHAR(13) NOT NULL, estado_sri VARCHAR(15) NOT NULL DEFAULT 'PENDIENTE',"+
-            "mensaje_sri VARCHAR(500), numero_autorizacion VARCHAR(49), fecha_autorizacion TIMESTAMP, xml_firmado TEXT,"+
+            "mensaje_sri TEXT, numero_autorizacion VARCHAR(49), fecha_autorizacion TIMESTAMP, xml_firmado TEXT,"+
             "usuario_id INTEGER NOT NULL REFERENCES usuarios(id), creado_en TIMESTAMP NOT NULL DEFAULT now())",
             "CREATE TABLE IF NOT EXISTS retencion_documento_sustento ("+
             "id SERIAL PRIMARY KEY, retencion_id INTEGER NOT NULL REFERENCES retencion_registro(id) ON DELETE CASCADE,"+
@@ -500,7 +511,7 @@ public class DatabaseConnection {
             "tipo_comprobante VARCHAR(20) NOT NULL, clave_acceso VARCHAR(49) UNIQUE NOT NULL, " +
             "numero_comprobante VARCHAR(30), ambiente VARCHAR(10), intentos INTEGER NOT NULL DEFAULT 0, " +
             "ultimo_intento TIMESTAMP, proximo_intento TIMESTAMP NOT NULL DEFAULT now(), " +
-            "estado VARCHAR(15) NOT NULL DEFAULT 'PENDIENTE', ultimo_mensaje_sri VARCHAR(500))",
+            "estado VARCHAR(15) NOT NULL DEFAULT 'PENDIENTE', ultimo_mensaje_sri TEXT)",
             "CREATE INDEX IF NOT EXISTS idx_pendiente_estado_proximo ON comprobante_pendiente_sri(estado, proximo_intento)",
             "CREATE INDEX IF NOT EXISTS idx_pendiente_clave ON comprobante_pendiente_sri(clave_acceso)"
         };
@@ -514,7 +525,7 @@ public class DatabaseConnection {
                     "tipo_comprobante VARCHAR(20) NOT NULL, clave_acceso VARCHAR(49) NOT NULL UNIQUE, " +
                     "numero_comprobante VARCHAR(30), ambiente VARCHAR(10), intentos INTEGER NOT NULL DEFAULT 0, " +
                     "ultimo_intento TIMESTAMP, proximo_intento TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
-                    "estado VARCHAR(15) NOT NULL DEFAULT 'PENDIENTE', ultimo_mensaje_sri VARCHAR(500))");
+                    "estado VARCHAR(15) NOT NULL DEFAULT 'PENDIENTE', ultimo_mensaje_sri TEXT)");
             st.execute("CREATE INDEX IF NOT EXISTS idx_pendiente_estado_proximo ON comprobante_pendiente_sri(estado, proximo_intento)");
         } catch (SQLException e) { logIfPermissionDenied(e, "ensureComprobantePendienteSriSchema hsqldb"); }
         try (Connection con = getConnection(); java.sql.Statement st = con.createStatement()) {
@@ -647,9 +658,7 @@ public class DatabaseConnection {
     }
 
     public static void setConnectionParams(String url, String user, String password) {
-        URL.set(url);
-        USER.set(user);
-        PASSWORD.set(password);
+        aplicarParams(url, user, password);
         configLoaded = true;
         // Si cambia a postgres real, recrear pool; si es hsqldb, cerrar pool
         if (url != null && (url.toLowerCase().contains("hsqldb") || url.contains("tc:"))) {
@@ -660,9 +669,7 @@ public class DatabaseConnection {
     }
 
     public static void resetToDefault() {
-        URL.set(DEFAULT_URL);
-        USER.set(DEFAULT_USER);
-        PASSWORD.set(DEFAULT_PASSWORD);
+        aplicarParams(DEFAULT_URL, DEFAULT_USER, DEFAULT_PASSWORD);
         synchronized (POOL_LOCK) { closePoolLocked(); }
         configLoaded = false;
     }

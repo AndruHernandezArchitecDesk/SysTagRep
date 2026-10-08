@@ -89,6 +89,5 @@ public final class AppConstants {
     public static final String ESTADO_SIN_ENVIO = "NO ENVIADO";
     public static final String ESTADO_ERROR_CONEXION = "ERROR DE CONEXIÓN";
 
-    public static final String RUC_PROVEEDOR_SISTEMA = "1799999999001";
-    public static final String RAZON_SOCIAL_PROVEEDOR_SISTEMA = "Vendex Sistema";
+    public static final String RUC_PROVEEDOR_SISTEMA = "1724611924001";
 }

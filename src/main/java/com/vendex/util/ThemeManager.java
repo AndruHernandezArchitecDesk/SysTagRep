@@ -80,7 +80,7 @@ public class ThemeManager {
     }
 
     public static String getLogoPath() {
-        return esDarkMode() ? "/img/VendexLogoDark.png" : "/img/logoVendex.png";
+        return "/img/logoTAG.png";
     }
 
     private static String cargarTema() {

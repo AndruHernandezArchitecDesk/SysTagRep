@@ -64,4 +64,24 @@ class PdfElectronicoTest {
         assertTrue(txt.contains("—") || txt.contains("PRUEBAS"),
                 "El RIDE sin autorización debe mostrar un marcador o el ambiente");
     }
+
+    @Test
+    void generar_ridePendiente_muestraBandaSinValidez() throws Exception {
+        File temp = File.createTempFile("factura_ride_pendiente_banda_", ".pdf");
+        String ruta = generarRide(temp.getAbsolutePath(), null, null);
+        String txt = extraerTexto(ruta);
+        assertTrue(txt.contains("PENDIENTE DE AUTORIZACI"),
+                "El RIDE provisional debe advertir que está pendiente de autorización");
+        assertTrue(txt.contains("sin validez tributaria"),
+                "El RIDE provisional debe aclarar que aún no tiene validez tributaria");
+    }
+
+    @Test
+    void generar_rideAutorizado_noMuestraBandaPendiente() throws Exception {
+        File temp = File.createTempFile("factura_ride_aut_banda_", ".pdf");
+        String ruta = generarRide(temp.getAbsolutePath(), NUM_AUT, "2026-08-12T10:00:00-05:00");
+        String txt = extraerTexto(ruta);
+        assertFalse(txt.contains("PENDIENTE DE AUTORIZACI"),
+                "El RIDE autorizado no debe mostrar la banda de pendiente");
+    }
 }

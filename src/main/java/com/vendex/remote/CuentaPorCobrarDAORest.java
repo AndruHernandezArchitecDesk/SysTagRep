@@ -45,13 +45,13 @@ public class CuentaPorCobrarDAORest extends RestDao<CuentaPorCobrar> implements 
     @Override
     public void insertar(CuentaPorCobrar cpc) {
         try {
-            Map<String, Object> body = Map.of(
-                    "clienteId", cpc.getClienteId(),
-                    "notaVentaId", cpc.getNotaVentaId(),
-                    "monto", cpc.getTotal() != null ? cpc.getTotal().toString() : "0",
-                    "saldo", cpc.getTotal() != null ? cpc.getTotal().toString() : "0",
-                    "sucursalId", SesionActual.getSucursalId()
-            );
+            java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+            body.put("clienteId", cpc.getClienteId());
+            if (cpc.getNotaVentaId() != null) body.put("notaVentaId", cpc.getNotaVentaId());
+            if (cpc.getFacturaRegistroId() != null) body.put("facturaRegistroId", cpc.getFacturaRegistroId());
+            body.put("monto", cpc.getTotal() != null ? cpc.getTotal().toString() : "0");
+            body.put("saldo", cpc.getTotal() != null ? cpc.getTotal().toString() : "0");
+            body.put("sucursalId", SesionActual.getSucursalId());
             rest.post("/api/cuenta-por-cobrar", body, Map.class);
         } catch (Exception e) {
             throw new RuntimeException("Error insertando cuenta por cobrar vía REST", e);

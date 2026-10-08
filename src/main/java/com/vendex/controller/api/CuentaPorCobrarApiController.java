@@ -26,6 +26,7 @@ public class CuentaPorCobrarApiController {
             CuentaPorCobrar cpc = new CuentaPorCobrar();
             cpc.setClienteId(((Number) body.get("clienteId")).intValue());
             cpc.setNotaVentaId(body.get("notaVentaId") != null ? ((Number) body.get("notaVentaId")).intValue() : null);
+            cpc.setFacturaRegistroId(body.get("facturaRegistroId") != null ? ((Number) body.get("facturaRegistroId")).intValue() : null);
             cpc.setTotal(new BigDecimal(body.get("monto").toString()));
             cpc.setCuotaMensual(new BigDecimal(body.get("saldo").toString()));
             dao.insertar(cpc);

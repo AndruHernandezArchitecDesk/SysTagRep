@@ -282,6 +282,7 @@ public class FacturasIngresadasController implements Initializable {
             return;
         }
         try {
+            com.vendex.util.ComboPopupGuard.ocultarAntesDeModal();
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/IngresoMercaderiaView.fxml"));
             com.vendex.config.VendexControllerFactory.aplicar(loader);
             Parent vista = loader.load();

@@ -259,7 +259,7 @@ public class DbSetupWizardController {
             return base + "\n→ Usuario o contraseña incorrectos para ese servidor. Pide la clave actual (rol app_vendex).";
         }
         if (low.contains("database") && low.contains("does not exist")) {
-            return base + "\n→ La base no existe en ese servidor. Verifica el nombre (ej. dbVendex). Este instalador no crea bases.";
+            return base + "\n→ La base no existe en ese servidor. Verifica el nombre (ej. dbTag). Este instalador no crea bases.";
         }
         if (low.contains("pg_hba") || low.contains("no pg_hba.conf entry")) {
             return base + "\n→ El servidor rechaza tu IP (pg_hba.conf). En el servidor autoriza: host <bd> <usuario> <tu-red>/24 scram-sha-256.";

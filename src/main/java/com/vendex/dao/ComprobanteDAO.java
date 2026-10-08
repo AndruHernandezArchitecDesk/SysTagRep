@@ -31,6 +31,11 @@ public interface ComprobanteDAO {
 
     int consultarSecuencial(String tipoComprobante);
 
+    /** XML firmado guardado al emitir, para transmitirlo (recepcion) desde el reintento. NULL si no existe. */
+    default String obtenerXmlFirmado(String claveAcceso) {
+        return null;
+    }
+
     /**
      * Datos de autorizacion para impresion/correo solo-autorizado.
      * @return {numeroAutorizacion, fechaAutorizacion ISO} o null si no hay.
