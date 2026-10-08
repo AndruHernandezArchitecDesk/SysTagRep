@@ -165,4 +165,25 @@ public class ComprobanteDAOPostgres implements ComprobanteDAO {
         }
         return 1;
     }
+
+    @Override
+    public String[] obtenerDatosAutorizacion(String claveAcceso) {
+        String sql = "SELECT numero_autorizacion, fecha_autorizacion FROM comprobantes_electronicos WHERE clave_acceso = ? LIMIT 1";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, claveAcceso);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String num = rs.getString(1);
+                    java.sql.Timestamp fh = rs.getTimestamp(2);
+                    if (num != null && !num.isBlank()) {
+                        return new String[]{num, fh != null ? fh.toLocalDateTime().toString() : ""};
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Error en operacion de ComprobanteDAO", e);
+        }
+        return null;
+    }
 }

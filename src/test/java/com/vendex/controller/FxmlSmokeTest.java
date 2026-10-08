@@ -84,6 +84,17 @@ class FxmlSmokeTest {
     }
 
     @Test
+    @Order(7)
+    void cargaSeguimientoSriViewConColumnaAcciones() throws Exception {
+        Object controller = cargar("/view/SeguimientoSriView.fxml");
+        assertNotNull(controller, "controller SeguimientoSriController");
+        assertNotNull(controller.getClass().getDeclaredField("colAcciones"), "campo colAcciones");
+        java.lang.reflect.Field f = controller.getClass().getDeclaredField("colAcciones");
+        f.setAccessible(true);
+        assertNotNull(f.get(controller), "colAcciones cableada desde FXML");
+    }
+
+    @Test
     @Order(1)
     void cargaMainViewConQuickAccessBar() throws Exception {
         Object controller = cargar("/view/MainView.fxml");

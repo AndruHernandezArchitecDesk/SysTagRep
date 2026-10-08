@@ -520,25 +520,18 @@ public class FacturaController implements Initializable {
                 logDAO.guardar("FacturaController", "encolar", ex.getMessage(), ex instanceof Exception ? (Exception)ex : new Exception(ex));
             }
 
-            // Entrega inmediata al cliente en mostrador (offline válido al firmar, sin esperar AUTORIZADO)
-            // No esperar SRI: mostrar PDF provisional y liberar mostrador; el job de fondo se encarga
+            // Sin auto-apertura del provisional: impresion y correo solo con factura
+            // AUTORIZADA desde Seguimiento SRI. El PDF provisional queda en disco con
+            // banda PENDIENTE y se regenera solo al autorizar.
             {
                 Alert alertExito = new Alert(Alert.AlertType.INFORMATION);
                 alertExito.setTitle("Factura registrada — pendiente SRI");
-                alertExito.setHeaderText("Comprobante entregable en mostrador");
+                alertExito.setHeaderText("Aun sin validez tributaria");
                 alertExito.setContentText("Factura " + resultado.numComprobante + " registrada.\nClave: " + resultado.claveAcceso +
-                        "\nPDF provisional guardado en: " + resultado.rutaPDF +
-                        "\n\nEl SRI autorizará en segundo plano (cola cada 2min). El PDF se actualizará y el correo se enviará al autorizar.");
+                        "\n\nEstado SRI: PENDIENTE DE AUTORIZACION." +
+                        "\nEl PDF y el correo se habilitaran en Seguimiento SRI al autorizarse." +
+                        "\nNo imprima ni entregue este comprobante como valido todavia.");
                 alertExito.showAndWait();
-                try {
-                    if (Desktop.isDesktopSupported()) {
-                        final File pdfFinal = new File(resultado.rutaPDF);
-                        new Thread(() -> {
-                            try { Desktop.getDesktop().open(pdfFinal); } catch (Exception ignored) { LOGGER.log(Level.WARNING, "No se pudo abrir PDF", ignored); }
-                        }, "Abrir-PDF").start();
-                    }
-                } catch (Exception ignored) { LOGGER.log(Level.WARNING, "Desktop no soportado", ignored); }
-                new Alert(Alert.AlertType.INFORMATION, "Factura en cola SRI. Quedará AUTORIZADA automáticamente. Verifique en Seguimiento SRI o banner.").showAndWait();
                 itemsDetalle.clear();
                 tblDetalle.refresh();
                 if (txtDescuento != null) txtDescuento.setText("0.00");
@@ -584,20 +577,12 @@ public class FacturaController implements Initializable {
 
             Alert alertExito = new Alert(Alert.AlertType.INFORMATION);
             alertExito.setTitle("Factura registrada — pendiente SRI");
-            alertExito.setHeaderText("Comprobante entregable en mostrador");
+            alertExito.setHeaderText("Aun sin validez tributaria");
             alertExito.setContentText("Factura " + numComprobante + " registrada.\nClave: " + claveAcceso +
-                    "\nPDF provisional guardado en: " + rutaPDF +
-                    "\n\nEl SRI autorizará en segundo plano (cola cada 2min). El PDF se actualizará y el correo se enviará al autorizar.");
+                    "\n\nEstado SRI: PENDIENTE DE AUTORIZACION." +
+                    "\nEl PDF y el correo se habilitaran en Seguimiento SRI al autorizarse." +
+                    "\nNo imprima ni entregue este comprobante como valido todavia.");
             alertExito.showAndWait();
-            try {
-                if (Desktop.isDesktopSupported()) {
-                    final File pdfFinal = new File(rutaPDF);
-                    new Thread(() -> {
-                        try { Desktop.getDesktop().open(pdfFinal); } catch (Exception ignored) { LOGGER.log(Level.WARNING, "No se pudo abrir PDF", ignored); }
-                    }, "Abrir-PDF").start();
-                }
-            } catch (Exception ignored) { LOGGER.log(Level.WARNING, "Desktop no soportado", ignored); }
-            new Alert(Alert.AlertType.INFORMATION, "Factura en cola SRI. Quedará AUTORIZADA automáticamente. Verifique en Seguimiento SRI o banner.").showAndWait();
             itemsDetalle.clear();
             tblDetalle.refresh();
             if (txtDescuento != null) txtDescuento.setText("0.00");

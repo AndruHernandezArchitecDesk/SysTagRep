@@ -31,4 +31,12 @@ public interface ComprobanteDAO {
 
     int consultarSecuencial(String tipoComprobante);
 
+    /**
+     * Datos de autorizacion para impresion/correo solo-autorizado.
+     * @return {numeroAutorizacion, fechaAutorizacion ISO} o null si no hay.
+     */
+    default String[] obtenerDatosAutorizacion(String claveAcceso) {
+        return null;
+    }
+
 }

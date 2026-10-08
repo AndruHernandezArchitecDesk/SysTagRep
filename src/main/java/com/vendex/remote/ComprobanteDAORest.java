@@ -115,4 +115,9 @@ public class ComprobanteDAORest implements ComprobanteDAO {
     public int consultarSecuencial(String tipoComprobante) {
         throw new UnsupportedOperationException("Comprobante.consultarSecuencial rest");
     }
+
+    @Override
+    public String[] obtenerDatosAutorizacion(String claveAcceso) {
+        throw new UnsupportedOperationException("Comprobante.obtenerDatosAutorizacion rest");
+    }
 }

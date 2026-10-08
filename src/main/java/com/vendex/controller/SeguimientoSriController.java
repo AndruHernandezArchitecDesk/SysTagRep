@@ -41,7 +41,9 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.HBox;
 
+import java.awt.Desktop;
 import java.io.File;
 import java.math.BigDecimal;
 import java.net.URL;
@@ -91,6 +93,7 @@ public class SeguimientoSriController implements Initializable {
     @FXML private Button btnAnterior;
     @FXML private Button btnSiguiente;
     @FXML private Button btnConsultarSri;
+    @FXML private TableColumn<FacturaRegistro, String> colAcciones;
     @FXML private ComboBox<Integer> cmbPageSize;
 
     private int currentPage = 1;
@@ -145,10 +148,132 @@ public class SeguimientoSriController implements Initializable {
 
         tblFacturas.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         SortTable.agregarBotones(tblFacturas);
+        configurarColumnaAcciones();
 
         iniciarPageSize();
         txtBuscar.textProperty().addListener((obs, old, val) -> { currentPage = 1; cargarDatos(); });
 
+        cargarDatos();
+    }
+
+    /**
+     * Acciones por fila: Imprimir y Enviar correo, habilitadas SOLO con factura
+     * AUTORIZADA (con numero de autorizacion). Antes de autorizar no hay nada
+     * valido que imprimir ni enviar.
+     */
+    private void configurarColumnaAcciones() {
+        if (colAcciones == null) return;
+        colAcciones.setCellValueFactory(new PropertyValueFactory<>("estadoSri"));
+        colAcciones.setCellFactory(col -> new TableCell<>() {
+            private final Button btnImprimir = new Button("Imprimir");
+            private final Button btnCorreo = new Button("Correo");
+            private final HBox box = new HBox(6, btnImprimir, btnCorreo);
+            {
+                btnImprimir.setOnAction(e -> {
+                    FacturaRegistro fr = getTableRow() == null ? null : getTableRow().getItem();
+                    if (fr != null) imprimirAutorizada(fr);
+                });
+                btnCorreo.setOnAction(e -> {
+                    FacturaRegistro fr = getTableRow() == null ? null : getTableRow().getItem();
+                    if (fr != null) enviarCorreoAutorizado(fr);
+                });
+            }
+            @Override
+            protected void updateItem(String estado, boolean empty) {
+                super.updateItem(estado, empty);
+                if (empty || getTableRow() == null || getTableRow().getItem() == null) {
+                    setGraphic(null);
+                    return;
+                }
+                boolean autorizada = AppConstants.ESTADO_AUTORIZADO.equals(getTableRow().getItem().getEstadoSri());
+                btnImprimir.setDisable(!autorizada);
+                btnCorreo.setDisable(!autorizada);
+                String tip = autorizada ? "Comprobante autorizado: disponible"
+                        : "Disponible al autorizarse por el SRI";
+                btnImprimir.setTooltip(new Tooltip(tip));
+                btnCorreo.setTooltip(new Tooltip(tip));
+                setGraphic(box);
+            }
+        });
+    }
+
+    /** Lee numero/fecha de autorizacion guardados; null si aun no hay. */
+    private String[] datosAutorizacion(FacturaRegistro fr) {
+        try {
+            if (fr == null || fr.getClaveAcceso() == null) return null;
+            return AppContext.getInstance().comprobanteDAO.obtenerDatosAutorizacion(fr.getClaveAcceso());
+        } catch (Exception e) {
+            logDAO.guardar("SeguimientoSriController", "datosAutorizacion", String.valueOf(e));
+            return null;
+        }
+    }
+
+    private void imprimirAutorizada(FacturaRegistro fr) {
+        String[] aut = datosAutorizacion(fr);
+        if (aut == null) {
+            new Alert(Alert.AlertType.WARNING,
+                    "Factura " + fr.getNumComprobante() + " aun sin autorizacion registrada. Consulte el SRI primero.").showAndWait();
+            return;
+        }
+        try {
+            String ruta = facturaService.regenerarRide(fr.getClaveAcceso(), aut[0], aut[1], obtenerDirectorioEscritorio());
+            if (ruta == null) {
+                new Alert(Alert.AlertType.ERROR, "No se pudo regenerar el RIDE autorizado.").showAndWait();
+                return;
+            }
+            File pdf = new File(ruta);
+            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(java.awt.Desktop.Action.PRINT)) {
+                Desktop.getDesktop().print(pdf);
+                new Alert(Alert.AlertType.INFORMATION, "RIDE autorizado enviado a la impresora:\n" + ruta).showAndWait();
+            } else if (Desktop.isDesktopSupported()) {
+                Desktop.getDesktop().open(pdf);
+                new Alert(Alert.AlertType.INFORMATION,
+                        "Impresion directa no soportada: se abrio el RIDE autorizado para imprimirlo manualmente:\n" + ruta).showAndWait();
+            } else {
+                new Alert(Alert.AlertType.INFORMATION, "RIDE autorizado listo en:\n" + ruta).showAndWait();
+            }
+        } catch (Exception e) {
+            logDAO.guardar("SeguimientoSriController", "imprimirAutorizada", String.valueOf(e));
+            new Alert(Alert.AlertType.ERROR, "Error al imprimir: " + e.getMessage()).showAndWait();
+        }
+        cargarDatos();
+    }
+
+    private void enviarCorreoAutorizado(FacturaRegistro fr) {
+        String[] aut = datosAutorizacion(fr);
+        if (aut == null || !ElectronicoUtil.debeEnviarNotificacion(fr.getEstadoSri(), aut[0], aut[1])) {
+            new Alert(Alert.AlertType.WARNING,
+                    "Factura " + fr.getNumComprobante() + " aun sin autorizacion. El correo se habilita al autorizarse.").showAndWait();
+            return;
+        }
+        try {
+            Cliente cliente = clienteDAO.obtenerPorId(fr.getClienteId());
+            if (cliente == null || cliente.getCorreo() == null || cliente.getCorreo().trim().isEmpty()) {
+                new Alert(Alert.AlertType.WARNING, "El cliente no tiene correo registrado.").showAndWait();
+                return;
+            }
+            String rutaPDF = facturaService.regenerarRide(fr.getClaveAcceso(), aut[0], aut[1], obtenerDirectorioEscritorio());
+            if (rutaPDF == null) {
+                new Alert(Alert.AlertType.ERROR, "No se pudo regenerar el RIDE autorizado.").showAndWait();
+                return;
+            }
+            String rutaXML = System.getProperty("user.home") + File.separator + AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT
+                    + File.separator + AppConstants.PREFIJO_PDF_FACTURA + fr.getNumComprobante().replace("-", "") + AppConstants.EXTENSION_XML;
+            EmailService emailService = new EmailService();
+            boolean enviado = emailService.enviarCorreoConArchivos(
+                    cliente.getCorreo().trim(), cliente.getNombre(), fr.getCodigo(),
+                    AppConstants.TIPO_DOCUMENTO_FACTURA, new File(rutaPDF), new File(rutaXML));
+            if (enviado) {
+                logDAO.guardar("SeguimientoSriController", "enviarCorreoAutorizado",
+                        "Correo enviado a " + cliente.getCorreo() + " para factura " + fr.getClaveAcceso());
+                new Alert(Alert.AlertType.INFORMATION, "Correo enviado a " + cliente.getCorreo()).showAndWait();
+            } else {
+                new Alert(Alert.AlertType.WARNING, "No se pudo enviar el correo: " + emailService.getUltimoError()).showAndWait();
+            }
+        } catch (Exception e) {
+            logDAO.guardar("SeguimientoSriController", "enviarCorreoAutorizado", String.valueOf(e));
+            new Alert(Alert.AlertType.ERROR, "Error al enviar correo: " + e.getMessage()).showAndWait();
+        }
         cargarDatos();
     }
 
