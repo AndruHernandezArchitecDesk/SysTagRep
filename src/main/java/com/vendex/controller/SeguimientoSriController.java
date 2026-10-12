@@ -223,12 +223,18 @@ public class SeguimientoSriController implements Initializable {
             }
             File pdf = new File(ruta);
             if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(java.awt.Desktop.Action.PRINT)) {
-                Desktop.getDesktop().print(pdf);
-                new Alert(Alert.AlertType.INFORMATION, "RIDE autorizado enviado a la impresora:\n" + ruta).showAndWait();
+                try {
+                    Desktop.getDesktop().print(pdf);
+                    new Alert(Alert.AlertType.INFORMATION, "RIDE autorizado enviado a la impresora:\n" + ruta).showAndWait();
+                } catch (Exception exPrint) {
+                    // Sin app asociada al verbo imprimir (típico sin lector PDF): respaldo abrir,
+                    // que usa la app predeterminada (normalmente Edge) para imprimir con Ctrl+P.
+                    logDAO.guardar("SeguimientoSriController", "imprimirDirecto",
+                            "PRINT fallo, usando OPEN: " + exPrint.getMessage());
+                    abrirRideParaImpresionManual(pdf, ruta);
+                }
             } else if (Desktop.isDesktopSupported()) {
-                Desktop.getDesktop().open(pdf);
-                new Alert(Alert.AlertType.INFORMATION,
-                        "Impresion directa no soportada: se abrio el RIDE autorizado para imprimirlo manualmente:\n" + ruta).showAndWait();
+                abrirRideParaImpresionManual(pdf, ruta);
             } else {
                 new Alert(Alert.AlertType.INFORMATION, "RIDE autorizado listo en:\n" + ruta).showAndWait();
             }
@@ -237,6 +243,21 @@ public class SeguimientoSriController implements Initializable {
             new Alert(Alert.AlertType.ERROR, "Error al imprimir: " + e.getMessage()).showAndWait();
         }
         cargarDatos();
+    }
+
+    /** Respaldo: abre el RIDE (Edge/navegador) para imprimir con Ctrl+P; si ni eso hay, muestra la ruta. */
+    private void abrirRideParaImpresionManual(File pdf, String ruta) {
+        try {
+            Desktop.getDesktop().open(pdf);
+            new Alert(Alert.AlertType.INFORMATION,
+                    "No hay impresion directa en esta PC: se abrio el RIDE autorizado (navegador) para imprimirlo con Ctrl+P:\n" + ruta).showAndWait();
+        } catch (Exception exOpen) {
+            logDAO.guardar("SeguimientoSriController", "abrirRide",
+                    "OPEN tambien fallo: " + exOpen.getMessage());
+            new Alert(Alert.AlertType.WARNING,
+                    "Esta PC no tiene aplicacion para PDF. El RIDE autorizado esta guardado en:\n" + ruta
+                    + "\n\nInstala un lector PDF (Edge, Adobe o SumatraPDF) o copia el archivo a otra PC para imprimirlo.").showAndWait();
+        }
     }
 
     private void enviarCorreoAutorizado(FacturaRegistro fr) {
