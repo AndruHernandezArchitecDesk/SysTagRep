@@ -275,6 +275,12 @@
                                 <FontIcon iconLiteral="fas-cogs" iconSize="16"/>
                             </graphic>
                         </Button>
+                        <Button text="Mi Empresa" onAction="#irMiEmpresa" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
+                            <graphic>
+                                <FontIcon iconLiteral="fas-building" iconSize="14"/>
+                            </graphic>
+                            <Tooltip text="Datos de la empresa, RUC, obligado a llevar contabilidad, agente de retención y logo"/>
+                        </Button>
                         <Button text="Clientes" onAction="#irClientes" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-user-friends" iconSize="14"/>

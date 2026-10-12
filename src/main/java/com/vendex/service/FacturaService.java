@@ -187,7 +187,7 @@ public class FacturaService {
                     throw new IllegalStateException("No se configuró la firma electrónica (.p12 y contraseña).");
                 }
                 String tipoIdComp = tipoIdCompTmp;
-                xmlGenerado = XmlSriBuilder.construirFactura(ambienteSri, claveAcceso, empresa.getRuc(), empresa.getRazonSocial(), codEstab, codPtoEmi, secuencialFE, com.vendex.util.SucursalActual.direccionEstablecimiento(empresa.getDireccionCallePrincipal() + " y " + empresa.getDireccionCalleSecundaria()), "", "NO", tipoIdComp, cliente.getNombre(), cliente.getIdentificacion(), cliente.getDireccion(), sub.setScale(2, RoundingMode.HALF_UP).toString(), descCalc.setScale(2, RoundingMode.HALF_UP).toString(), ivaCalc.setScale(2, RoundingMode.HALF_UP).toString(), totCalc.setScale(2, RoundingMode.HALF_UP).toString(), "0.00", formaPago, fechaEmisionFE, filasDetalleSri);
+                xmlGenerado = XmlSriBuilder.construirFactura(ambienteSri, claveAcceso, empresa.getRuc(), empresa.getRazonSocial(), codEstab, codPtoEmi, secuencialFE, com.vendex.util.SucursalActual.direccionEstablecimiento(empresa.getDireccionCallePrincipal() + " y " + empresa.getDireccionCalleSecundaria()), empresa.getAgenteRetencion(), obligadoSri(empresa), tipoIdComp, cliente.getNombre(), cliente.getIdentificacion(), cliente.getDireccion(), sub.setScale(2, RoundingMode.HALF_UP).toString(), descCalc.setScale(2, RoundingMode.HALF_UP).toString(), ivaCalc.setScale(2, RoundingMode.HALF_UP).toString(), totCalc.setScale(2, RoundingMode.HALF_UP).toString(), "0.00", formaPago, fechaEmisionFE, filasDetalleSri);
                 try {
                     FirmaDigital firma = new FirmaDigital();
                     if (!firma.cargarCertificado(rutaP12, claveP12)) throw new IllegalStateException("No se pudo cargar el certificado. Verifique la ruta y la contraseña.");
@@ -273,7 +273,7 @@ public class FacturaService {
                 resultado.empresa.getRuc(), resultado.empresa.getRazonSocial(),
                 com.vendex.util.SucursalActual.direccionEstablecimiento(resultado.empresa.getDireccionCallePrincipal() + " y " + resultado.empresa.getDireccionCalleSecundaria()),
                 resultado.empresa.getTelefono(), resultado.empresa.getCorreo(),
-                "", "NO", resultado.empresa.getSucursal(),
+                resultado.empresa.getAgenteRetencion(), obligadoSri(resultado.empresa), resultado.empresa.getSucursal(),
                 resultado.empresa.getAgenteRetencion(), resultado.empresa.getResolucion(),
                 resultado.codEstab, resultado.codPtoEmi, resultado.secuencialFE,
                 resultado.fechaEmisionFE, resultado.tipoIdComp,
@@ -331,7 +331,7 @@ public class FacturaService {
                 empresa.getRuc(), empresa.getRazonSocial(),
                 com.vendex.util.SucursalActual.direccionEstablecimiento(empresa.getDireccionCallePrincipal() + " y " + empresa.getDireccionCalleSecundaria()),
                 empresa.getTelefono(), empresa.getCorreo(),
-                "", "NO", empresa.getSucursal(),
+                empresa.getAgenteRetencion(), obligadoSri(empresa), empresa.getSucursal(),
                 empresa.getAgenteRetencion(), empresa.getResolucion(),
                 codEstab, codPtoEmi, secuencial,
                 fechaEmisionFE, tipoIdComp,
@@ -391,6 +391,15 @@ public class FacturaService {
             }
         }
         return resultado;
+    }
+
+    /**
+     * Obligado a llevar contabilidad desde la ficha de la empresa (vista "Mi Empresa").
+     * Normaliza a "SI"/"NO" (SRI solo acepta esos valores).
+     */
+    static String obligadoSri(com.vendex.model.Empresa empresa) {
+        if (empresa != null && "SI".equalsIgnoreCase(empresa.getObligadoContabilidad())) return "SI";
+        return "NO";
     }
 
     /**

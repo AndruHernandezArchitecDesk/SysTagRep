@@ -89,6 +89,7 @@ public class ApiServer {
 
         app.get("/api/empresa", empresaCtrl::listar);
         app.get("/api/empresa/{id}", empresaCtrl::obtenerPorId);
+        app.post("/api/empresa", empresaCtrl::crear);
         app.put("/api/empresa/{id}", empresaCtrl::actualizar);
 
         app.get("/api/inventario", inventarioCtrl::listar);

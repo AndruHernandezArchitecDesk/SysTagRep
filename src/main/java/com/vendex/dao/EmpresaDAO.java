@@ -17,4 +17,6 @@ public interface EmpresaDAO {
 
     boolean actualizar(Empresa empresa);
 
+    Empresa crear(Empresa empresa);
+
 }

@@ -45,17 +45,29 @@ public class EmpresaDAOPostgres implements EmpresaDAO {
     }
 
     public boolean actualizar(Empresa empresa) {
-        String sql = "UPDATE empresa SET razon_social = ?, logo_url = ?, agente_retencion = ?, resolucion = ?, estado = ? WHERE id = ?";
+        String sql = "UPDATE empresa SET ruc = ?, razon_social = ?, titulo = ?, sucursal = ?, "
+                + "direccion_calle_principal = ?, direccion_calle_secundaria = ?, telefono = ?, celular = ?, "
+                + "correo = ?, logo_url = ?, agente_retencion = ?, resolucion = ?, obligado_contabilidad = ?, estado = ? "
+                + "WHERE id = ?";
 
         try (Connection con = new DatabaseConnection().getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
-            ps.setString(1, empresa.getRazonSocial());
-            ps.setString(2, empresa.getLogoUrl());
-            ps.setString(3, empresa.getAgenteRetencion());
-            ps.setString(4, empresa.getResolucion());
-            ps.setBoolean(5, empresa.isEstado());
-            ps.setInt(6, empresa.getId());
+            ps.setString(1, empresa.getRuc());
+            ps.setString(2, empresa.getRazonSocial());
+            ps.setString(3, empresa.getTitulo());
+            ps.setString(4, empresa.getSucursal());
+            ps.setString(5, empresa.getDireccionCallePrincipal());
+            ps.setString(6, empresa.getDireccionCalleSecundaria());
+            ps.setString(7, empresa.getTelefono());
+            ps.setString(8, empresa.getCelular());
+            ps.setString(9, empresa.getCorreo());
+            ps.setString(10, empresa.getLogoUrl());
+            ps.setString(11, empresa.getAgenteRetencion());
+            ps.setString(12, empresa.getResolucion());
+            ps.setString(13, empresa.getObligadoContabilidad());
+            ps.setBoolean(14, empresa.isEstado());
+            ps.setInt(15, empresa.getId());
 
             int filasAfectadas = ps.executeUpdate();
             return filasAfectadas > 0;
@@ -63,6 +75,40 @@ public class EmpresaDAOPostgres implements EmpresaDAO {
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
+        }
+    }
+
+    public Empresa crear(Empresa empresa) {
+        String sql = "INSERT INTO empresa(ruc, razon_social, titulo, sucursal, direccion_calle_principal, "
+                + "direccion_calle_secundaria, telefono, celular, correo, logo_url, agente_retencion, resolucion, "
+                + "obligado_contabilidad, estado) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id";
+
+        try (Connection con = new DatabaseConnection().getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, empresa.getRuc());
+            ps.setString(2, empresa.getRazonSocial());
+            ps.setString(3, empresa.getTitulo());
+            ps.setString(4, empresa.getSucursal());
+            ps.setString(5, empresa.getDireccionCallePrincipal());
+            ps.setString(6, empresa.getDireccionCalleSecundaria());
+            ps.setString(7, empresa.getTelefono());
+            ps.setString(8, empresa.getCelular());
+            ps.setString(9, empresa.getCorreo());
+            ps.setString(10, empresa.getLogoUrl());
+            ps.setString(11, empresa.getAgenteRetencion());
+            ps.setString(12, empresa.getResolucion());
+            ps.setString(13, empresa.getObligadoContabilidad());
+            ps.setBoolean(14, empresa.isEstado());
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) empresa.setId(rs.getInt(1));
+            }
+            return empresa;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
         }
     }
 
@@ -78,10 +124,11 @@ public class EmpresaDAOPostgres implements EmpresaDAO {
         e.setTelefono(rs.getString("telefono"));
         e.setCelular(rs.getString("celular"));
         e.setCorreo(rs.getString("correo"));
-        e.setLogoUrl(rs.getString("logo_url"));
+        try { e.setLogoUrl(rs.getString("logo_url")); } catch (SQLException ignore) {}
         e.setAgenteRetencion(rs.getString("agente_retencion"));
         e.setResolucion(rs.getString("resolucion"));
-        e.setEstado(rs.getBoolean("estado"));
+        try { e.setObligadoContabilidad(rs.getString("obligado_contabilidad")); } catch (SQLException ignore) {}
+        try { e.setEstado(rs.getBoolean("estado")); } catch (SQLException ignore) { e.setEstado(true); }
         return e;
     }
 }

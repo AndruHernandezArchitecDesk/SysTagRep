@@ -73,7 +73,7 @@ public class PdfElectronico {
             celdaIzq.setPadding(0);
 
             try {
-                java.io.InputStream logoStream = PdfElectronico.class.getResourceAsStream("/img/logoTAG.png");
+                java.io.InputStream logoStream = com.vendex.util.EmpresaLogo.abrirLogoStream(null);
                 if (logoStream != null) {
                     Image logo = Image.getInstance(logoStream.readAllBytes());
                     logo.scaleToFit(110, 110);

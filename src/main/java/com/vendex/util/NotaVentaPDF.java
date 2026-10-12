@@ -64,7 +64,7 @@ public class NotaVentaPDF {
             celdaLogo.setBorder(PdfPCell.NO_BORDER);
             celdaLogo.setVerticalAlignment(Element.ALIGN_MIDDLE);
             try {
-                java.io.InputStream logoStream = NotaVentaPDF.class.getResourceAsStream("/img/logoTAG.png");
+                java.io.InputStream logoStream = com.vendex.util.EmpresaLogo.abrirLogoStream(null);
                 if (logoStream != null) {
                     Image logo = Image.getInstance(logoStream.readAllBytes());
                     logo.scaleToFit(50, 50);

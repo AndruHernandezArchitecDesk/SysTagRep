@@ -39,4 +39,13 @@ public class EmpresaDAORest extends RestDao<Empresa> implements EmpresaDAO {
             return false;
         }
     }
+
+    @Override
+    public Empresa crear(Empresa empresa) {
+        try {
+            return rest.post("/api/empresa", empresa, Empresa.class);
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }

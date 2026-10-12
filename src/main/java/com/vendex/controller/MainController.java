@@ -241,6 +241,11 @@ public class MainController implements Initializable {
     }
 
     @FXML
+    private void irMiEmpresa() {
+        cargarVista("/view/EmpresaView.fxml");
+    }
+
+    @FXML
     private void irCodigos() {
         cargarVista("/view/CodigoView.fxml");
     }

@@ -58,7 +58,7 @@ public class PdfNotaDebito {
             celdaIzq.setBorder(PdfPCell.NO_BORDER);
             celdaIzq.setPadding(0);
             try {
-                java.io.InputStream logoStream = PdfNotaDebito.class.getResourceAsStream("/img/logoTAG.png");
+                java.io.InputStream logoStream = com.vendex.util.EmpresaLogo.abrirLogoStream(null);
                 if (logoStream != null) {
                     Image logo = Image.getInstance(logoStream.readAllBytes());
                     logo.scaleToFit(110, 110);

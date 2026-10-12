@@ -14,6 +14,7 @@ public class Empresa {
     private String logoUrl;
     private String agenteRetencion;
     private String resolucion;
+    private String obligadoContabilidad;
     private boolean estado;
 
     public Empresa(){}
@@ -132,6 +133,14 @@ public class Empresa {
 
     public void setResolucion(String resolucion) {
         this.resolucion = resolucion;
+    }
+
+    public String getObligadoContabilidad() {
+        return obligadoContabilidad;
+    }
+
+    public void setObligadoContabilidad(String obligadoContabilidad) {
+        this.obligadoContabilidad = obligadoContabilidad;
     }
 
     public boolean isEstado() {

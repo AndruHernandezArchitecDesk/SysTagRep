@@ -130,7 +130,22 @@ class FxmlSmokeTest {
                 com.vendex.util.CatalogoVistas.rutaDe("Facturas de Venta"));
         org.junit.jupiter.api.Assertions.assertEquals("/view/NotaVentaView.fxml",
                 com.vendex.util.CatalogoVistas.rutaDe("Proformas"));
+        org.junit.jupiter.api.Assertions.assertEquals("/view/EmpresaView.fxml",
+                com.vendex.util.CatalogoVistas.rutaDe("Mi Empresa"));
         org.junit.jupiter.api.Assertions.assertNull(com.vendex.util.CatalogoVistas.rutaDe("Cerrar Sesión"));
         org.junit.jupiter.api.Assertions.assertNull(com.vendex.util.CatalogoVistas.rutaDe("Cola Offline"));
+    }
+
+    @Test
+    @Order(8)
+    void cargaMiEmpresaViewConCamposSriYLogo() throws Exception {
+        Object controller = cargar("/view/EmpresaView.fxml");
+        assertNotNull(controller, "controller EmpresaController");
+        for (String campo : new String[]{"txtRuc", "txtRazonSocial", "txtTelefono", "cmbObligado",
+                "txtAgenteRetencion", "imgLogo", "btnGuardar", "btnCancelar"}) {
+            java.lang.reflect.Field f = controller.getClass().getDeclaredField(campo);
+            f.setAccessible(true);
+            assertNotNull(f.get(controller), campo + " cableado desde FXML");
+        }
     }
 }

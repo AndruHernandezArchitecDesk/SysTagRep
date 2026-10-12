@@ -72,13 +72,7 @@ public class EtiquetaUtil {
         g.setColor(Color.WHITE);
         g.fillRect(0, 0, WIDTH_PX, HEIGHT_PX);
         int y = 4;
-        try {
-            InputStream logoStream = EtiquetaUtil.class.getResourceAsStream(rutaLogo);
-            if (logoStream != null) {
-                java.awt.Image logo = ImageIO.read(logoStream).getScaledInstance(LOGO_SIZE, LOGO_SIZE, java.awt.Image.SCALE_SMOOTH);
-                g.drawImage(logo, MARGIN, y, null);
-            }
-        } catch (Exception ignored) {}
+        dibujarLogo(g, rutaLogo, MARGIN, y);
         g.setColor(Color.BLACK);
         dibujarTituloAjustado(g, "TAG REPUESTOS AUTOMOTRICES", MARGIN + LOGO_SIZE + 4, y + LOGO_SIZE - 4,
                 WIDTH_PX - MARGIN - (MARGIN + LOGO_SIZE + 4), 30);
@@ -174,13 +168,7 @@ public class EtiquetaUtil {
         g.setColor(Color.WHITE);
         g.fillRect(0, 0, WIDTH_PX, HEIGHT_PX);
         int y = 4;
-        try {
-            InputStream logoStream = EtiquetaUtil.class.getResourceAsStream(rutaLogo);
-            if (logoStream != null) {
-                java.awt.Image logo = ImageIO.read(logoStream).getScaledInstance(LOGO_SIZE, LOGO_SIZE, java.awt.Image.SCALE_SMOOTH);
-                g.drawImage(logo, MARGIN, y, null);
-            }
-        } catch (Exception ignored) {}
+        dibujarLogo(g, rutaLogo, MARGIN, y);
         g.setColor(Color.BLACK);
         // diferenciador 1/5, 2/5 ... en esquina superior derecha (se mide antes para reservar ancho al titulo)
         String diff = indice + "/" + total;
@@ -265,13 +253,7 @@ public class EtiquetaUtil {
         g.setColor(Color.WHITE);
         g.fillRect(0, 0, WIDTH_PX, HEIGHT_PX);
         int y = 4;
-        try {
-            InputStream logoStream = EtiquetaUtil.class.getResourceAsStream(rutaLogo);
-            if (logoStream != null) {
-                java.awt.Image logo = ImageIO.read(logoStream).getScaledInstance(LOGO_SIZE, LOGO_SIZE, java.awt.Image.SCALE_SMOOTH);
-                g.drawImage(logo, MARGIN, y, null);
-            }
-        } catch (Exception ignored) {}
+        dibujarLogo(g, rutaLogo, MARGIN, y);
         g.setColor(Color.BLACK);
         dibujarTituloAjustado(g, "TAG REPUESTOS AUTOMOTRICES", MARGIN + LOGO_SIZE + 4, y + LOGO_SIZE - 4,
                 WIDTH_PX - MARGIN - (MARGIN + LOGO_SIZE + 4), 30);
@@ -380,6 +362,15 @@ public class EtiquetaUtil {
     }
 
     public static Path getEtiquetasDirPublic() { return getEtiquetasDir(); }
+
+    private static void dibujarLogo(Graphics2D g, String rutaLogo, int x, int y) {
+        try (InputStream logoStream = com.vendex.util.EmpresaLogo.abrirLogoStream(rutaLogo)) {
+            if (logoStream != null) {
+                java.awt.Image logo = ImageIO.read(logoStream).getScaledInstance(LOGO_SIZE, LOGO_SIZE, java.awt.Image.SCALE_SMOOTH);
+                if (logo != null) g.drawImage(logo, x, y, null);
+            }
+        } catch (Exception ignored) {}
+    }
 
     private static void dibujarTituloAjustado(Graphics2D g, String texto, int x, int yBase, int maxAncho, int tamInicial) {
         int tamMin = 14;

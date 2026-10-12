@@ -41,6 +41,7 @@ public final class CatalogoVistas {
         m.put("Historial de Compras", "/view/HistorialCompraView.fxml");
         m.put("Alertas", "/view/AlertaView.fxml");
         m.put("Administración", "/view/ClienteView.fxml");
+        m.put("Mi Empresa", "/view/EmpresaView.fxml");
         m.put("Clientes", "/view/ClienteView.fxml");
         m.put("Usuarios", "/view/UsuariosView.fxml");
         m.put("Roles y Permisos", "/view/GestionRolesView.fxml");

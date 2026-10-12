@@ -29,7 +29,9 @@ import com.vendex.dao.UbicacionDetalleDAOPostgres;
  */
 public class HojaEtiquetasPDF {
 
-    private static final String RUTA_LOGO = "/img/logoTAG.png";
+    private static String rutaLogo() {
+        return com.vendex.util.EmpresaLogo.rutaLogoEtiqueta();
+    }
 
     public static File generarHojaA4(List<Inventario> productos, String numeroFactura) throws Exception {
         if (productos == null || productos.isEmpty()) throw new IllegalArgumentException("Lista de productos vacía");
@@ -70,7 +72,7 @@ public class HojaEtiquetasPDF {
                 fake.setStockAsignado(total);
                 for (int i = 1; i <= total; i++) {
                     if (totalEtiquetas >= CAP) break outer;
-                    BufferedImage bi = EtiquetaUtil.renderImagenEtiquetaConIndice(inv, fake, i, total, RUTA_LOGO);
+                    BufferedImage bi = EtiquetaUtil.renderImagenEtiquetaConIndice(inv, fake, i, total, rutaLogo());
                     addImageCell(table, bi);
                     totalEtiquetas++;
                 }
@@ -80,7 +82,7 @@ public class HojaEtiquetasPDF {
                     if (total > 100) total = 100;
                     for (int i = 1; i <= total; i++) {
                         if (totalEtiquetas >= CAP) break outer;
-                        BufferedImage bi = EtiquetaUtil.renderImagenEtiquetaConIndice(inv, u, i, total, RUTA_LOGO);
+                        BufferedImage bi = EtiquetaUtil.renderImagenEtiquetaConIndice(inv, u, i, total, rutaLogo());
                         addImageCell(table, bi);
                         totalEtiquetas++;
                     }
