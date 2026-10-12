@@ -80,8 +80,8 @@ public class EtiquetaUtil {
             }
         } catch (Exception ignored) {}
         g.setColor(Color.BLACK);
-        g.setFont(new Font("SansSerif", Font.BOLD, 30));
-        g.drawString("TAG REPUESTOS AUTOMOTRICES", MARGIN + LOGO_SIZE + 4, y + LOGO_SIZE - 4);
+        dibujarTituloAjustado(g, "TAG REPUESTOS AUTOMOTRICES", MARGIN + LOGO_SIZE + 4, y + LOGO_SIZE - 4,
+                WIDTH_PX - MARGIN - (MARGIN + LOGO_SIZE + 4), 30);
         String codigo = copia.getCodigo() != null ? copia.getCodigo() : "";
         String ubicStr = copia.getUbicacionPercha() != null ? copia.getUbicacionPercha() : "";
         LocalDateTime fechaIngreso = copia.getFecha_ingreso();
@@ -98,7 +98,7 @@ public class EtiquetaUtil {
                 g.drawImage(barcodeImg, barcodeX, y, null);
             } catch (Exception ignored) {}
         }
-        y += barcodeHeight + 14;
+        y += barcodeHeight + 18;
         int rightX = WIDTH_PX - MARGIN;
         if (!codigo.trim().isEmpty()) {
             g.setFont(new Font("SansSerif", Font.PLAIN, 28));
@@ -106,7 +106,7 @@ public class EtiquetaUtil {
             FontMetrics fmCod = g.getFontMetrics();
             if (fmCod.stringWidth(codigoDraw) > rightX - MARGIN) codigoDraw = conElipsis(fmCod, codigoDraw, rightX - MARGIN);
             g.drawString(codigoDraw, MARGIN, y + 8);
-            y += 22;
+            y += 26;
         }
         String precioStr = copia.getPrecioVenta() != null ? cifrarPrecio(copia.getPrecioVenta().setScale(2, java.math.RoundingMode.HALF_UP).toString()) : "";
         // descripcion adaptativa: prueba 26 -> 16 hasta que quepa en 2 lineas sin ...
@@ -126,22 +126,23 @@ public class EtiquetaUtil {
         precioWidth = precioStr.isEmpty() ? 0 : g.getFontMetrics().stringWidth(precioStr);
         if (lineas.isEmpty()) {
             g.drawString(precioStr, rightX - precioWidth, y + 6);
-            y += 18;
+            y += 22;
         } else {
             for (int i = 0; i < lineas.size(); i++) {
                 g.drawString(lineas.get(i), MARGIN, y + 6);
                 if (i == lineas.size() - 1) g.drawString(precioStr, rightX - precioWidth, y + 6);
-                y += 18;
+                y += 22;
             }
         }
         g.setFont(new Font("SansSerif", Font.PLAIN, 20));
-        g.drawString("Fecha: " + fechaStr, MARGIN, y + 5);
+        int footerY = HEIGHT_PX - MARGIN - 4;
+        g.drawString("Fecha: " + fechaStr, MARGIN, footerY);
         g.setFont(new Font("SansSerif", Font.PLAIN, 20));
         String ubicText = "Ubic: " + ubicStr;
         FontMetrics fmUbic = g.getFontMetrics();
         if (fmUbic.stringWidth(ubicText) > rightX - MARGIN) ubicText = conElipsis(fmUbic, ubicText, rightX - MARGIN);
         int ubicW = fmUbic.stringWidth(ubicText);
-        g.drawString(ubicText, rightX - ubicW, y + 5);
+        g.drawString(ubicText, rightX - ubicW, footerY);
         g.dispose();
         try {
             Path dir = getEtiquetasDir();
@@ -181,11 +182,14 @@ public class EtiquetaUtil {
             }
         } catch (Exception ignored) {}
         g.setColor(Color.BLACK);
-        g.setFont(new Font("SansSerif", Font.BOLD, 26));
-        g.drawString("TAG REPUESTOS AUTOMOTRICES", MARGIN + LOGO_SIZE + 4, y + LOGO_SIZE - 4);
-        // diferenciador 1/5, 2/5 ... en esquina superior derecha
+        // diferenciador 1/5, 2/5 ... en esquina superior derecha (se mide antes para reservar ancho al titulo)
         String diff = indice + "/" + total;
-        g.setFont(new Font("SansSerif", Font.BOLD, 12));
+        Font diffFont = new Font("SansSerif", Font.BOLD, 12);
+        int diffW = g.getFontMetrics(diffFont).stringWidth(diff);
+        int maxAnchoTitulo = WIDTH_PX - MARGIN - (MARGIN + LOGO_SIZE + 4) - diffW - 8;
+        dibujarTituloAjustado(g, "TAG REPUESTOS AUTOMOTRICES", MARGIN + LOGO_SIZE + 4, y + LOGO_SIZE - 4,
+                maxAnchoTitulo, 26);
+        g.setFont(diffFont);
         FontMetrics fmDiff = g.getFontMetrics();
         g.setColor(new Color(80,80,80));
         g.drawString(diff, WIDTH_PX - MARGIN - fmDiff.stringWidth(diff), y + 10);
@@ -206,7 +210,7 @@ public class EtiquetaUtil {
                 g.drawImage(barcodeImg, barcodeX, y, null);
             } catch (Exception ignored) {}
         }
-        y += barcodeHeight + 14;
+        y += barcodeHeight + 18;
         int rightX = WIDTH_PX - MARGIN;
         if (!codigo.trim().isEmpty()) {
             g.setFont(new Font("SansSerif", Font.PLAIN, 28));
@@ -214,7 +218,7 @@ public class EtiquetaUtil {
             FontMetrics fmCod = g.getFontMetrics();
             if (fmCod.stringWidth(codigoDraw) > rightX - MARGIN) codigoDraw = conElipsis(fmCod, codigoDraw, rightX - MARGIN);
             g.drawString(codigoDraw, MARGIN, y + 8);
-            y += 22;
+            y += 26;
         }
         String precioStr = copia.getPrecioVenta() != null ? cifrarPrecio(copia.getPrecioVenta().setScale(2, java.math.RoundingMode.HALF_UP).toString()) : "";
         List<String> lineas = null;
@@ -233,21 +237,22 @@ public class EtiquetaUtil {
         precioWidth = precioStr.isEmpty() ? 0 : g.getFontMetrics().stringWidth(precioStr);
         if (lineas.isEmpty()) {
             g.drawString(precioStr, rightX - precioWidth, y + 6);
-            y += 18;
+            y += 22;
         } else {
             for (int i = 0; i < lineas.size(); i++) {
                 g.drawString(lineas.get(i), MARGIN, y + 6);
                 if (i == lineas.size() - 1) g.drawString(precioStr, rightX - precioWidth, y + 6);
-                y += 18;
+                y += 22;
             }
         }
         g.setFont(new Font("SansSerif", Font.PLAIN, 20));
-        g.drawString("Fecha: " + fechaStr, MARGIN, y + 5);
+        int footerY = HEIGHT_PX - MARGIN - 4;
+        g.drawString("Fecha: " + fechaStr, MARGIN, footerY);
         g.setFont(new Font("SansSerif", Font.PLAIN, 20));
         String ubicText = "Ubic: " + ubicStr;
         FontMetrics fmUbic = g.getFontMetrics();
         if (fmUbic.stringWidth(ubicText) > rightX - MARGIN) ubicText = conElipsis(fmUbic, ubicText, rightX - MARGIN);
-        g.drawString(ubicText, rightX - fmUbic.stringWidth(ubicText), y + 5);
+        g.drawString(ubicText, rightX - fmUbic.stringWidth(ubicText), footerY);
         g.dispose();
         return img;
     }
@@ -268,8 +273,8 @@ public class EtiquetaUtil {
             }
         } catch (Exception ignored) {}
         g.setColor(Color.BLACK);
-        g.setFont(new Font("SansSerif", Font.BOLD, 30));
-        g.drawString("TAG REPUESTOS AUTOMOTRICES", MARGIN + LOGO_SIZE + 4, y + LOGO_SIZE - 4);
+        dibujarTituloAjustado(g, "TAG REPUESTOS AUTOMOTRICES", MARGIN + LOGO_SIZE + 4, y + LOGO_SIZE - 4,
+                WIDTH_PX - MARGIN - (MARGIN + LOGO_SIZE + 4), 30);
         String codigo = item.getCodigo() != null ? item.getCodigo() : "";
         String tagCodigo = item.getTagCodigo() != null ? item.getTagCodigo() : "";
         String descripcion = item.getDescripcion() != null ? item.getDescripcion() : "";
@@ -287,7 +292,7 @@ public class EtiquetaUtil {
                 g.drawImage(barcodeImg, barcodeX, y, null);
             } catch (Exception ignored) {}
         }
-        y += barcodeHeight + 14;
+        y += barcodeHeight + 18;
         int rightX = WIDTH_PX - MARGIN;
         if (!codigo.trim().isEmpty()) {
             g.setFont(new Font("SansSerif", Font.PLAIN, 28));
@@ -295,7 +300,7 @@ public class EtiquetaUtil {
             FontMetrics fmCod = g.getFontMetrics();
             if (fmCod.stringWidth(codigoDraw) > rightX - MARGIN) codigoDraw = conElipsis(fmCod, codigoDraw, rightX - MARGIN);
             g.drawString(codigoDraw, MARGIN, y + 8);
-            y += 22;
+            y += 26;
         }
         String precioStr = item.getPrecioVenta() != null ? cifrarPrecio(item.getPrecioVenta().setScale(2, java.math.RoundingMode.HALF_UP).toString()) : "";
         List<String> lineas = null;
@@ -314,21 +319,22 @@ public class EtiquetaUtil {
         precioWidth = precioStr.isEmpty() ? 0 : g.getFontMetrics().stringWidth(precioStr);
         if (lineas.isEmpty()) {
             g.drawString(precioStr, rightX - precioWidth, y + 6);
-            y += 18;
+            y += 22;
         } else {
             for (int i = 0; i < lineas.size(); i++) {
                 g.drawString(lineas.get(i), MARGIN, y + 6);
                 if (i == lineas.size() - 1) g.drawString(precioStr, rightX - precioWidth, y + 6);
-                y += 18;
+                y += 22;
             }
         }
         g.setFont(new Font("SansSerif", Font.PLAIN, 20));
-        g.drawString("Fecha: " + fechaStr, MARGIN, y + 5);
+        int footerY = HEIGHT_PX - MARGIN - 4;
+        g.drawString("Fecha: " + fechaStr, MARGIN, footerY);
         g.setFont(new Font("SansSerif", Font.PLAIN, 20));
         String ubicText = "Ubic: " + ubicacion;
         FontMetrics fmUbic2 = g.getFontMetrics();
         if (fmUbic2.stringWidth(ubicText) > rightX - MARGIN) ubicText = conElipsis(fmUbic2, ubicText, rightX - MARGIN);
-        g.drawString(ubicText, rightX - fmUbic2.stringWidth(ubicText), y + 5);
+        g.drawString(ubicText, rightX - fmUbic2.stringWidth(ubicText), footerY);
         g.dispose();
         return img;
     }
@@ -374,6 +380,27 @@ public class EtiquetaUtil {
     }
 
     public static Path getEtiquetasDirPublic() { return getEtiquetasDir(); }
+
+    private static void dibujarTituloAjustado(Graphics2D g, String texto, int x, int yBase, int maxAncho, int tamInicial) {
+        int tamMin = 14;
+        Font ajustada = new Font("SansSerif", Font.BOLD, tamInicial);
+        for (int sz = tamInicial; sz >= tamMin; sz--) {
+            Font f = new Font("SansSerif", Font.BOLD, sz);
+            FontMetrics fm = g.getFontMetrics(f);
+            if (fm.stringWidth(texto) <= maxAncho) {
+                ajustada = f;
+                break;
+            }
+            ajustada = f;
+        }
+        g.setFont(ajustada);
+        FontMetrics fmFinal = g.getFontMetrics();
+        String dibujar = texto;
+        if (fmFinal.stringWidth(dibujar) > maxAncho) {
+            dibujar = conElipsis(fmFinal, dibujar, maxAncho);
+        }
+        g.drawString(dibujar, x, yBase);
+    }
 
     private static List<String> partirTexto(Graphics2D g, String texto, int maxWidth, int maxLineas) {
         List<String> lineas = new ArrayList<>();
