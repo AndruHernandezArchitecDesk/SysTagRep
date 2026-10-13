@@ -389,25 +389,16 @@ public class FacturaController implements Initializable {
         if (i == null) return;
 
         int stockDisponible = calcularStockDisponible(i);
-        if (stockDisponible <= 0) {
-            new Alert(Alert.AlertType.WARNING, "No hay stock disponible para: " + i.getDescripcion()).showAndWait();
-            return;
-        }
 
         TextInputDialog dialog = new TextInputDialog("1");
         dialog.setTitle("Cantidad");
         dialog.setHeaderText(i.getDescripcion());
-        dialog.setContentText("Stock disponible: " + stockDisponible + "\nCantidad a facturar:");
+        dialog.setContentText("Stock disponible: " + stockDisponible + " (puede quedar negativo)\nCantidad a facturar:");
 
         dialog.showAndWait().ifPresent(cantStr -> {
             try {
                 int cant = Integer.parseInt(cantStr);
                 if (cant <= 0) return;
-
-                if (cant > stockDisponible) {
-                    new Alert(Alert.AlertType.WARNING, "La cantidad ingresada (" + cant + ") excede el stock disponible (" + stockDisponible + ").").showAndWait();
-                    return;
-                }
 
                 boolean existe = false;
                 for (FacturaDetalle d : itemsDetalle) {

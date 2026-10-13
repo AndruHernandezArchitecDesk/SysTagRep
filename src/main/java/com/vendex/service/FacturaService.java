@@ -32,6 +32,7 @@ public class FacturaService {
     private final CuentaPorCobrarDAO cuentaPorCobrarDAO;
     private final HistorialProductoDAO historialProductoDAO;
     private final LogDAO logDAO;
+    private AlertaDAO alertaDAO;
 
     public FacturaService() {
         this.logDAO = new LogDAOPostgres();
@@ -56,6 +57,11 @@ public class FacturaService {
         this.comprobanteDAO = comprobanteDAO;
         this.cuentaPorCobrarDAO = cuentaPorCobrarDAO;
         this.historialProductoDAO = historialProductoDAO;
+    }
+
+    /** Alerta inmediata de stock negativo al facturar (opcional; si es null se omite). */
+    public void setAlertaDAO(AlertaDAO alertaDAO) {
+        this.alertaDAO = alertaDAO;
     }
 
 
@@ -164,6 +170,7 @@ public class FacturaService {
                 for (FacturaDetalle d : itemsDetalle) {
                     inventarioDAO.descontarStock(con, d.getInventarioId(), d.getCantidad());
                 }
+                registrarAlertasStockNegativo(con, facturaId, numComprobante, itemsDetalle);
                 String clienteNombre = cliente.getNombre();
                 List<HistorialProducto> historial = new ArrayList<>();
                 for (FacturaDetalle d : itemsDetalle) {
@@ -391,6 +398,30 @@ public class FacturaService {
             }
         }
         return resultado;
+    }
+
+    /**
+     * Alerta inmediata cuando la factura deja productos en negativo
+     * (venta sobre stock, pendiente de ingreso por compra).
+     * No interrumpe la facturación si falla.
+     */
+    private void registrarAlertasStockNegativo(Connection con, int facturaId, String numComprobante,
+                                               List<FacturaDetalle> items) {
+        if (alertaDAO == null) return;
+        for (FacturaDetalle d : items) {
+            try {
+                Inventario inv = inventarioDAO.obtenerPorId(con, d.getInventarioId());
+                if (inv != null && inv.getCantidad() < 0) {
+                    String codigo = inv.getCodigo() != null && !inv.getCodigo().isEmpty()
+                            ? inv.getCodigo() : inv.getTagCodigo();
+                    String msg = String.format("Stock negativo: %s (Código: %s) — Cantidad actual: %d — por factura %s, pendiente de ingreso por compra",
+                            inv.getDescripcion(), codigo, inv.getCantidad(), numComprobante);
+                    alertaDAO.insertar(new Alerta("STOCK_NEGATIVO", msg, facturaId, "FACTURA"));
+                }
+            } catch (Exception e) {
+                logDAO.guardar("FacturaService", "alertaStockNegativo", e.getMessage(), e);
+            }
+        }
     }
 
     /**

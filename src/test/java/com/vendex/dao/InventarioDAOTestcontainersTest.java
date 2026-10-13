@@ -123,5 +123,9 @@ public class InventarioDAOTestcontainersTest {
         }
         Inventario despuesRollback = dao.obtenerPorId(id);
         assertEquals(7, despuesRollback.getCantidad(), "Rollback debe mantener stock");
+
+        // Venta sobre stock: permite negativo (pendiente de ingreso por compra)
+        dao.descontarStock(id, 10);
+        assertEquals(-3, dao.obtenerPorId(id).getCantidad(), "Debe permitir stock negativo");
     }
 }

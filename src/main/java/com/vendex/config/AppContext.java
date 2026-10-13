@@ -152,6 +152,7 @@ public class AppContext {
                 empresaDAO, clienteDAO, inventarioDAO, facturaRegistroDAO, facturaDetalleDAO,
                 secuenciaDAO, comprobanteDAO, cuentaPorCobrarDAO, historialProductoDAO, logDAO
         );
+        this.facturaService.setAlertaDAO(alertaDAO);
         this.notaCreditoService = new NotaCreditoService(
                 empresaDAO, clienteDAO, inventarioDAO, facturaRegistroDAO, facturaDetalleDAO,
                 secuenciaDAO, comprobanteDAO, notaCreditoRegistroDAO, notaCreditoDetalleDAO,

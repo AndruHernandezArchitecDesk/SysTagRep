@@ -56,6 +56,8 @@ public interface InventarioDAO {
 
     List<Inventario> listarStockBajo(int umbral);
 
+    List<Inventario> listarStockNegativo();
+
     List<Inventario> listarActivosConStock();
 
     Inventario obtenerPorId(int id);

@@ -36,6 +36,7 @@ public class AlertaService {
         alertaDAO.limpiar();
         List<Alerta> alertas = new ArrayList<>();
         alertas.addAll(generarAlertasStockBajo());
+        alertas.addAll(generarAlertasStockNegativo());
         alertas.addAll(generarAlertasCuentasVencidas());
         for (Alerta a : alertas) {
             alertaDAO.insertar(a);
@@ -82,6 +83,25 @@ public class AlertaService {
                 Alerta a = new Alerta("STOCK_BAJO", msg, inv.getId(), "INVENTARIO");
                 lista.add(a);
             }
+        }
+        return lista;
+    }
+
+    private List<Alerta> generarAlertasStockNegativo() {
+        List<Alerta> lista = new ArrayList<>();
+        List<com.vendex.model.Inventario> negativos;
+        try {
+            negativos = inventarioDAO.listarStockNegativo();
+        } catch (UnsupportedOperationException e) {
+            return lista;
+        }
+        for (var inv : negativos) {
+            String msg = String.format("Stock negativo: %s (Código: %s) — Cantidad actual: %d — pendiente de ingreso por compra",
+                    inv.getDescripcion(),
+                    inv.getCodigo() != null && !inv.getCodigo().isEmpty() ? inv.getCodigo() : inv.getTagCodigo(),
+                    inv.getCantidad());
+            Alerta a = new Alerta("STOCK_NEGATIVO", msg, inv.getId(), "INVENTARIO");
+            lista.add(a);
         }
         return lista;
     }

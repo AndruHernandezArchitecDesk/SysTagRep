@@ -171,6 +171,11 @@ public class InventarioDAORest extends RestDao<Inventario> implements Inventario
     }
 
     @Override
+    public List<Inventario> listarStockNegativo() {
+        throw new UnsupportedOperationException("Inventario.listarStockNegativo rest");
+    }
+
+    @Override
     public List<Inventario> listarActivosConStock() {
         throw new UnsupportedOperationException("Inventario.listarActivosConStock rest");
     }
