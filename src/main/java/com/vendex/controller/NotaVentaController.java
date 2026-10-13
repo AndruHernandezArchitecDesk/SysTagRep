@@ -210,11 +210,10 @@ public class NotaVentaController implements Initializable {
     }
 
     private void cargarDescuento() {
-        ObservableList<String> descuentos = FXCollections.observableArrayList();
-        for (int i = 0; i <= 100; i += 5) descuentos.add(String.valueOf(i));
-        ComboFilter.habilitar(cmbDescuento, descuentos);
+        // Descuento en VALOR FIJO ($): combo editable sin presets de porcentaje.
+        cmbDescuento.getItems().clear();
         cmbDescuento.setValue("0");
-        cmbDescuento.getEditor().setPromptText("0.00 valor fijo");
+        cmbDescuento.getEditor().setPromptText("$ 0.00 valor fijo");
         cmbDescuento.valueProperty().addListener((obs, old, val) -> calcularTotales());
         cmbDescuento.getEditor().textProperty().addListener((obs, old, val) -> calcularTotales());
         cmbDescuento.getEditor().textProperty().addListener((obs, old, val) -> {
@@ -596,8 +595,17 @@ public class NotaVentaController implements Initializable {
             else if (cmbDescuento.getValue() != null && !cmbDescuento.getValue().trim().isEmpty()) fijo = new BigDecimal(cmbDescuento.getValue().trim());
         } catch (NumberFormatException ignored) {}
         if (fijo.compareTo(BigDecimal.ZERO) < 0) fijo = BigDecimal.ZERO;
-        if (fijo.compareTo(totalBruto) > 0) fijo = totalBruto;
-        return fijo.setScale(2, RoundingMode.HALF_UP);
+        // Tope real en $: suma de bases sin IVA (misma convencion que factura).
+        BigDecimal tope = BigDecimal.ZERO;
+        try {
+            for (DetalleVenta d : itemsDetalle) {
+                if (d == null || d.getPrecioUnitario() == null) continue;
+                tope = tope.add(d.getPrecioUnitario().divide(new BigDecimal("1.15"), 6, java.math.RoundingMode.HALF_UP)
+                        .multiply(new BigDecimal(d.getCantidad())).setScale(2, java.math.RoundingMode.HALF_UP));
+            }
+        } catch (Exception ignored) {}
+        if (fijo.compareTo(tope) > 0) fijo = tope.setScale(2, java.math.RoundingMode.HALF_UP);
+        return fijo.setScale(2, java.math.RoundingMode.HALF_UP);
     }
 
     private void cargarLogo() {

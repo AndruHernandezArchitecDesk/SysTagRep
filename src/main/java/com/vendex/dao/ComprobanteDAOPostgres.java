@@ -78,12 +78,26 @@ public class ComprobanteDAOPostgres implements ComprobanteDAO {
                      "xml_autorizado = ?, numero_autorizacion = ?, fecha_autorizacion = ? WHERE clave_acceso = ?";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, estado);
-            ps.setString(2, truncar(mensaje));
+            ps.setString(2, mensaje);
             ps.setString(3, xmlAutorizado);
             ps.setString(4, numeroAutorizacion);
             ps.setTimestamp(5, parsearFechaAutorizacion(fechaAutorizacion));
             ps.setString(6, claveAcceso);
-            ps.executeUpdate();
+            try {
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                if (!esExcesoLargo(e)) throw e;
+                // BD sin migrar a TEXT (V33): reintentar recortado.
+                try (PreparedStatement ps2 = con.prepareStatement(sql)) {
+                    ps2.setString(1, estado);
+                    ps2.setString(2, truncar(mensaje));
+                    ps2.setString(3, xmlAutorizado);
+                    ps2.setString(4, numeroAutorizacion);
+                    ps2.setTimestamp(5, parsearFechaAutorizacion(fechaAutorizacion));
+                    ps2.setString(6, claveAcceso);
+                    ps2.executeUpdate();
+                }
+            }
         }
     }
 
@@ -118,10 +132,29 @@ public class ComprobanteDAOPostgres implements ComprobanteDAO {
             ps.setString(6, respuestaRecepcion);
             ps.setString(7, respuestaAutorizacion);
             ps.setString(8, estado);
-            ps.setString(9, truncar(mensaje));
+            ps.setString(9, mensaje);
             ps.setString(10, numeroAutorizacion);
             ps.setTimestamp(11, parsearFechaAutorizacion(fechaAutorizacion));
-            ps.executeUpdate();
+            try {
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                if (!esExcesoLargo(e)) throw e;
+                // BD sin migrar a TEXT (V33): reintentar recortado.
+                try (PreparedStatement ps2 = con.prepareStatement(sql)) {
+                    ps2.setString(1, claveAcceso);
+                    ps2.setString(2, numeroComprobante);
+                    ps2.setString(3, ambiente);
+                    ps2.setString(4, tipoComprobante);
+                    ps2.setString(5, xmlEnviado);
+                    ps2.setString(6, respuestaRecepcion);
+                    ps2.setString(7, respuestaAutorizacion);
+                    ps2.setString(8, estado);
+                    ps2.setString(9, truncar(mensaje));
+                    ps2.setString(10, numeroAutorizacion);
+                    ps2.setTimestamp(11, parsearFechaAutorizacion(fechaAutorizacion));
+                    ps2.executeUpdate();
+                }
+            }
         }
     }
 
@@ -209,5 +242,13 @@ public class ComprobanteDAOPostgres implements ComprobanteDAO {
     private static String truncar(String mensaje) {
         if (mensaje == null) return null;
         return mensaje.length() <= 450 ? mensaje : mensaje.substring(0, 450) + "...[truncado]";
+    }
+
+    /** SQLState 22001 = string data right truncation (columna VARCHAR corta). */
+    private static boolean esExcesoLargo(SQLException e) {
+        if (e == null) return false;
+        if ("22001".equals(e.getSQLState())) return true;
+        String m = e.getMessage();
+        return m != null && (m.contains("too long") || m.contains("demasiado largo"));
     }
 }

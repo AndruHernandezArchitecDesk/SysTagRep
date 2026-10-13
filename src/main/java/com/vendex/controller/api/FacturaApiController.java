@@ -176,7 +176,8 @@ public class FacturaApiController {
             int clienteId = ((Number) body.get("clienteId")).intValue();
             String formaPago = (String) body.getOrDefault("formaPago", "Efectivo");
             String ambienteSri = (String) body.getOrDefault("ambienteSri", AppConstants.AMBIENTE_PRODUCCION);
-            BigDecimal descuentoPct = body.get("descuentoPct") != null ? new BigDecimal(body.get("descuentoPct").toString()) : BigDecimal.ZERO;
+            Object descRaw = body.get("descuentoValor") != null ? body.get("descuentoValor") : body.get("descuentoPct");
+            BigDecimal descuentoValor = descRaw != null ? new BigDecimal(descRaw.toString()) : BigDecimal.ZERO;
 
             Cliente cliente = clienteDAO.obtenerPorId(clienteId);
             if (cliente == null) { ctx.status(400).json(Map.of("error", "Cliente no encontrado")); return; }
@@ -205,7 +206,7 @@ public class FacturaApiController {
 
             FacturaService.ResultadoFactura resultado = facturaService.guardarFactura(
                     cliente, empresa, null, items, formaPago, null, null,
-                    ambienteSri, rutaP12, claveP12, dir, descuentoPct
+                    ambienteSri, rutaP12, claveP12, dir, descuentoValor
             );
 
             Map<String, Object> resp = new LinkedHashMap<>();

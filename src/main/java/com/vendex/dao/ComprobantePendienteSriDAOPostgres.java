@@ -126,11 +126,24 @@ public class ComprobantePendienteSriDAOPostgres implements ComprobantePendienteS
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, estado);
-            ps.setString(2, truncar(mensaje));
+            ps.setString(2, mensaje);
             if (proximoIntento == null) ps.setNull(3, Types.TIMESTAMP); else ps.setTimestamp(3, Timestamp.valueOf(proximoIntento));
             ps.setInt(4, intentos);
             ps.setInt(5, id);
-            ps.executeUpdate();
+            try {
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                if (!esExcesoLargo(e)) throw e;
+                // BD sin migrar a TEXT: reintentar recortado.
+                try (PreparedStatement ps2 = con.prepareStatement(sql)) {
+                    ps2.setString(1, estado);
+                    ps2.setString(2, truncar(mensaje));
+                    if (proximoIntento == null) ps2.setNull(3, Types.TIMESTAMP); else ps2.setTimestamp(3, Timestamp.valueOf(proximoIntento));
+                    ps2.setInt(4, intentos);
+                    ps2.setInt(5, id);
+                    ps2.executeUpdate();
+                }
+            }
         } catch (SQLException e) {
             LOG.log(Level.WARNING, "marcarResultado", e);
         }
@@ -174,5 +187,13 @@ public class ComprobantePendienteSriDAOPostgres implements ComprobantePendienteS
     private static String truncar(String mensaje) {
         if (mensaje == null) return null;
         return mensaje.length() <= 450 ? mensaje : mensaje.substring(0, 450) + "...[truncado]";
+    }
+
+    /** SQLState 22001 = string data right truncation (columna VARCHAR corta). */
+    private static boolean esExcesoLargo(SQLException e) {
+        if (e == null) return false;
+        if ("22001".equals(e.getSQLState())) return true;
+        String m = e.getMessage();
+        return m != null && (m.contains("too long") || m.contains("demasiado largo"));
     }
 }

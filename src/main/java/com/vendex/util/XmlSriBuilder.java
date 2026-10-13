@@ -86,6 +86,11 @@ public class XmlSriBuilder {
             Element impuesto = doc.createElement("totalImpuesto");
             agregarElemento(impuesto, "codigo", "2"); // 2=IVA
             agregarElemento(impuesto, "codigoPorcentaje", "4"); // 4=IVA 15%
+            // Campo SRI (ficha tecnica v1.6+, parte de la formula del importe):
+            // importeTotal = totalSinImpuestos - descuentoAdicional + impuestos.
+            // Sin este elemento el SRI lo toma como 0.0 y tumba facturas con descuento
+            // (ERROR EN DIFERENCIAS). Espeja el descuento de cabecera (impuesto unico IVA).
+            agregarElemento(impuesto, "descuentoAdicional", totalDescuento != null ? totalDescuento : "0.00");
             agregarElemento(impuesto, "baseImponible", baseImponibleIva(detalles, totalSinImpuestos));
             agregarElemento(impuesto, "valor", totalImpuesto);
             totalConImpuestosEl.appendChild(impuesto);

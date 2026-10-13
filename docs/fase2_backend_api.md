@@ -50,7 +50,7 @@
 - `GET /api/facturas` — listar facturas (filtro sucursal)
 - `GET /api/facturas/{id}` — obtener factura
 - `GET /api/facturas/clave` — obtener factura por claveAcceso
-- `POST /api/facturas` — emitir factura (body: `clienteId`, `items`, `formaPago`, `ambienteSri`, `descuentoPct`)
+- `POST /api/facturas` — emitir factura (body: `clienteId`, `items`, `formaPago`, `ambienteSri`, `descuentoValor` en $ fijos; se acepta `descuentoPct` legacy como alias)
 - `POST /api/facturas/registro` — insertar registro de factura
 - `PUT /api/facturas/estado` — actualizar estado factura
 - `GET /api/facturas/pendientes-sri` — listar pendientes SRI

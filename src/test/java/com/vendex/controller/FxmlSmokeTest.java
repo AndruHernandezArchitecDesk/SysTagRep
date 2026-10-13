@@ -136,9 +136,10 @@ class FxmlSmokeTest {
         org.junit.jupiter.api.Assertions.assertNull(com.vendex.util.CatalogoVistas.rutaDe("Cola Offline"));
     }
 
-    @Test
+        @Test
     @Order(8)
     void cargaMiEmpresaViewConCamposSriYLogo() throws Exception {
+
         Object controller = cargar("/view/EmpresaView.fxml");
         assertNotNull(controller, "controller EmpresaController");
         for (String campo : new String[]{"txtRuc", "txtRazonSocial", "txtTelefono", "cmbObligado",
@@ -147,5 +148,26 @@ class FxmlSmokeTest {
             f.setAccessible(true);
             assertNotNull(f.get(controller), campo + " cableado desde FXML");
         }
+    }
+
+    @Test
+    @Order(9)
+    void cargaFacturaViewSinErroresExpresion() throws Exception {
+        // Regresion: promptText="$ ..." rompia el FXMLLoader (Invalid path en KeyPath).
+        Object controller = cargar("/view/FacturaView.fxml");
+        assertNotNull(controller, "controller FacturaController");
+        java.lang.reflect.Field f = controller.getClass().getDeclaredField("txtDescuento");
+        f.setAccessible(true);
+        assertNotNull(f.get(controller), "txtDescuento cableado desde FXML");
+    }
+
+    @Test
+    @Order(10)
+    void cargaNotaVentaViewSinErroresExpresion() throws Exception {
+        Object controller = cargar("/view/NotaVentaView.fxml");
+        assertNotNull(controller, "controller NotaVentaController");
+        java.lang.reflect.Field f = controller.getClass().getDeclaredField("txtDescuento");
+        f.setAccessible(true);
+        assertNotNull(f.get(controller), "txtDescuento cableado desde FXML");
     }
 }

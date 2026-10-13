@@ -162,8 +162,30 @@ class ServicioReintentoSriTest {
                 argThat(java.util.Objects::nonNull), eq(6));
     }
 
+        @Test
+    void envioGuardaXmlFirmado_autorizadoYRechazado() {
+        // Autorizado: el xml_enviado debe persistirse (antes se guardaba null).
+        pendiente("<firmado/>");
+
+        servicio.ciclo();
+
+        verify(comprobanteDAO).guardarEnvio(eq("CLAVE123"), eq("001-001-000000001"), eq("PRUEBAS"),
+                eq("<firmado/>"), any(), any(), eq(AppConstants.ESTADO_AUTORIZADO), any(), any(), any(), eq("01"));
+
+        // Rechazado: tambien debe persistirse el xml.
+        reset(comprobanteDAO, pendienteDAO);
+        sri.estadoAutorizacion = "RECHAZADA";
+        pendiente("<firmado/>");
+
+        servicio.ciclo();
+
+        verify(comprobanteDAO).guardarEnvio(eq("CLAVE123"), eq("001-001-000000001"), eq("PRUEBAS"),
+                eq("<firmado/>"), any(), any(), eq("RECHAZADA"), any(), isNull(), isNull(), eq("01"));
+    }
+
     @Test
     void truncarMensaje_cortaSinRomperNulos() {
+
         assertNull(ServicioReintentoSri.truncarMensaje(null));
         assertEquals("abc", ServicioReintentoSri.truncarMensaje("abc"));
         String largo = "x".repeat(2000);

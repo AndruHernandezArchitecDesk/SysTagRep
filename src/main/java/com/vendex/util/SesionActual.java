@@ -121,13 +121,22 @@ public final class SesionActual {
         }
     }
 
-    public static void exigirDescuento(BigDecimal pctSolicitado) {
-        if (pctSolicitado == null || pctSolicitado.compareTo(BigDecimal.ZERO) <= 0) return;
+    /**
+     * Descuento en VALOR FIJO ($). El tope del rol sigue expresado en %:
+     * se convierte el monto a % equivalente sobre el total bruto.
+     */
+    public static void exigirDescuento(BigDecimal valorFijo, BigDecimal totalBruto) {
+        if (valorFijo == null || valorFijo.compareTo(BigDecimal.ZERO) <= 0) return;
         exigirPermiso("DESCUENTO_APLICAR");
         BigDecimal limite = getLimiteDescuento();
         if (limite == null) return; // sin tope (admin)
+        BigDecimal pctSolicitado = BigDecimal.ZERO;
+        if (totalBruto != null && totalBruto.compareTo(BigDecimal.ZERO) > 0) {
+            pctSolicitado = valorFijo.multiply(new BigDecimal("100"))
+                    .divide(totalBruto, 2, java.math.RoundingMode.HALF_UP);
+        }
         if (pctSolicitado.compareTo(limite) > 0) {
-            try { if (usuario != null) new AuditoriaAccionDAOPostgres().registrar(usuario.getId(), "DESCUENTO_APLICAR", "DENEGADO", "Tope " + limite + "% solicitado " + pctSolicitado + "%"); } catch (Exception ignored) {}
+            try { if (usuario != null) new AuditoriaAccionDAOPostgres().registrar(usuario.getId(), "DESCUENTO_APLICAR", "DENEGADO", "Tope " + limite + "% solicitado " + pctSolicitado + "% ($" + valorFijo + ")"); } catch (Exception ignored) {}
             throw new SinPermisoException("DESCUENTO_APLICAR", "Tope excedido: máximo " + limite + "% solicitado " + pctSolicitado + "%");
         }
     }

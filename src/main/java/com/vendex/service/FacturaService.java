@@ -70,11 +70,8 @@ public class FacturaService {
                                            String formaPago, Integer mesesPlazo, String interes,
                                            String ambienteSri, String rutaP12, String claveP12,
                                            File directorioEscritorio,
-                                           BigDecimal descuentoPct) throws Exception {
+                                           BigDecimal descuentoValor) throws Exception {
         com.vendex.util.SesionActual.exigirPermiso("FACTURA_EMITIR");
-        if (descuentoPct != null && descuentoPct.compareTo(BigDecimal.ZERO) > 0) {
-            com.vendex.util.SesionActual.exigirDescuento(descuentoPct);
-        }
         if (cliente == null) {
             throw new IllegalArgumentException("Debe seleccionar un cliente.");
         }
@@ -89,27 +86,37 @@ public class FacturaService {
         int empresaId = empresa.getId();
         LocalDateTime ahora = LocalDateTime.now();
 
-        BigDecimal sub = itemsDetalle.stream()
+        BigDecimal subBruto = itemsDetalle.stream()
                 .map(FacturaDetalle::getPrecioTotal)
                 .reduce(AppConstants.CERO, BigDecimal::add);
-        BigDecimal totalBrutoCalc = sub.add(sub.multiply(AppConstants.IVA_RATE).setScale(2, RoundingMode.HALF_UP));
-        BigDecimal descCalc = calcularDescuento(totalBrutoCalc, descuentoPct);
-        // IVA sobre BASE NETA sin-IVA (sin doble IVA): los precios de UI traen IVA incluido,
-        // la base neta es la suma de totales NETOS de lineas (precio/1.15 - descuento),
-        // NO sub-desc (eso mezcla base con-IVA con descuento sin-IVA). Regla SRI:
-        // baseImponible == suma de precioTotalSinImpuesto de lineas.
-        final List<Object[]> filasDetalleSri = armarDetalles(itemsDetalle, descCalc);
+        BigDecimal totalBrutoCalc = subBruto.add(subBruto.multiply(AppConstants.IVA_RATE).setScale(2, RoundingMode.HALF_UP));
+        // CONVENCION C (SRI): precios con IVA incluido; el descuento vive SOLO en
+        // cabecera (totalDescuento + descuentoAdicional). Las lineas van en bruto
+        // (descuento 0.00, neto = base) y el header es neto:
+        //   subtotal = S bases sin IVA; base = S netos (= S bases); iva = 15% x base;
+        //   total = base - descuento + iva.
+        // Asi se cumplen las 3 reglas SRI a la vez:
+        //   R1 sub == S netos; R2 desc == S desc lineas + adicional; T total == sub - adic + iva.
+        // Descuento en VALOR FIJO ($), tope = suma de bases sin IVA.
+        BigDecimal sumaBasesSinIva = sumarBasesSinIva(itemsDetalle);
+        if (descuentoValor != null && descuentoValor.compareTo(BigDecimal.ZERO) > 0) {
+            com.vendex.util.SesionActual.exigirDescuento(descuentoValor, totalBrutoCalc);
+        }
+        BigDecimal descCalc = calcularDescuento(sumaBasesSinIva, descuentoValor);
+        final List<Object[]> filasDetalleSri = armarDetalles(itemsDetalle);
         BigDecimal baseNeta = filasDetalleSri.stream()
                 .map(f -> new BigDecimal(f[5].toString().trim()))
                 .reduce(AppConstants.CERO, BigDecimal::add);
+        BigDecimal sub = baseNeta;
         BigDecimal ivaCalc = baseNeta.multiply(AppConstants.IVA_RATE).setScale(2, RoundingMode.HALF_UP);
         BigDecimal totCalc = sub.subtract(descCalc).add(ivaCalc).setScale(2, RoundingMode.HALF_UP);
 
-        // Pre-validacion SRI ANTES de consumir secuencial/BD: replica las 5 reglas del
-        // validador (linea neta, desc header==suma lineas, base==suma netos, iva==base*15%,
-        // importe==sub-desc+iva). Si algo no cuadra se aborta aqui con mensaje humano,
+        // Pre-validacion SRI ANTES de consumir secuencial/BD: espejo exacto del validador
+        // (R1 sub==S netos, R2 desc==S lineas+adic, linea neta, iva==base*15%,
+        // T importe==sub-adic+iva). Si algo no cuadra se aborta aqui con mensaje humano,
         // sin gastar numero, sin escribir BD y sin encolar reintentos fantasma.
-        validarConsistenciaSri(filasDetalleSri, sub, descCalc, ivaCalc, totCalc);
+        validarConsistenciaSri(filasDetalleSri, sub, descCalc, descCalc, ivaCalc, totCalc);
+        validarNoNegativos(filasDetalleSri, totCalc);
 
         // Validacion SRI: consumidor final (9999999999999 / 9999999999 tipo 07) no puede exceder $50
         if (AppConstants.esConsumidorFinal(cliente.getIdentificacion()) && totCalc.compareTo(AppConstants.LIMITE_CONSUMIDOR_FINAL) > 0) {
@@ -287,7 +294,7 @@ public class FacturaService {
                 resultado.cliente.getNombre(), resultado.cliente.getIdentificacion(),
                 resultado.cliente.getDireccion(), resultado.cliente.getCorreo(), resultado.cliente.getTelefono(),
                 resultado.formaPago,
-                armarDetalles(resultado.itemsDetalle, resultado.descCalc),
+                armarDetalles(resultado.itemsDetalle),
                 resultado.sub, resultado.descCalc, resultado.ivaCalc, resultado.totCalc);
     }
 
@@ -345,7 +352,7 @@ public class FacturaService {
                 cliente.getNombre(), cliente.getIdentificacion(),
                 cliente.getDireccion(), cliente.getCorreo(), cliente.getTelefono(),
                 fr.getFormaPago(),
-                armarDetalles(detallesDb, fr.getDescuento() != null ? fr.getDescuento() : AppConstants.CERO),
+                armarDetalles(detallesDb),
                 fr.getSubtotal() != null ? fr.getSubtotal() : AppConstants.CERO,
                 fr.getDescuento() != null ? fr.getDescuento() : AppConstants.CERO,
                 fr.getIva() != null ? fr.getIva() : AppConstants.CERO,
@@ -369,14 +376,57 @@ public class FacturaService {
         }
     }
 
-    private BigDecimal calcularDescuento(BigDecimal totalBruto, BigDecimal descuentoValorFijo) {
+    /**
+     * Descuento en VALOR FIJO ($): total - descuento = total neto.
+     * Tope real = suma de bases sin IVA (ahi se reparte); topar contra el bruto
+     * con IVA dejaba netos de linea negativos que el SRI rechaza.
+     */
+    private BigDecimal calcularDescuento(BigDecimal sumaBasesSinIva, BigDecimal descuentoValorFijo) {
         if (descuentoValorFijo == null) return AppConstants.CERO.setScale(2, RoundingMode.HALF_UP);
         BigDecimal fijo = descuentoValorFijo.setScale(2, RoundingMode.HALF_UP);
         if (fijo.compareTo(AppConstants.CERO) < 0) fijo = AppConstants.CERO;
-        if (fijo.compareTo(totalBruto) > 0) fijo = totalBruto.setScale(2, RoundingMode.HALF_UP);
+        BigDecimal tope = sumaBasesSinIva != null ? sumaBasesSinIva.setScale(2, RoundingMode.HALF_UP) : AppConstants.CERO;
+        if (fijo.compareTo(tope) > 0) fijo = tope;
         return fijo;
     }
 
+    /** Suma de bases sin IVA de las lineas (misma formula que armarDetalles). */
+    static BigDecimal sumarBasesSinIva(List<FacturaDetalle> items) {
+        BigDecimal suma = AppConstants.CERO.setScale(2, RoundingMode.HALF_UP);
+        if (items == null) return suma;
+        for (FacturaDetalle d : items) {
+            if (d == null || d.getPrecioUnitario() == null) continue;
+            BigDecimal precioSinIva = d.getPrecioUnitario().divide(new BigDecimal("1.15"), 6, RoundingMode.HALF_UP);
+            suma = suma.add(precioSinIva.multiply(new BigDecimal(d.getCantidad())).setScale(2, RoundingMode.HALF_UP));
+        }
+        return suma.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Red de seguridad SRI: ninguna linea ni el total pueden quedar en negativo
+     * (baseImponible tiene minInclusive 0.0). Se invoca antes de consumir secuencial/BD.
+     * Visible para tests.
+     */
+    static void validarNoNegativos(List<Object[]> filasDet, BigDecimal total) {
+        for (Object[] f : filasDet) {
+            BigDecimal tl;
+            try {
+                tl = new BigDecimal(f[5].toString().trim());
+            } catch (Exception e) {
+                throw new IllegalStateException("Detalle con total no parseable, revisa cantidad/precio.");
+            }
+            if (tl.compareTo(BigDecimal.ZERO) < 0) {
+                throw new IllegalArgumentException("El descuento deja la línea " + f[0] + " en " + tl
+                        + ". El total no puede quedar en negativo: reduce el descuento o revisa precios.");
+            }
+        }
+        if (total != null && total.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("El total de la factura no puede quedar en negativo (" + total
+                    + "). Reduce el descuento.");
+        }
+    }
+
+    /** Sin uso en convencion C (lineas siempre en bruto); se conserva por compatibilidad. */
     private static List<BigDecimal> distribuirDescuento(BigDecimal descuentoTotal, List<BigDecimal> bases) {
         List<BigDecimal> resultado = new ArrayList<>();
         for (BigDecimal b : bases) resultado.add(BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP));
@@ -434,11 +484,16 @@ public class FacturaService {
     }
 
     /**
-     * Replica las 5 reglas del validador SRI sobre los numeros ya calculados.
+     * Espejo exacto del validador SRI (mensajes ERROR EN DIFERENCIAS observados):
+     *  R1: totalSinImpuestos == suma de netos de lineas;
+     *  R2: totalDescuento == suma desc lineas + descuentoAdicional;
+     *  linea: cantidad*precio-descuento == neto;
+     *  iva == base*15%; T: importe == sub - adicional + iva.
      * Visible para tests. Lanza IllegalStateException descriptivo si no cuadran.
      */
     static void validarConsistenciaSri(List<Object[]> filasDet, BigDecimal subtotal,
-                                       BigDecimal descHeader, BigDecimal iva, BigDecimal total) {
+                                       BigDecimal descHeader, BigDecimal descAdicional,
+                                       BigDecimal iva, BigDecimal total) {
         BigDecimal sumaDesc = AppConstants.CERO.setScale(2, RoundingMode.HALF_UP);
         BigDecimal sumaNeto = AppConstants.CERO.setScale(2, RoundingMode.HALF_UP);
         for (Object[] f : filasDet) {
@@ -459,53 +514,48 @@ public class FacturaService {
             sumaDesc = sumaDesc.add(dl);
             sumaNeto = sumaNeto.add(tl);
         }
-        if (sumaDesc.compareTo(descHeader.setScale(2, RoundingMode.HALF_UP)) != 0) {
+        if (subtotal.setScale(2, RoundingMode.HALF_UP).compareTo(sumaNeto.setScale(2, RoundingMode.HALF_UP)) != 0) {
+            throw new IllegalStateException("totalSinImpuestos del header (" + subtotal
+                    + ") difiere de la suma de netos de lineas (" + sumaNeto + "). El SRI lo rechazara (R1).");
+        }
+        BigDecimal descCalculado = sumaDesc.add(descAdicional != null ? descAdicional : AppConstants.CERO)
+                .setScale(2, RoundingMode.HALF_UP);
+        if (descCalculado.compareTo(descHeader.setScale(2, RoundingMode.HALF_UP)) != 0) {
             throw new IllegalStateException("totalDescuento del header (" + descHeader
-                    + ") difiere de la suma de descuentos de lineas (" + sumaDesc + "). El SRI lo rechazara.");
+                    + ") difiere de lineas+adicional (" + sumaDesc + " + "
+                    + (descAdicional != null ? descAdicional : AppConstants.CERO) + "). El SRI lo rechazara (R2).");
         }
         BigDecimal ivaEsperado = sumaNeto.multiply(AppConstants.IVA_RATE).setScale(2, RoundingMode.HALF_UP);
         if (ivaEsperado.compareTo(iva.setScale(2, RoundingMode.HALF_UP)) != 0) {
             throw new IllegalStateException("IVA " + iva + " no corresponde a base neta " + sumaNeto
                     + " (esperado " + ivaEsperado + "). Sin doble IVA.");
         }
-        BigDecimal totalEsperado = subtotal.subtract(descHeader).add(iva).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal adic = descAdicional != null ? descAdicional : AppConstants.CERO;
+        BigDecimal totalEsperado = subtotal.subtract(adic).add(iva).setScale(2, RoundingMode.HALF_UP);
         if (totalEsperado.compareTo(total.setScale(2, RoundingMode.HALF_UP)) != 0) {
-            throw new IllegalStateException("Importe " + total + " no cuadra: subtotal - descuento + IVA = "
-                    + totalEsperado + ". El SRI lo rechazara.");
+            throw new IllegalStateException("Importe " + total + " no cuadra: subtotal - descuentoAdicional + IVA = "
+                    + totalEsperado + ". El SRI lo rechazara (T).");
         }
     }
 
     /**
-     * Arma filas para XML/RIDE con el descuento declarado en AMBOS niveles de forma
-     * consistente (reglas SRI evidenciadas en rechazos reales de produccion):
-     *  - detalle: cantidad*precioUnitario - descuento == precioTotalSinImpuesto (NETO);
-     *  - header totalDescuento == suma de descuentos de lineas (se distribuye descCalc);
-     *  - header totalSinImpuestos/IVA/total sin cambios (base bruta como calcula la app).
-     * Romper cualquiera (linea en bruto con desc>0, o header 0 con lineas>0)
-     * produce "ERROR EN DIFERENCIAS" y tumba la autorizacion.
+     * Arma filas para XML/RIDE en CONVENCION C (SRI): lineas en BRUTO
+     * (descuento 0.00, neto = base sin IVA); el descuento vive SOLO en cabecera
+     * (totalDescuento + descuentoAdicional). Asi se cumplen R1/R2/T a la vez.
      */
     /** Visible para tests de reglas SRI. */
-    static List<Object[]> armarDetalles(List<FacturaDetalle> items, BigDecimal descuentoTotal) {
-        List<BigDecimal> bases = new ArrayList<>();
+    static List<Object[]> armarDetalles(List<FacturaDetalle> items) {
+        List<Object[]> resultado = new ArrayList<>();
         for (FacturaDetalle d : items) {
             BigDecimal precioSinIva = d.getPrecioUnitario().divide(new BigDecimal("1.15"), 6, RoundingMode.HALF_UP);
-            bases.add(precioSinIva.multiply(new BigDecimal(d.getCantidad())).setScale(2, RoundingMode.HALF_UP));
-        }
-        List<BigDecimal> descLinea = distribuirDescuento(descuentoTotal, bases);
-
-        List<Object[]> resultado = new ArrayList<>();
-        for (int i = 0; i < items.size(); i++) {
-            FacturaDetalle d = items.get(i);
-            BigDecimal precioSinIva = d.getPrecioUnitario().divide(new BigDecimal("1.15"), 6, RoundingMode.HALF_UP);
             BigDecimal baseDet = precioSinIva.multiply(new BigDecimal(d.getCantidad())).setScale(2, RoundingMode.HALF_UP);
-            BigDecimal totalDetSinIva = baseDet.subtract(descLinea.get(i)).setScale(2, RoundingMode.HALF_UP);
             String desc = d.getDescripcion();
             if (desc.length() > AppConstants.MAX_DESCRIPCION_XML) desc = desc.substring(0, AppConstants.MAX_DESCRIPCION_XML);
             resultado.add(new Object[]{
                     d.getCodigo(), desc, String.valueOf(d.getCantidad()),
                     precioSinIva.setScale(2, RoundingMode.HALF_UP).toString(),
-                    descLinea.get(i).toString(),
-                    totalDetSinIva.toString()
+                    "0.00",
+                    baseDet.toString()
             });
         }
         return resultado;

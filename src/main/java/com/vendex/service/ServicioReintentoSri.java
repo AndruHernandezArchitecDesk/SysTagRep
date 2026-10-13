@@ -133,8 +133,10 @@ public class ServicioReintentoSri {
             // Se retransmite cada ciclo (idempotente por clave): RECIBIDA o ya-registrada => seguir
             // a consultar; DEVUELTA real => ruta rechazada; ERROR/sin XML => backoff natural.
             String respuestaRecepcionXml = null;
+            // XML firmado para reenviar y para persistir en xml_enviados en todos los casos.
+            String xmlFirmado = null;
             try {
-                String xmlFirmado = comprobanteDAO.obtenerXmlFirmado(p.getClaveAcceso());
+                xmlFirmado = comprobanteDAO.obtenerXmlFirmado(p.getClaveAcceso());
                 if (xmlFirmado != null && !xmlFirmado.isBlank()) {
                     SRIWebService.SRIResponse recepcion = null;
                     try {
@@ -157,7 +159,7 @@ public class ServicioReintentoSri {
                         if (AppConstants.ESTADO_DEVUELTA.equals(estRx) && !yaRegistrada) {
                             comprobanteDAO.actualizarEstado(p.getClaveAcceso(), estRx, msgRx, null, null, null);
                             actualizarRegistroTipo(p, estRx, msgRx, null, null);
-                            comprobanteDAO.guardarEnvio(p.getClaveAcceso(), p.getNumeroComprobante(), ambiente, null, respuestaRecepcionXml, null, estRx, msgRx, null, null, mapTipo(p.getTipoComprobante()));
+                            comprobanteDAO.guardarEnvio(p.getClaveAcceso(), p.getNumeroComprobante(), ambiente, xmlFirmado, respuestaRecepcionXml, null, estRx, msgRx, null, null, mapTipo(p.getTipoComprobante()));
                             pendienteDAO.marcarResultado(p.getId(), AppConstants.ESTADO_RECHAZADA, "Recepcion DEVUELTA: " + msgRx, LocalDateTime.now(), p.getIntentos() + 1);
                             notificarRechazada(p, estRx, msgRx);
                             LOG.warning("SRI recepcion devuelta " + p.getClaveAcceso() + " -> no reintentar, notificado");
@@ -182,7 +184,7 @@ public class ServicioReintentoSri {
                 // actualizar comprobantes_electronicos y registro especifico
                 comprobanteDAO.actualizarEstado(p.getClaveAcceso(), AppConstants.ESTADO_AUTORIZADO, mensaje, null, resp.getNumeroAutorizacion(), resp.getFechaAutorizacion());
                 actualizarRegistroTipo(p, AppConstants.ESTADO_AUTORIZADO, mensaje, resp.getNumeroAutorizacion(), resp.getFechaAutorizacion());
-                comprobanteDAO.guardarEnvio(p.getClaveAcceso(), p.getNumeroComprobante(), ambiente, null, respuestaRecepcionEfectiva, resp.getRespuestaAutorizacionXml(), AppConstants.ESTADO_AUTORIZADO, mensaje, resp.getNumeroAutorizacion(), resp.getFechaAutorizacion(), mapTipo(p.getTipoComprobante()));
+                comprobanteDAO.guardarEnvio(p.getClaveAcceso(), p.getNumeroComprobante(), ambiente, xmlFirmado, respuestaRecepcionEfectiva, resp.getRespuestaAutorizacionXml(), AppConstants.ESTADO_AUTORIZADO, mensaje, resp.getNumeroAutorizacion(), resp.getFechaAutorizacion(), mapTipo(p.getTipoComprobante()));
                 // regenerar RIDE con autorizacion
                 regenerarRide(p, resp.getNumeroAutorizacion(), resp.getFechaAutorizacion());
                 // email al cliente
@@ -194,7 +196,7 @@ public class ServicioReintentoSri {
                 // NO reintentar — requiere correccion manual
                 comprobanteDAO.actualizarEstado(p.getClaveAcceso(), estado, mensaje, null, null, null);
                 actualizarRegistroTipo(p, estado, mensaje, null, null);
-                comprobanteDAO.guardarEnvio(p.getClaveAcceso(), p.getNumeroComprobante(), ambiente, null, respuestaRecepcionEfectiva, resp.getRespuestaAutorizacionXml(), estado, mensaje, null, null, mapTipo(p.getTipoComprobante()));
+                comprobanteDAO.guardarEnvio(p.getClaveAcceso(), p.getNumeroComprobante(), ambiente, xmlFirmado, respuestaRecepcionEfectiva, resp.getRespuestaAutorizacionXml(), estado, mensaje, null, null, mapTipo(p.getTipoComprobante()));
                 pendienteDAO.marcarResultado(p.getId(), AppConstants.ESTADO_RECHAZADA, mensaje, LocalDateTime.now(), p.getIntentos() + 1);
                 notificarRechazada(p, estado, mensaje);
                 LOG.warning("SRI rechazada " + p.getClaveAcceso() + " estado=" + estado + " -> no reintentar, notificado");
@@ -204,7 +206,7 @@ public class ServicioReintentoSri {
                 int nuevosIntentos = p.getIntentos() + 1;
                 if (nuevosIntentos > 30) {
                     pendienteDAO.marcarResultado(p.getId(), AppConstants.ESTADO_AGOTADA, "Agotado tras 24h (~30 intentos): " + mensaje, LocalDateTime.now(), nuevosIntentos);
-                    comprobanteDAO.guardarEnvio(p.getClaveAcceso(), p.getNumeroComprobante(), ambiente, null, respuestaRecepcionEfectiva, resp.getRespuestaAutorizacionXml(), AppConstants.ESTADO_AGOTADA, "AGOTADA: " + mensaje, null, null, mapTipo(p.getTipoComprobante()));
+                    comprobanteDAO.guardarEnvio(p.getClaveAcceso(), p.getNumeroComprobante(), ambiente, xmlFirmado, respuestaRecepcionEfectiva, resp.getRespuestaAutorizacionXml(), AppConstants.ESTADO_AGOTADA, "AGOTADA: " + mensaje, null, null, mapTipo(p.getTipoComprobante()));
                     notificarAgotada(p, mensaje);
                     LOG.warning("SRI AGOTADA " + p.getClaveAcceso() + " tras " + nuevosIntentos + " intentos");
                 } else {

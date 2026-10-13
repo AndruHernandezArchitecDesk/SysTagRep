@@ -209,11 +209,10 @@ public class FacturaController implements Initializable {
     }
 
     private void cargarDescuento() {
-        ObservableList<String> descuentos = FXCollections.observableArrayList();
-        for (int i = 0; i <= 100; i += 5) descuentos.add(String.valueOf(i));
-        ComboFilter.habilitar(cmbDescuento, descuentos);
+        // Descuento en VALOR FIJO ($): combo editable sin presets de porcentaje.
+        cmbDescuento.getItems().clear();
         cmbDescuento.setValue("0");
-        cmbDescuento.getEditor().setPromptText("0.00 valor fijo");
+        cmbDescuento.getEditor().setPromptText("$ 0.00 valor fijo");
         cmbDescuento.valueProperty().addListener((obs, old, val) -> calcularTotales());
         cmbDescuento.getEditor().textProperty().addListener((obs, old, val) -> calcularTotales());
         cmbDescuento.getEditor().textProperty().addListener((obs, old, val) -> {
@@ -228,7 +227,7 @@ public class FacturaController implements Initializable {
         }
     }
 
-    private BigDecimal obtenerDescuentoPct() {
+    private BigDecimal obtenerDescuentoValor() {
         BigDecimal fijo = AppConstants.CERO;
         String txt = null;
         if (txtDescuento != null && txtDescuento.getText() != null && !txtDescuento.getText().trim().isEmpty()) txt = txtDescuento.getText().trim();
@@ -243,59 +242,22 @@ public class FacturaController implements Initializable {
         return fijo.setScale(2, RoundingMode.HALF_UP);
     }
 
-    private BigDecimal obtenerDescuentoFijo(BigDecimal totalBruto) {
-        BigDecimal fijo = obtenerDescuentoPct();
-        if (fijo.compareTo(totalBruto) > 0) fijo = totalBruto;
+    private BigDecimal obtenerDescuentoFijo(BigDecimal topeBasesSinIva) {
+        BigDecimal fijo = obtenerDescuentoValor();
+        BigDecimal tope = topeBasesSinIva != null ? topeBasesSinIva : AppConstants.CERO;
+        if (fijo.compareTo(tope) > 0) fijo = tope;
         return fijo;
     }
 
-    private List<BigDecimal> distribuirDescuento(BigDecimal descuentoTotal, List<BigDecimal> bases) {
-        List<BigDecimal> resultado = new ArrayList<>();
-        for (BigDecimal b : bases) resultado.add(BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP));
-        if (descuentoTotal == null || descuentoTotal.signum() == 0 || bases.isEmpty()) {
-            return resultado;
-        }
-        BigDecimal sumaBases = BigDecimal.ZERO;
-        for (BigDecimal b : bases) sumaBases = sumaBases.add(b);
-        if (sumaBases.signum() == 0) return resultado;
-
-        BigDecimal acumulado = BigDecimal.ZERO;
-        for (int i = 0; i < bases.size(); i++) {
-            if (i == bases.size() - 1) {
-                resultado.set(i, descuentoTotal.subtract(acumulado).setScale(2, RoundingMode.HALF_UP));
-            } else {
-                BigDecimal d = descuentoTotal.multiply(bases.get(i)).divide(sumaBases, 2, RoundingMode.HALF_UP);
-                acumulado = acumulado.add(d);
-                resultado.set(i, d);
-            }
-        }
-        return resultado;
-    }
-
-    // Misma convencion que FacturaService.armarDetalles: descuento distribuido en lineas
-    // con total NETO, y header totalDescuento == suma de lineas (reglas SRI).
-    private List<Object[]> armarDetalles(BigDecimal descuentoTotal) {
-        List<BigDecimal> bases = new ArrayList<>();
+    /** Suma de bases sin IVA (tope real del descuento en $). */
+    private BigDecimal sumaBasesSinIva() {
+        BigDecimal suma = BigDecimal.ZERO.setScale(2, java.math.RoundingMode.HALF_UP);
         for (FacturaDetalle d : itemsDetalle) {
-            BigDecimal precioSinIva = d.getPrecioUnitario().divide(new BigDecimal("1.15"), 6, RoundingMode.HALF_UP);
-            bases.add(precioSinIva.multiply(new BigDecimal(d.getCantidad())).setScale(2, RoundingMode.HALF_UP));
+            if (d == null || d.getPrecioUnitario() == null) continue;
+            suma = suma.add(d.getPrecioUnitario().divide(new BigDecimal("1.15"), 6, java.math.RoundingMode.HALF_UP)
+                    .multiply(new BigDecimal(d.getCantidad())).setScale(2, java.math.RoundingMode.HALF_UP));
         }
-        List<BigDecimal> descLinea = distribuirDescuento(descuentoTotal, bases);
-
-        List<Object[]> resultado = new ArrayList<>();
-        for (int i = 0; i < itemsDetalle.size(); i++) {
-            FacturaDetalle d = itemsDetalle.get(i);
-            BigDecimal precioSinIva = d.getPrecioUnitario().divide(new BigDecimal("1.15"), 6, RoundingMode.HALF_UP);
-            BigDecimal baseDet = precioSinIva.multiply(new BigDecimal(d.getCantidad())).setScale(2, RoundingMode.HALF_UP);
-            BigDecimal totalDetSinIva = baseDet.subtract(descLinea.get(i)).setScale(2, RoundingMode.HALF_UP);
-            String desc = d.getDescripcion();
-            if (desc.length() > AppConstants.MAX_DESCRIPCION_XML) desc = desc.substring(0, AppConstants.MAX_DESCRIPCION_XML);
-            resultado.add(new Object[]{d.getCodigo(), desc, String.valueOf(d.getCantidad()),
-                    precioSinIva.setScale(2, RoundingMode.HALF_UP).toString(),
-                    descLinea.get(i).toString(),
-                    totalDetSinIva.toString()});
-        }
-        return resultado;
+        return suma.setScale(2, java.math.RoundingMode.HALF_UP);
     }
 
     private void cargarListaClientes() {
@@ -433,37 +395,17 @@ public class FacturaController implements Initializable {
     }
 
     private void calcularTotales() {
-        BigDecimal subtotal = itemsDetalle.stream().map(FacturaDetalle::getPrecioTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal totalBrutoRef = subtotal.add(subtotal.multiply(AppConstants.IVA_RATE).setScale(2, RoundingMode.HALF_UP));
-        BigDecimal descuento = obtenerDescuentoFijo(totalBrutoRef);
-        // IVA sobre base NETA sin-IVA (igual que FacturaService): base = suma(linea sin IVA - desc).
-        BigDecimal baseNeta = baseNetaSinIva(subtotal, descuento);
-        BigDecimal iva = baseNeta.multiply(AppConstants.IVA_RATE).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal total = subtotal.subtract(descuento).add(iva).setScale(2, RoundingMode.HALF_UP);
+        // Convencion C (igual que FacturaService): subtotal = S bases sin IVA (neto),
+        // descuento solo cabecera, IVA 15% sobre base bruta, total = base - desc + iva.
+        BigDecimal base = sumaBasesSinIva();
+        BigDecimal descuento = obtenerDescuentoFijo(base);
+        BigDecimal iva = base.multiply(AppConstants.IVA_RATE).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal total = base.subtract(descuento).add(iva).setScale(2, RoundingMode.HALF_UP);
 
-        lblSubtotal.setText(subtotal.setScale(2, RoundingMode.HALF_UP).toString());
+        lblSubtotal.setText(base.setScale(2, RoundingMode.HALF_UP).toString());
         lblIva.setText(iva.toString());
         lblDescuento.setText(descuento.toString());
         lblTotal.setText(total.toString());
-    }
-
-    /**
-     * Base neta sin-IVA para el IVA (misma formula que FacturaService.guardarFactura):
-     * suma por linea de (precioUnitario/1.15 - descuento distribuido). Sin descuento
-     * equivale al subtotal sin IVA; con descuento evita el doble cobro de IVA.
-     */
-    private BigDecimal baseNetaSinIva(BigDecimal subtotal, BigDecimal descuento) {
-        List<BigDecimal> bases = new ArrayList<>();
-        for (FacturaDetalle d : itemsDetalle) {
-            bases.add(d.getPrecioUnitario().divide(new BigDecimal("1.15"), 6, RoundingMode.HALF_UP)
-                    .multiply(new BigDecimal(d.getCantidad())).setScale(2, RoundingMode.HALF_UP));
-        }
-        List<BigDecimal> dist = distribuirDescuento(descuento, bases);
-        BigDecimal neta = BigDecimal.ZERO;
-        for (int i = 0; i < bases.size(); i++) {
-            neta = neta.add(bases.get(i).subtract(dist.get(i)));
-        }
-        return neta.setScale(2, RoundingMode.HALF_UP);
     }
 
     private void cargarLogo() {
@@ -516,7 +458,7 @@ public class FacturaController implements Initializable {
                     cmbCliente.getValue(), empresaActual, codigo, itemsDetalle,
                     cmbFormaPago.getValue(), cmbMesesPlazo.getValue(), cmbInteres.getValue(),
                     ambienteSri, rutaP12Config, claveP12Config, directorioEscritorio,
-                    obtenerDescuentoPct()
+                    obtenerDescuentoValor()
             );
 
             // Contingencia SRI: todo a cola — entrega inmediata sin esperar SRI (LINEAMIENTO_CONTINGENCIA_SRI §1 y §2)
@@ -571,7 +513,7 @@ public class FacturaController implements Initializable {
             body.put("clienteId", cmbCliente.getValue() != null ? cmbCliente.getValue().getId() : null);
             body.put("formaPago", cmbFormaPago.getValue());
             body.put("ambienteSri", ambienteSri);
-            body.put("descuentoPct", obtenerDescuentoPct());
+            body.put("descuentoValor", obtenerDescuentoValor());
             java.util.List<java.util.Map<String, Object>> items = new java.util.ArrayList<>();
             for (FacturaDetalle d : itemsDetalle) {
                 java.util.Map<String, Object> it = new java.util.LinkedHashMap<>();
@@ -620,7 +562,7 @@ public class FacturaController implements Initializable {
             body.put("clienteId", cmbCliente.getValue() != null ? cmbCliente.getValue().getId() : null);
             body.put("formaPago", cmbFormaPago.getValue());
             body.put("ambienteSri", cmbAmbiente.getValue() != null ? cmbAmbiente.getValue() : AppConstants.AMBIENTE_PRUEBAS);
-            body.put("descuentoPct", obtenerDescuentoPct());
+            body.put("descuentoValor", obtenerDescuentoValor());
             java.util.List<java.util.Map<String, Object>> items = new java.util.ArrayList<>();
             for (FacturaDetalle d : itemsDetalle) {
                 java.util.Map<String, Object> it = new java.util.LinkedHashMap<>();
@@ -666,11 +608,10 @@ public class FacturaController implements Initializable {
         // Validacion consumidor final >50 bloquea antes de consumir secuencial
         Cliente cli = cmbCliente.getValue();
         if (AppConstants.esConsumidorFinal(cli.getIdentificacion())) {
-            BigDecimal subtotal = itemsDetalle.stream().map(FacturaDetalle::getPrecioTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
-            BigDecimal descCf = obtenerDescuentoFijo(subtotal.add(subtotal.multiply(AppConstants.IVA_RATE).setScale(2, RoundingMode.HALF_UP)));
-            BigDecimal baseCf = baseNetaSinIva(subtotal, descCf);
+            BigDecimal baseCf = sumaBasesSinIva();
+            BigDecimal descCf = obtenerDescuentoFijo(baseCf);
             BigDecimal iva = baseCf.multiply(AppConstants.IVA_RATE).setScale(2, RoundingMode.HALF_UP);
-            BigDecimal tot = subtotal.subtract(descCf).add(iva).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal tot = baseCf.subtract(descCf).add(iva).setScale(2, RoundingMode.HALF_UP);
             if (tot.compareTo(AppConstants.LIMITE_CONSUMIDOR_FINAL) > 0) {
                 throw new IllegalArgumentException("Consumidor Final (9999999999999 / tipo 07) solo permite facturas hasta $50.00. Total actual: $" + tot + ". Use identificación válida (cédula/RUC/pasaporte).");
             }
