@@ -25,7 +25,7 @@ class XmlSriBuilderTest {
                 "PRUEBAS", CLAVE, "1790000000001", "TAG REPUESTOS",
                 "001", "001", 1, "Av. Principal y Secundaria",
                 "", "SI", "04", "Cliente Prueba", "1790000000002",
-                "Quito", "60.87", "0.00", "9.13", "70.00", "0.00",
+                "Quito", "60.87", "0.00", "70.00", "0.00",
                 "Efectivo", "12/08/2026", detalles);
     }
 
@@ -57,7 +57,7 @@ class XmlSriBuilderTest {
                 "PRODUCCION", CLAVE, "1790000000001", "TAG REPUESTOS",
                 "001", "001", 1, "Av. Principal",
                 "", "SI", "04", "Cliente Prueba", "1790000000002",
-                "Quito", "26.96", "0.00", "4.04", "31.00", "0.00",
+                "Quito", "26.96", "0.00", "31.00", "0.00",
                 "Efectivo", "12/08/2026", detalles);
         assertTrue(xml.contains("<ambiente>2</ambiente>"), "Producción debe usar ambiente 2");
     }
@@ -68,7 +68,7 @@ class XmlSriBuilderTest {
                 "PRUEBAS", CLAVE, "1790000000001", "TAG REPUESTOS",
                 "001", "001", 1, "Av. Principal",
                 "NO", "SI", "04", "Cliente Prueba", "1790000000002",
-                "Quito", "26.96", "0.00", "4.04", "31.00", "0.00",
+                "Quito", "26.96", "0.00", "31.00", "0.00",
                 "Efectivo", "12/08/2026",
                 List.<Object[]>of(new Object[]{"001", "Aceite 5W30", "1", "26.96", "0.00", "26.96"}));
 
@@ -91,7 +91,7 @@ class XmlSriBuilderTest {
                 "PRUEBAS", CLAVE, "1790000000001", "TAG REPUESTOS",
                 "001", "001", 1, "Av. Principal",
                 "001", "SI", "04", "Cliente Prueba", "1790000000002",
-                "Quito", "26.96", "0.00", "4.04", "31.00", "0.00",
+                "Quito", "26.96", "0.00", "31.00", "0.00",
                 "Efectivo", "12/08/2026",
                 List.<Object[]>of(new Object[]{"001", "Aceite 5W30", "1", "26.96", "0.00", "26.96"}));
 

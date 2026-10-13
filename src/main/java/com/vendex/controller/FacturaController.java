@@ -399,7 +399,8 @@ public class FacturaController implements Initializable {
         // descuento solo cabecera, IVA 15% sobre base bruta, total = base - desc + iva.
         BigDecimal base = sumaBasesSinIva();
         BigDecimal descuento = obtenerDescuentoFijo(base);
-        BigDecimal iva = base.multiply(AppConstants.IVA_RATE).setScale(2, RoundingMode.HALF_UP);
+        // Regla SRI ImpuestoTotalizado: valor = 15% * (base - adicional).
+        BigDecimal iva = base.subtract(descuento).multiply(AppConstants.IVA_RATE).setScale(2, RoundingMode.HALF_UP);
         BigDecimal total = base.subtract(descuento).add(iva).setScale(2, RoundingMode.HALF_UP);
 
         lblSubtotal.setText(base.setScale(2, RoundingMode.HALF_UP).toString());
@@ -610,7 +611,7 @@ public class FacturaController implements Initializable {
         if (AppConstants.esConsumidorFinal(cli.getIdentificacion())) {
             BigDecimal baseCf = sumaBasesSinIva();
             BigDecimal descCf = obtenerDescuentoFijo(baseCf);
-            BigDecimal iva = baseCf.multiply(AppConstants.IVA_RATE).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal iva = baseCf.subtract(descCf).multiply(AppConstants.IVA_RATE).setScale(2, RoundingMode.HALF_UP);
             BigDecimal tot = baseCf.subtract(descCf).add(iva).setScale(2, RoundingMode.HALF_UP);
             if (tot.compareTo(AppConstants.LIMITE_CONSUMIDOR_FINAL) > 0) {
                 throw new IllegalArgumentException("Consumidor Final (9999999999999 / tipo 07) solo permite facturas hasta $50.00. Total actual: $" + tot + ". Use identificación válida (cédula/RUC/pasaporte).");

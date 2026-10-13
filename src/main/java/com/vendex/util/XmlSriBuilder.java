@@ -28,7 +28,7 @@ public class XmlSriBuilder {
                                            String tipoIdentificacionComprador,
                                            String razonSocialComprador, String identificacionComprador,
                                            String direccionComprador, String totalSinImpuestos,
-                                           String totalDescuento, String totalImpuesto,
+                                           String totalDescuento,
                                            String totalConImpuestos, String propina,
                                            String formaPago, String fechaEmision,
                                            List<Object[]> detalles) {
@@ -80,19 +80,29 @@ public class XmlSriBuilder {
             agregarElemento(infoFactura, "totalDescuento", totalDescuento);
 
             // totalConImpuestos — baseImponible = suma de totales NETOS de lineas
-            // (regla SRI: base == suma de precioTotalSinImpuesto). Fallback al subtotal
-            // del header si las lineas no son parseables (callers legacy sin descuento).
+            // (regla SRI: base == suma de precioTotalSinImpuesto). Regla SRI
+            // ImpuestoTotalizado: valor = tarifa * (base - descuentoAdicional).
+            String baseImp = baseImponibleIva(detalles, totalSinImpuestos);
+            java.math.BigDecimal adicNum;
+            try {
+                adicNum = new java.math.BigDecimal(totalDescuento != null ? totalDescuento.trim() : "0");
+            } catch (Exception e) {
+                adicNum = java.math.BigDecimal.ZERO;
+            }
+            String valorImp = new java.math.BigDecimal(baseImp).subtract(adicNum)
+                    .multiply(new java.math.BigDecimal("0.15"))
+                    .setScale(2, java.math.RoundingMode.HALF_UP).toString();
             Element totalConImpuestosEl = doc.createElement("totalConImpuestos");
             Element impuesto = doc.createElement("totalImpuesto");
-            agregarElemento(impuesto, "codigo", "2"); // 2=IVA
+            agregarElemento(impuesto, "codigo", "2");
             agregarElemento(impuesto, "codigoPorcentaje", "4"); // 4=IVA 15%
             // Campo SRI (ficha tecnica v1.6+, parte de la formula del importe):
             // importeTotal = totalSinImpuestos - descuentoAdicional + impuestos.
             // Sin este elemento el SRI lo toma como 0.0 y tumba facturas con descuento
             // (ERROR EN DIFERENCIAS). Espeja el descuento de cabecera (impuesto unico IVA).
             agregarElemento(impuesto, "descuentoAdicional", totalDescuento != null ? totalDescuento : "0.00");
-            agregarElemento(impuesto, "baseImponible", baseImponibleIva(detalles, totalSinImpuestos));
-            agregarElemento(impuesto, "valor", totalImpuesto);
+            agregarElemento(impuesto, "baseImponible", baseImp);
+            agregarElemento(impuesto, "valor", valorImp);
             totalConImpuestosEl.appendChild(impuesto);
             infoFactura.appendChild(totalConImpuestosEl);
 

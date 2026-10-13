@@ -63,7 +63,7 @@ class SRIRealIntegracionTest {
                 empresa.getDireccionCallePrincipal() + " y " + empresa.getDireccionCalleSecundaria(),
                 empresa.getAgenteRetencion(), "NO", "04",
                 "Cliente Prueba SRI", "1716854540002",
-                "Quito", "8.70", "0.00", "1.30", "10.00", "0.00",
+                "Quito", "8.70", "0.00", "10.00", "0.00",
                 "Efectivo", fechaEmision, detalles);
 
         FirmaDigital firmaDigital = new FirmaDigital();

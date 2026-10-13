@@ -77,14 +77,14 @@ class FacturaDescuentoSriTest {
     @Test
     void xml_convencionC_casoReal1643() throws Exception {
         // TAPA RADIADOR 2x56.35 (bases 98.00), desc cabecera 70.00:
-        // sub 98.00, desc 70.00, adic 70.00, base 98.00, iva 14.70, total 42.70.
+        // sub 98.00, desc/adic 70.00, base 98.00, iva 4.20, total 32.20.
         List<Object[]> detalles = List.<Object[]>of(
             new Object[]{"4PK1210", "TAPA RADIADOR TOYOTA PRIUS/HILUX", "2", "49.00", "0.00", "98.00"}
         );
         String xml = XmlSriBuilder.construirFactura("PRUEBAS", "1310202601171685454000110011000000016438804530017",
                 "1716854540001", "TAG Repuestos Automotrices", "001", "100", 1643, "Av. De los Pinos y Av. 6 de Diciembre",
                 "", "NO", "07", "Consumidor final", "9999999999999", "NA",
-                "98.00", "70.00", "14.70", "42.70", "0.00", "01", "13/10/2026", detalles);
+                "98.00", "70.00", "32.20", "0.00", "01", "13/10/2026", detalles);
 
         DocumentBuilderFactory f = DocumentBuilderFactory.newInstance();
         f.setNamespaceAware(true);
@@ -100,13 +100,15 @@ class FacturaDescuentoSriTest {
 
         assertEquals(0, num(doc, "baseImponible").compareTo(new BigDecimal("98.00")),
                 "base = suma de netos en bruto");
-        assertEquals(0, num(doc, "baseImponible").multiply(new BigDecimal("0.15"))
-                .setScale(2, RoundingMode.HALF_UP).compareTo(num(doc, "valor")),
-                "IVA = base * 15%");
+        assertEquals(0, num(doc, "baseImponible")
+                .subtract(new BigDecimal(adic.item(0).getTextContent().trim()))
+                .multiply(new BigDecimal("0.15")).setScale(2, RoundingMode.HALF_UP)
+                .compareTo(num(doc, "valor")),
+                "Regla SRI ImpuestoTotalizado: valor = 15% * (base - adicional)");
 
         // Formulas SRI con el elemento presente:
         // R2: desc == lineas + adic  =>  70.00 == 0.00 + 70.00
-        // T:  importe == sub - adic + imp  =>  98.00 - 70.00 + 14.70 == 42.70
+        // T:  importe == sub - adic + imp  =>  98.00 - 70.00 + 4.20 == 32.20
         BigDecimal calcR2 = new BigDecimal("0.00")
                 .add(new BigDecimal(adic.item(0).getTextContent().trim()));
         assertEquals(0, calcR2.compareTo(num(doc, "totalDescuento")), "R2 SRI");
@@ -118,14 +120,14 @@ class FacturaDescuentoSriTest {
 
     @Test
     void xml_ejemploUsuario_350menos200igual150() throws Exception {
-        // bases 350/1.15 = 304.35; desc 200; iva 15% s/base bruta = 45.65; total 150.00
+        // bases 350/1.15 = 304.35; desc/adic 200; iva = 15% * 104.35 = 15.65; total 120.00
         List<Object[]> detalles = List.<Object[]>of(
             new Object[]{"X", "ITEM", "1", "304.35", "0.00", "304.35"}
         );
         String xml = XmlSriBuilder.construirFactura("PRUEBAS", "1310202601171685454000110011000000016438804530017",
                 "1716854540001", "TAG Repuestos Automotrices", "001", "100", 1644, "Av. Principal",
                 "", "NO", "04", "Cliente", "1790000000002", "Quito",
-                "304.35", "200.00", "45.65", "150.00", "0.00", "01", "13/10/2026", detalles);
+                "304.35", "200.00", "120.00", "0.00", "01", "13/10/2026", detalles);
 
         DocumentBuilderFactory f = DocumentBuilderFactory.newInstance();
         f.setNamespaceAware(true);
@@ -134,7 +136,7 @@ class FacturaDescuentoSriTest {
         BigDecimal calcT = num(doc, "totalSinImpuestos")
                 .subtract(num(doc, "totalDescuento"))
                 .add(num(doc, "valor"));
-        assertEquals(0, calcT.compareTo(new BigDecimal("150.00")));
+        assertEquals(0, calcT.compareTo(new BigDecimal("120.00")));
         assertEquals(0, calcT.compareTo(num(doc, "importeTotal")));
     }
 
@@ -160,10 +162,10 @@ class FacturaDescuentoSriTest {
 
     @Test
     void prevalidacion_casoCorrectoC_pasa() throws Exception {
-        // Lineas en bruto + header C: sub 63.00, desc 40.00, adic 40.00, iva 9.45, total 32.45
+        // Lineas en bruto + header C: sub 63.00, desc/adic 40.00, iva 3.45, total 26.45
         List<Object[]> filas = List.<Object[]>of(
                 new Object[]{"4PK1210", "TEST12", "1", "63.00", "0.00", "63.00"});
-        assertDoesNotThrow(() -> validar(filas, "63.00", "40.00", "40.00", "9.45", "32.45"));
+        assertDoesNotThrow(() -> validar(filas, "63.00", "40.00", "40.00", "3.45", "26.45"));
     }
 
     @Test
@@ -186,12 +188,40 @@ class FacturaDescuentoSriTest {
     }
 
     @Test
-    void prevalidacion_ivaSobreNetoConBaseBruta_falla() {
-        // IVA calculado sobre neto distribuido (convencion vieja) no cuadra con base bruta
+    void prevalidacion_ivaSobreBaseBruta_falla() {
+        // IVA calculado sobre base bruta ignorando el adicional (bug anterior):
+        // 9.45 vs 3.45 = 15% * (63.00 - 40.00) esperado por el SRI
         List<Object[]> filas = List.<Object[]>of(
                 new Object[]{"4PK1210", "TEST12", "1", "63.00", "0.00", "63.00"});
-        assertThrows(IllegalStateException.class,
-                () -> validar(filas, "63.00", "40.00", "40.00", "3.45", "26.45"));
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                () -> validar(filas, "63.00", "40.00", "40.00", "9.45", "32.45"));
+        assertTrue(e.getMessage().contains("ImpuestoTotalizado"));
+    }
+
+    @Test
+    void xml_valorEsTarifaPorBaseMenosAdicional_caso1646() throws Exception {
+        // Factura 1646 real: base 126.00, desc/adic 100.00.
+        // Regla SRI ImpuestoTotalizado: valor = 15% * (126.00 - 100.00) = 3.90
+        // (antes emitiamos 18.90 = 15% * base y el SRI devolvia DIFERENCIAS).
+        List<Object[]> detalles = List.<Object[]>of(
+            new Object[]{"4PK1210", "TEST12", "2", "63.00", "0.00", "126.00"}
+        );
+        String xml = XmlSriBuilder.construirFactura("PRUEBAS", "1310202601171685454000110011000000016462735730414",
+                "1716854540001", "TAG Repuestos Automotrices", "001", "100", 1646, "Av. Principal",
+                "", "NO", "07", "Consumidor final", "9999999999999", "NA",
+                "126.00", "100.00", "29.90", "0.00", "01", "13/10/2026", detalles);
+
+        DocumentBuilderFactory f = DocumentBuilderFactory.newInstance();
+        f.setNamespaceAware(true);
+        Document doc = f.newDocumentBuilder().parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+
+        assertEquals(0, num(doc, "valor").compareTo(new BigDecimal("3.90")),
+                "valor debe ser 15% * (base - adicional)");
+        BigDecimal calcT = num(doc, "totalSinImpuestos")
+                .subtract(num(doc, "descuentoAdicional"))
+                .add(num(doc, "valor"));
+        assertEquals(0, calcT.compareTo(num(doc, "importeTotal")),
+                "T SRI: 126.00 - 100.00 + 3.90 == 29.90");
     }
 
     @Test

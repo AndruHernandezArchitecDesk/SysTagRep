@@ -108,7 +108,8 @@ public class FacturaService {
                 .map(f -> new BigDecimal(f[5].toString().trim()))
                 .reduce(AppConstants.CERO, BigDecimal::add);
         BigDecimal sub = baseNeta;
-        BigDecimal ivaCalc = baseNeta.multiply(AppConstants.IVA_RATE).setScale(2, RoundingMode.HALF_UP);
+        // Regla SRI ImpuestoTotalizado: valor = tarifa * (base - descuentoAdicional).
+        BigDecimal ivaCalc = baseNeta.subtract(descCalc).multiply(AppConstants.IVA_RATE).setScale(2, RoundingMode.HALF_UP);
         BigDecimal totCalc = sub.subtract(descCalc).add(ivaCalc).setScale(2, RoundingMode.HALF_UP);
 
         // Pre-validacion SRI ANTES de consumir secuencial/BD: espejo exacto del validador
@@ -201,7 +202,7 @@ public class FacturaService {
                     throw new IllegalStateException("No se configuró la firma electrónica (.p12 y contraseña).");
                 }
                 String tipoIdComp = tipoIdCompTmp;
-                xmlGenerado = XmlSriBuilder.construirFactura(ambienteSri, claveAcceso, empresa.getRuc(), empresa.getRazonSocial(), codEstab, codPtoEmi, secuencialFE, com.vendex.util.SucursalActual.direccionEstablecimiento(empresa.getDireccionCallePrincipal() + " y " + empresa.getDireccionCalleSecundaria()), empresa.getAgenteRetencion(), obligadoSri(empresa), tipoIdComp, cliente.getNombre(), cliente.getIdentificacion(), cliente.getDireccion(), sub.setScale(2, RoundingMode.HALF_UP).toString(), descCalc.setScale(2, RoundingMode.HALF_UP).toString(), ivaCalc.setScale(2, RoundingMode.HALF_UP).toString(), totCalc.setScale(2, RoundingMode.HALF_UP).toString(), "0.00", formaPago, fechaEmisionFE, filasDetalleSri);
+                xmlGenerado = XmlSriBuilder.construirFactura(ambienteSri, claveAcceso, empresa.getRuc(), empresa.getRazonSocial(), codEstab, codPtoEmi, secuencialFE, com.vendex.util.SucursalActual.direccionEstablecimiento(empresa.getDireccionCallePrincipal() + " y " + empresa.getDireccionCalleSecundaria()), empresa.getAgenteRetencion(), obligadoSri(empresa), tipoIdComp, cliente.getNombre(), cliente.getIdentificacion(), cliente.getDireccion(), sub.setScale(2, RoundingMode.HALF_UP).toString(), descCalc.setScale(2, RoundingMode.HALF_UP).toString(), totCalc.setScale(2, RoundingMode.HALF_UP).toString(), "0.00", formaPago, fechaEmisionFE, filasDetalleSri);
                 try {
                     FirmaDigital firma = new FirmaDigital();
                     if (!firma.cargarCertificado(rutaP12, claveP12)) throw new IllegalStateException("No se pudo cargar el certificado. Verifique la ruta y la contraseña.");
@@ -525,12 +526,12 @@ public class FacturaService {
                     + ") difiere de lineas+adicional (" + sumaDesc + " + "
                     + (descAdicional != null ? descAdicional : AppConstants.CERO) + "). El SRI lo rechazara (R2).");
         }
-        BigDecimal ivaEsperado = sumaNeto.multiply(AppConstants.IVA_RATE).setScale(2, RoundingMode.HALF_UP);
-        if (ivaEsperado.compareTo(iva.setScale(2, RoundingMode.HALF_UP)) != 0) {
-            throw new IllegalStateException("IVA " + iva + " no corresponde a base neta " + sumaNeto
-                    + " (esperado " + ivaEsperado + "). Sin doble IVA.");
-        }
         BigDecimal adic = descAdicional != null ? descAdicional : AppConstants.CERO;
+        BigDecimal ivaEsperado = sumaNeto.subtract(adic).multiply(AppConstants.IVA_RATE).setScale(2, RoundingMode.HALF_UP);
+        if (ivaEsperado.compareTo(iva.setScale(2, RoundingMode.HALF_UP)) != 0) {
+            throw new IllegalStateException("IVA " + iva + " no corresponde a (base " + sumaNeto
+                    + " - adicional " + adic + ") * 15% (esperado " + ivaEsperado + "). Regla SRI ImpuestoTotalizado.");
+        }
         BigDecimal totalEsperado = subtotal.subtract(adic).add(iva).setScale(2, RoundingMode.HALF_UP);
         if (totalEsperado.compareTo(total.setScale(2, RoundingMode.HALF_UP)) != 0) {
             throw new IllegalStateException("Importe " + total + " no cuadra: subtotal - descuentoAdicional + IVA = "

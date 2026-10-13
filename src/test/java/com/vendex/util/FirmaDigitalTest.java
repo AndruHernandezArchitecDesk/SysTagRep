@@ -20,7 +20,7 @@ class FirmaDigitalTest {
                 "PRUEBAS", "1234567890123456789012345678901234567890123456789", "1790000000001", "TAG REPUESTOS",
                 "001", "001", 1, "Av. Principal y Secundaria",
                 "", "SI", "04", "Cliente Prueba", "1790000000002",
-                "Quito", "26.96", "0.00", "4.04", "31.00", "0.00",
+                "Quito", "26.96", "0.00", "31.00", "0.00",
                 "Efectivo", "12/08/2026", detalles);
     }
 
