@@ -169,6 +169,10 @@ public class SeguimientoSriController implements Initializable {
             private final Button btnCorreo = new Button("Correo");
             private final HBox box = new HBox(6, btnImprimir, btnCorreo);
             {
+                // Texto negro sobre fondo gris: legible en modo claro y oscuro
+                // (el CSS global hereda texto claro en dark y no se leia).
+                btnImprimir.setStyle("-fx-text-fill: black;");
+                btnCorreo.setStyle("-fx-text-fill: black;");
                 btnImprimir.setOnAction(e -> {
                     FacturaRegistro fr = getTableRow() == null ? null : getTableRow().getItem();
                     if (fr != null) imprimirAutorizada(fr);

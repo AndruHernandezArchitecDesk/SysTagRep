@@ -16,12 +16,16 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.GridPane;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
@@ -86,6 +90,7 @@ public class CajaController implements Initializable {
     @FXML private TableColumn<CajaSesion, BigDecimal> colHistDiferencia;
     @FXML private TableColumn<CajaSesion, String> colHistEstado;
     @FXML private TableColumn<CajaSesion, Integer> colHistUsuario;
+    @FXML private TableColumn<CajaSesion, Void> colHistAcciones;
 
     @FXML private DatePicker dpDesde;
     @FXML private DatePicker dpHasta;
@@ -207,6 +212,21 @@ public class CajaController implements Initializable {
                 }
             }
         });
+        colHistAcciones.setCellFactory(col -> new TableCell<>() {
+            private final Button btnVer = new Button("Ver detalle");
+            {
+                btnVer.setOnAction(e -> {
+                    CajaSesion s = getTableRow() == null ? null : getTableRow().getItem();
+                    if (s != null) mostrarDetalleSesion(s);
+                });
+            }
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || getTableRow() == null || getTableRow().getItem() == null) setGraphic(null);
+                else { setGraphic(btnVer); setAlignment(Pos.CENTER); }
+            }
+        });
         tblHistorial.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
     }
 
@@ -219,6 +239,142 @@ public class CajaController implements Initializable {
                 else setText("$" + item.setScale(2, BigDecimal.ROUND_HALF_UP));
             }
         };
+    }
+
+    private String nombreUsuario(int usuarioId) {
+        try {
+            var u = usuarioDAO.obtenerPorId(usuarioId);
+            if (u != null && u.getNombre() != null && !u.getNombre().isBlank()) return u.getNombre();
+        } catch (Exception ignored) {}
+        return "Usuario #" + usuarioId;
+    }
+
+    private static String dinero(BigDecimal v) {
+        if (v == null) return "—";
+        return "$" + v.setScale(2, BigDecimal.ROUND_HALF_UP);
+    }
+
+    private static Label etiqueta(String texto) {
+        Label l = new Label(texto);
+        l.setStyle("-fx-font-weight: bold;");
+        return l;
+    }
+
+    /** Modal solo lectura con cabecera, totales por tipo y movimientos de la sesión. */
+    private void mostrarDetalleSesion(CajaSesion s) {
+        try {
+            List<CajaMovimiento> movs = cajaService.obtenerMovimientos(s.getId());
+            BigDecimal ing = BigDecimal.ZERO, egr = BigDecimal.ZERO,
+                    ret = BigDecimal.ZERO, aju = BigDecimal.ZERO;
+            for (CajaMovimiento m : movs) {
+                if (m == null || m.getMonto() == null) continue;
+                switch (m.getTipo() != null ? m.getTipo() : "") {
+                    case "INGRESO" -> ing = ing.add(m.getMonto());
+                    case "EGRESO" -> egr = egr.add(m.getMonto());
+                    case "RETIRO" -> ret = ret.add(m.getMonto());
+                    case "AJUSTE" -> aju = aju.add(m.getMonto());
+                    default -> {}
+                }
+            }
+            BigDecimal neto = ing.subtract(egr).subtract(ret).subtract(aju);
+            BigDecimal inicial = s.getMontoInicial() != null ? s.getMontoInicial() : BigDecimal.ZERO;
+            BigDecimal esperado = inicial.add(neto);
+
+            Stage modal = new Stage();
+            modal.initModality(Modality.APPLICATION_MODAL);
+            modal.setTitle("Detalle Sesión #" + s.getId());
+            modal.setMinWidth(720);
+            modal.setMinHeight(540);
+
+            VBox contenido = new VBox(12);
+            contenido.setPadding(new Insets(20));
+
+            Label lblTitulo = new Label("Detalle Sesión #" + s.getId());
+            lblTitulo.setFont(Font.font("System", FontWeight.BOLD, 16));
+            contenido.getChildren().add(lblTitulo);
+
+            GridPane info = new GridPane();
+            info.setHgap(15);
+            info.setVgap(8);
+            info.add(etiqueta("Apertura:"), 0, 0);
+            info.add(new Label(s.getFechaApertura() != null ? s.getFechaApertura().format(fmtFecha) : "—"), 1, 0);
+            info.add(etiqueta("Cierre:"), 0, 1);
+            info.add(new Label(s.getFechaCierre() != null ? s.getFechaCierre().format(fmtFecha) : "—"), 1, 1);
+            info.add(etiqueta("Usuario:"), 2, 0);
+            info.add(new Label(nombreUsuario(s.getUsuarioId())), 3, 0);
+            info.add(etiqueta("Estado:"), 2, 1);
+            info.add(new Label(s.getEstado() != null ? s.getEstado() : "—"), 3, 1);
+            contenido.getChildren().add(info);
+
+            GridPane totales = new GridPane();
+            totales.setHgap(15);
+            totales.setVgap(6);
+            String[][] filas = {
+                    {"Monto inicial:", dinero(inicial)},
+                    {"Ingresos:", dinero(ing)},
+                    {"Egresos:", dinero(egr)},
+                    {"Retiros:", dinero(ret)},
+                    {"Ajustes:", dinero(aju)},
+                    {"Neto (ing − egr − ret − aju):", dinero(neto)},
+                    {"Esperado (inicial + neto):", dinero(esperado)},
+                    {"Físico:", dinero(s.getMontoFisico())},
+                    {"Diferencia:", dinero(s.getDiferencia())},
+            };
+            for (int i = 0; i < filas.length; i++) {
+                totales.add(etiqueta(filas[i][0]), 0, i);
+                totales.add(new Label(filas[i][1]), 1, i);
+            }
+            contenido.getChildren().add(totales);
+
+            TableView<CajaMovimiento> tbl = new TableView<>();
+            TableColumn<CajaMovimiento, LocalDateTime> cFecha = new TableColumn<>("Fecha");
+            cFecha.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("fecha"));
+            cFecha.setCellFactory(c -> new TableCell<>() {
+                @Override protected void updateItem(LocalDateTime item, boolean empty) {
+                    super.updateItem(item, empty);
+                    setText(empty || item == null ? null : item.format(fmtFecha));
+                }
+            });
+            TableColumn<CajaMovimiento, String> cTipo = new TableColumn<>("Tipo");
+            cTipo.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("tipo"));
+            TableColumn<CajaMovimiento, String> cDesc = new TableColumn<>("Descripción");
+            cDesc.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("descripcion"));
+            TableColumn<CajaMovimiento, BigDecimal> cMonto = new TableColumn<>("Monto");
+            cMonto.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("monto"));
+            cMonto.setCellFactory(c -> new TableCell<>() {
+                @Override protected void updateItem(BigDecimal item, boolean empty) {
+                    super.updateItem(item, empty);
+                    setText(empty || item == null ? null : dinero(item));
+                }
+            });
+            TableColumn<CajaMovimiento, Integer> cUsu = new TableColumn<>("Usuario");
+            cUsu.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("usuarioId"));
+            cUsu.setCellFactory(c -> new TableCell<>() {
+                @Override protected void updateItem(Integer item, boolean empty) {
+                    super.updateItem(item, empty);
+                    setText(empty || item == null ? null : nombreUsuario(item));
+                }
+            });
+            tbl.getColumns().addAll(cFecha, cTipo, cDesc, cMonto, cUsu);
+            tbl.setItems(FXCollections.observableArrayList(movs));
+            tbl.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+            tbl.setPrefHeight(280);
+            VBox.setVgrow(tbl, javafx.scene.layout.Priority.ALWAYS);
+            contenido.getChildren().add(new Label(movs.size() + " movimiento(s)"));
+            contenido.getChildren().add(tbl);
+
+            Button btnCerrar = new Button("Cerrar");
+            btnCerrar.setOnAction(e -> modal.close());
+            HBox pie = new HBox(btnCerrar);
+            pie.setAlignment(Pos.CENTER_RIGHT);
+            contenido.getChildren().add(pie);
+
+            modal.setScene(new javafx.scene.Scene(contenido));
+            modal.showAndWait();
+        } catch (Exception e) {
+            logDAO.guardar("CajaController", "mostrarDetalleSesion", e.getMessage(), e);
+            new Alert(Alert.AlertType.ERROR, "No se pudo abrir el detalle: " + e.getMessage()).showAndWait();
+        }
     }
 
     private void cargarEstado() {

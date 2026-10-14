@@ -72,7 +72,9 @@ public class SecuenciaDocumentoApiController {
         try {
             Map<String, Object> body = ctx.bodyAsClass(Map.class);
             int numeroUsado = ((Number) body.get("numeroUsado")).intValue();
-            // Obtener bloque y actualizar
+            SecuenciaBloque stub = new SecuenciaBloque();
+            stub.setId(bloqueId);
+            bloqueDAO.marcarUsado(stub, numeroUsado);
             ctx.json(Map.of("ok", true));
         } catch (Exception e) {
             ctx.status(500).json(Map.of("error", e.getMessage() != null ? e.getMessage() : "Error interno"));

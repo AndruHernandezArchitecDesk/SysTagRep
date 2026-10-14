@@ -104,6 +104,11 @@ public class FacturaApiController {
             String codigo = (String) body.get("codigo");
             String claveAcceso = (String) body.get("claveAcceso");
             String numComprobante = (String) body.get("numComprobante");
+            if (codigo == null || codigo.isBlank() || claveAcceso == null || claveAcceso.isBlank()
+                    || numComprobante == null || numComprobante.isBlank()) {
+                ctx.status(400).json(Map.of("error", "codigo, claveAcceso y numComprobante son obligatorios (no se aceptan NULL: el UNIQUE no los frena)"));
+                return;
+            }
             String estadoSri = (String) body.get("estadoSri");
             String fechaStr = (String) body.get("fecha");
             String totalStr = (String) body.get("total");

@@ -31,6 +31,7 @@ public class SyncService {
     private int enviadas = 0;
     private int conflictos = 0;
     private int fallidas = 0;
+    private String ultimoError = null;
 
     private SyncService() {
         this(new com.vendex.remote.RestClient(com.vendex.remote.ApiConfig.baseUrl()));
@@ -113,25 +114,25 @@ public class SyncService {
         if (responseBody == null || responseBody.isBlank()) {
             return true;
         }
-        return !responseBody.toLowerCase().contains("error");
+        if (responseBody.toLowerCase().contains("error")) {
+            ultimoError = responseBody.length() > 500 ? responseBody.substring(0, 500) : responseBody;
+            return false;
+        }
+        return true;
     }
 
     private String leerRespuestaError(OperacionOffline op) {
-        String endpoint = resolverEndpoint(op.getTipo());
-        if (endpoint == null) return "Endpoint no soportado";
-        try {
-            String idempotencyKey = op.getTipo() + "-" + op.getId() + "-" + op.getCreadoEn();
-            String body = client.postString(endpoint, op.getPayload(), idempotencyKey);
-            if (body == null || body.isBlank()) return "HTTP 200";
-            return body.length() > 200 ? body.substring(0, 200) : body;
-        } catch (Exception e) {
-            return e.getMessage();
-        }
+        // No reenviar: para endpoints no idempotentes (emitir factura) repostear
+        // crearia un segundo comprobante con nuevo secuencial.
+        return ultimoError != null ? ultimoError : "Error en servidor";
     }
 
     private String resolverEndpoint(String tipo) {
         return switch (tipo) {
-            case "FACTURA" -> "/facturas/registro";
+            // FACTURA por el camino real (secuencial atomico + stock + comprobante + SRI),
+            // nunca por insercion directa: el payload offline ya trae clienteId, formaPago,
+            // ambienteSri, descuentoValor e items, igual que el guardado remoto online.
+            case "FACTURA" -> "/facturas";
             case "NOTA_CREDITO" -> "/nota-credito";
             case "NOTA_VENTA" -> "/nota-venta";
             case "NOTA_DEBITO" -> "/nota-debito";

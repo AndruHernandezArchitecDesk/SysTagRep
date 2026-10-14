@@ -170,4 +170,14 @@ class FxmlSmokeTest {
         f.setAccessible(true);
         assertNotNull(f.get(controller), "txtDescuento cableado desde FXML");
     }
+
+    @Test
+    @Order(11)
+    void cargaCajaViewConColumnaAccionesHistorial() throws Exception {
+        Object controller = cargar("/view/CajaView.fxml");
+        assertNotNull(controller, "controller CajaController");
+        java.lang.reflect.Field f = controller.getClass().getDeclaredField("colHistAcciones");
+        f.setAccessible(true);
+        assertNotNull(f.get(controller), "colHistAcciones cableada desde FXML");
+    }
 }

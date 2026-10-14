@@ -20,6 +20,8 @@ class SyncServiceIntegrationTest {
         server = HttpServer.create(new InetSocketAddress(0), 0);
         puerto = server.getAddress().getPort();
         server.setExecutor(null);
+        // Cola aislada por test: el directorio real (~/.vendex) acumula estado entre corridas.
+        LocalOperationQueue.setDirectorioPrueba(java.nio.file.Files.createTempDirectory("cola_offline_test"));
     }
 
     @AfterEach
@@ -31,7 +33,7 @@ class SyncServiceIntegrationTest {
 
     @Test
     void sincronizar_operaConExito_yMarcaEnviada() throws Exception {
-        server.createContext("/facturas/registro", ex -> {
+        server.createContext("/facturas", ex -> {
             if ("POST".equalsIgnoreCase(ex.getRequestMethod())) {
                 ex.sendResponseHeaders(200, 0);
                 ex.getResponseBody().close();
@@ -55,7 +57,7 @@ class SyncServiceIntegrationTest {
 
     @Test
     void sincronizar_marcaConflicto_enError400() throws Exception {
-        server.createContext("/facturas/registro", ex -> {
+        server.createContext("/facturas", ex -> {
             if ("POST".equalsIgnoreCase(ex.getRequestMethod())) {
                 ex.sendResponseHeaders(400, 0);
                 ex.getResponseBody().write("{\"error\":\"datos invalidos\"}".getBytes());

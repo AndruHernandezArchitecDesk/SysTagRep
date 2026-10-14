@@ -109,6 +109,13 @@ public class FacturaServiceTest {
     }
 
     @Test
+    void esViolacionUnico_detecta23505() {
+        assertTrue(FacturaService.esViolacionUnico(new java.sql.SQLException("duplicate key value", "23505")));
+        assertTrue(FacturaService.esViolacionUnico(new java.sql.SQLException("Unique index or primary key violation", "23000")));
+        assertFalse(FacturaService.esViolacionUnico(new java.sql.SQLException("connection refused", "08001")));
+        assertFalse(FacturaService.esViolacionUnico(null));
+    }
+    @Test
     void validarNoNegativos_rechazaLineaNegativaSRI() {
         // Caso real: baseImponible '-12.00' rechazado por minInclusive 0.0
         Object[] mala = new Object[]{"COD", "Desc", "1", "63.00", "75.00", "-12.00"};

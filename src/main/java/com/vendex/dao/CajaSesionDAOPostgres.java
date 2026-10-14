@@ -105,7 +105,9 @@ public class CajaSesionDAOPostgres implements CajaSesionDAO {
     }
 
     public BigDecimal calcularTotalMovimientos(int sesionId) {
-        String sql = "SELECT COALESCE(SUM(monto), 0) FROM caja_movimiento WHERE sesion_id = ?";
+        // Signo por tipo, igual que el resumen (NETO = INGRESO - EGRESO - RETIRO - AJUSTE):
+        // solo INGRESO suma; el resto resta. Asi el esperado del arqueo cuadra con el neto.
+        String sql = "SELECT COALESCE(SUM(CASE WHEN tipo = 'INGRESO' THEN monto ELSE -monto END), 0) FROM caja_movimiento WHERE sesion_id = ?";
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, sesionId);

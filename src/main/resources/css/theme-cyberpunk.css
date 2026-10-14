@@ -35,6 +35,10 @@
     -fx-faint-focus-color: transparent;
 }
 
+/* Botones planos estilo Modena (fondo gris): texto negro para contraste en dark.
+ * Va antes de .btn-guardar/.btn-orden para que esas clases sigan ganando. */
+.button { -fx-text-fill: #000000; }
+
 /* ========== TÍTULOS ========== */
 .titulo { -fx-text-fill: -text-primary; }
 .titulo-icono { -fx-icon-color: -accent-primary; }

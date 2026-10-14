@@ -185,6 +185,7 @@ public class ApiServer {
         app.get("/api/secuencia-documento/{puntoEmisionId}/{tipo}", secuenciaCtrl::obtener);
         app.post("/api/secuencia-documento/{puntoEmisionId}/{tipo}/marcar-usado", secuenciaCtrl::marcarUsado);
         app.post("/api/secuencia-documento/bloque", secuenciaCtrl::reservarBloque);
+        app.put("/api/secuencia-documento/bloque/{bloqueId}/usado", secuenciaCtrl::marcarBloqueUsado);
         app.get("/api/secuencia-documento/bloque-disponible", secuenciaCtrl::obtenerBloqueDisponible);
         app.get("/api/secuencia-documento/bloques", secuenciaCtrl::listarBloques);
         app.post("/api/secuencia-documento/bloques/liberar-expirados", secuenciaCtrl::liberarExpirados);

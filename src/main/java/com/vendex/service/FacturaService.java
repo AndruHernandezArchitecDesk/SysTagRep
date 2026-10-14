@@ -150,7 +150,13 @@ public class FacturaService {
         // Pero necesitamos secuencial/codEstab/codPtoEmi que vienen de la BD, así que primero abrimos tx para obtenerlos
         // y luego generamos XML/firma dentro de la misma tx antes del commit
 
-        try (Connection con = DatabaseConnection.getConnection()) {
+        // Reintento ante colisión de secuencial con otra PC: si el UNIQUE
+        // (codigo/num_comprobante/clave_acceso) rechaza el INSERT, se hace rollback
+        // total y se repite con el siguiente número. Máximo 2 intentos.
+        int intentoEmision = 0;
+        while (true) {
+            intentoEmision++;
+            try (Connection con = DatabaseConnection.getConnection()) {
             con.setAutoCommit(false);
             try {
                 secuencialFE = secuenciaDAO.marcarUsado(con, com.vendex.util.SesionActual.getPuntoEmisionId(), "FACTURA");
@@ -220,6 +226,19 @@ public class FacturaService {
             } finally {
                 try { con.setAutoCommit(true); } catch (SQLException ignore) {}
             }
+            } catch (SQLException e) {
+                if (esViolacionUnico(e) && intentoEmision < 2) {
+                    logDAO.guardar("FacturaService", "guardarFactura",
+                            "Colisión de secuencial con otra PC (" + e.getMessage() + "), reintentando con el siguiente número");
+                    continue;
+                }
+                if (esViolacionUnico(e)) {
+                    throw new IllegalStateException("Otro usuario registró ese número de factura justo antes. "
+                            + "Se reintentó con el siguiente número y volvió a colisionar; verifique la secuencia e intente de nuevo.");
+                }
+                throw e;
+            }
+            break;
         }
 
         String tipoIdComp = tipoIdCompTmp;
@@ -482,6 +501,14 @@ public class FacturaService {
     static String obligadoSri(com.vendex.model.Empresa empresa) {
         if (empresa != null && "SI".equalsIgnoreCase(empresa.getObligadoContabilidad())) return "SI";
         return "NO";
+    }
+
+    /** SQLState 23505 = violación de UNIQUE (PostgreSQL y H2). */
+    static boolean esViolacionUnico(SQLException e) {
+        if (e == null) return false;
+        if ("23505".equals(e.getSQLState())) return true;
+        String m = e.getMessage();
+        return m != null && (m.contains("duplicate key") || m.contains("Unique index or primary key violation"));
     }
 
     /**
