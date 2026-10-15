@@ -171,8 +171,8 @@ public class NotaCreditoController implements Initializable {
     private void calcularTotales() {
         BigDecimal sub = BigDecimal.ZERO;
         for (var d: detallesNc) {
-            BigDecimal precioSinIva = d.precioUnitario.divide(new BigDecimal("1.15"), 6, RoundingMode.HALF_UP);
-            sub = sub.add(precioSinIva.multiply(d.cantidad).setScale(2, RoundingMode.HALF_UP));
+            BigDecimal precioSinIva = com.vendex.util.ElectronicoUtil.precioSinIva2(d.precioUnitario);
+            sub = sub.add(com.vendex.util.ElectronicoUtil.netoLinea(d.cantidad, precioSinIva, BigDecimal.ZERO));
         }
         BigDecimal iva = sub.multiply(AppConstants.IVA_RATE).setScale(2, RoundingMode.HALF_UP);
         BigDecimal tot = sub.add(iva).setScale(2, RoundingMode.HALF_UP);

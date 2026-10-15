@@ -241,13 +241,13 @@ public class FacturaController implements Initializable {
         return fijo;
     }
 
-    /** Suma de bases sin IVA (tope real del descuento en $). */
+    /** Suma de bases sin IVA (tope real del descuento en $). Misma fórmula que el servicio. */
     private BigDecimal sumaBasesSinIva() {
         BigDecimal suma = BigDecimal.ZERO.setScale(2, java.math.RoundingMode.HALF_UP);
         for (FacturaDetalle d : itemsDetalle) {
             if (d == null || d.getPrecioUnitario() == null) continue;
-            suma = suma.add(d.getPrecioUnitario().divide(new BigDecimal("1.15"), 6, java.math.RoundingMode.HALF_UP)
-                    .multiply(new BigDecimal(d.getCantidad())).setScale(2, java.math.RoundingMode.HALF_UP));
+            BigDecimal pu2 = com.vendex.util.ElectronicoUtil.precioSinIva2(d.getPrecioUnitario());
+            suma = suma.add(com.vendex.util.ElectronicoUtil.netoLinea(new BigDecimal(d.getCantidad()), pu2, BigDecimal.ZERO));
         }
         return suma.setScale(2, java.math.RoundingMode.HALF_UP);
     }

@@ -2,6 +2,8 @@ package com.vendex.util;
 
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -95,5 +97,17 @@ class ElectronicoUtilTest {
                 "1510202604171685454000120010010000000019748821513", "AUTORIZADO", "OK", "NUM", null, null, null);
         assertFalse(r.rescatado);
         assertEquals("NUM", r.numero);
+    }
+
+    @Test
+    void precioSinIva2_redondeaUnaSolaVez() {
+        assertEquals(new BigDecimal("3.02"), ElectronicoUtil.precioSinIva2(new BigDecimal("3.47")));
+        assertEquals(new BigDecimal("63.00"), ElectronicoUtil.precioSinIva2(new BigDecimal("72.45")));
+    }
+
+    @Test
+    void netoLinea_cantidadPorPrecioMenosDescuento() {
+        assertEquals(new BigDecimal("6.04"),
+                ElectronicoUtil.netoLinea(new BigDecimal("2"), new BigDecimal("3.02"), BigDecimal.ZERO));
     }
 }

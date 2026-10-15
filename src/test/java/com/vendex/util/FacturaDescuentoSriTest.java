@@ -230,4 +230,47 @@ class FacturaDescuentoSriTest {
                 new Object[]{"X", "Y", "2", "10.00", "0.00", "20.00"});
         assertDoesNotThrow(() -> validar(filas, "20.00", "0.00", "0.00", "3.00", "23.00"));
     }
+
+    @Test
+    void lineaDobleRedondeo_casoProduccion55245K_pasa() throws Exception {
+        // Producción: PVP 3.47 x2. Antes: total salía del precio a 6 dec
+        // (3.017391x2=6.03) pero el XML llevaba precio a 2 dec (3.02) y el
+        // validador recomputaba 2x3.02=6.04 -> "difiere del total 6.03".
+        // Ahora total y precio salen de la misma base a 2 dec: 6.04.
+        FacturaDetalle d = new FacturaDetalle(1, "55245K", "ITEM", 2, new BigDecimal("3.47"));
+        List<Object[]> filas = armar(List.of(d));
+        assertEquals(1, filas.size());
+        Object[] f = filas.get(0);
+        assertEquals("3.02", f[3], "precioUnitario sin IVA a 2 dec");
+        assertEquals("6.04", f[5], "precioTotalSinImpuesto = 2 x 3.02");
+        // header como lo calcula emitir: base=S netos, iva=15% base, total=base+iva
+        assertDoesNotThrow(() -> validar(filas, "6.04", "0.00", "0.00", "0.91", "6.95"));
+    }
+
+    @Test
+    void lineaSiempreConsistente_barridoPreciosCantidades() throws Exception {
+        // Propiedad SRI: cant*pu-desc == tl para cualquier precio/cantidad
+        int n = 0;
+        for (int cent = 100; cent <= 2000; cent += 37) {
+            for (int cant : new int[]{1, 2, 3, 5, 10}) {
+                BigDecimal pvp = new BigDecimal(cent).movePointLeft(2);
+                FacturaDetalle d = new FacturaDetalle(1, "P" + cent, "ITEM", cant, pvp);
+                List<Object[]> filas = armar(List.of(d));
+                Object[] f = filas.get(0);
+                BigDecimal c = new BigDecimal((String) f[2]);
+                BigDecimal pu = new BigDecimal((String) f[3]);
+                BigDecimal dl = new BigDecimal((String) f[4]);
+                BigDecimal tl = new BigDecimal((String) f[5]);
+                assertEquals(0, c.multiply(pu).subtract(dl).setScale(2, RoundingMode.HALF_UP).compareTo(tl),
+                        "cant*pu-desc==tl para pvp=" + pvp + " cant=" + cant);
+                BigDecimal iva = tl.multiply(new BigDecimal("0.15")).setScale(2, RoundingMode.HALF_UP);
+                BigDecimal tot = tl.add(iva).setScale(2, RoundingMode.HALF_UP);
+                assertDoesNotThrow(() -> validar(filas, tl.toPlainString(), "0.00", "0.00",
+                        iva.toPlainString(), tot.toPlainString()),
+                        "validador pasa para pvp=" + pvp + " cant=" + cant);
+                n++;
+            }
+        }
+        assertTrue(n > 200, "barrido con muestra amplia, n=" + n);
+    }
 }

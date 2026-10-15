@@ -109,8 +109,11 @@ public class NotaCreditoService {
         List<NotaCreditoDetalle> detallesParaDao = new ArrayList<>();
         List<Object[]> detallesParaXml = new ArrayList<>();
         for (DetalleNCInput in : detallesInput) {
-            BigDecimal precioSinIva = in.precioUnitario.divide(new BigDecimal("1.15"), 6, RoundingMode.HALF_UP);
-            BigDecimal totalSinIva = precioSinIva.multiply(in.cantidad).setScale(2, RoundingMode.HALF_UP);
+            // Fuente única: precio a 2 dec (el del XML) y neto = cant*precio2.
+            // Antes el total salía del precio a 6 dec mientras el XML llevaba el de 2 dec:
+            // con cantidad>=2 eso descuadraba 1 centavo y el SRI rechaza.
+            BigDecimal precioSinIva = ElectronicoUtil.precioSinIva2(in.precioUnitario);
+            BigDecimal totalSinIva = ElectronicoUtil.netoLinea(in.cantidad, precioSinIva, BigDecimal.ZERO);
             BigDecimal desc = in.descuento != null ? in.descuento : BigDecimal.ZERO;
             String descTxt = in.descripcion != null && in.descripcion.length() > AppConstants.MAX_DESCRIPCION_XML ? in.descripcion.substring(0, AppConstants.MAX_DESCRIPCION_XML) : in.descripcion;
             subSinIva = subSinIva.add(totalSinIva).subtract(desc);

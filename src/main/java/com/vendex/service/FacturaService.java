@@ -431,14 +431,14 @@ public class FacturaService {
         return fijo;
     }
 
-    /** Suma de bases sin IVA de las lineas (misma formula que armarDetalles). */
+    /** Suma de bases sin IVA de las lineas (misma fórmula que armarDetalles). */
     static BigDecimal sumarBasesSinIva(List<FacturaDetalle> items) {
         BigDecimal suma = AppConstants.CERO.setScale(2, RoundingMode.HALF_UP);
         if (items == null) return suma;
         for (FacturaDetalle d : items) {
             if (d == null || d.getPrecioUnitario() == null) continue;
-            BigDecimal precioSinIva = d.getPrecioUnitario().divide(new BigDecimal("1.15"), 6, RoundingMode.HALF_UP);
-            suma = suma.add(precioSinIva.multiply(new BigDecimal(d.getCantidad())).setScale(2, RoundingMode.HALF_UP));
+            BigDecimal precioSinIva = com.vendex.util.ElectronicoUtil.precioSinIva2(d.getPrecioUnitario());
+            suma = suma.add(com.vendex.util.ElectronicoUtil.netoLinea(new BigDecimal(d.getCantidad()), precioSinIva, BigDecimal.ZERO));
         }
         return suma.setScale(2, RoundingMode.HALF_UP);
     }
@@ -596,13 +596,16 @@ public class FacturaService {
     static List<Object[]> armarDetalles(List<FacturaDetalle> items) {
         List<Object[]> resultado = new ArrayList<>();
         for (FacturaDetalle d : items) {
-            BigDecimal precioSinIva = d.getPrecioUnitario().divide(new BigDecimal("1.15"), 6, RoundingMode.HALF_UP);
-            BigDecimal baseDet = precioSinIva.multiply(new BigDecimal(d.getCantidad())).setScale(2, RoundingMode.HALF_UP);
+            // Fuente única: precio a 2 dec (el del XML) y neto = cant*precio2 - desc.
+            // Antes el neto salía del precio a 6 dec mientras el XML llevaba el de 2 dec:
+            // con cantidad>=2 eso descuadraba 1 centavo (cant*pu2 != tl) y el SRI rechaza.
+            BigDecimal precioSinIva = com.vendex.util.ElectronicoUtil.precioSinIva2(d.getPrecioUnitario());
+            BigDecimal baseDet = com.vendex.util.ElectronicoUtil.netoLinea(new BigDecimal(d.getCantidad()), precioSinIva, BigDecimal.ZERO);
             String desc = d.getDescripcion();
             if (desc.length() > AppConstants.MAX_DESCRIPCION_XML) desc = desc.substring(0, AppConstants.MAX_DESCRIPCION_XML);
             resultado.add(new Object[]{
                     d.getCodigo(), desc, String.valueOf(d.getCantidad()),
-                    precioSinIva.setScale(2, RoundingMode.HALF_UP).toString(),
+                    precioSinIva.toPlainString(),
                     "0.00",
                     baseDet.toString()
             });

@@ -1,5 +1,8 @@
 package com.vendex.util;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 /**
  * Utilidades del flujo de facturación electrónica.
  */
@@ -34,6 +37,30 @@ public final class ElectronicoUtil {
     public static String resolverMensaje(String mensajeSri) {
         if (mensajeSri != null && !mensajeSri.trim().isEmpty()) return mensajeSri;
         return "Autorizado SRI";
+    }
+
+    /**
+     * Precio sin IVA a 2 decimales: el que viaja en el XML (precioUnitario) y base
+     * única de todos los cálculos. Redondear una sola vez evita el doble redondeo
+     * (precio a 6 dec para el total pero a 2 dec para el XML) que descuadraba
+     * cantidad*precio-descuento vs total en 1 centavo y el SRI rechaza.
+     */
+    public static BigDecimal precioSinIva2(BigDecimal precioConIva) {
+        if (precioConIva == null) return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+        return precioConIva.divide(new BigDecimal("1.15"), 2, RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Neto de línea sin IVA: cantidad × precioSinIva2 − descuento, a 2 decimales.
+     * Debe usarse para el total de línea (f[5]) y para suma de bases, de modo que
+     * el XML (precioUnitario=f[3], precioTotalSinImpuesto=f[5]) siempre cumpla
+     * cantidad*precio-descuento == total.
+     */
+    public static BigDecimal netoLinea(BigDecimal cantidad, BigDecimal precioSinIva2, BigDecimal descuento) {
+        BigDecimal c = cantidad != null ? cantidad : BigDecimal.ZERO;
+        BigDecimal p = precioSinIva2 != null ? precioSinIva2 : BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+        BigDecimal d = descuento != null ? descuento : BigDecimal.ZERO;
+        return p.multiply(c).subtract(d).setScale(2, RoundingMode.HALF_UP);
     }
 
     /** Resultado del rescate de autorización para un AUTORIZADO sin número en BD. */
