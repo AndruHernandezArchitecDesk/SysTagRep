@@ -330,6 +330,27 @@ public class FacturaService {
             logDAO.guardar("FacturaService", "regenerarRide", "Factura no encontrada por clave " + claveAcceso);
             return null;
         }
+        // Rescate: AUTORIZADO sin número en comprobantes -> deducir de clave y persistir.
+        // (factura_registro no tiene columna numero; vive en comprobantes_electronicos)
+        if (AppConstants.ESTADO_AUTORIZADO.equals(fr.getEstadoSri())) {
+            String[] autDb = null;
+            try { autDb = comprobanteDAO.obtenerDatosAutorizacion(claveAcceso); } catch (Exception ignore) {}
+            if (autDb == null) {
+                String numRes = com.vendex.util.ElectronicoUtil.resolverNumero(claveAcceso,
+                        numeroAutorizacion != null && !numeroAutorizacion.trim().isEmpty() ? numeroAutorizacion : null);
+                if (numRes != null && !numRes.trim().isEmpty()) {
+                    try {
+                        comprobanteDAO.actualizarEstado(claveAcceso, fr.getEstadoSri(), "Autorizado SRI", null, numRes,
+                                fechaAutorizacion != null && !fechaAutorizacion.trim().isEmpty() ? fechaAutorizacion : null);
+                        logDAO.guardar("FacturaService", "regenerarRide", "Backfill AUTORIZADO sin numero: " + claveAcceso);
+                    } catch (Exception e) { logDAO.guardar("FacturaService", "regenerarRide", "Backfill: " + e.getMessage()); }
+                    numeroAutorizacion = numRes;
+                }
+            } else {
+                if (numeroAutorizacion == null || numeroAutorizacion.trim().isEmpty()) numeroAutorizacion = autDb[0];
+                if ((fechaAutorizacion == null || fechaAutorizacion.trim().isEmpty()) && autDb.length > 1) fechaAutorizacion = autDb[1];
+            }
+        }
         Cliente cliente = clienteDAO.obtenerPorId(fr.getClienteId());
         if (cliente == null) {
             logDAO.guardar("FacturaService", "regenerarRide", "Cliente no encontrado para " + claveAcceso);

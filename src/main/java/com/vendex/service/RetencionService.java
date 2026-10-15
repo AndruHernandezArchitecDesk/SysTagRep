@@ -285,6 +285,19 @@ public class RetencionService {
     public String regenerarRide(String claveAcceso, String numeroAutorizacion, String fechaAutorizacion, File directorioEscritorio) {
         RetencionRegistro reg = retencionDAO.obtenerPorClave(claveAcceso);
         if (reg == null) { logDAO.guardar("RetencionService","regenerarRide","Retencion no encontrada "+claveAcceso); return null; }
+        // Rescate: AUTORIZADO sin número en BD -> deducir de clave y persistir (registro + comprobantes)
+        ElectronicoUtil.AutRescatada aut = ElectronicoUtil.rescatarAutorizacion(claveAcceso, reg.getEstadoSri(),
+                reg.getMensajeSri(), reg.getNumeroAutorizacion(), numeroAutorizacion,
+                reg.getFechaAutorizacion() != null ? reg.getFechaAutorizacion().toString() : null, fechaAutorizacion);
+        if (aut.rescatado) {
+            try {
+                retencionDAO.actualizarEstado(claveAcceso, reg.getEstadoSri(), aut.mensaje, aut.numero, aut.fecha);
+                comprobanteDAO.actualizarEstado(claveAcceso, reg.getEstadoSri(), aut.mensaje, null, aut.numero, aut.fecha);
+                logDAO.guardar("RetencionService", "regenerarRide", "Backfill AUTORIZADO sin numero: " + claveAcceso);
+            } catch (Exception e) { logDAO.guardar("RetencionService", "regenerarRide", "Backfill: " + e.getMessage()); }
+        }
+        numeroAutorizacion = aut.numero;
+        fechaAutorizacion = aut.fecha;
         Empresa empresa = empresaDAO.listar().isEmpty() ? null : empresaDAO.listar().get(0);
         if (empresa == null) return null;
         String fechaEmision = reg.getFechaEmision()!=null? reg.getFechaEmision().format(DateTimeFormatter.ofPattern(AppConstants.PATRON_FECHA_EMISION)) : "";

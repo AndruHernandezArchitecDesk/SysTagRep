@@ -181,15 +181,20 @@ public class ServicioReintentoSri {
             LOG.info("SRI reintento " + p.getTipoComprobante() + " " + p.getClaveAcceso() + " -> " + estado + " intento#" + p.getIntentos());
 
             if (AppConstants.ESTADO_AUTORIZADO.equals(estado)) {
+                // Rescate: si el SRI autoriza sin número/mensaje, deducir de clave y rellenar mensaje
+                String numAut = resp.getNumeroAutorizacion();
+                if (numAut == null || numAut.isBlank()) numAut = p.getClaveAcceso();
+                String msgAut = mensaje;
+                if (msgAut == null || msgAut.isBlank()) msgAut = "Autorizado SRI";
                 // actualizar comprobantes_electronicos y registro especifico
-                comprobanteDAO.actualizarEstado(p.getClaveAcceso(), AppConstants.ESTADO_AUTORIZADO, mensaje, null, resp.getNumeroAutorizacion(), resp.getFechaAutorizacion());
-                actualizarRegistroTipo(p, AppConstants.ESTADO_AUTORIZADO, mensaje, resp.getNumeroAutorizacion(), resp.getFechaAutorizacion());
-                comprobanteDAO.guardarEnvio(p.getClaveAcceso(), p.getNumeroComprobante(), ambiente, xmlFirmado, respuestaRecepcionEfectiva, resp.getRespuestaAutorizacionXml(), AppConstants.ESTADO_AUTORIZADO, mensaje, resp.getNumeroAutorizacion(), resp.getFechaAutorizacion(), mapTipo(p.getTipoComprobante()));
+                comprobanteDAO.actualizarEstado(p.getClaveAcceso(), AppConstants.ESTADO_AUTORIZADO, msgAut, null, numAut, resp.getFechaAutorizacion());
+                actualizarRegistroTipo(p, AppConstants.ESTADO_AUTORIZADO, msgAut, numAut, resp.getFechaAutorizacion());
+                comprobanteDAO.guardarEnvio(p.getClaveAcceso(), p.getNumeroComprobante(), ambiente, xmlFirmado, respuestaRecepcionEfectiva, resp.getRespuestaAutorizacionXml(), AppConstants.ESTADO_AUTORIZADO, msgAut, numAut, resp.getFechaAutorizacion(), mapTipo(p.getTipoComprobante()));
                 // regenerar RIDE con autorizacion
-                regenerarRide(p, resp.getNumeroAutorizacion(), resp.getFechaAutorizacion());
+                regenerarRide(p, numAut, resp.getFechaAutorizacion());
                 // email al cliente
-                enviarCorreoCliente(p, resp.getNumeroAutorizacion(), resp.getFechaAutorizacion());
-                pendienteDAO.marcarResultado(p.getId(), AppConstants.ESTADO_AUTORIZADO, mensaje, LocalDateTime.now(), p.getIntentos() + 1);
+                enviarCorreoCliente(p, numAut, resp.getFechaAutorizacion());
+                pendienteDAO.marcarResultado(p.getId(), AppConstants.ESTADO_AUTORIZADO, msgAut, LocalDateTime.now(), p.getIntentos() + 1);
                 LOG.info("SRI autorizado " + p.getClaveAcceso() + " -> marcado AUTORIZADO, RIDE regenerado");
 
             } else if (AppConstants.ESTADO_RECHAZADA.equals(estado) || AppConstants.ESTADO_DEVUELTA.equals(estado) || "NO AUTORIZADO".equals(estado)) {

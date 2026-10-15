@@ -176,8 +176,8 @@ public class FacturaRegistroDAOPostgres implements FacturaRegistroDAO {
                      "LEFT JOIN cliente c ON c.id = fr.cliente_id " +
                      "LEFT JOIN comprobantes_electronicos ce ON ce.clave_acceso = fr.clave_acceso " +
                      buildWhereClause(filtro) +
-                     " ORDER BY CAST(regexp_replace(fr.codigo, '\\D', '', 'g') AS BIGINT) ASC, fr.id ASC " +
-                     "LIMIT ? OFFSET ?";
+                      " ORDER BY COALESCE(fr.fecha, fr.fecha_registro) DESC NULLS LAST, fr.id DESC " +
+                      "LIMIT ? OFFSET ?";
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             int idx = setFilterParameters(ps, filtro, 1);

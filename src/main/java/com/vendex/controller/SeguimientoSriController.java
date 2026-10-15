@@ -15,6 +15,9 @@ import com.vendex.model.GuiaRemisionRegistro;
 import com.vendex.model.NotaCreditoRegistro;
 import com.vendex.model.NotaDebitoRegistro;
 import com.vendex.model.RetencionRegistro;
+import com.vendex.model.SeguimientoSriItem;
+import com.vendex.dao.SeguimientoSriDAO;
+import com.vendex.dao.ProveedorDAO;
 import com.vendex.service.FacturaService;
 import com.vendex.service.GuiaRemisionService;
 import com.vendex.service.NotaCreditoService;
@@ -38,6 +41,9 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.Toggle;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -72,42 +78,78 @@ public class SeguimientoSriController implements Initializable {
         this.logDAO = ctx.logDAO;
         this.clienteDAO = ctx.clienteDAO;
         this.facturaService = ctx.facturaService;
+        this.ncService = ctx.notaCreditoService;
+        this.ndService = ctx.notaDebitoService;
+        this.grService = ctx.guiaRemisionService;
+        this.retService = ctx.retencionService;
+        this.proveedorDAO = ctx.proveedorDAO;
+        this.seguimientoDAO = new SeguimientoSriDAO();
     }
 
     private static final Logger LOGGER = Logger.getLogger(SeguimientoSriController.class.getName());
 
     @FXML private TextField txtBuscar;
-    @FXML private TableView<FacturaRegistro> tblFacturas;
-    @FXML private TableColumn<FacturaRegistro, String> colCodigo;
-    @FXML private TableColumn<FacturaRegistro, String> colNumComprobante;
-    @FXML private TableColumn<FacturaRegistro, LocalDateTime> colFecha;
-    @FXML private TableColumn<FacturaRegistro, String> colCliente;
-    @FXML private TableColumn<FacturaRegistro, String> colFormaPago;
-    @FXML private TableColumn<FacturaRegistro, BigDecimal> colSubtotal;
-    @FXML private TableColumn<FacturaRegistro, BigDecimal> colIva;
-    @FXML private TableColumn<FacturaRegistro, BigDecimal> colTotal;
-    @FXML private TableColumn<FacturaRegistro, String> colEstado;
-    @FXML private TableColumn<FacturaRegistro, String> colMensaje;
+    @FXML private HBox barraTipos;
+    @FXML private ToggleButton btnTipoTodos;
+    @FXML private ToggleButton btnTipoFactura;
+    @FXML private ToggleButton btnTipoNc;
+    @FXML private ToggleButton btnTipoNd;
+    @FXML private ToggleButton btnTipoGuia;
+    @FXML private ToggleButton btnTipoRet;
+    @FXML private TableView<SeguimientoSriItem> tblComprobantes;
+    @FXML private TableColumn<SeguimientoSriItem, String> colTipo;
+    @FXML private TableColumn<SeguimientoSriItem, String> colCodigo;
+    @FXML private TableColumn<SeguimientoSriItem, String> colNumComprobante;
+    @FXML private TableColumn<SeguimientoSriItem, LocalDateTime> colFecha;
+    @FXML private TableColumn<SeguimientoSriItem, String> colCliente;
+    @FXML private TableColumn<SeguimientoSriItem, String> colFormaPago;
+    @FXML private TableColumn<SeguimientoSriItem, BigDecimal> colSubtotal;
+    @FXML private TableColumn<SeguimientoSriItem, BigDecimal> colIva;
+    @FXML private TableColumn<SeguimientoSriItem, BigDecimal> colTotal;
+    @FXML private TableColumn<SeguimientoSriItem, String> colEstado;
+    @FXML private TableColumn<SeguimientoSriItem, String> colMensaje;
 
     @FXML private Label lblPaginaInfo;
     @FXML private Button btnAnterior;
     @FXML private Button btnSiguiente;
     @FXML private Button btnConsultarSri;
-    @FXML private TableColumn<FacturaRegistro, String> colAcciones;
+    @FXML private TableColumn<SeguimientoSriItem, String> colAcciones;
     @FXML private ComboBox<Integer> cmbPageSize;
 
     private int currentPage = 1;
     private int pageSize = 25;
     private int totalPages = 1;
     private int totalCount = 0;
+    private String tipoFiltro = "TODOS";
     private final FacturaRegistroDAO dao;
     private final LogDAO logDAO;
     private final ClienteDAO clienteDAO;
     private final FacturaService facturaService;
-    private final ObservableList<FacturaRegistro> listaFacturas = FXCollections.observableArrayList();
+    private final NotaCreditoService ncService;
+    private final NotaDebitoService ndService;
+    private final GuiaRemisionService grService;
+    private final RetencionService retService;
+    private final ProveedorDAO proveedorDAO;
+    private final SeguimientoSriDAO seguimientoDAO;
+    private final ObservableList<SeguimientoSriItem> listaItems = FXCollections.observableArrayList();
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        colTipo.setCellValueFactory(new PropertyValueFactory<>("tipoLabel"));
+        colTipo.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String label, boolean empty) {
+                super.updateItem(label, empty);
+                if (empty || getTableRow() == null || getTableRow().getItem() == null) {
+                    setText(null);
+                    setStyle("");
+                    return;
+                }
+                SeguimientoSriItem it = getTableRow().getItem();
+                setText(it.getTipoLabel());
+                setStyle("-fx-text-fill: " + colorTipo(it.getTipo()) + "; -fx-font-weight: bold;");
+            }
+        });
         colCodigo.setCellValueFactory(new PropertyValueFactory<>("codigo"));
         colNumComprobante.setCellValueFactory(new PropertyValueFactory<>("numComprobante"));
         colFecha.setCellValueFactory(new PropertyValueFactory<>("fecha"));
@@ -127,11 +169,11 @@ public class SeguimientoSriController implements Initializable {
                     setStyle("");
                     return;
                 }
-                FacturaRegistro fr = getTableRow().getItem();
-                String texto = formatearEstado(estado, fr.getMensajeSri());
+                SeguimientoSriItem it = getTableRow().getItem();
+                String texto = formatearEstado(estado, it.getMensajeSri());
                 setText(texto);
-                setStyle("-fx-text-fill: " + colorEstado(estado, fr.getMensajeSri()) + "; -fx-font-weight: bold;");
-                String detalle = fr.getMensajeSri();
+                setStyle("-fx-text-fill: " + colorEstado(estado, it.getMensajeSri()) + "; -fx-font-weight: bold;");
+                String detalle = it.getMensajeSri();
                 setTooltip(detalle != null && !detalle.trim().isEmpty()
                         ? new Tooltip(detalle) : null);
             }
@@ -146,19 +188,76 @@ public class SeguimientoSriController implements Initializable {
             }
         });
 
-        tblFacturas.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        SortTable.agregarBotones(tblFacturas);
+        tblComprobantes.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        SortTable.agregarBotones(tblComprobantes);
         configurarColumnaAcciones();
 
         iniciarPageSize();
         txtBuscar.textProperty().addListener((obs, old, val) -> { currentPage = 1; cargarDatos(); });
+        if (barraTipos != null) {
+            configurarBarraTipos();
+        }
 
         cargarDatos();
     }
 
+    private ToggleGroup grupoTipos;
+
     /**
-     * Acciones por fila: Imprimir y Enviar correo, habilitadas SOLO con factura
-     * AUTORIZADA (con numero de autorizacion). Antes de autorizar no hay nada
+     * Barra segmentada de tipos con estilo en línea (no depende de hojas de tema).
+     * No seleccionado: fondo claro + letra negra en negrita.
+     * Seleccionado: fondo azul + letra blanca.
+     */
+    private void configurarBarraTipos() {
+        grupoTipos = new ToggleGroup();
+        for (javafx.scene.Node n : barraTipos.getChildren()) {
+            if (n instanceof ToggleButton b) b.setToggleGroup(grupoTipos);
+        }
+        grupoTipos.selectToggle(btnTipoTodos != null ? btnTipoTodos : null);
+        grupoTipos.selectedToggleProperty().addListener((obs, old, sel) -> {
+            if (sel == null) {
+                grupoTipos.selectToggle(btnTipoTodos);
+                return;
+            }
+            Object ud = sel.getUserData();
+            tipoFiltro = ud != null ? String.valueOf(ud) : "TODOS";
+            aplicarEstilosTipos();
+            currentPage = 1;
+            cargarDatos();
+        });
+        tipoFiltro = "TODOS";
+        aplicarEstilosTipos();
+    }
+
+    private void aplicarEstilosTipos() {
+        if (grupoTipos == null) return;
+        for (Toggle t : grupoTipos.getToggles()) {
+            if (!(t instanceof ToggleButton b)) continue;
+            boolean esSel = t == grupoTipos.getSelectedToggle();
+            b.setStyle(esSel
+                    ? "-fx-min-height: 36; -fx-min-width: 130; -fx-font-size: 14px; -fx-font-weight: bold;"
+                      + "-fx-text-fill: white; -fx-background-color: #0d6efd; -fx-background-radius: 8;"
+                    : "-fx-min-height: 36; -fx-min-width: 130; -fx-font-size: 14px; -fx-font-weight: bold;"
+                      + "-fx-text-fill: black; -fx-background-color: #e9ecef; -fx-background-radius: 8;"
+                      + "-fx-border-color: #adb5bd; -fx-border-radius: 8;");
+        }
+    }
+
+    private static String colorTipo(String tipo) {
+        if (tipo == null) return "#6c757d";
+        return switch (tipo) {
+            case "FACTURA" -> "#0d6efd";
+            case "NC" -> "#6f42c1";
+            case "ND" -> "#d63384";
+            case "GUIA" -> "#0dcaf0";
+            case "RETENCION" -> "#198754";
+            default -> "#6c757d";
+        };
+    }
+
+    /**
+     * Acciones por fila: Imprimir y Enviar correo, habilitadas SOLO con comprobante
+     * AUTORIZADO (con numero de autorizacion). Antes de autorizar no hay nada
      * valido que imprimir ni enviar.
      */
     private void configurarColumnaAcciones() {
@@ -174,12 +273,12 @@ public class SeguimientoSriController implements Initializable {
                 btnImprimir.setStyle("-fx-text-fill: black;");
                 btnCorreo.setStyle("-fx-text-fill: black;");
                 btnImprimir.setOnAction(e -> {
-                    FacturaRegistro fr = getTableRow() == null ? null : getTableRow().getItem();
-                    if (fr != null) imprimirAutorizada(fr);
+                    SeguimientoSriItem it = getTableRow() == null ? null : getTableRow().getItem();
+                    if (it != null) imprimirAutorizada(it);
                 });
                 btnCorreo.setOnAction(e -> {
-                    FacturaRegistro fr = getTableRow() == null ? null : getTableRow().getItem();
-                    if (fr != null) enviarCorreoAutorizado(fr);
+                    SeguimientoSriItem it = getTableRow() == null ? null : getTableRow().getItem();
+                    if (it != null) enviarCorreoAutorizado(it);
                 });
             }
             @Override
@@ -201,26 +300,34 @@ public class SeguimientoSriController implements Initializable {
         });
     }
 
-    /** Lee numero/fecha de autorizacion guardados; null si aun no hay. */
-    private String[] datosAutorizacion(FacturaRegistro fr) {
+    /** Lee numero/fecha de autorizacion guardados; deduce de la clave si es AUTORIZADO sin número. */
+    private String[] datosAutorizacion(SeguimientoSriItem it) {
         try {
-            if (fr == null || fr.getClaveAcceso() == null) return null;
-            return AppContext.getInstance().comprobanteDAO.obtenerDatosAutorizacion(fr.getClaveAcceso());
+            if (it == null || it.getClaveAcceso() == null) return null;
+            String[] aut = AppContext.getInstance().comprobanteDAO.obtenerDatosAutorizacion(it.getClaveAcceso());
+            if (aut != null) return aut;
+            // Fallback: AUTORIZADO sin número en comprobantes -> deducir de clave (SRI offline: numero==clave).
+            // Imprimir se habilita; el backfill real ocurre en regenerarRideItem().
+            if (AppConstants.ESTADO_AUTORIZADO.equals(it.getEstadoSri())) {
+                String num = ElectronicoUtil.resolverNumero(it.getClaveAcceso(), null);
+                if (num != null && !num.trim().isEmpty()) return new String[]{num, ""};
+            }
+            return null;
         } catch (Exception e) {
             logDAO.guardar("SeguimientoSriController", "datosAutorizacion", String.valueOf(e));
             return null;
         }
     }
 
-    private void imprimirAutorizada(FacturaRegistro fr) {
-        String[] aut = datosAutorizacion(fr);
+    private void imprimirAutorizada(SeguimientoSriItem it) {
+        String[] aut = datosAutorizacion(it);
         if (aut == null) {
             new Alert(Alert.AlertType.WARNING,
-                    "Factura " + fr.getNumComprobante() + " aun sin autorizacion registrada. Consulte el SRI primero.").showAndWait();
+                    it.getTipoLabel() + " " + it.getNumComprobante() + " aun sin autorizacion registrada. Consulte el SRI primero.").showAndWait();
             return;
         }
         try {
-            String ruta = facturaService.regenerarRide(fr.getClaveAcceso(), aut[0], aut[1], obtenerDirectorioEscritorio());
+            String ruta = regenerarRideItem(it, aut[0], aut[1]);
             if (ruta == null) {
                 new Alert(Alert.AlertType.ERROR, "No se pudo regenerar el RIDE autorizado.").showAndWait();
                 return;
@@ -249,6 +356,55 @@ public class SeguimientoSriController implements Initializable {
         cargarDatos();
     }
 
+    /** Regenera el RIDE del item según su tipo, en su carpeta por tipo. */
+    private String regenerarRideItem(SeguimientoSriItem it, String numAut, String fechaAut) {
+        String tipo = it.getTipo() == null ? "" : it.getTipo();
+        return switch (tipo) {
+            case "NC" -> ncService.regenerarRide(it.getClaveAcceso(), numAut, fechaAut,
+                    obtenerDirectorioPorTipo(com.vendex.util.DirectorioComprobantes.CARPETA_NOTA_CREDITO));
+            case "ND" -> ndService.regenerarRide(it.getClaveAcceso(), numAut, fechaAut,
+                    obtenerDirectorioPorTipo(com.vendex.util.DirectorioComprobantes.CARPETA_NOTA_DEBITO));
+            case "GUIA" -> grService.regenerarRide(it.getClaveAcceso(), numAut, fechaAut,
+                    obtenerDirectorioPorTipo(com.vendex.util.DirectorioComprobantes.CARPETA_GUIA_REMISION));
+            case "RETENCION" -> retService.regenerarRide(it.getClaveAcceso(), numAut, fechaAut,
+                    obtenerDirectorioPorTipo(com.vendex.util.DirectorioComprobantes.CARPETA_RETENCION));
+            default -> facturaService.regenerarRide(it.getClaveAcceso(), numAut, fechaAut, obtenerDirectorioEscritorio());
+        };
+    }
+
+    private String prefijoPdfItem(SeguimientoSriItem it) {
+        String tipo = it.getTipo() == null ? "" : it.getTipo();
+        return switch (tipo) {
+            case "NC" -> AppConstants.PREFIJO_PDF_NOTA_CREDITO;
+            case "ND" -> AppConstants.PREFIJO_PDF_NOTA_DEBITO;
+            case "GUIA" -> AppConstants.PREFIJO_PDF_GUIA_REMISION;
+            case "RETENCION" -> AppConstants.PREFIJO_PDF_RETENCION;
+            default -> AppConstants.PREFIJO_PDF_FACTURA;
+        };
+    }
+
+    private String tipoDocItem(SeguimientoSriItem it) {
+        String tipo = it.getTipo() == null ? "" : it.getTipo();
+        return switch (tipo) {
+            case "NC" -> AppConstants.TIPO_DOCUMENTO_NOTA_CREDITO;
+            case "ND" -> AppConstants.TIPO_DOCUMENTO_NOTA_DEBITO;
+            case "GUIA" -> AppConstants.TIPO_DOCUMENTO_GUIA_REMISION;
+            case "RETENCION" -> AppConstants.TIPO_DOCUMENTO_RETENCION;
+            default -> AppConstants.TIPO_DOCUMENTO_FACTURA;
+        };
+    }
+
+    private File dirItem(SeguimientoSriItem it) {
+        String tipo = it.getTipo() == null ? "" : it.getTipo();
+        return switch (tipo) {
+            case "NC" -> obtenerDirectorioPorTipo(com.vendex.util.DirectorioComprobantes.CARPETA_NOTA_CREDITO);
+            case "ND" -> obtenerDirectorioPorTipo(com.vendex.util.DirectorioComprobantes.CARPETA_NOTA_DEBITO);
+            case "GUIA" -> obtenerDirectorioPorTipo(com.vendex.util.DirectorioComprobantes.CARPETA_GUIA_REMISION);
+            case "RETENCION" -> obtenerDirectorioPorTipo(com.vendex.util.DirectorioComprobantes.CARPETA_RETENCION);
+            default -> obtenerDirectorioEscritorio();
+        };
+    }
+
     /** Respaldo: abre el RIDE (Edge/navegador) para imprimir con Ctrl+P; si ni eso hay, muestra la ruta. */
     private void abrirRideParaImpresionManual(File pdf, String ruta) {
         try {
@@ -264,33 +420,35 @@ public class SeguimientoSriController implements Initializable {
         }
     }
 
-    private void enviarCorreoAutorizado(FacturaRegistro fr) {
-        String[] aut = datosAutorizacion(fr);
-        if (aut == null || !ElectronicoUtil.debeEnviarNotificacion(fr.getEstadoSri(), aut[0], aut[1])) {
+    private void enviarCorreoAutorizado(SeguimientoSriItem it) {
+        String[] aut = datosAutorizacion(it);
+        if (aut == null || !ElectronicoUtil.debeEnviarNotificacion(it.getEstadoSri(), aut[0], aut[1])) {
             new Alert(Alert.AlertType.WARNING,
-                    "Factura " + fr.getNumComprobante() + " aun sin autorizacion. El correo se habilita al autorizarse.").showAndWait();
+                    it.getTipoLabel() + " " + it.getNumComprobante() + " aun sin autorizacion. El correo se habilita al autorizarse.").showAndWait();
             return;
         }
         try {
-            Cliente cliente = clienteDAO.obtenerPorId(fr.getClienteId());
-            if (cliente == null || cliente.getCorreo() == null || cliente.getCorreo().trim().isEmpty()) {
-                new Alert(Alert.AlertType.WARNING, "El cliente no tiene correo registrado.").showAndWait();
+            String destinatario = destinatarioItem(it);
+            String nombreDest = it.getNombreCliente() != null ? it.getNombreCliente() : "";
+            if (destinatario == null || destinatario.trim().isEmpty()) {
+                new Alert(Alert.AlertType.WARNING, "El destinatario no tiene correo registrado.").showAndWait();
                 return;
             }
-            String rutaPDF = facturaService.regenerarRide(fr.getClaveAcceso(), aut[0], aut[1], obtenerDirectorioEscritorio());
+            String rutaPDF = regenerarRideItem(it, aut[0], aut[1]);
             if (rutaPDF == null) {
                 new Alert(Alert.AlertType.ERROR, "No se pudo regenerar el RIDE autorizado.").showAndWait();
                 return;
             }
-            String rutaXML = obtenerDirectorioEscritorio().getAbsolutePath()+File.separator + AppConstants.PREFIJO_PDF_FACTURA + fr.getNumComprobante().replace("-", "") + AppConstants.EXTENSION_XML;
+            String rutaXML = dirItem(it).getAbsolutePath() + File.separator + prefijoPdfItem(it)
+                    + (it.getNumComprobante() != null ? it.getNumComprobante().replace("-", "") : "") + AppConstants.EXTENSION_XML;
             EmailService emailService = new EmailService();
             boolean enviado = emailService.enviarCorreoConArchivos(
-                    cliente.getCorreo().trim(), cliente.getNombre(), fr.getCodigo(),
-                    AppConstants.TIPO_DOCUMENTO_FACTURA, new File(rutaPDF), new File(rutaXML));
+                    destinatario.trim(), nombreDest, it.getCodigo(),
+                    tipoDocItem(it), new File(rutaPDF), new File(rutaXML));
             if (enviado) {
                 logDAO.guardar("SeguimientoSriController", "enviarCorreoAutorizado",
-                        "Correo enviado a " + cliente.getCorreo() + " para factura " + fr.getClaveAcceso());
-                new Alert(Alert.AlertType.INFORMATION, "Correo enviado a " + cliente.getCorreo()).showAndWait();
+                        "Correo enviado a " + destinatario + " para " + it.getClaveAcceso());
+                new Alert(Alert.AlertType.INFORMATION, "Correo enviado a " + destinatario).showAndWait();
             } else {
                 new Alert(Alert.AlertType.WARNING, "No se pudo enviar el correo: " + emailService.getUltimoError()).showAndWait();
             }
@@ -301,14 +459,76 @@ public class SeguimientoSriController implements Initializable {
         cargarDatos();
     }
 
+    /** Resuelve el correo destinatario según el tipo (cliente o proveedor). */
+    private String destinatarioItem(SeguimientoSriItem it) {
+        try {
+            String tipo = it.getTipo() == null ? "" : it.getTipo();
+            if ("RETENCION".equals(tipo)) {
+                for (com.vendex.model.Proveedor p : AppContext.getInstance().proveedorDAO.listar()) {
+                    if (it.getRefId() != 0 && p.getId() == it.getRefId() && p.getCorreo() != null) return p.getCorreo().trim();
+                }
+                return null;
+            }
+            if ("GUIA".equals(tipo)) {
+                try {
+                    var dests = AppContext.getInstance().guiaRemisionDestinatarioDAO.listarPorGuiaId(it.getRegistroId());
+                    if (dests != null && !dests.isEmpty()) {
+                        String ident = dests.get(0).getIdentificacionDestinatario();
+                        for (Cliente cli : clienteDAO.listar()) {
+                            if (ident != null && ident.equals(cli.getIdentificacion()) && cli.getCorreo() != null) return cli.getCorreo().trim();
+                        }
+                    }
+                } catch (Exception ignore) {}
+                return null;
+            }
+            Cliente cliente = clienteDAO.obtenerPorId(it.getRefId());
+            return cliente != null ? cliente.getCorreo() : null;
+        } catch (Exception e) {
+            logDAO.guardar("SeguimientoSriController", "destinatarioItem", String.valueOf(e));
+            return null;
+        }
+    }
+
     private void cargarDatos() {
-        String filtro = txtBuscar.getText();
-        totalCount = dao.contar(filtro);
-        totalPages = Math.max(1, (int) Math.ceil((double) totalCount / pageSize));
-        if (currentPage > totalPages) currentPage = totalPages;
-        if (currentPage < 1) currentPage = 1;
-        listaFacturas.setAll(dao.listarPaginado(currentPage, pageSize, filtro));
-        tblFacturas.setItems(listaFacturas);
+        String filtro = txtBuscar != null ? txtBuscar.getText() : null;
+        try {
+            totalCount = seguimientoDAO.contar(tipoFiltro, filtro);
+            totalPages = Math.max(1, (int) Math.ceil((double) totalCount / pageSize));
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+            listaItems.setAll(seguimientoDAO.listar(tipoFiltro, currentPage, pageSize, filtro));
+        } catch (Exception e) {
+            // Fallback modo remoto/sin BD local: solo facturas via DAO inyectado
+            logDAO.guardar("SeguimientoSriController", "cargarDatos", "Fallback facturas: " + e.getMessage());
+            try {
+                totalCount = dao.contar(filtro);
+                totalPages = Math.max(1, (int) Math.ceil((double) totalCount / pageSize));
+                if (currentPage > totalPages) currentPage = totalPages;
+                if (currentPage < 1) currentPage = 1;
+                listaItems.clear();
+                for (FacturaRegistro f : dao.listarPaginado(currentPage, pageSize, filtro)) {
+                    SeguimientoSriItem it = new SeguimientoSriItem();
+                    it.setTipo("FACTURA");
+                    it.setRegistroId(f.getId());
+                    it.setCodigo(f.getCodigo());
+                    it.setNumComprobante(f.getNumComprobante());
+                    it.setFecha(f.getFecha());
+                    it.setNombreCliente(f.getNombreCliente());
+                    it.setFormaPago(f.getFormaPago());
+                    it.setSubtotal(f.getSubtotal());
+                    it.setIva(f.getIva());
+                    it.setTotal(f.getTotal());
+                    it.setEstadoSri(f.getEstadoSri());
+                    it.setMensajeSri(f.getMensajeSri());
+                    it.setClaveAcceso(f.getClaveAcceso());
+                    it.setRefId(f.getClienteId());
+                    listaItems.add(it);
+                }
+            } catch (Exception ex) {
+                logDAO.guardar("SeguimientoSriController", "cargarDatosFallback", String.valueOf(ex));
+            }
+        }
+        tblComprobantes.setItems(listaItems);
         actualizarPaginaInfo();
     }
 

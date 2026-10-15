@@ -324,6 +324,19 @@ public class NotaCreditoService {
     public String regenerarRide(String claveAcceso, String numeroAutorizacion, String fechaAutorizacion, File directorioEscritorio) {
         NotaCreditoRegistro nc = notaCreditoDAO.obtenerPorClave(claveAcceso);
         if (nc == null) { logDAO.guardar("NotaCreditoService","regenerarRide","NC no encontrada "+claveAcceso); return null; }
+        // Rescate: AUTORIZADO sin número en BD -> deducir de clave y persistir (registro + comprobantes)
+        ElectronicoUtil.AutRescatada aut = ElectronicoUtil.rescatarAutorizacion(claveAcceso, nc.getEstadoSri(),
+                nc.getMensajeSri(), nc.getNumeroAutorizacion(), numeroAutorizacion,
+                nc.getFechaAutorizacion() != null ? nc.getFechaAutorizacion().toString() : null, fechaAutorizacion);
+        if (aut.rescatado) {
+            try {
+                notaCreditoDAO.actualizarEstado(claveAcceso, nc.getEstadoSri(), aut.mensaje, aut.numero, aut.fecha);
+                comprobanteDAO.actualizarEstado(claveAcceso, nc.getEstadoSri(), aut.mensaje, null, aut.numero, aut.fecha);
+                logDAO.guardar("NotaCreditoService", "regenerarRide", "Backfill AUTORIZADO sin numero: " + claveAcceso);
+            } catch (Exception e) { logDAO.guardar("NotaCreditoService", "regenerarRide", "Backfill: " + e.getMessage()); }
+        }
+        numeroAutorizacion = aut.numero;
+        fechaAutorizacion = aut.fecha;
         Cliente cliente = clienteDAO.obtenerPorId(nc.getClienteId());
         Empresa empresa = empresaDAO.listar().isEmpty() ? null : empresaDAO.listar().get(0);
         if (cliente == null || empresa == null) return null;
