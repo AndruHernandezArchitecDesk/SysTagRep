@@ -335,6 +335,20 @@ public class FacturaController implements Initializable {
         });
         colAcciones.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(null));
         tblDetalle.setItems(itemsDetalle);
+        // Detalle auto-expandible: conserva 120px con <=3 filas y crece hacia abajo
+        // sin scrollbar interno (el scroll lo hace la página). Sin tope.
+        tblDetalle.setFixedCellSize(ALTURA_FILA_DETALLE);
+        itemsDetalle.addListener((javafx.collections.ListChangeListener<FacturaDetalle>) c -> ajustarAlturaDetalle());
+        ajustarAlturaDetalle();
+    }
+
+    private static final double ALTURA_FILA_DETALLE = 26;
+    private static final double ALTURA_MINIMA_DETALLE = 120;
+
+    private void ajustarAlturaDetalle() {
+        int n = itemsDetalle != null ? itemsDetalle.size() : 0;
+        double alto = 30 + Math.max(3, n) * ALTURA_FILA_DETALLE;
+        tblDetalle.setPrefHeight(Math.max(ALTURA_MINIMA_DETALLE, alto));
     }
 
     @FXML
