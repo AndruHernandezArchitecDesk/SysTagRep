@@ -455,7 +455,7 @@ public class SeguimientoSriController implements Initializable {
                 }
                 // Procesar NC pendientes
                 NotaCreditoService ncService = AppContext.getInstance().notaCreditoService;
-                File dirEsc = obtenerDirectorioEscritorio();
+                File dirNc = obtenerDirectorioPorTipo(com.vendex.util.DirectorioComprobantes.CARPETA_NOTA_CREDITO);
                 for (NotaCreditoRegistro nc : pendientesNc) {
                     String clave = nc.getClaveAcceso();
                     if (clave == null || clave.trim().isEmpty()) continue;
@@ -473,10 +473,10 @@ public class SeguimientoSriController implements Initializable {
                                 String fechaAut = r.getFechaAutorizacion();
                                 try {
                                     NotaCreditoRegistro ncFull = ncDao.obtenerPorClave(clave);
-                                    String pdfRegenerado = ncService.regenerarRide(clave, numAut, fechaAut, dirEsc);
+                                    String pdfRegenerado = ncService.regenerarRide(clave, numAut, fechaAut, dirNc);
                                     Cliente cli = clienteDAO.obtenerPorId(ncFull.getClienteId());
                                     if (cli != null && cli.getCorreo()!=null && !cli.getCorreo().trim().isEmpty() && pdfRegenerado!=null) {
-                                        String rutaXML = obtenerDirectorioEscritorio().getAbsolutePath()+File.separator+AppConstants.PREFIJO_PDF_NOTA_CREDITO+ncFull.getNumComprobante().replace("-","")+AppConstants.EXTENSION_XML;
+                                        String rutaXML = obtenerDirectorioPorTipo(com.vendex.util.DirectorioComprobantes.CARPETA_NOTA_CREDITO).getAbsolutePath()+File.separator+AppConstants.PREFIJO_PDF_NOTA_CREDITO+ncFull.getNumComprobante().replace("-","")+AppConstants.EXTENSION_XML;
                                         EmailService es = new EmailService();
                                         boolean enviado = es.enviarCorreoConArchivos(cli.getCorreo().trim(), cli.getNombre(), ncFull.getNumComprobante(), AppConstants.TIPO_DOCUMENTO_NOTA_CREDITO, new File(pdfRegenerado), new File(rutaXML));
                                         if (enviado) emailsEnviados.append("✓ NC ").append(cli.getCorreo()).append("\n");
@@ -505,10 +505,10 @@ public class SeguimientoSriController implements Initializable {
                                 String fechaAut = r.getFechaAutorizacion();
                                 try {
                                     NotaDebitoRegistro ndFull = ndDao.obtenerPorClave(clave);
-                                    String pdfRegenerado = ndService.regenerarRide(clave, numAut, fechaAut, dirEsc);
+                                    String pdfRegenerado = ndService.regenerarRide(clave, numAut, fechaAut, obtenerDirectorioPorTipo(com.vendex.util.DirectorioComprobantes.CARPETA_NOTA_DEBITO));
                                     Cliente cli = clienteDAO.obtenerPorId(ndFull.getClienteId());
                                     if (cli != null && cli.getCorreo()!=null && !cli.getCorreo().trim().isEmpty() && pdfRegenerado!=null) {
-                                        String rutaXML = obtenerDirectorioEscritorio().getAbsolutePath()+File.separator+AppConstants.PREFIJO_PDF_NOTA_DEBITO+ndFull.getNumComprobante().replace("-","")+AppConstants.EXTENSION_XML;
+                                        String rutaXML = obtenerDirectorioPorTipo(com.vendex.util.DirectorioComprobantes.CARPETA_NOTA_DEBITO).getAbsolutePath()+File.separator+AppConstants.PREFIJO_PDF_NOTA_DEBITO+ndFull.getNumComprobante().replace("-","")+AppConstants.EXTENSION_XML;
                                         EmailService es = new EmailService();
                                         boolean enviado = es.enviarCorreoConArchivos(cli.getCorreo().trim(), cli.getNombre(), ndFull.getNumComprobante(), AppConstants.TIPO_DOCUMENTO_NOTA_DEBITO, new File(pdfRegenerado), new File(rutaXML));
                                         if (enviado) emailsEnviados.append("✓ ND ").append(cli.getCorreo()).append("\n");
@@ -537,10 +537,10 @@ public class SeguimientoSriController implements Initializable {
                                 String fechaAut = r.getFechaAutorizacion();
                                 try {
                                     GuiaRemisionRegistro grFull = grDao.obtenerPorClave(clave);
-                                    String pdfRegenerado = grService.regenerarRide(clave, numAut, fechaAut, dirEsc);
+                                    String pdfRegenerado = grService.regenerarRide(clave, numAut, fechaAut, obtenerDirectorioPorTipo(com.vendex.util.DirectorioComprobantes.CARPETA_GUIA_REMISION));
                                     // intentar enviar correo si el destinatario tiene email como cliente
                                     if (pdfRegenerado != null) {
-                                        String rutaXML = obtenerDirectorioEscritorio().getAbsolutePath()+File.separator+AppConstants.PREFIJO_PDF_GUIA_REMISION+grFull.getNumComprobante().replace("-","")+AppConstants.EXTENSION_XML;
+                                        String rutaXML = obtenerDirectorioPorTipo(com.vendex.util.DirectorioComprobantes.CARPETA_GUIA_REMISION).getAbsolutePath()+File.separator+AppConstants.PREFIJO_PDF_GUIA_REMISION+grFull.getNumComprobante().replace("-","")+AppConstants.EXTENSION_XML;
                                         // correo opcional: buscar primer destinatario que coincida con cliente
                                         try {
                                             java.util.List<com.vendex.model.GuiaRemisionDestinatario> dests = AppContext.getInstance().guiaRemisionDestinatarioDAO.listarPorGuiaId(grFull.getId());
@@ -580,9 +580,9 @@ public class SeguimientoSriController implements Initializable {
                                 String fechaAut = r.getFechaAutorizacion();
                                 try {
                                     RetencionRegistro retFull = retDao.obtenerPorClave(clave);
-                                    String pdfRegenerado = retService.regenerarRide(clave, numAut, fechaAut, dirEsc);
+                                    String pdfRegenerado = retService.regenerarRide(clave, numAut, fechaAut, obtenerDirectorioPorTipo(com.vendex.util.DirectorioComprobantes.CARPETA_RETENCION));
                                     if (pdfRegenerado != null) {
-                                        String rutaXML = obtenerDirectorioEscritorio().getAbsolutePath()+File.separator+AppConstants.PREFIJO_PDF_RETENCION+retFull.getNumComprobante().replace("-","")+AppConstants.EXTENSION_XML;
+                                        String rutaXML = obtenerDirectorioPorTipo(com.vendex.util.DirectorioComprobantes.CARPETA_RETENCION).getAbsolutePath()+File.separator+AppConstants.PREFIJO_PDF_RETENCION+retFull.getNumComprobante().replace("-","")+AppConstants.EXTENSION_XML;
                                         // correo a proveedor
                                         String correo = null; String nombre = retFull.getRazonSocialSujeto();
                                         if (retFull.getProveedorId()!=null) {
@@ -631,8 +631,13 @@ public class SeguimientoSriController implements Initializable {
     }
 
     private File obtenerDirectorioEscritorio() {
-        // Carpetas por dia: Documentos/<Empresa>/yyyy-MM-dd/ (DirectorioComprobantes).
-        return com.vendex.util.DirectorioComprobantes.dirDiaFile();
+        // Carpetas por tipo: Documentos/<Empresa>/Factura/yyyy-MM-dd/.
+        return com.vendex.util.DirectorioComprobantes.dirTipoFile(com.vendex.util.DirectorioComprobantes.CARPETA_FACTURA);
+    }
+
+    private File obtenerDirectorioPorTipo(String tipo) {
+        // Carpetas por tipo: Documentos/<Empresa>/<Tipo>/yyyy-MM-dd/.
+        return com.vendex.util.DirectorioComprobantes.dirTipoFile(tipo);
     }
 
     private String formatearEstado(String estado, String mensaje) {

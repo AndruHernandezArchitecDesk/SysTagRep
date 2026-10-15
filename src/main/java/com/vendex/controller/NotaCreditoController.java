@@ -224,8 +224,8 @@ public class NotaCreditoController implements Initializable {
     }
 
     private File obtenerDirEscritorio() {
-        // Carpetas por dia: Documentos/<Empresa>/yyyy-MM-dd/ (DirectorioComprobantes).
-        return com.vendex.util.DirectorioComprobantes.dirDiaFile();
+        // Carpetas por tipo: Documentos/<Empresa>/NotaCredito/yyyy-MM-dd/.
+        return com.vendex.util.DirectorioComprobantes.dirTipoFile(com.vendex.util.DirectorioComprobantes.CARPETA_NOTA_CREDITO);
     }
 
     private void emitirNotaCreditoRemoto() {

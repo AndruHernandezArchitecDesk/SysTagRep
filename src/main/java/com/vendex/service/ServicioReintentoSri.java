@@ -271,27 +271,26 @@ public class ServicioReintentoSri {
 
     private void regenerarRide(ComprobantePendienteSri p, String numAut, String fechaAut) {
         try {
-            File dir = obtenerDirectorioEscritorio();
             switch (p.getTipoComprobante()) {
                 case "FACTURA" -> {
                     FacturaService fs = new FacturaService();
-                    fs.regenerarRide(p.getClaveAcceso(), numAut, fechaAut, dir);
+                    fs.regenerarRide(p.getClaveAcceso(), numAut, fechaAut, obtenerDirectorioEscritorio("FACTURA"));
                 }
                 case "NOTA_CREDITO" -> {
                     NotaCreditoService s = new NotaCreditoService();
-                    s.regenerarRide(p.getClaveAcceso(), numAut, fechaAut, dir);
+                    s.regenerarRide(p.getClaveAcceso(), numAut, fechaAut, obtenerDirectorioEscritorio("NOTA_CREDITO"));
                 }
                 case "NOTA_DEBITO" -> {
                     NotaDebitoService s = new NotaDebitoService();
-                    s.regenerarRide(p.getClaveAcceso(), numAut, fechaAut, dir);
+                    s.regenerarRide(p.getClaveAcceso(), numAut, fechaAut, obtenerDirectorioEscritorio("NOTA_DEBITO"));
                 }
                 case "GUIA_REMISION" -> {
                     GuiaRemisionService s = new GuiaRemisionService();
-                    s.regenerarRide(p.getClaveAcceso(), numAut, fechaAut, dir);
+                    s.regenerarRide(p.getClaveAcceso(), numAut, fechaAut, obtenerDirectorioEscritorio("GUIA_REMISION"));
                 }
                 case "RETENCION" -> {
                     RetencionService s = new RetencionService();
-                    s.regenerarRide(p.getClaveAcceso(), numAut, fechaAut, dir);
+                    s.regenerarRide(p.getClaveAcceso(), numAut, fechaAut, obtenerDirectorioEscritorio("RETENCION"));
                 }
             }
         } catch (Exception e) {
@@ -300,8 +299,13 @@ public class ServicioReintentoSri {
     }
 
     private File obtenerDirectorioEscritorio() {
-        // Carpetas por dia: Documentos/<Empresa>/yyyy-MM-dd/ (DirectorioComprobantes).
-        return com.vendex.util.DirectorioComprobantes.dirDiaFile();
+        // Compatibilidad: por defecto Factura. Usar obtenerDirectorioEscritorio(tipo) para el resto.
+        return com.vendex.util.DirectorioComprobantes.dirTipoFile("FACTURA");
+    }
+
+    private File obtenerDirectorioEscritorio(String tipoComprobante) {
+        // Carpetas por tipo: Documentos/<Empresa>/<Tipo>/yyyy-MM-dd/.
+        return com.vendex.util.DirectorioComprobantes.dirTipoFile(tipoComprobante);
     }
 
     private void enviarCorreoCliente(ComprobantePendienteSri p, String numAut, String fechaAut) {
