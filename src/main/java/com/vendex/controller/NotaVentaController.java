@@ -727,8 +727,8 @@ public class NotaVentaController implements Initializable {
         }
 
         // --- Generar PDF Proforma ---
-        String rutaPDF = System.getProperty("java.io.tmpdir") + File.separator
-                + "Proforma_" + codigo.replace("-", "") + ".pdf";
+        String rutaPDF = new File(com.vendex.util.DirectorioComprobantes.dirDiaFile(),
+                "Proforma_" + codigo.replace("-", "") + ".pdf").getAbsolutePath();
 
         List<String[]> detallesPDF = new ArrayList<>();
         for (DetalleVenta d : itemsDetalle) {
@@ -834,8 +834,8 @@ public class NotaVentaController implements Initializable {
             BigDecimal descCalc = calcularDescuento(totalBruto);
             BigDecimal totCalc = totalBruto.subtract(descCalc).setScale(2, RoundingMode.HALF_UP);
 
-            String rutaPDF = System.getProperty("java.io.tmpdir") + File.separator
-                    + "Proforma_" + (codigo != null ? codigo.replace("-", "") : notaVentaId) + ".pdf";
+            String rutaPDF = new File(com.vendex.util.DirectorioComprobantes.dirDiaFile(),
+                    "Proforma_" + (codigo != null ? codigo.replace("-", "") : notaVentaId) + ".pdf").getAbsolutePath();
             List<String[]> detallesPDF = new ArrayList<>();
             for (DetalleVenta d : itemsDetalle) {
                 detallesPDF.add(new String[]{

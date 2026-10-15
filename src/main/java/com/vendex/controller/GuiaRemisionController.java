@@ -333,5 +333,8 @@ public class GuiaRemisionController implements Initializable {
         } catch (Exception e) { logDAO.guardar("GuiaRemisionController","volcarErrorSRI", e.getMessage(), e instanceof Exception ? (Exception)e : new Exception(e)); }
     }
 
-    private File obtenerDirEscritorio(){ File h=new File(System.getProperty("user.home")); for(String n: new String[]{AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT, AppConstants.DIRECTORIO_ESCRITORIO_ALT}){ File d=new File(h,n); if(d.exists()&&d.isDirectory()) return d; } File d=new File(h, AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT); d.mkdirs(); return d; }
+    private File obtenerDirEscritorio() {
+        // Carpetas por dia: Documentos/<Empresa>/yyyy-MM-dd/ (DirectorioComprobantes).
+        return com.vendex.util.DirectorioComprobantes.dirDiaFile();
+    }
 }

@@ -97,9 +97,21 @@ class FxmlSmokeTest {
     @Test
     @Order(1)
     void cargaMainViewConQuickAccessBar() throws Exception {
-        Object controller = cargar("/view/MainView.fxml");
-        assertNotNull(controller, "controller MainController");
-        assertNotNull(controller.getClass().getDeclaredField("quickAccessBar"), "campo quickAccessBar");
+        // MainView exige sesion con permiso (igual que en produccion tras login);
+        // sin esto el gate muestra un modal y la carga se cuelga. Se cierra al final
+        // para no fugar sesion a otros tests del mismo JVM.
+        com.vendex.model.Usuario u = new com.vendex.model.Usuario();
+        u.setId(1);
+        u.setRol("ADMINISTRADOR");
+        com.vendex.util.SesionActual.setUsuarioForTest(u);
+        com.vendex.util.SesionActual.setPermisosForTest(java.util.Set.of("REPORTE_VER"));
+        try {
+            Object controller = cargar("/view/MainView.fxml");
+            assertNotNull(controller, "controller MainController");
+            assertNotNull(controller.getClass().getDeclaredField("quickAccessBar"), "campo quickAccessBar");
+        } finally {
+            com.vendex.util.SesionActual.cerrar();
+        }
     }
 
     @Test

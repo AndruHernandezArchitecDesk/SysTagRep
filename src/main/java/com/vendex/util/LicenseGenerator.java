@@ -1,6 +1,7 @@
 package com.vendex.util;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 public class LicenseGenerator {
     public static void main(String[] args) {
@@ -13,6 +14,12 @@ public class LicenseGenerator {
             System.out.println("Usage:");
             System.out.println("  java -cp Vendex.jar com.vendex.util.LicenseGenerator <machine-code>");
             System.out.println("  java -cp Vendex.jar com.vendex.util.LicenseGenerator <machine-code> vitalicia");
+            System.out.println("  java -cp Vendex.jar com.vendex.util.LicenseGenerator <machine-code> <dias>");
+            System.out.println("      Ej: ... <machine-code> 12   (vence hoy + 12 dias)");
+            System.out.println("  java -cp Vendex.jar com.vendex.util.LicenseGenerator <machine-code> <YYYYMMDD>");
+            System.out.println("      Ej: ... <machine-code> 20261026");
+            System.out.println();
+            System.out.println("IMPORTANTE: ejecutar en la PC destino (usa su secreto local si existe).");
             return;
         }
 
@@ -28,6 +35,16 @@ public class LicenseGenerator {
             String licenseKey = LicenseManager.generateLicenseKeyPermanente(machineCode);
             System.out.println("License Key:  " + licenseKey);
             System.out.println("Válida hasta: PERMANENTE (no expira)");
+        } else if (args.length > 1 && args[1].matches("\\d{8}")) {
+            LocalDate vencimiento = LocalDate.parse(args[1], DateTimeFormatter.BASIC_ISO_DATE);
+            String licenseKey = LicenseManager.generateLicenseKey(machineCode, vencimiento);
+            System.out.println("License Key:  " + licenseKey);
+            System.out.println("Válida hasta: " + vencimiento);
+        } else if (args.length > 1 && args[1].matches("\\d{1,3}")) {
+            LocalDate vencimiento = LocalDate.now().plusDays(Integer.parseInt(args[1]));
+            String licenseKey = LicenseManager.generateLicenseKey(machineCode, vencimiento);
+            System.out.println("License Key:  " + licenseKey);
+            System.out.println("Válida hasta: " + vencimiento);
         } else {
             String licenseKey = LicenseManager.generateLicenseKey(machineCode);
             LocalDate vencimiento = LicenseManager.getVencimientoDeClave(licenseKey);

@@ -300,14 +300,8 @@ public class ServicioReintentoSri {
     }
 
     private File obtenerDirectorioEscritorio() {
-        File home = new File(System.getProperty("user.home"));
-        for (String n : new String[]{AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT, AppConstants.DIRECTORIO_ESCRITORIO_ALT}) {
-            File d = new File(home, n);
-            if (d.exists() && d.isDirectory()) return d;
-        }
-        File d = new File(home, AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT);
-        d.mkdirs();
-        return d;
+        // Carpetas por dia: Documentos/<Empresa>/yyyy-MM-dd/ (DirectorioComprobantes).
+        return com.vendex.util.DirectorioComprobantes.dirDiaFile();
     }
 
     private void enviarCorreoCliente(ComprobantePendienteSri p, String numAut, String fechaAut) {

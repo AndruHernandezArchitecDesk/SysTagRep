@@ -282,8 +282,7 @@ public class SeguimientoSriController implements Initializable {
                 new Alert(Alert.AlertType.ERROR, "No se pudo regenerar el RIDE autorizado.").showAndWait();
                 return;
             }
-            String rutaXML = System.getProperty("user.home") + File.separator + AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT
-                    + File.separator + AppConstants.PREFIJO_PDF_FACTURA + fr.getNumComprobante().replace("-", "") + AppConstants.EXTENSION_XML;
+            String rutaXML = obtenerDirectorioEscritorio().getAbsolutePath()+File.separator + AppConstants.PREFIJO_PDF_FACTURA + fr.getNumComprobante().replace("-", "") + AppConstants.EXTENSION_XML;
             EmailService emailService = new EmailService();
             boolean enviado = emailService.enviarCorreoConArchivos(
                     cliente.getCorreo().trim(), cliente.getNombre(), fr.getCodigo(),
@@ -413,10 +412,8 @@ public class SeguimientoSriController implements Initializable {
                                         Cliente cliente = clienteDAO.obtenerPorId(f.getClienteId());
                                         if (cliente != null && cliente.getCorreo() != null && !cliente.getCorreo().trim().isEmpty()) {
                                             String numComp = f.getNumComprobante();
-                                    String rutaPDF = System.getProperty("user.home") + File.separator + AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT
-                                                    + File.separator + AppConstants.PREFIJO_PDF_FACTURA + numComp.replace("-", "") + AppConstants.EXTENSION_PDF;
-                                            String rutaXML = System.getProperty("user.home") + File.separator + AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT
-                                                    + File.separator + AppConstants.PREFIJO_PDF_FACTURA + numComp.replace("-", "") + AppConstants.EXTENSION_XML;
+                                    String rutaPDF = obtenerDirectorioEscritorio().getAbsolutePath()+File.separator + AppConstants.PREFIJO_PDF_FACTURA + numComp.replace("-", "") + AppConstants.EXTENSION_PDF;
+                                            String rutaXML = obtenerDirectorioEscritorio().getAbsolutePath()+File.separator + AppConstants.PREFIJO_PDF_FACTURA + numComp.replace("-", "") + AppConstants.EXTENSION_XML;
                                             String pdfRegenerado = facturaService.regenerarRide(clave, numAut, fechaAut, obtenerDirectorioEscritorio());
                                             if (pdfRegenerado != null) {
                                                 rutaPDF = pdfRegenerado;
@@ -479,7 +476,7 @@ public class SeguimientoSriController implements Initializable {
                                     String pdfRegenerado = ncService.regenerarRide(clave, numAut, fechaAut, dirEsc);
                                     Cliente cli = clienteDAO.obtenerPorId(ncFull.getClienteId());
                                     if (cli != null && cli.getCorreo()!=null && !cli.getCorreo().trim().isEmpty() && pdfRegenerado!=null) {
-                                        String rutaXML = System.getProperty("user.home")+File.separator+AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT+File.separator+AppConstants.PREFIJO_PDF_NOTA_CREDITO+ncFull.getNumComprobante().replace("-","")+AppConstants.EXTENSION_XML;
+                                        String rutaXML = obtenerDirectorioEscritorio().getAbsolutePath()+File.separator+AppConstants.PREFIJO_PDF_NOTA_CREDITO+ncFull.getNumComprobante().replace("-","")+AppConstants.EXTENSION_XML;
                                         EmailService es = new EmailService();
                                         boolean enviado = es.enviarCorreoConArchivos(cli.getCorreo().trim(), cli.getNombre(), ncFull.getNumComprobante(), AppConstants.TIPO_DOCUMENTO_NOTA_CREDITO, new File(pdfRegenerado), new File(rutaXML));
                                         if (enviado) emailsEnviados.append("✓ NC ").append(cli.getCorreo()).append("\n");
@@ -511,7 +508,7 @@ public class SeguimientoSriController implements Initializable {
                                     String pdfRegenerado = ndService.regenerarRide(clave, numAut, fechaAut, dirEsc);
                                     Cliente cli = clienteDAO.obtenerPorId(ndFull.getClienteId());
                                     if (cli != null && cli.getCorreo()!=null && !cli.getCorreo().trim().isEmpty() && pdfRegenerado!=null) {
-                                        String rutaXML = System.getProperty("user.home")+File.separator+AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT+File.separator+AppConstants.PREFIJO_PDF_NOTA_DEBITO+ndFull.getNumComprobante().replace("-","")+AppConstants.EXTENSION_XML;
+                                        String rutaXML = obtenerDirectorioEscritorio().getAbsolutePath()+File.separator+AppConstants.PREFIJO_PDF_NOTA_DEBITO+ndFull.getNumComprobante().replace("-","")+AppConstants.EXTENSION_XML;
                                         EmailService es = new EmailService();
                                         boolean enviado = es.enviarCorreoConArchivos(cli.getCorreo().trim(), cli.getNombre(), ndFull.getNumComprobante(), AppConstants.TIPO_DOCUMENTO_NOTA_DEBITO, new File(pdfRegenerado), new File(rutaXML));
                                         if (enviado) emailsEnviados.append("✓ ND ").append(cli.getCorreo()).append("\n");
@@ -543,7 +540,7 @@ public class SeguimientoSriController implements Initializable {
                                     String pdfRegenerado = grService.regenerarRide(clave, numAut, fechaAut, dirEsc);
                                     // intentar enviar correo si el destinatario tiene email como cliente
                                     if (pdfRegenerado != null) {
-                                        String rutaXML = System.getProperty("user.home")+File.separator+AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT+File.separator+AppConstants.PREFIJO_PDF_GUIA_REMISION+grFull.getNumComprobante().replace("-","")+AppConstants.EXTENSION_XML;
+                                        String rutaXML = obtenerDirectorioEscritorio().getAbsolutePath()+File.separator+AppConstants.PREFIJO_PDF_GUIA_REMISION+grFull.getNumComprobante().replace("-","")+AppConstants.EXTENSION_XML;
                                         // correo opcional: buscar primer destinatario que coincida con cliente
                                         try {
                                             java.util.List<com.vendex.model.GuiaRemisionDestinatario> dests = AppContext.getInstance().guiaRemisionDestinatarioDAO.listarPorGuiaId(grFull.getId());
@@ -585,7 +582,7 @@ public class SeguimientoSriController implements Initializable {
                                     RetencionRegistro retFull = retDao.obtenerPorClave(clave);
                                     String pdfRegenerado = retService.regenerarRide(clave, numAut, fechaAut, dirEsc);
                                     if (pdfRegenerado != null) {
-                                        String rutaXML = System.getProperty("user.home")+File.separator+AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT+File.separator+AppConstants.PREFIJO_PDF_RETENCION+retFull.getNumComprobante().replace("-","")+AppConstants.EXTENSION_XML;
+                                        String rutaXML = obtenerDirectorioEscritorio().getAbsolutePath()+File.separator+AppConstants.PREFIJO_PDF_RETENCION+retFull.getNumComprobante().replace("-","")+AppConstants.EXTENSION_XML;
                                         // correo a proveedor
                                         String correo = null; String nombre = retFull.getRazonSocialSujeto();
                                         if (retFull.getProveedorId()!=null) {
@@ -634,16 +631,8 @@ public class SeguimientoSriController implements Initializable {
     }
 
     private File obtenerDirectorioEscritorio() {
-        File home = new File(System.getProperty("user.home"));
-        for (String n : new String[]{AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT, AppConstants.DIRECTORIO_ESCRITORIO_ALT}) {
-            File d = new File(home, n);
-            if (d.exists() && d.isDirectory()) {
-                return d;
-            }
-        }
-        File d = new File(home, AppConstants.DIRECTORIO_ESCRITORIO_DEFAULT);
-        d.mkdirs();
-        return d;
+        // Carpetas por dia: Documentos/<Empresa>/yyyy-MM-dd/ (DirectorioComprobantes).
+        return com.vendex.util.DirectorioComprobantes.dirDiaFile();
     }
 
     private String formatearEstado(String estado, String mensaje) {
