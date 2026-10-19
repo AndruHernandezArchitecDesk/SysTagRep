@@ -34,6 +34,8 @@ import java.util.Map;
 import java.util.ResourceBundle;
 import com.vendex.dao.LogDAOPostgres;
 import com.vendex.dao.DashboardDAOPostgres;
+import com.vendex.dao.EmpresaDAOPostgres;
+import com.vendex.model.Empresa;
 
 public class Dashboard2Controller implements Initializable {
 
@@ -83,12 +85,23 @@ public class Dashboard2Controller implements Initializable {
         if (imgLogo != null) {
             try { imgLogo.setImage(new Image(getClass().getResourceAsStream(com.vendex.util.ThemeManager.getLogoPath()))); } catch (Exception ignored) {}
         }
-        new ScrambleText(lblTitulo, "VENDEX Repuestos Automotrices").repeat(true).play();
+        new ScrambleText(lblTitulo, nombreEmpresa()).repeat(true).play();
         cargarGraficos();
         cargarAlertasHome();
         if (lblTitulo.getScene() != null) {
             ThemeManager.aplicarTemaGuardado(lblTitulo.getScene());
         }
+    }
+
+    private String nombreEmpresa() {
+        try {
+            List<Empresa> empresas = new EmpresaDAOPostgres().listar();
+            if (!empresas.isEmpty()) {
+                String razon = empresas.get(0).getRazonSocial();
+                if (razon != null && !razon.isBlank()) return razon;
+            }
+        } catch (Exception ignored) {}
+        return "VENDEX Repuestos Automotrices";
     }
 
     private void cargarAlertasHome() {
