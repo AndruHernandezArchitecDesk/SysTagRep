@@ -482,3 +482,15 @@
     -fx-font-style: italic;
     -fx-padding: 4 8;
 }
+
+/* ========== TOOLTIP ========== */
+.tooltip {
+    -fx-background-color: -bg-card-alt;
+    -fx-text-fill: -text-primary;
+    -fx-border-color: -border;
+    -fx-border-width: 1;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-padding: 8 12;
+    -fx-font-size: 13px;
+}
