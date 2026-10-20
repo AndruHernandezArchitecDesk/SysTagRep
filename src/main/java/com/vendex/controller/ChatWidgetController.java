@@ -29,6 +29,8 @@ public class ChatWidgetController {
     public ChatWidgetController(com.vendex.config.AppContext ctx) {
         this.chatbotService = new com.vendex.chatbot.GeminiChatbotService(ctx.repuestoChatbotDAO);
         this.vehiculoDAO = ctx.vehiculoDAO;
+        this.repuestoChatbotDAO = ctx.repuestoChatbotDAO;
+        this.investigacionService = new com.vendex.service.InvestigacionWebService(ctx.vendexiConsumoService);
     }
 
     @FXML private StackPane rootStack;
@@ -45,8 +47,11 @@ public class ChatWidgetController {
 
     private final GeminiChatbotService chatbotService;
     private final com.vendex.dao.VehiculoDAO vehiculoDAO;
+    private final com.vendex.dao.RepuestoChatbotDAO repuestoChatbotDAO;
+    private final com.vendex.service.InvestigacionWebService investigacionService;
     private static final String TODAS = "Todas";
     private static final String TODOS = "Todos";
+    private long sesionVendexi = -1;
 
     @FXML
     public void initialize() {
@@ -130,11 +135,25 @@ public class ChatWidgetController {
         chatPanel.setVisible(mostrar);
         chatPanel.setManaged(mostrar);
         actualizarBadge();
+        // Fase 3: registro de tiempo de interacción (estadística, no es límite — spec §12)
+        if (mostrar) {
+            sesionVendexi = com.vendex.config.AppContext.getInstance().vendexiConsumoService
+                    .iniciarSesion("chat", "CONSULTA");
+        } else {
+            finalizarSesionVendexi();
+        }
         if (mostrar && mensajesBox.getChildren().isEmpty()) {
             agregarMensaje("¡Hola! Pregúntame por cualquier repuesto y verifico stock.\nEj: \"tapa radiador CHEV AVEO\"\nSíntoma: \"ruido al frenar\" → te sugiero repuesto\nUsa los filtros Marca/Modelo/Año para buscar por compatibilidad de vehículo.", false, false);
             inputField.requestFocus();
         } else if (mostrar) {
             inputField.requestFocus();
+        }
+    }
+
+    private void finalizarSesionVendexi() {
+        if (sesionVendexi > 0) {
+            com.vendex.config.AppContext.getInstance().vendexiConsumoService.finalizarSesion(sesionVendexi);
+            sesionVendexi = -1;
         }
     }
 
@@ -161,6 +180,14 @@ public class ChatWidgetController {
         inputField.setDisable(true);
         badgeIA.setText("⏳ consultando...");
 
+        // Fase 4: investigación web (§8) — códigos/números de parte o petición explícita
+        if (com.vendex.service.InvestigacionWebService.esConsultaInvestigacion(texto)
+                && com.vendex.util.LicenseManager.licenciaIncluyeIA()
+                && GeminiConfig.tieneApiKey()) {
+            investigarEnWeb(texto, vehMarca, vehModelo, vehAnio);
+            return;
+        }
+
         Thread hilo = new Thread(() -> {
             GeminiChatbotService.RespuestaChat rc;
             try {
@@ -180,8 +207,101 @@ public class ChatWidgetController {
         hilo.start();
     }
 
+    /** Fase 4: investigación web de repuestos con fuentes verificables (spec §8). */
+    private void investigarEnWeb(String texto, String vehMarca, String vehModelo, Integer vehAnio) {
+        badgeIA.setText("⏳ investigando web...");
+        Thread hilo = new Thread(() -> {
+            String resumenLocal = "";
+            try {
+                GeminiChatbotService.ResultadoBusqueda r =
+                        repuestoChatbotDAO.buscar(texto.trim(), vehMarca, vehModelo, vehAnio);
+                if (r != null && r.isEncontrado()) {
+                    resumenLocal = r.getCodigo() + " | " + r.getNombre() + " | stock " + r.getStock();
+                }
+            } catch (Exception ignored) {}
+            com.vendex.service.InvestigacionWebService.Resultado res =
+                    investigacionService.investigar(texto, resumenLocal, vehMarca, vehModelo, vehAnio);
+            Platform.runLater(() -> {
+                boolean sinIa = res.estado == com.vendex.service.InvestigacionWebService.Estado.SIN_LICENCIA
+                        || res.estado == com.vendex.service.InvestigacionWebService.Estado.SIN_CAPACIDAD
+                        || res.estado == com.vendex.service.InvestigacionWebService.Estado.SIN_API_KEY
+                        || res.estado == com.vendex.service.InvestigacionWebService.Estado.SIN_CONEXION
+                        || res.estado == com.vendex.service.InvestigacionWebService.Estado.SIN_BUSQUEDA
+                        || res.estado == com.vendex.service.InvestigacionWebService.Estado.ERROR;
+                String encabezado = res.estado == com.vendex.service.InvestigacionWebService.Estado.OK
+                        ? "🔍 Investigación web de \"" + texto + "\"\n\n"
+                        : "";
+                agregarMensajeConFuentes(encabezado + res.texto, res.fuentes, sinIa);
+                actualizarBadge();
+                inputField.setDisable(false);
+                inputField.requestFocus();
+            });
+        });
+        hilo.setDaemon(true);
+        hilo.start();
+    }
+
+    private void agregarMensajeConFuentes(String texto,
+                                          java.util.List<com.vendex.service.InvestigacionWebService.Fuente> fuentes,
+                                          boolean esSinIA) {
+        javafx.scene.layout.VBox cuerpo = new javafx.scene.layout.VBox(3);
+        Label label = new Label(texto);
+        label.setWrapText(true);
+        label.getStyleClass().add(esSinIA ? "mensaje-bot-sin-ia" : "mensaje-bot");
+        cuerpo.getChildren().add(label);
+        if (fuentes != null && !fuentes.isEmpty()) {
+            Label lblFuentes = new Label("Fuentes verificables:");
+            lblFuentes.setStyle("-fx-font-weight: bold; -fx-font-size: 11px;");
+            cuerpo.getChildren().add(lblFuentes);
+            for (com.vendex.service.InvestigacionWebService.Fuente f : fuentes) {
+                javafx.scene.control.Hyperlink link = new javafx.scene.control.Hyperlink(
+                        (f.titulo != null && !f.titulo.isBlank()) ? f.titulo : f.uri);
+                link.setWrapText(true);
+                link.setStyle("-fx-font-size: 11px; -fx-padding: 0 4 0 8;");
+                if (f.tieneUri()) {
+                    final String uri = f.uri;
+                    link.setOnAction(e -> abrirEnlace(uri));
+                    link.setTooltip(new javafx.scene.control.Tooltip(uri));
+                } else {
+                    link.setDisable(true);
+                }
+                cuerpo.getChildren().add(link);
+            }
+        }
+        HBox contenedor = new HBox(cuerpo);
+        contenedor.setFillHeight(false);
+        HBox.setHgrow(cuerpo, Priority.NEVER);
+        contenedor.setStyle("-fx-alignment: CENTER_LEFT;");
+        mensajesBox.getChildren().add(contenedor);
+        Platform.runLater(() -> {
+            scrollPane.layout();
+            scrollPane.setVvalue(1.0);
+        });
+    }
+
+    private void abrirEnlace(String uri) {
+        try {
+            if (java.awt.Desktop.isDesktopSupported()) {
+                java.awt.Desktop.getDesktop().browse(java.net.URI.create(uri));
+            }
+        } catch (Exception e) {
+            javafx.scene.control.Alert a = new javafx.scene.control.Alert(
+                    javafx.scene.control.Alert.AlertType.WARNING,
+                    "No se pudo abrir el enlace:\n" + uri);
+            a.showAndWait();
+        }
+    }
+
     private void actualizarBadge() {
         if (badgeIA == null) return;
+        // Fase 1: licencia sin Vendexi AI — solo modo local (función ERP permitida)
+        if (!com.vendex.util.LicenseManager.licenciaIncluyeIA()) {
+            badgeIA.setText("○ Local (licencia)");
+            badgeIA.getStyleClass().setAll("badge-local");
+            badgeIA.setTooltip(new javafx.scene.control.Tooltip(
+                    "La licencia de esta instalación no incluye Vendexi AI. La búsqueda local en inventario sigue disponible."));
+            return;
+        }
         GeminiChatbotService.EstadoIA e = chatbotService.getEstado();
         // Si no hay archivo ni env, mostrar Local
         boolean tieneKey = GeminiConfig.tieneApiKey();

@@ -61,6 +61,7 @@ public class MainApp extends Application {
         DatabaseConnection.ensureSucursalSchema();
         DatabaseConnection.ensureVehiculoSchema();
         DatabaseConnection.ensureAccesoDirectoSchema();
+        try { DatabaseConnection.ensureVendexiSchema(); } catch (Exception e) { System.err.println("No se pudo asegurar esquema Vendexi: " + e.getMessage()); }
         // SRI contingencia: cola persistente todo a cola (desacople mostrador)
         try { com.vendex.service.ServicioReintentoSri.getInstance().start(); } catch (Exception e) { System.err.println("No se pudo iniciar SRI reintento: " + e.getMessage()); }
         // Activacion solo en host (localhost). PC cliente con db.url remota (vendex-db) no requiere licencia local.

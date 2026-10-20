@@ -380,6 +380,18 @@
                         </graphic>
                         <Tooltip text="Guardar API key de Gemini/NVIDIA (cifrada) para el asistente IA"/>
                     </Button>
+                    <Button text="Consumo de IA" onAction="#irConsumoIa" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
+                        <graphic>
+                            <FontIcon iconLiteral="fas-chart-line" iconSize="16"/>
+                        </graphic>
+                        <Tooltip text="Tokens, costos y capacidad de la licencia de Vendexi AI"/>
+                    </Button>
+                    <Button text="Análisis IA" onAction="#irAnalisisIa" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
+                        <graphic>
+                            <FontIcon iconLiteral="fas-chart-pie" iconSize="16"/>
+                        </graphic>
+                        <Tooltip text="Rotación, agotamiento, márgenes y tendencias con periodos y limitaciones"/>
+                    </Button>
                 </VBox>
             </ScrollPane>
 

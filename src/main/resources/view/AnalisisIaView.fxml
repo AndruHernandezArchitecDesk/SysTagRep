@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.vendex.controller.AnalisisIaController" prefHeight="600.0" prefWidth="1100.0" style="-fx-padding: 10">
+  <top>
+    <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 5 0 10 0">
+      <Label text="Análisis empresarial IA" styleClass="titulo">
+        <graphic><FontIcon iconLiteral="fas-chart-pie" styleClass="titulo-icono"/></graphic>
+      </Label>
+      <Region HBox.hgrow="ALWAYS"/>
+      <Button fx:id="btnAnalizar" text="Analizar" onAction="#onAnalizar" style="-fx-font-weight: bold">
+        <graphic><FontIcon iconLiteral="fas-brain"/></graphic>
+      </Button>
+    </HBox>
+  </top>
+  <center>
+    <VBox spacing="10">
+      <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="Tipo de análisis:"/>
+        <ComboBox fx:id="cmbTipo" prefWidth="170"/>
+        <Label text="Periodo (días):"/>
+        <ComboBox fx:id="cmbDias" prefWidth="90"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="lblEstado" text="" style="-fx-text-fill: gray;"/>
+      </HBox>
+      <Label text="Resultado (IA)" style="-fx-font-weight: bold"/>
+      <TextArea fx:id="txtResultado" editable="false" wrapText="true" promptText="Selecciona el tipo de análisis y pulsa Analizar." VBox.vgrow="ALWAYS"/>
+      <Label text="Datos autorizados enviados al modelo (agregados; el modelo no accede a la BD)" style="-fx-font-weight: bold"/>
+      <TextArea fx:id="txtDatos" editable="false" wrapText="true" prefHeight="140" style="-fx-font-size: 11px;"/>
+    </VBox>
+  </center>
+</BorderPane>

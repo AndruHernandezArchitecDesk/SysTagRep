@@ -25,6 +25,7 @@ import com.vendex.util.ComboFilter;
 import com.vendex.util.AppConstants;
 import com.vendex.util.ThemeManager;
 import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -117,6 +118,7 @@ public class FacturaController implements Initializable {
     @FXML private ComboBox<Integer> cmbMesesPlazo;
     @FXML private ComboBox<String> cmbInteres;
     @FXML private ComboBox<String> cmbAmbiente;
+    private com.vendex.controller.VendexiSugerenciasPane vendexi;
 
     private final EmpresaDAO daoEmpresa;
     private final ClienteDAO daoCliente;
@@ -160,6 +162,86 @@ public class FacturaController implements Initializable {
         SortTable.agregarBotones(tblDetalle);
 
         cargarAmbiente();
+        configurarVendexi();
+    }
+
+    /** Fase 2 Vendexi AI — panel contextual en facturación. */
+    private void configurarVendexi() {
+        try {
+            vendexi = new com.vendex.controller.VendexiSugerenciasPane();
+            vendexi.setModulo("factura");
+            vendexi.setContextoProvider(this::contextoVendexi);
+            vendexi.setOnAgregarProducto(this::agregarSugeridoVendexi);
+            vendexi.setOnCopiarTexto(t -> {
+                if (txtBuscarProducto != null) {
+                    txtBuscarProducto.setText(t);
+                    txtBuscarProducto.requestFocus();
+                }
+            });
+            javafx.scene.layout.VBox contenido =
+                    com.vendex.controller.VendexiSugerenciasPane.localizarContenidoDesde(cmbCliente);
+            vendexi.insertarEn(contenido, 0);
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "No se pudo montar el panel Vendexi en factura", e);
+            vendexi = null;
+        }
+    }
+
+    private com.vendex.service.VendexiSugerenciaService.Contexto contextoVendexi() {
+        List<com.vendex.service.VendexiSugerenciaService.Linea> lineas = new ArrayList<>();
+        for (FacturaDetalle d : itemsDetalle) {
+            int stock = 0;
+            for (Inventario inv : listaInventario) {
+                if (inv.getId() == d.getInventarioId()) { stock = inv.getCantidad(); break; }
+            }
+            lineas.add(new com.vendex.service.VendexiSugerenciaService.Linea(
+                    d.getInventarioId(), d.getCodigo(), d.getDescripcion(),
+                    d.getCantidad(), d.getPrecioUnitario(), stock));
+        }
+        return new com.vendex.service.VendexiSugerenciaService.Contexto(
+                "factura", cmbCliente.getValue() != null, lineas);
+    }
+
+    /** Complementarios por IA tras agregar un producto (silencioso si IA no disponible). */
+    private void consultarComplementariosVendexi(Inventario agregado) {
+        if (vendexi == null) return;
+        com.vendex.service.VendexiSugerenciaService svc = new com.vendex.service.VendexiSugerenciaService();
+        if (!svc.esIaDisponible()) return;
+        java.util.Set<Integer> idsEnDoc = new java.util.HashSet<>();
+        for (FacturaDetalle d : itemsDetalle) idsEnDoc.add(d.getInventarioId());
+        List<Inventario> inventarioSnapshot = new ArrayList<>(listaInventario);
+        Thread hilo = new Thread(() -> {
+            List<com.vendex.service.VendexiSugerenciaService.Sugerencia> sugs =
+                    svc.sugerenciasComplementarias(agregado, inventarioSnapshot, idsEnDoc, null);
+            Platform.runLater(() -> {
+                if (!sugs.isEmpty()) {
+                    for (com.vendex.service.VendexiSugerenciaService.Sugerencia s : sugs) {
+                        vendexi.agregarSugerencia(s);
+                    }
+                    vendexi.estado("Sugerencias de la IA sobre \"" + agregado.getDescripcion()
+                            + "\" — la IA no garantiza compatibilidad.");
+                }
+            });
+        });
+        hilo.setDaemon(true);
+        hilo.start();
+    }
+
+    /** Agrega un producto sugerido por Vendexi (tras confirmación en el panel). */
+    private void agregarSugeridoVendexi(Inventario i) {
+        boolean existe = false;
+        for (FacturaDetalle d : itemsDetalle) {
+            if (d.getInventarioId() == i.getId()) {
+                d.setCantidad(d.getCantidad() + 1);
+                existe = true;
+                break;
+            }
+        }
+        if (!existe) {
+            itemsDetalle.add(new FacturaDetalle(i.getId(), i.getCodigo(), i.getDescripcion(), 1, i.getPrecioVenta()));
+        }
+        tblDetalle.refresh();
+        calcularTotales();
     }
 
     private void cargarAmbiente() {
@@ -383,6 +465,7 @@ public class FacturaController implements Initializable {
 
                 tblDetalle.refresh();
                 calcularTotales();
+                consultarComplementariosVendexi(i);
             } catch (NumberFormatException ignored) {
                 LOGGER.log(Level.WARNING, "Cantidad invalida ingresada", ignored);
             }

@@ -32,8 +32,10 @@ public class LicenseActivatorController {
             return;
         }
         String cleanKey = key.trim();
+        LicenseManager.LicenseInfo info = LicenseManager.getInfoDeClave(
+                LicenseManager.getMachineCode(), cleanKey);
         if (LicenseManager.isPerpetua(cleanKey)) {
-            lblStatus.setText("Licencia VITALICIA — no expira.");
+            lblStatus.setText("Licencia VITALICIA — no expira." + detallesVendexi(info));
             lblStatus.setStyle("");
             return;
         }
@@ -43,12 +45,25 @@ public class LicenseActivatorController {
                 lblStatus.setText("Esta licencia ya venció (" + vencimiento + ").");
                 lblStatus.setStyle("");
             } else {
-                lblStatus.setText("Licencia válida hasta: " + vencimiento);
+                lblStatus.setText("Licencia válida hasta: " + vencimiento + detallesVendexi(info));
                 lblStatus.setStyle("");
             }
         } else {
             lblStatus.setText("");
         }
+    }
+
+    private String detallesVendexi(LicenseManager.LicenseInfo info) {
+        if (info == null || !info.version2) return "";
+        StringBuilder sb = new StringBuilder(" · ").append(info.modalidad);
+        sb.append(info.incluyeIA ? " · Vendexi AI incluida" : " · sin Vendexi AI");
+        if (info.incluyeIA && !info.rolesIA.isEmpty()) {
+            sb.append(" · roles: ").append(String.join(",", info.rolesIA));
+        }
+        if (info.incluyeIA && info.capacidadIA > 0) {
+            sb.append(" · capacidad: ").append(info.capacidadIA);
+        }
+        return sb.toString();
     }
 
     private void activate() {
@@ -72,9 +87,11 @@ public class LicenseActivatorController {
         if (LicenseManager.validateLicenseKey(code, key)) {
             LicenseManager.saveActivation(code, key);
             activated = true;
+            LicenseManager.LicenseInfo info = LicenseManager.getInfoDeClave(code, key);
             String msg = perpetua
                     ? "Licencia VITALICIA activada correctamente."
                     : "Licencia activada correctamente (vence: " + vencimiento + ").";
+            msg += detallesVendexi(info);
             lblStatus.setText(msg);
             lblStatus.setStyle("");
             Stage stage = (Stage) btnActivate.getScene().getWindow();

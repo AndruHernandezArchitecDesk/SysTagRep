@@ -77,6 +77,7 @@ public class AppContext {
     public final VehiculoDAO vehiculoDAO;
     public final InventarioVehiculoDAO inventarioVehiculoDAO;
     public final SecuenciaBloqueDAO secuenciaBloqueDAO;
+    public final VendexiConsumoDAO vendexiConsumoDAO;
 
     // Servicios
     public final FacturaService facturaService;
@@ -89,6 +90,8 @@ public class AppContext {
     public final CajaService cajaService;
     public final CertificadoAlertaService certificadoAlertaService;
     public final ServicioReintentoSri servicioReintentoSri;
+    public final VendexiConsumoService vendexiConsumoService;
+    public final AnalisisEmpresarialService analisisEmpresarialService;
 
     private AppContext() {
         // DAOs (Postgres locales o Rest segun modoRemoto)
@@ -146,6 +149,8 @@ public class AppContext {
         this.transferenciaInventarioDAO = dao(() -> new TransferenciaInventarioDAOPostgres(), () -> new TransferenciaInventarioDAORest(restClient));
         this.vehiculoDAO = dao(() -> new VehiculoDAOPostgres(), () -> new VehiculoDAORest(restClient));
         this.inventarioVehiculoDAO = dao(() -> new InventarioVehiculoDAOPostgres(), () -> new InventarioVehiculoDAORest(restClient));
+        // Medición Vendexi (solo local por ahora; modalidad central llega con Fase 6)
+        this.vendexiConsumoDAO = new VendexiConsumoDAOPostgres();
 
         // Servicios con inyección por constructor
         this.facturaService = new FacturaService(
@@ -180,6 +185,9 @@ public class AppContext {
                 comprobantePendienteSriDAO, comprobanteDAO, facturaRegistroDAO,
                 notaCreditoRegistroDAO, notaDebitoRegistroDAO, guiaRemisionRegistroDAO, retencionRegistroDAO
         );
+        this.vendexiConsumoService = new VendexiConsumoService(vendexiConsumoDAO);
+        this.analisisEmpresarialService = new AnalisisEmpresarialService(
+                inventarioDAO, dashboardDAO, historialProductoDAO, vendexiConsumoService);
     }
 
     public static AppContext getInstance() {

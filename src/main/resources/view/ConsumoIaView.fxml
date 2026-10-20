@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.vendex.controller.ConsumoIaController" prefHeight="600.0" prefWidth="1100.0" style="-fx-padding: 10">
+  <top>
+    <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 5 0 10 0">
+      <Label text="Consumo de IA" styleClass="titulo">
+        <graphic><FontIcon iconLiteral="fas-chart-line" styleClass="titulo-icono"/></graphic>
+      </Label>
+      <Region HBox.hgrow="ALWAYS"/>
+      <Button fx:id="btnRenovar" text="Renovar periodo" onAction="#onRenovarPeriodo">
+        <graphic><FontIcon iconLiteral="fas-redo"/></graphic>
+        <Tooltip text="Reinicia el contador del periodo de capacidad (administrador)"/>
+      </Button>
+      <Button fx:id="btnActualizar" text="Actualizar" onAction="#onActualizar">
+        <graphic><FontIcon iconLiteral="fas-sync-alt"/></graphic>
+      </Button>
+    </HBox>
+  </top>
+  <center>
+    <VBox spacing="10">
+      <GridPane hgap="14" vgap="8" style="-fx-padding: 8; -fx-background-color: #f6f8fa; -fx-background-radius: 6;">
+        <columnConstraints>
+          <ColumnConstraints minWidth="140" prefWidth="140"/>
+          <ColumnConstraints minWidth="180" hgrow="SOMETIMES"/>
+        </columnConstraints>
+        <Label text="Capacidad de la licencia:" style="-fx-font-weight: bold" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <Label fx:id="lblCapacidad" text="—" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+        <Label text="Consumido en el periodo:" style="-fx-font-weight: bold" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+        <Label fx:id="lblConsumido" text="—" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+        <Label text="Restante:" style="-fx-font-weight: bold" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+        <Label fx:id="lblRestante" text="—" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+        <Label text="Costo estimado del periodo:" style="-fx-font-weight: bold" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+        <Label fx:id="lblCosto" text="—" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+        <Label text="Inicio del periodo:" style="-fx-font-weight: bold" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+        <Label fx:id="lblInicio" text="—" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+        <Label text="Precios de referencia:" style="-fx-font-weight: bold" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
+        <Label fx:id="lblPrecios" text="—" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
+      </GridPane>
+      <Label text="Últimas operaciones de IA" style="-fx-font-weight: bold"/>
+      <TableView fx:id="tblConsumo" VBox.vgrow="ALWAYS">
+        <columns>
+          <TableColumn fx:id="colFecha" text="Fecha" prefWidth="150"/>
+          <TableColumn fx:id="colModulo" text="Módulo" prefWidth="110"/>
+          <TableColumn fx:id="colOperacion" text="Operación" prefWidth="140"/>
+          <TableColumn fx:id="colModelo" text="Modelo" prefWidth="170"/>
+          <TableColumn fx:id="colTokensIn" text="Tokens entrada" prefWidth="110"/>
+          <TableColumn fx:id="colTokensOut" text="Tokens salida" prefWidth="110"/>
+          <TableColumn fx:id="colCosto" text="Costo est. (USD)" prefWidth="120"/>
+        </columns>
+        <placeholder>
+          <Label text="Sin operaciones registradas en este periodo."/>
+        </placeholder>
+      </TableView>
+    </VBox>
+  </center>
+</BorderPane>

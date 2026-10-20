@@ -34,6 +34,8 @@ public class VendexControllerFactory implements Callback<Class<?>, Object> {
             if (type == CodigoController.class) return new CodigoController(ctx);
             if (type == ComprobanteVentaReporteController.class) return new ComprobanteVentaReporteController(ctx);
             if (type == ConfiguracionEmailController.class) return new ConfiguracionEmailController(ctx);
+            if (type == ConsumoIaController.class) return new ConsumoIaController(ctx);
+            if (type == AnalisisIaController.class) return new AnalisisIaController(ctx);
             if (type == Dashboard2Controller.class) return new Dashboard2Controller(ctx);
             if (type == DashboardController.class) return new DashboardController(ctx);
             if (type == EmpresaController.class) return new EmpresaController(ctx);

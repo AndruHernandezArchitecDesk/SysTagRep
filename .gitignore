@@ -42,6 +42,16 @@ postgres.properties
 contingencia.properties
 backup.properties
 
+### Secretos / certificados ###
+*.p12
+*.jks
+*.pem
+*.crt
+*.key
+gemini.properties
+nvidia.properties
+.env
+
 ### VS Code ###
 .vscode/
 

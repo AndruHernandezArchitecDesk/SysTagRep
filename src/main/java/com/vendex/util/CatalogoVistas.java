@@ -53,6 +53,8 @@ public final class CatalogoVistas {
         m.put("Firma Electrónica", "/view/FirmaView.fxml");
         m.put("Correo Electrónico", "/view/ConfiguracionEmailView.fxml");
         m.put("Respaldos", "/view/BackupView.fxml");
+        m.put("Consumo de IA", "/view/ConsumoIaView.fxml");
+        m.put("Análisis IA", "/view/AnalisisIaView.fxml");
         RUTA_POR_TITULO = Collections.unmodifiableMap(m);
     }
 

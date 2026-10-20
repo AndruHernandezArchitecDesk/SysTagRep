@@ -383,6 +383,13 @@ public class MainController implements Initializable {
 
     @FXML
     private void irConfigurarIA() {
+        if (!com.vendex.util.LicenseManager.licenciaIncluyeIA()) {
+            new Alert(Alert.AlertType.INFORMATION,
+                    "La licencia de esta instalación no incluye Vendexi AI.\n" +
+                    "Para habilitar el asistente inteligente, contacte al administrador de Vendex.",
+                    ButtonType.OK).showAndWait();
+            return;
+        }
         javafx.scene.control.ChoiceDialog<String> tipoDlg = new javafx.scene.control.ChoiceDialog<>("Gemini", "Gemini", "NVIDIA");
         tipoDlg.setTitle("Configurar IA");
         tipoDlg.setHeaderText("Seleccione proveedor");
@@ -416,6 +423,16 @@ public class MainController implements Initializable {
                 }
             }
         }
+    }
+
+    @FXML
+    private void irConsumoIa() {
+        cargarVista("/view/ConsumoIaView.fxml");
+    }
+
+    @FXML
+    private void irAnalisisIa() {
+        cargarVista("/view/AnalisisIaView.fxml");
     }
 
     @FXML
@@ -967,6 +984,8 @@ public class MainController implements Initializable {
             case "/view/InventarioView.fxml", "/view/GestionStockView.fxml", "/view/UbicacionPercheroView.fxml" -> "INVENTARIO_AJUSTAR";
             case "/view/UsuariosView.fxml", "/view/GestionRolesView.fxml" -> "USUARIO_GESTIONAR";
             case "/view/ConfiguracionEmailView.fxml", "/view/FirmaView.fxml", "/view/NumeracionView.fxml", "/view/BackupView.fxml" -> "CONFIGURACION_EMAIL_EDITAR";
+            case "/view/ConsumoIaView.fxml" -> "USUARIO_GESTIONAR";
+            case "/view/AnalisisIaView.fxml" -> "REPORTE_VER";
             case "/view/DashboardView.fxml", "/view/Dashboard2View.fxml" -> "REPORTE_VER";
             default -> null;
         };

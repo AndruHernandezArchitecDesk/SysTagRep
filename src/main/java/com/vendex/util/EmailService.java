@@ -19,12 +19,6 @@ public class EmailService {
     private static volatile ConfiguracionEmail cachedConfig;
     private static final Object CACHE_LOCK = new Object();
 
-    // Fallback legacy (solo si no hay fila activa y para compatibilidad tests sin BD)
-    private static final String FALLBACK_REMITENTE = "tagrepuestosvick@gmail.com";
-    private static final String FALLBACK_PASSWORD = "awnfnmidbtqyyclz";
-    private static final String FALLBACK_HOST = "smtp.gmail.com";
-    private static final int FALLBACK_PORT = 587;
-
     private String ultimoError;
 
     public String getUltimoError() {
@@ -111,16 +105,9 @@ public class EmailService {
                 return false;
             }
         } else {
-            // Fallback legacy solo si no hay configuración en BD (primer arranque sin migrar o test sin BD)
-            LOGGER.warning("Sin configuracion_email activa, usando fallback legacy. Configure el correo en Administración → Correo Electrónico.");
-            host = FALLBACK_HOST;
-            puerto = FALLBACK_PORT;
-            usarTls = true;
-            remitente = FALLBACK_REMITENTE;
-            nombreRemitente = "Vendex Repuestos";
-            usuario = FALLBACK_REMITENTE;
-            passwordPlano = FALLBACK_PASSWORD;
-            replyTo = null;
+            ultimoError = "Sin configuración de correo activa. Vaya a Administración → Correo Electrónico y configure la cuenta SMTP.";
+            LOGGER.warning("Sin configuracion_email activa; envio cancelado. Configure el correo en Administración → Correo Electrónico.");
+            return false;
         }
 
         Properties props = new Properties();

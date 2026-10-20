@@ -43,11 +43,28 @@ public class GeminiChatbotService {
     private final HttpClient httpClient;
     private volatile EstadoIA estado = EstadoIA.SIN_API_KEY;
     private volatile String ultimoError = "";
+    private volatile com.vendex.service.VendexiConsumoService consumo;
 
     public GeminiChatbotService(RepuestoDao repuestoDao) {
         this.repuestoDao = repuestoDao;
         this.httpClient = HttpClient.newBuilder().connectTimeout(TIMEOUT).build();
         actualizarEstadoInicial();
+    }
+
+    /** Fase 3: medición/capacidad — lazy para no acoplar AppContext en tests del chatbot. */
+    private com.vendex.service.VendexiConsumoService consumoService() {
+        if (consumo == null) {
+            synchronized (this) {
+                if (consumo == null) {
+                    try {
+                        consumo = com.vendex.config.AppContext.getInstance().vendexiConsumoService;
+                    } catch (Exception e) {
+                        consumo = new com.vendex.service.VendexiConsumoService(new com.vendex.dao.VendexiConsumoDAOPostgres());
+                    }
+                }
+            }
+        }
+        return consumo;
     }
 
     private void actualizarEstadoInicial() {
@@ -117,6 +134,22 @@ public class GeminiChatbotService {
     public String preguntar(String textoUsuario, String vehMarca, String vehModelo, Integer vehAnio) {
         if (textoUsuario == null || textoUsuario.isBlank()) {
             return "Escribe el nombre del repuesto que buscas, ej: 'tapa radiador aveo'.";
+        }
+        // Fase 1: gate de licencia — si la licencia no incluye Vendexi AI, no se llama al proveedor.
+        // La búsqueda local (función ERP permitida) sigue disponible.
+        if (!com.vendex.util.LicenseManager.licenciaIncluyeIA()) {
+            estado = EstadoIA.SIN_API_KEY;
+            ultimoError = "La licencia de esta instalación no incluye Vendexi AI";
+            return "ℹ️ La licencia de esta instalación no incluye Vendexi AI.\n" +
+                   "Búsqueda local en inventario:\n" + preguntarSoloLocal(textoUsuario, vehMarca, vehModelo, vehAnio);
+        }
+        // Fase 3: gate de capacidad asignada (spec §10.2) — el ERP local sigue disponible.
+        if (!consumoService().hayCapacidadDisponible()) {
+            estado = EstadoIA.SIN_IA_TOKENS;
+            ultimoError = com.vendex.service.VendexiConsumoService.mensajeCapacidadAgotada();
+            return "⚠️ capacidad de IA agotada\n" +
+                   com.vendex.service.VendexiConsumoService.mensajeCapacidadAgotada() + "\n\n" +
+                   "Búsqueda local en inventario:\n" + preguntarSoloLocal(textoUsuario, vehMarca, vehModelo, vehAnio);
         }
         String apiKey = GeminiConfig.obtenerApiKey();
         boolean tieneGemini = apiKey != null && !apiKey.isBlank();
@@ -347,6 +380,13 @@ public class GeminiChatbotService {
         if (code != 200) throw new GeminiException(EstadoIA.SIN_IA_SERVIDOR, "HTTP " + code + ": " + b);
 
         JsonNode respRoot = MAPPER.readTree(b);
+        // Fase 3: medición de tokens (best-effort; spec §10.1)
+        try {
+            JsonNode usage = respRoot.path("usageMetadata");
+            long tin = usage.path("promptTokenCount").asLong(0);
+            long tout = usage.path("candidatesTokenCount").asLong(0);
+            consumoService().registrarTokens("chatbot", "chat", modelo, tin, tout);
+        } catch (Exception ignored) {}
         JsonNode candidates = respRoot.path("candidates");
         if (candidates.isArray() && !candidates.isEmpty()) {
             JsonNode respParts = candidates.get(0).path("content").path("parts");

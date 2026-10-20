@@ -23,6 +23,7 @@ import com.vendex.util.SortTable;
 import com.vendex.util.ComboFilter;
 import com.vendex.util.ThemeManager;
 import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -125,6 +126,7 @@ public class NotaVentaController implements Initializable {
     @FXML private ComboBox<String> cmbDescuento;
     @FXML private HBox pnlCredito;
     @FXML private ComboBox<Integer> cmbMesesPlazo;
+    private com.vendex.controller.VendexiSugerenciasPane vendexi;
     @FXML private ComboBox<String> cmbInteres;
 
     private final EmpresaDAO daoEmpresa;
@@ -185,6 +187,95 @@ public class NotaVentaController implements Initializable {
         tblDetalle.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         SortTable.agregarBotones(tblInventarioBusqueda);
         SortTable.agregarBotones(tblDetalle);
+        configurarVendexi();
+    }
+
+    /** Fase 2 Vendexi AI — panel contextual en proformas. */
+    private void configurarVendexi() {
+        try {
+            vendexi = new com.vendex.controller.VendexiSugerenciasPane();
+            vendexi.setModulo("proforma");
+            vendexi.setContextoProvider(this::contextoVendexi);
+            vendexi.setOnAgregarProducto(this::agregarSugeridoVendexi);
+            vendexi.setOnCopiarTexto(t -> {
+                if (txtBuscarProducto != null) {
+                    txtBuscarProducto.setText(t);
+                    txtBuscarProducto.requestFocus();
+                }
+            });
+            javafx.scene.layout.VBox contenido =
+                    com.vendex.controller.VendexiSugerenciasPane.localizarContenidoDesde(cmbCliente);
+            vendexi.insertarEn(contenido, 0);
+        } catch (Exception e) {
+            java.util.logging.Logger.getLogger(NotaVentaController.class.getName())
+                    .log(java.util.logging.Level.WARNING, "No se pudo montar el panel Vendexi en proforma", e);
+            vendexi = null;
+        }
+    }
+
+    private com.vendex.service.VendexiSugerenciaService.Contexto contextoVendexi() {
+        List<com.vendex.service.VendexiSugerenciaService.Linea> lineas = new ArrayList<>();
+        for (DetalleVenta d : itemsDetalle) {
+            int stock = 0;
+            for (Inventario inv : listaInventario) {
+                if (inv.getId() == d.getProductoId()) { stock = inv.getCantidad(); break; }
+            }
+            lineas.add(new com.vendex.service.VendexiSugerenciaService.Linea(
+                    d.getProductoId(), d.getCodigo(), d.getDescripcion(),
+                    d.getCantidad(), d.getPrecioUnitario(), stock));
+        }
+        return new com.vendex.service.VendexiSugerenciaService.Contexto(
+                "proforma", cmbCliente.getValue() != null, lineas);
+    }
+
+    /** Complementarios por IA tras agregar un producto (silencioso si IA no disponible). */
+    private void consultarComplementariosVendexi(Inventario agregado) {
+        if (vendexi == null) return;
+        com.vendex.service.VendexiSugerenciaService svc = new com.vendex.service.VendexiSugerenciaService();
+        if (!svc.esIaDisponible()) return;
+        java.util.Set<Integer> idsEnDoc = new java.util.HashSet<>();
+        for (DetalleVenta d : itemsDetalle) idsEnDoc.add(d.getProductoId());
+        List<Inventario> inventarioSnapshot = new ArrayList<>(listaInventario);
+        StringBuilder veh = new StringBuilder();
+        String m = valorVeh(cmbProdVehMarca != null ? cmbProdVehMarca.getValue() : null);
+        String mo = valorVeh(cmbProdVehModelo != null ? cmbProdVehModelo.getValue() : null);
+        Integer an = cmbProdVehAnio != null ? cmbProdVehAnio.getValue() : null;
+        if (m != null) veh.append(m);
+        if (mo != null) veh.append(' ').append(mo);
+        if (an != null) veh.append(' ').append(an);
+        String contextoVeh = veh.toString().isBlank() ? null : veh.toString().trim();
+        Thread hilo = new Thread(() -> {
+            List<com.vendex.service.VendexiSugerenciaService.Sugerencia> sugs =
+                    svc.sugerenciasComplementarias(agregado, inventarioSnapshot, idsEnDoc, contextoVeh);
+            Platform.runLater(() -> {
+                if (!sugs.isEmpty()) {
+                    for (com.vendex.service.VendexiSugerenciaService.Sugerencia s : sugs) {
+                        vendexi.agregarSugerencia(s);
+                    }
+                    vendexi.estado("Sugerencias de la IA sobre \"" + agregado.getDescripcion()
+                            + "\" — la IA no garantiza compatibilidad.");
+                }
+            });
+        });
+        hilo.setDaemon(true);
+        hilo.start();
+    }
+
+    /** Agrega un producto sugerido por Vendexi (tras confirmación en el panel). */
+    private void agregarSugeridoVendexi(Inventario i) {
+        boolean existe = false;
+        for (DetalleVenta d : itemsDetalle) {
+            if (d.getProductoId() == i.getId()) {
+                d.setCantidad(d.getCantidad() + 1);
+                existe = true;
+                break;
+            }
+        }
+        if (!existe) {
+            itemsDetalle.add(new DetalleVenta(i.getId(), i.getCodigo(), i.getDescripcion(), 1, i.getPrecioVenta()));
+        }
+        tblDetalle.refresh();
+        calcularTotales();
     }
 
     private void cargarFormasPago() {
@@ -486,6 +577,7 @@ public class NotaVentaController implements Initializable {
 
                 tblDetalle.refresh();
                 calcularTotales();
+                consultarComplementariosVendexi(i);
             } catch (NumberFormatException ignored) {}
         });
     }
