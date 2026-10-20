@@ -74,8 +74,47 @@ public class ApiServer {
 
         app = Javalin.create(cfg -> {
             cfg.http.defaultContentType = "application/json";
-            cfg.bundledPlugins.enableCors(cors -> cors.addRule(it -> it.anyHost()));
+            // Aislamiento: por defecto solo escucha en localhost (spec §13.2);
+            // -Dapi.bind=0.0.0.0 para exponer (solo tras endurecer red/TLS).
+            // Aislamiento: por defecto solo escucha en localhost (spec §13.2);
+            // -Dapi.bind=0.0.0.0 para exponer (solo tras endurecer red/TLS).
+            cfg.jetty.defaultHost = System.getProperty("api.bind", "localhost");
+            // CORS se habilita explícitamente: -Dapi.cors=true (nativos no lo necesitan)
+            if ("true".equalsIgnoreCase(System.getProperty("api.cors",
+                    System.getenv().getOrDefault("API_CORS", "false")))) {
+                cfg.bundledPlugins.enableCors(cors -> cors.addRule(it -> it.anyHost()));
+            }
         });
+
+        // ===== Fase 6: autenticación + autorización + aislamiento por hilo =====
+        app.before("/*", c -> {
+            // Limpieza defensiva: nunca heredar sesión de una petición anterior del mismo hilo
+            com.vendex.util.SesionActual.cerrarApi();
+            String metodo = c.method().name();
+            String path = c.path();
+            if (com.vendex.api.ApiAuthService.esPublico(metodo, path)) return;
+            String token = com.vendex.api.ApiAuthService.extraerBearer(c.header("Authorization"));
+            com.vendex.api.ApiAuthService.Claims claims = com.vendex.api.ApiAuthService.verificar(token);
+            if (claims == null) {
+                throw new com.vendex.api.ApiAuthException(401, "No autenticado o token inválido");
+            }
+            com.vendex.model.Usuario u = AppContext.getInstance().usuarioDAO.obtenerPorId(claims.userId());
+            if (u == null || !u.isEstado()) {
+                throw new com.vendex.api.ApiAuthException(401, "Usuario inexistente o desactivado");
+            }
+            // Sesión por-hilo: aislamiento entre peticiones concurrentes (UI no se toca)
+            com.vendex.util.SesionActual.iniciarApi(u, claims.sucursalId(), claims.puntoEmisionId());
+            String permiso = com.vendex.api.ApiAuthService.permisoRequerido(metodo, path);
+            if (permiso != null && !com.vendex.util.SesionActual.tienePermiso(permiso)) {
+                try {
+                    new com.vendex.dao.AuditoriaAccionDAOPostgres().registrar(u.getId(), permiso, "DENEGADO",
+                            "API " + metodo + " " + path);
+                } catch (Exception ignored) {}
+                throw new com.vendex.api.ApiAuthException(403,
+                        "Permiso requerido para esta operación: " + permiso);
+            }
+        });
+        app.after("/*", c -> com.vendex.util.SesionActual.cerrarApi());
 
         app.get("/api/health", ctx2 -> ctx2.json(java.util.Map.of("status", "UP", "sucursales", ctx.sucursalDAO.listar().size())));
 
@@ -189,6 +228,9 @@ public class ApiServer {
         app.get("/api/secuencia-documento/bloque-disponible", secuenciaCtrl::obtenerBloqueDisponible);
         app.get("/api/secuencia-documento/bloques", secuenciaCtrl::listarBloques);
         app.post("/api/secuencia-documento/bloques/liberar-expirados", secuenciaCtrl::liberarExpirados);
+
+        app.exception(com.vendex.api.ApiAuthException.class, (e, ctx2) ->
+                ctx2.status(e.status).json(java.util.Map.of("error", e.getMessage())));
 
         app.exception(Exception.class, (e, ctx2) -> {
             LOG.log(Level.WARNING, "API error", e);

@@ -22,6 +22,19 @@ public class AppContext {
         return modoRemoto ? remote.get() : local.get();
     }
 
+    /** Fase 6: en modo remoto, auto-login contra la API central (credenciales por env/props). */
+    private static void autenticarSiRemoto() {
+        String u = System.getProperty("api.user", System.getenv().getOrDefault("VENDEX_API_USER", ""));
+        String p = System.getProperty("api.pass", System.getenv().getOrDefault("VENDEX_API_PASS", ""));
+        if (u.isBlank()) {
+            System.err.println("Vendex: modo remoto sin api.user/VENDEX_API_USER — las llamadas API devolverán 401");
+            return;
+        }
+        if (!com.vendex.remote.RestClient.login(com.vendex.remote.ApiConfig.host(), u, p)) {
+            System.err.println("Vendex: auto-login API fallido para '" + u + "'");
+        }
+    }
+
     // DAOs
     public final FacturaRegistroDAO facturaRegistroDAO;
     public final FacturaDetalleDAO facturaDetalleDAO;
@@ -94,6 +107,7 @@ public class AppContext {
     public final AnalisisEmpresarialService analisisEmpresarialService;
 
     private AppContext() {
+        if (modoRemoto) autenticarSiRemoto();
         // DAOs (Postgres locales o Rest segun modoRemoto)
         this.facturaRegistroDAO = dao(() -> new FacturaRegistroDAOPostgres(), () -> new FacturaRegistroDAORest(restClient));
         this.facturaDetalleDAO = dao(() -> new FacturaDetalleDAOPostgres(), () -> new FacturaDetalleDAORest(restClient));

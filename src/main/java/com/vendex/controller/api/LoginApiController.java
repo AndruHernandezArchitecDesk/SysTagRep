@@ -29,13 +29,34 @@ public class LoginApiController {
                 ctx.status(400).json(Map.of("error", "username y password son obligatorios"));
                 return;
             }
+            // Anti fuerza bruta (Fase 6): bloqueo por intentos
+            Usuario previo = usuarioDAO.buscarPorUsername(username);
+            if (previo != null && previo.getBloqueadoHasta() != null
+                    && previo.getBloqueadoHasta().isAfter(java.time.LocalDateTime.now())) {
+                ctx.status(423).json(Map.of("error",
+                        "Cuenta bloqueada hasta " + previo.getBloqueadoHasta().withNano(0)));
+                return;
+            }
             Usuario u = usuarioDAO.autenticar(username, password);
             if (u == null) {
+                if (previo != null) {
+                    usuarioDAO.incrementarIntentoFallido(previo.getId());
+                    int intentos = previo.getIntentosFallidos() + 1;
+                    if (intentos >= 5) {
+                        usuarioDAO.bloquear(previo.getId(), java.time.LocalDateTime.now().plusMinutes(15));
+                    }
+                }
                 ctx.status(401).json(Map.of("error", "Credenciales inválidas"));
                 return;
             }
-            SesionActual.iniciar(u);
+            usuarioDAO.resetearIntentos(u.getId());
+            // Sesión por-hilo (aislamiento API) — no altera la sesión global de la UI local
+            SesionActual.iniciarApi(u, u.getSucursalId(), null);
+            String token = com.vendex.api.ApiAuthService.crearToken(u, u.getSucursalId(), null);
             Map<String, Object> resp = new java.util.LinkedHashMap<>();
+            resp.put("token", token);
+            resp.put("tokenType", "Bearer");
+            resp.put("expiraEnMinutos", Long.getLong("api.token.ttl.minutos", 720L));
             resp.put("id", u.getId());
             resp.put("username", u.getUsername());
             resp.put("nombre", u.getNombre() + " " + (u.getApellido() != null ? u.getApellido() : ""));
@@ -51,7 +72,9 @@ public class LoginApiController {
     }
 
     public void logout(Context ctx) {
-        SesionActual.cerrar();
+        String token = com.vendex.api.ApiAuthService.extraerBearer(ctx.header("Authorization"));
+        if (token != null) com.vendex.api.ApiAuthService.revocar(token);
+        SesionActual.cerrarApi();
         ctx.json(Map.of("ok", true));
     }
 
