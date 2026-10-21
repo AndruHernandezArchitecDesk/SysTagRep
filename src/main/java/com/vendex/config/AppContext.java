@@ -91,6 +91,7 @@ public class AppContext {
     public final InventarioVehiculoDAO inventarioVehiculoDAO;
     public final SecuenciaBloqueDAO secuenciaBloqueDAO;
     public final VendexiConsumoDAO vendexiConsumoDAO;
+    public final LicenciaCentralDAO licenciaCentralDAO;
 
     // Servicios
     public final FacturaService facturaService;
@@ -165,6 +166,8 @@ public class AppContext {
         this.inventarioVehiculoDAO = dao(() -> new InventarioVehiculoDAOPostgres(), () -> new InventarioVehiculoDAORest(restClient));
         // Medición Vendexi (solo local por ahora; modalidad central llega con Fase 6)
         this.vendexiConsumoDAO = new VendexiConsumoDAOPostgres();
+        // Fase 6b: administración central de licencias (siempre local en la instancia central)
+        this.licenciaCentralDAO = new LicenciaCentralDAOPostgres();
 
         // Servicios con inyección por constructor
         this.facturaService = new FacturaService(

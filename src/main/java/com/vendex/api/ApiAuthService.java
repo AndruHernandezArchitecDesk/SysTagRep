@@ -178,8 +178,12 @@ public final class ApiAuthService {
      * GET → solo autenticar (null). Escrituras → permiso del módulo ERP.
      */
     public static String permisoRequerido(String method, String path) {
-        if (path == null || "GET".equalsIgnoreCase(method) || "HEAD".equalsIgnoreCase(method)) return null;
+        if (path == null) return null;
         String p = path.toLowerCase();
+        // Fase 6b: reglas de administración que aplican también a GET
+        if (p.startsWith("/api/licencias/validar")) return null; // clientes CENTRAL autenticados validan su clave
+        if (p.startsWith("/api/licencias") || p.startsWith("/api/respaldos")) return "USUARIO_GESTIONAR";
+        if ("GET".equalsIgnoreCase(method) || "HEAD".equalsIgnoreCase(method)) return null;
         if (p.startsWith("/api/facturas")) return "FACTURA_EMITIR";
         if (p.startsWith("/api/nota-venta")) return "FACTURA_EMITIR";
         if (p.startsWith("/api/nota-credito")) return "NOTA_CREDITO_EMITIR";

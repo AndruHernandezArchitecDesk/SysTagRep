@@ -1,5 +1,6 @@
 package com.vendex.config;
 
+import com.vendex.controller.api.BackupApiController;
 import com.vendex.controller.api.CajaApiController;
 import com.vendex.controller.api.ClienteApiController;
 import com.vendex.controller.api.ComprobanteApiController;
@@ -11,6 +12,7 @@ import com.vendex.controller.api.FacturaDetalleApiController;
 import com.vendex.controller.api.GuiaRemisionApiController;
 import com.vendex.controller.api.HistorialProductoApiController;
 import com.vendex.controller.api.InventarioApiController;
+import com.vendex.controller.api.LicenciaCentralApiController;
 import com.vendex.controller.api.LogApiController;
 import com.vendex.controller.api.LoginApiController;
 import com.vendex.controller.api.NotaCreditoApiController;
@@ -71,11 +73,12 @@ public class ApiServer {
         SecuenciaDocumentoApiController secuenciaCtrl = new SecuenciaDocumentoApiController(ctx);
         EmpresaApiController empresaCtrl = new EmpresaApiController(ctx);
         LogApiController logCtrl = new LogApiController(ctx);
+        LicenciaCentralApiController licenciasCtrl = new LicenciaCentralApiController(
+                new com.vendex.service.LicenciaCentralService(ctx.licenciaCentralDAO));
+        BackupApiController backupCtrl = new BackupApiController();
 
         app = Javalin.create(cfg -> {
             cfg.http.defaultContentType = "application/json";
-            // Aislamiento: por defecto solo escucha en localhost (spec §13.2);
-            // -Dapi.bind=0.0.0.0 para exponer (solo tras endurecer red/TLS).
             // Aislamiento: por defecto solo escucha en localhost (spec §13.2);
             // -Dapi.bind=0.0.0.0 para exponer (solo tras endurecer red/TLS).
             cfg.jetty.defaultHost = System.getProperty("api.bind", "localhost");
@@ -121,6 +124,16 @@ public class ApiServer {
         app.post("/api/auth/login", loginCtrl::login);
         app.post("/api/auth/logout", loginCtrl::logout);
         app.get("/api/auth/me", loginCtrl::me);
+
+        // Fase 6b: administración central de licencias + respaldos
+        app.post("/api/licencias/emitir", licenciasCtrl::emitir);
+        app.post("/api/licencias/revocar", licenciasCtrl::revocar);
+        app.get("/api/licencias/validar", licenciasCtrl::validar);
+        app.post("/api/licencias/validar", licenciasCtrl::validar);
+        app.get("/api/licencias/emitidas", licenciasCtrl::listarEmitidas);
+        app.get("/api/licencias/revocadas", licenciasCtrl::listarRevocadas);
+        app.post("/api/respaldos", backupCtrl::ejecutar);
+        app.get("/api/respaldos", backupCtrl::listar);
 
         app.get("/api/sucursales", sucursalCtrl::listar);
         app.get("/api/sucursales/{id}", sucursalCtrl::obtenerPorId);

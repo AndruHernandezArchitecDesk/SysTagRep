@@ -46,15 +46,46 @@ respaldos quedan en 6b).
 - `POST /api/auth/logout` → revoca el `jti`
 - `GET /api/auth/me` → usuario de la petición actual
 
-## Verificación
-- `ApiAuthServiceTest` (9): roundtrip de claims, token alterado/expirado/vacío,
-  revocación por jti, Bearer, paths públicos, matriz de permisos.
-- `SesionActualAislamientoTest` (5): no compartido entre hilos, logout API no
-  borra sesión global de UI, sucursal/punto por hilo.
-- Suite completa: `./mvnw test` → **248 tests, 0 fallos**.
+## Fase 6b — licencias centrales, respaldos y resiliencia
 
-## Pendiente (6b)
-- Administración **central de licencias** (endpoint oficial de emisión/revocación).
-- **Respaldos**, recuperación y pruebas de fallos de conexión (spec §16).
+### Administración central de licencias
+- Tablas `licencia_emitida` (hash SHA-256 de la clave, nunca la clave en claro) y
+  `licencia_revocada` (por machineCode, con motivo) — migración
+  `V37__licencias_centrales.sql` + `DatabaseConnection.ensureLicenciasCentralSchema()`.
+- `LicenciaCentralService`:
+  - `emitir(machineCode, LOCAL|CENTRAL, incluyeIA, roles[], capacidad, expiracion|null)`
+    → genera clave v2 con el HMAC de la instancia central y registra la emisión.
+  - `validarCentral(machineCode, clave)` → firma (LicenseManager) **y** revocación;
+    `valida=false` si la firma es válida pero el machineCode está revocado.
+  - `revocar(machineCode, motivo, usuarioId)` idempotente.
+- Endpoints (admin = `USUARIO_GESTIONAR`, también en GET de listados):
+  - `POST /api/licencias/emitir` → 201 `{clave, machineCode, modalidad, ...}`
+  - `POST /api/licencias/revocar`
+  - `GET|POST /api/licencias/validar?machineCode=&clave=` → solo sesión válida
+    (clientes en modalidad CENTRAL autentican con su usuario de negocio)
+  - `GET /api/licencias/emitidas`, `GET /api/licencias/revocadas`
+- `LicenciaEmitida` (model) + `LicenciaCentralDAO`/`LicenciaCentralDAOPostgres`
+  (registro en `AppContext.licenciaCentralDAO`).
+
+### Respaldos vía API
+- `BackupApiController`: `POST /api/respaldos` (ejecuta el `BackupService` existente:
+  pg_dump custom + verify + cifrado GPG + offsite; 200 exito / 502 falla) y
+  `GET /api/respaldos` (listado del directorio de respaldos). Permiso `USUARIO_GESTIONAR`.
+
+### Pruebas de fallos de conexión (resiliencia)
+- `RestClientResilienciaTest` (5, Javalin embebido sin BD): login ok/credenciales
+  malas, servidor caído → excepción controlada, **token vencido (401) → re-login y
+  reintento automático** (header Authorization actualizado), sin credenciales no
+  se recupera. Corrección aplicada: `RestClient` ahora reenvía la petición con
+  `Authorization` renovado (`setHeader`, rebuild por Java 11).
+
+## Verificación
+- `ApiAuthServiceTest` (9), `SesionActualAislamientoTest` (5),
+  `LicenciaCentralServiceTest` (10, DAO falso en memoria),
+  `RestClientResilienciaTest` (5).
+- Suite completa: `./mvnw test` → **263 tests, 0 fallos**.
+
+## Pendiente futuro (fuera de 6a/6b)
 - TLS/terminación HTTPS (hoy: red de confianza/localhost; el bind por defecto es local).
 - Rate limiting / bloqueo por IP en login.
+- Consumo del endpoint `validar` desde el cliente (modalidad CENTRAL en runtime).

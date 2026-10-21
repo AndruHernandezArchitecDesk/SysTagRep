@@ -26,11 +26,11 @@ public class RestClient {
 
     public static void setToken(String t) { token = t; }
     public static String getToken() { return token; }
-    public static void clearToken() { token = null; }
+    public static void clearToken() { token = null; lastUser = null; lastPass = null; lastBase = null; }
 
     private static void auth(HttpRequest.Builder b) {
         String t = token;
-        if (t != null && !t.isBlank()) b.header("Authorization", "Bearer " + t);
+        if (t != null && !t.isBlank()) b.setHeader("Authorization", "Bearer " + t);
     }
 
     /** Login contra /api/auth/login y guarda el token para el resto de llamadas. */
@@ -140,20 +140,28 @@ public class RestClient {
     }
 
     private <T> T execute(HttpRequest req, Class<T> type) throws IOException, InterruptedException {
-        HttpResponse<String> resp = CLIENT.send(req, HttpResponse.BodyHandlers.ofString());
-        if (resp.statusCode() == 401 && refrescarToken()) {
-            resp = CLIENT.send(req, HttpResponse.BodyHandlers.ofString());
-        }
+        HttpResponse<String> resp = enviar(req);
         if (resp.statusCode() >= 400) throw new IOException(req.uri() + " -> " + resp.statusCode() + ": " + resp.body());
         return resp.body().isEmpty() ? null : MAPPER.readValue(resp.body(), type);
     }
 
     private <T> T execute(HttpRequest req, TypeReference<T> typeRef) throws IOException, InterruptedException {
-        HttpResponse<String> resp = CLIENT.send(req, HttpResponse.BodyHandlers.ofString());
-        if (resp.statusCode() == 401 && refrescarToken()) {
-            resp = CLIENT.send(req, HttpResponse.BodyHandlers.ofString());
-        }
+        HttpResponse<String> resp = enviar(req);
         if (resp.statusCode() >= 400) throw new IOException(req.uri() + " -> " + resp.statusCode() + ": " + resp.body());
         return MAPPER.readValue(resp.body(), typeRef);
+    }
+
+    /** Envía y, ante 401, refresca el token y reintenta una vez con el header actualizado. */
+    private HttpResponse<String> enviar(HttpRequest req) throws IOException, InterruptedException {
+        HttpResponse<String> resp = CLIENT.send(req, HttpResponse.BodyHandlers.ofString());
+        if (resp.statusCode() == 401 && refrescarToken()) {
+            HttpRequest.Builder rb = HttpRequest.newBuilder(req.uri())
+                    .method(req.method(), req.bodyPublisher().orElse(HttpRequest.BodyPublishers.noBody()));
+            req.headers().map().forEach((k, vs) -> vs.forEach(v -> rb.header(k, v)));
+            String t = token;
+            if (t != null && !t.isBlank()) rb.setHeader("Authorization", "Bearer " + t);
+            resp = CLIENT.send(rb.build(), HttpResponse.BodyHandlers.ofString());
+        }
+        return resp;
     }
 }
