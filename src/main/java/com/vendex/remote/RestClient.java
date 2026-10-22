@@ -86,11 +86,27 @@ public class RestClient {
         return execute(b.build(), typeRef);
     }
 
+    /** Lecturas auxiliares con espera acotada (por ejemplo, recuperar el historial del chat). */
+    public <T> T get(String path, TypeReference<T> typeRef, Duration timeout) throws IOException, InterruptedException {
+        HttpRequest.Builder b = HttpRequest.newBuilder(URI.create(baseUrl + path))
+                .header("Content-Type", "application/json").timeout(timeout).GET();
+        auth(b);
+        return execute(b.build(), typeRef);
+    }
+
     public <T> T post(String path, Object body, Class<T> type) throws IOException, InterruptedException {
         byte[] json = MAPPER.writeValueAsBytes(body);
         HttpRequest.Builder b = HttpRequest.newBuilder(URI.create(baseUrl + path))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofByteArray(json));
+        auth(b);
+        return execute(b.build(), type);
+    }
+
+    public <T> T post(String path, Object body, Class<T> type, Duration timeout) throws IOException, InterruptedException {
+        HttpRequest.Builder b = HttpRequest.newBuilder(URI.create(baseUrl + path))
+                .header("Content-Type", "application/json").timeout(timeout)
+                .POST(HttpRequest.BodyPublishers.ofByteArray(MAPPER.writeValueAsBytes(body)));
         auth(b);
         return execute(b.build(), type);
     }
@@ -162,6 +178,7 @@ public class RestClient {
         if (resp.statusCode() == 401 && refrescarToken()) {
             HttpRequest.Builder rb = HttpRequest.newBuilder(req.uri())
                     .method(req.method(), req.bodyPublisher().orElse(HttpRequest.BodyPublishers.noBody()));
+            req.timeout().ifPresent(rb::timeout);
             req.headers().map().forEach((k, vs) -> vs.forEach(v -> rb.header(k, v)));
             String t = token;
             if (t != null && !t.isBlank()) rb.setHeader("Authorization", "Bearer " + t);

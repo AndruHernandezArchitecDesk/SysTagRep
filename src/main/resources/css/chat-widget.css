@@ -216,3 +216,4 @@
 }
 .capibara-enlace { -fx-background-color: transparent; -fx-text-fill: -accent-primary; -fx-padding: 2 0; -fx-font-size: 11px; -fx-cursor: hand; }
 .chat-panel .btn-enviar .text, .capibara-globo .btn-enviar .text { -fx-fill: white; }
+.chat-panel .mensaje-usuario .text { -fx-fill: white; }

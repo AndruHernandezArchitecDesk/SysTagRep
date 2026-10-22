@@ -30,6 +30,12 @@ public interface InventarioDAO {
 
     int guardar(Inventario inv);
 
+    /** Alta de código nuevo dentro de la emisión; el descuento de stock lo realiza FacturaService. */
+    default int crearTemporalFactura(Connection con, String codigo, String descripcion,
+                                     BigDecimal precioVenta, int sucursalId) throws SQLException {
+        throw new UnsupportedOperationException("El temporal debe registrarse en la transacción del servidor de facturación");
+    }
+
     void actualizar(Inventario inv);
 
     void actualizarPrecioVenta(int id, java.math.BigDecimal precio);
@@ -57,6 +63,11 @@ public interface InventarioDAO {
     List<Inventario> listarStockBajo(int umbral);
 
     List<Inventario> listarStockNegativo();
+
+    /** Panel de ingreso: activos negativos de la sucursal, fecha de alta DESC, nulos al final. */
+    default List<com.vendex.model.StockNegativoItem> listarStockNegativoPorFecha(int sucursalId) throws Exception {
+        throw new UnsupportedOperationException("Consulta de stock negativo por fecha no implementada");
+    }
 
     List<Inventario> listarActivosConStock();
 

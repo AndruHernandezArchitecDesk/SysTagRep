@@ -86,6 +86,20 @@ public class InventarioApiController {
         ctx.json(dao.listarPaginado(page, size, q, numeroFactura));
     }
 
+    public void stockNegativo(Context ctx) throws Exception {
+        if (com.vendex.util.SesionActual.getUsuario() == null)
+            throw new com.vendex.api.ApiAuthException(401, "Sesión requerida");
+        int actual = com.vendex.util.SesionActual.getSucursalId();
+        String solicitada = ctx.queryParam("sucursalId");
+        if (solicitada != null) {
+            try {
+                if (Integer.parseInt(solicitada) != actual)
+                    throw new com.vendex.api.ApiAuthException(403, "El panel corresponde a la sucursal de la sesión");
+            } catch (NumberFormatException e) { throw new IllegalArgumentException("sucursalId debe ser numérico"); }
+        }
+        ctx.json(dao.listarStockNegativoPorFecha(actual));
+    }
+
     private List<Inventario> filtrar(List<Inventario> lista, String q, String numeroFactura, Set<Integer> idsVeh) {
         List<Inventario> result = lista;
         if (q != null && !q.isBlank()) {

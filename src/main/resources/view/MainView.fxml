@@ -41,7 +41,7 @@
                     <graphic>
                         <FontIcon iconLiteral="fas-bell" iconSize="16"/>
                     </graphic>
-                    <Tooltip text="Alertas"/>
+                    <tooltip><Tooltip text="Alertas"/></tooltip>
                 </Button>
                 <Button onAction="#cambiarTema" styleClass="btn-orden" prefHeight="28" prefWidth="42">
                     <graphic>
@@ -52,7 +52,7 @@
                     <graphic>
                         <FontIcon iconLiteral="fas-user" iconSize="16"/>
                     </graphic>
-                    <Tooltip text="Inicio"/>
+                    <tooltip><Tooltip text="Inicio"/></tooltip>
                 </Button>
             </HBox>
 
@@ -105,7 +105,7 @@
                         <graphic>
                             <FontIcon iconLiteral="fas-chart-line" iconSize="16"/>
                         </graphic>
-                        <Tooltip text="Panel principal con métricas y resumen del negocio"/>
+                        <tooltip><Tooltip text="Panel principal con métricas y resumen del negocio"/></tooltip>
                     </Button>
 
                     <!-- Comprobantes -->
@@ -119,61 +119,61 @@
                             <graphic>
                                 <FontIcon iconLiteral="fas-arrow-down" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Registro de facturas de compra/ingreso de mercadería desde proveedores"/>
+                            <tooltip><Tooltip text="Registro de facturas de compra/ingreso de mercadería desde proveedores"/></tooltip>
                         </Button>
                         <Button text="Compras Registradas" onAction="#irFacturasIngresadas" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-list" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Listado y consulta de facturas de compra ya registradas en el sistema"/>
+                            <tooltip><Tooltip text="Listado y consulta de facturas de compra ya registradas en el sistema"/></tooltip>
                         </Button>
                         <Button text="Proformas" onAction="#irNotaVenta" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-file-alt" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Emisión de proformas/comprobantes de venta a clientes"/>
+                            <tooltip><Tooltip text="Emisión de proformas/comprobantes de venta a clientes"/></tooltip>
                         </Button>
                         <Button text="Facturas de Venta" onAction="#irFactura" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-file-invoice-dollar" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Emisión de facturas electrónicas de venta"/>
+                            <tooltip><Tooltip text="Emisión de facturas electrónicas de venta"/></tooltip>
                         </Button>
                         <Button text="Notas de Crédito" onAction="#irNotaCredito" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-undo" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Emisión de notas de crédito para devoluciones o ajustes"/>
+                            <tooltip><Tooltip text="Emisión de notas de crédito para devoluciones o ajustes"/></tooltip>
                         </Button>
                         <Button text="Notas de Débito" onAction="#irNotaDebito" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-redo" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Emisión de notas de débito para recargos o ajustes"/>
+                            <tooltip><Tooltip text="Emisión de notas de débito para recargos o ajustes"/></tooltip>
                         </Button>
                         <Button text="Guías de Remisión" onAction="#irGuiaRemision" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-truck" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Generación y gestión de guías de remisión de transporte"/>
+                            <tooltip><Tooltip text="Generación y gestión de guías de remisión de transporte"/></tooltip>
                         </Button>
                         <Button text="Retenciones" onAction="#irRetencion" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-percentage" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Emisión y gestión de retenciones de impuestos"/>
+                            <tooltip><Tooltip text="Emisión y gestión de retenciones de impuestos"/></tooltip>
                         </Button>
                         <Button text="Seguimiento SRI" onAction="#irSeguimientoSri" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-satellite-dish" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Consulta del estado de autorización de comprobantes en el SRI"/>
+                            <tooltip><Tooltip text="Consulta del estado de autorización de comprobantes en el SRI"/></tooltip>
                         </Button>
                         <Button text="Reporte de Ventas" onAction="#irComprobanteVentaReporte" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 10 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-clipboard-list" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Reporte y listado de comprobantes de venta emitidos"/>
+                            <tooltip><Tooltip text="Reporte y listado de comprobantes de venta emitidos"/></tooltip>
                         </Button>
                     </VBox>
 
@@ -188,19 +188,19 @@
                             <graphic>
                                 <FontIcon iconLiteral="fas-map-marker-alt" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Gestión física de ubicaciones en percheros/estanterías del depósito"/>
+                            <tooltip><Tooltip text="Gestión física de ubicaciones en percheros/estanterías del depósito"/></tooltip>
                         </Button>
                         <Button text="Productos" onAction="#irInventario" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-box" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Ingreso, edición, baja y consulta de productos en inventario"/>
+                            <tooltip><Tooltip text="Ingreso, edición, baja y consulta de productos en inventario"/></tooltip>
                         </Button>
                         <Button text="Stock" onAction="#irGestionStock" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 10 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-chart-bar" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Control de stock mínimo, alertas de reposición y movimientos"/>
+                            <tooltip><Tooltip text="Control de stock mínimo, alertas de reposición y movimientos"/></tooltip>
                         </Button>
                     </VBox>
 
@@ -215,19 +215,19 @@
                             <graphic>
                                 <FontIcon iconLiteral="fas-users" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Gestión de cuentas corrientes de clientes y seguimiento de pagos"/>
+                            <tooltip><Tooltip text="Gestión de cuentas corrientes de clientes y seguimiento de pagos"/></tooltip>
                         </Button>
                         <Button text="Cuentas por Pagar" onAction="#irPorPagar" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-store" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Gestión de cuentas corrientes con proveedores y fechas de pago"/>
+                            <tooltip><Tooltip text="Gestión de cuentas corrientes con proveedores y fechas de pago"/></tooltip>
                         </Button>
                         <Button text="Préstamos" onAction="#irPrestamos" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 10 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-university" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Préstamos bancarios: cuotas, abonos desde caja y metas de venta"/>
+                            <tooltip><Tooltip text="Préstamos bancarios: cuotas, abonos desde caja y metas de venta"/></tooltip>
                         </Button>
                     </VBox>
 
@@ -236,7 +236,7 @@
                         <graphic>
                             <FontIcon iconLiteral="fas-cash-register" iconSize="16"/>
                         </graphic>
-                        <Tooltip text="Apertura, cierre y movimiento de caja diaria"/>
+                        <tooltip><Tooltip text="Apertura, cierre y movimiento de caja diaria"/></tooltip>
                     </Button>
 
                     <!-- Historial -->
@@ -250,19 +250,19 @@
                             <graphic>
                                 <FontIcon iconLiteral="fas-box-open" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Historial de movimientos, precios y modificaciones de productos"/>
+                            <tooltip><Tooltip text="Historial de movimientos, precios y modificaciones de productos"/></tooltip>
                         </Button>
                         <Button text="Historial de Ventas" onAction="#irHistorialVentas" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-shopping-cart" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Registro histórico de ventas y comprobantes emitidos"/>
+                            <tooltip><Tooltip text="Registro histórico de ventas y comprobantes emitidos"/></tooltip>
                         </Button>
                         <Button text="Historial de Compras" onAction="#irHistorialCompras" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 10 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-truck-loading" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Registro histórico de compras y facturas de ingreso"/>
+                            <tooltip><Tooltip text="Registro histórico de compras y facturas de ingreso"/></tooltip>
                         </Button>
                     </VBox>
 
@@ -271,7 +271,7 @@
                         <graphic>
                             <FontIcon iconLiteral="fas-bell" iconSize="16"/>
                         </graphic>
-                        <Tooltip text="Visualización de alertas activas del sistema (stock, certificados, SRI)"/>
+                        <tooltip><Tooltip text="Visualización de alertas activas del sistema (stock, certificados, SRI)"/></tooltip>
                     </Button>
 
                     <!-- Administración -->
@@ -285,91 +285,91 @@
                             <graphic>
                                 <FontIcon iconLiteral="fas-building" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Datos de la empresa, RUC, obligado a llevar contabilidad, agente de retención y logo"/>
+                            <tooltip><Tooltip text="Datos de la empresa, RUC, obligado a llevar contabilidad, agente de retención y logo"/></tooltip>
                         </Button>
                         <Button text="Clientes" onAction="#irClientes" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-user-friends" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Alta, baja, modificación y consulta de clientes"/>
+                            <tooltip><Tooltip text="Alta, baja, modificación y consulta de clientes"/></tooltip>
                         </Button>
                         <Button text="Usuarios" onAction="#irUsuarios" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-user-shield" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Administración de usuarios del sistema y credenciales"/>
+                            <tooltip><Tooltip text="Administración de usuarios del sistema y credenciales"/></tooltip>
                         </Button>
                         <Button text="Roles y Permisos" onAction="#irGestionRoles" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-key" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Definición de roles, permisos y accesos por perfil"/>
+                            <tooltip><Tooltip text="Definición de roles, permisos y accesos por perfil"/></tooltip>
                         </Button>
                         <Button text="Proveedores" onAction="#irProveedores" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-truck" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Alta, baja, modificación y consulta de proveedores"/>
+                            <tooltip><Tooltip text="Alta, baja, modificación y consulta de proveedores"/></tooltip>
                         </Button>
                         <Button text="Códigos" onAction="#irCodigos" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-barcode" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Administración de códigos auxiliares del sistema"/>
+                            <tooltip><Tooltip text="Administración de códigos auxiliares del sistema"/></tooltip>
                         </Button>
                         <Button text="Grupos" onAction="#irGrupos" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-layer-group" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Administración de grupos de productos"/>
+                            <tooltip><Tooltip text="Administración de grupos de productos"/></tooltip>
                         </Button>
                         <Button text="Marcas" onAction="#irMarcas" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-tag" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Administración de marcas de productos"/>
+                            <tooltip><Tooltip text="Administración de marcas de productos"/></tooltip>
                         </Button>
                         <Button text="Numeración" onAction="#irNumeracion" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-sort-numeric-up" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Configuración de secuencias y numeración de comprobantes"/>
+                            <tooltip><Tooltip text="Configuración de secuencias y numeración de comprobantes"/></tooltip>
                         </Button>
                         <Button text="Firma Electrónica" onAction="#irFirma" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-certificate" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Administración del certificado de firma electrónica"/>
+                            <tooltip><Tooltip text="Administración del certificado de firma electrónica"/></tooltip>
                         </Button>
                         <Button text="Correo Electrónico" onAction="#irConfiguracionEmail" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-envelope" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Configuración de cuenta SMTP para envío de correos"/>
+                            <tooltip><Tooltip text="Configuración de cuenta SMTP para envío de correos"/></tooltip>
                         </Button>
                         <Button text="Respaldos" onAction="#irRespaldos" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-database" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Generación y administración de respaldos de base de datos"/>
+                            <tooltip><Tooltip text="Generación y administración de respaldos de base de datos"/></tooltip>
                         </Button>
                         <Button text="Cola Offline" onAction="#irColaOffline" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-wifi" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Visualización y gestión de la cola offline de operaciones"/>
+                            <tooltip><Tooltip text="Visualización y gestión de la cola offline de operaciones"/></tooltip>
                         </Button>
                         <Button text="Contingencia SRI" onAction="#irConfigurarContingenciaSRI" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-envelope-open-text" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Configuración de envío de comprobantes por email en contingencia SRI"/>
+                            <tooltip><Tooltip text="Configuración de envío de comprobantes por email en contingencia SRI"/></tooltip>
                         </Button>
                         <Button text="Migraciones DB" onAction="#irConfigurarPostgres" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 10 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-download" iconSize="14"/>
                             </graphic>
-                            <Tooltip text="Ejecución y control de migraciones Flyway de base de datos"/>
+                            <tooltip><Tooltip text="Ejecución y control de migraciones Flyway de base de datos"/></tooltip>
                         </Button>
                     </VBox>
 
@@ -378,25 +378,25 @@
                         <graphic>
                             <FontIcon iconLiteral="fas-paw" iconSize="16"/>
                         </graphic>
-                        <Tooltip text="Abrir Vetxi, tu capibara de repuestos, negocio y sugerencias"/>
+                        <tooltip><Tooltip text="Abrir Vetxi, tu capibara de repuestos, negocio y sugerencias"/></tooltip>
                     </Button>
                     <Button text="Configurar IA" onAction="#irConfigurarIA" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                         <graphic>
                             <FontIcon iconLiteral="fas-key" iconSize="16"/>
                         </graphic>
-                        <Tooltip text="Guardar API key de Gemini/NVIDIA (cifrada) para el asistente IA"/>
+                        <tooltip><Tooltip text="Guardar API key de Gemini/NVIDIA (cifrada) para el asistente IA"/></tooltip>
                     </Button>
                     <Button text="Consumo de IA" onAction="#irConsumoIa" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                         <graphic>
                             <FontIcon iconLiteral="fas-chart-line" iconSize="16"/>
                         </graphic>
-                        <Tooltip text="Tokens, costos y capacidad de la licencia de Vetxi AI"/>
+                        <tooltip><Tooltip text="Tokens, costos y capacidad de la licencia de Vetxi AI"/></tooltip>
                     </Button>
                     <Button text="Análisis IA" onAction="#irAnalisisIa" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                         <graphic>
                             <FontIcon iconLiteral="fas-chart-pie" iconSize="16"/>
                         </graphic>
-                        <Tooltip text="Rotación, agotamiento, márgenes y tendencias con periodos y limitaciones"/>
+                        <tooltip><Tooltip text="Rotación, agotamiento, márgenes y tendencias con periodos y limitaciones"/></tooltip>
                     </Button>
                 </VBox>
             </ScrollPane>
@@ -408,7 +408,7 @@
                     <graphic>
                         <FontIcon iconLiteral="fas-sign-out-alt" iconSize="16"/>
                     </graphic>
-                    <Tooltip text="Cierra la sesión actual del usuario"/>
+                    <tooltip><Tooltip text="Cierra la sesión actual del usuario"/></tooltip>
                 </Button>
             </VBox>
         </VBox>

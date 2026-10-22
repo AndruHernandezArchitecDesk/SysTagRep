@@ -23,24 +23,30 @@
                         <FontIcon iconLiteral="fas-university" styleClass="titulo-icono"/>
                     </graphic>
                 </Label>
+                <Button fx:id="btnToggleIngresos" text="Ingresos recientes" onAction="#toggleIngresos" styleClass="btn-icono">
+                    <graphic>
+                        <FontIcon iconLiteral="fas-chevron-right" iconSize="16"/>
+                    </graphic>
+                    <tooltip><Tooltip text="Ocultar el panel de ingresos recientes"/></tooltip>
+                </Button>
                 <HBox HBox.hgrow="ALWAYS"/>
                 <Button text="GESTIONAR ENTIDADES" onAction="#gestionarEntidades" styleClass="button-secondary" style="-fx-padding: 6 15">
                     <graphic>
                         <FontIcon iconLiteral="fas-building" iconColor="white"/>
                     </graphic>
-                    <Tooltip text="Administrar bancos y entidades prestamistas"/>
+                    <tooltip><Tooltip text="Administrar bancos y entidades prestamistas"/></tooltip>
                 </Button>
                 <Button text="NUEVO PRÉSTAMO" onAction="#nuevoPrestamo" styleClass="button-primary" style="-fx-padding: 6 15">
                     <graphic>
                         <FontIcon iconLiteral="fas-plus" iconColor="white"/>
                     </graphic>
-                    <Tooltip text="Registrar un nuevo préstamo con tabla de amortización"/>
+                    <tooltip><Tooltip text="Registrar un nuevo préstamo con tabla de amortización"/></tooltip>
                 </Button>
                 <Button text="REFRESCAR" onAction="#refrescar" styleClass="btn-orden" style="-fx-padding: 6 15">
                     <graphic>
                         <FontIcon iconLiteral="fas-sync"/>
                     </graphic>
-                    <Tooltip text="Actualizar la lista de préstamos y los ingresos recientes"/>
+                    <tooltip><Tooltip text="Actualizar la lista de préstamos y los ingresos recientes"/></tooltip>
                 </Button>
             </HBox>
             <Separator/>
@@ -79,19 +85,19 @@
                                 <graphic>
                                     <FontIcon iconLiteral="fas-hand-holding-usd" iconColor="white"/>
                                 </graphic>
-                                <Tooltip text="Registrar un abono al préstamo seleccionado"/>
+                                <tooltip><Tooltip text="Registrar un abono al préstamo seleccionado"/></tooltip>
                             </Button>
                             <Button text="META" onAction="#editarMeta" styleClass="button-secondary" style="-fx-padding: 6 15">
                                 <graphic>
                                     <FontIcon iconLiteral="fas-bullseye" iconColor="white"/>
                                 </graphic>
-                                <Tooltip text="Configurar la meta de ventas del préstamo"/>
+                                <tooltip><Tooltip text="Configurar la meta de ventas del préstamo"/></tooltip>
                             </Button>
                             <Button text="CANCELAR PRÉSTAMO" onAction="#cancelarPrestamo" styleClass="button-danger" style="-fx-padding: 6 15">
                                 <graphic>
                                     <FontIcon iconLiteral="fas-ban" iconColor="white"/>
                                 </graphic>
-                                <Tooltip text="Marcar el préstamo seleccionado como cancelado"/>
+                                <tooltip><Tooltip text="Marcar el préstamo seleccionado como cancelado"/></tooltip>
                             </Button>
                         </HBox>
                         <TabPane>
@@ -129,7 +135,7 @@
                 </content>
             </TitledPane>
         </VBox>
-        <TitledPane text="Ingresos recientes" collapsible="false" styleClass="section-card" style="-fx-font-weight: bold" prefWidth="400.0" minWidth="300.0">
+        <TitledPane fx:id="paneIngresos" text="Ingresos recientes" collapsible="false" styleClass="section-card" style="-fx-font-weight: bold" prefWidth="400.0" minWidth="300.0">
             <content>
                 <TableView fx:id="tblIngresos" style="-fx-font-size: 11px">
                     <columns>

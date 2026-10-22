@@ -76,6 +76,7 @@ public class ApiServer {
         LicenciaCentralApiController licenciasCtrl = new LicenciaCentralApiController(
                 new com.vendex.service.LicenciaCentralService(ctx.licenciaCentralDAO));
         BackupApiController backupCtrl = new BackupApiController();
+        var vetxiHistorialCtrl = new com.vendex.controller.api.VetxiHistorialApiController(ctx.vetxiHistorialService);
         com.vendex.controller.api.UsuarioAdminApiController usuarioAdminCtrl = new com.vendex.controller.api.UsuarioAdminApiController();
         com.vendex.controller.api.OfflineSyncApiController offlineSyncCtrl = new com.vendex.controller.api.OfflineSyncApiController(ctx);
 
@@ -149,6 +150,10 @@ public class ApiServer {
         app.post("/api/auth/logout", loginCtrl::logout);
         app.get("/api/auth/me", loginCtrl::me);
 
+        app.get("/api/vetxi/conversaciones", vetxiHistorialCtrl::conversaciones);
+        app.get("/api/vetxi/conversaciones/{id}/mensajes", vetxiHistorialCtrl::mensajes);
+        app.post("/api/vetxi/mensajes", vetxiHistorialCtrl::guardar);
+
         // Fase 6b: administración central de licencias + respaldos
         app.post("/api/licencias/emitir", licenciasCtrl::emitir);
         app.post("/api/licencias/revocar", licenciasCtrl::revocar);
@@ -182,6 +187,7 @@ public class ApiServer {
         app.put("/api/empresa/{id}", empresaCtrl::actualizar);
 
         app.get("/api/inventario", inventarioCtrl::listar);
+        app.get("/api/inventario/stock-negativo", inventarioCtrl::stockNegativo);
         app.get("/api/inventario/{id}", inventarioCtrl::obtenerPorId);
         app.post("/api/inventario", inventarioCtrl::guardar);
         app.put("/api/inventario/{id}", inventarioCtrl::actualizar);

@@ -189,6 +189,39 @@ public class InventarioDAOPostgres implements InventarioDAO {
         return 0;
     }
 
+    @Override
+    public int crearTemporalFactura(Connection con, String codigo, String descripcion,
+                                    BigDecimal precioVenta, int sucursalId) throws SQLException {
+        if (con.getAutoCommit()) throw new IllegalStateException("El alta temporal requiere una transacción de factura.");
+        String cod = com.vendex.service.ProductoTemporalFactura.codigo(codigo);
+        if (cod.isEmpty() || sucursalId <= 0) throw new IllegalArgumentException("Código y sucursal obligatorios.");
+        if (con.getMetaData().getDatabaseProductName().toLowerCase(java.util.Locale.ROOT).contains("postgres")) {
+            // Incluye las altas normales: evita que aparezca ese código entre la comprobación y el INSERT.
+            try (java.sql.Statement bloqueo = con.createStatement()) {
+                bloqueo.execute("LOCK TABLE inventario IN SHARE ROW EXCLUSIVE MODE");
+            }
+        }
+        try (PreparedStatement ps = con.prepareStatement(
+                "SELECT id FROM inventario WHERE sucursal_id=? AND UPPER(TRIM(codigo))=?")) {
+            ps.setInt(1, sucursalId); ps.setString(2, cod);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) throw new IllegalArgumentException("El código " + cod
+                        + " ya existe en esta sucursal. Agregue el producto desde el inventario o use un código nuevo.");
+            }
+        }
+        String sql = "INSERT INTO inventario (codigo, descripcion, cantidad, precio_venta, costo_sin_iva, " +
+                "fecha_ingreso, estado, tag_codigo, sucursal_id) VALUES (?, ?, 0, ?, NULL, ?, true, ?, ?)";
+        try (PreparedStatement ps = con.prepareStatement(sql, java.sql.Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, cod); ps.setString(2, descripcion); ps.setBigDecimal(3, precioVenta);
+            ps.setObject(4, LocalDateTime.now()); ps.setString(5, cod); ps.setInt(6, sucursalId);
+            ps.executeUpdate();
+            try (ResultSet ids = ps.getGeneratedKeys()) {
+                if (ids.next()) return ids.getInt(1);
+            }
+        }
+        throw new SQLException("No se obtuvo el identificador del producto temporal " + cod);
+    }
+
     public void actualizar(Inventario inv) {
         String sql = "UPDATE inventario SET descripcion=?, grupo_id=?, marca_id=?, costo_sin_iva=?, cantidad=?, ubicacion_percha_id=?, precio_venta=?, fecha_ingreso=?, tag_codigo=?, codigo=?, proveedor_id=?, forma_pago=?, meses_plazo=?, interes=?, numero_factura=?, sucursal_id=? WHERE id=?";
         try (Connection con = DatabaseConnection.getConnection();
@@ -439,6 +472,26 @@ public class InventarioDAOPostgres implements InventarioDAO {
             LOGGER.log(Level.SEVERE, "Error en operacion de InventarioDAO", e);
         }
         return lista;
+    }
+
+    @Override
+    public List<com.vendex.model.StockNegativoItem> listarStockNegativoPorFecha(int sucursalId) throws SQLException {
+        if (sucursalId <= 0) throw new IllegalArgumentException("Sucursal inválida");
+        String sql = "SELECT id, codigo, descripcion, cantidad, fecha_ingreso FROM inventario " +
+                "WHERE estado=true AND cantidad<0 AND sucursal_id=? ORDER BY fecha_ingreso DESC NULLS LAST, id DESC";
+        List<com.vendex.model.StockNegativoItem> out = new ArrayList<>();
+        try (Connection con = DatabaseConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, sucursalId);
+            ps.setQueryTimeout(15);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    var fecha = rs.getTimestamp("fecha_ingreso");
+                    out.add(new com.vendex.model.StockNegativoItem(rs.getInt("id"), rs.getString("codigo"),
+                            rs.getString("descripcion"), rs.getInt("cantidad"), fecha == null ? null : fecha.toLocalDateTime().toString()));
+                }
+            }
+        }
+        return out;
     }
 
     public List<Inventario> listarActivosConStock() {

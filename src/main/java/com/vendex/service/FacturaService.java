@@ -81,12 +81,14 @@ public class FacturaService {
         if (empresa == null) {
             throw new IllegalArgumentException("No se encontraron datos de la empresa.");
         }
+        final List<FacturaDetalle> borrador = ProductoTemporalFactura.copiarYValidar(itemsDetalle);
+        final int sucursalId = com.vendex.util.SesionActual.getSucursalId();
 
         int clienteId = cliente.getId();
         int empresaId = empresa.getId();
         LocalDateTime ahora = LocalDateTime.now();
 
-        BigDecimal subBruto = itemsDetalle.stream()
+        BigDecimal subBruto = borrador.stream()
                 .map(FacturaDetalle::getPrecioTotal)
                 .reduce(AppConstants.CERO, BigDecimal::add);
         BigDecimal totalBrutoCalc = subBruto.add(subBruto.multiply(AppConstants.IVA_RATE).setScale(2, RoundingMode.HALF_UP));
@@ -98,12 +100,12 @@ public class FacturaService {
         // Asi se cumplen las 3 reglas SRI a la vez:
         //   R1 sub == S netos; R2 desc == S desc lineas + adicional; T total == sub - adic + iva.
         // Descuento en VALOR FIJO ($), tope = suma de bases sin IVA.
-        BigDecimal sumaBasesSinIva = sumarBasesSinIva(itemsDetalle);
+        BigDecimal sumaBasesSinIva = sumarBasesSinIva(borrador);
         if (descuentoValor != null && descuentoValor.compareTo(BigDecimal.ZERO) > 0) {
             com.vendex.util.SesionActual.exigirDescuento(descuentoValor, totalBrutoCalc);
         }
         BigDecimal descCalc = calcularDescuento(sumaBasesSinIva, descuentoValor);
-        final List<Object[]> filasDetalleSri = armarDetalles(itemsDetalle);
+        final List<Object[]> filasDetalleSri = armarDetalles(borrador);
         BigDecimal baseNeta = filasDetalleSri.stream()
                 .map(f -> new BigDecimal(f[5].toString().trim()))
                 .reduce(AppConstants.CERO, BigDecimal::add);
@@ -154,6 +156,7 @@ public class FacturaService {
         // (codigo/num_comprobante/clave_acceso) rechaza el INSERT, se hace rollback
         // total y se repite con el siguiente número. Máximo 2 intentos.
         int intentoEmision = 0;
+        List<FacturaDetalle> itemsRegistrados = null;
         while (true) {
             intentoEmision++;
             try (Connection con = DatabaseConnection.getConnection()) {
@@ -168,28 +171,33 @@ public class FacturaService {
                 fechaEmisionFE = ahora.format(DateTimeFormatter.ofPattern(AppConstants.PATRON_FECHA_EMISION));
                 numComprobante = codEstab + "-" + codPtoEmi + "-" + String.format(AppConstants.PATRON_NUMERO_COMPROBANTE, secuencialFE);
 
-                FacturaRegistro fr = new FacturaRegistro(empresaId, clienteId, ahora, codigo, formaPago, sub, ivaCalc, descCalc, totCalc, claveAcceso, numComprobante, ambienteSri);
+                String codigoRegistro = codigo == null || codigo.isBlank() ? numComprobante : codigo;
+                FacturaRegistro fr = new FacturaRegistro(empresaId, clienteId, ahora, codigoRegistro, formaPago, sub, ivaCalc, descCalc, totCalc, claveAcceso, numComprobante, ambienteSri);
                 fr.setEstadoSri(AppConstants.ESTADO_PENDIENTE);
-                fr.setSucursalId(com.vendex.util.SucursalActual.getId());
+                fr.setSucursalId(sucursalId);
                 facturaId = facturaRegistroDAO.insertar(con, fr);
                 if (facturaId == -1) throw new IllegalStateException("Error al registrar la factura.");
 
                 List<FacturaDetalle> detallesDb = new ArrayList<>();
-                for (FacturaDetalle d : itemsDetalle) {
-                    FacturaDetalle fd = new FacturaDetalle(d.getInventarioId(), d.getCodigo(), d.getDescripcion(), d.getCantidad(), d.getPrecioUnitario());
+                for (FacturaDetalle d : borrador) {
+                    int inventarioId = d.getInventarioId();
+                    if (inventarioId == 0) {
+                        inventarioId = inventarioDAO.crearTemporalFactura(con, d.getCodigo(), d.getDescripcion(), d.getPrecioUnitario(), sucursalId);
+                        if (inventarioId <= 0) throw new IllegalStateException("No se pudo crear el producto temporal " + d.getCodigo());
+                    }
+                    FacturaDetalle fd = new FacturaDetalle(inventarioId, d.getCodigo(), d.getDescripcion(), d.getCantidad(), d.getPrecioUnitario());
                     fd.setFacturaRegistroId(facturaId);
                     detallesDb.add(fd);
                 }
                 facturaDetalleDAO.insertarDetalle(con, facturaId, detallesDb);
-                for (FacturaDetalle d : itemsDetalle) {
+                for (FacturaDetalle d : detallesDb) {
                     inventarioDAO.descontarStock(con, d.getInventarioId(), d.getCantidad());
                 }
-                registrarAlertasStockNegativo(con, facturaId, numComprobante, itemsDetalle);
                 String clienteNombre = cliente.getNombre();
                 List<HistorialProducto> historial = new ArrayList<>();
-                for (FacturaDetalle d : itemsDetalle) {
+                for (FacturaDetalle d : detallesDb) {
                     String provNombre = inventarioDAO.obtenerProveedorNombre(con, d.getInventarioId());
-                    historial.add(new HistorialProducto(d.getInventarioId(), d.getCodigo(), d.getDescripcion(), d.getCantidad(), d.getPrecioUnitario(), "FACTURA", codigo, clienteNombre, provNombre, ahora));
+                    historial.add(new HistorialProducto(d.getInventarioId(), d.getCodigo(), d.getDescripcion(), d.getCantidad(), d.getPrecioUnitario(), "FACTURA", codigoRegistro, clienteNombre, provNombre, ahora));
                 }
                 historialProductoDAO.insertar(con, historial);
                 if (AppConstants.FORMA_PAGO_CREDITO.equals(formaPago) && mesesPlazo != null && interes != null) {
@@ -210,9 +218,7 @@ public class FacturaService {
                 String tipoIdComp = tipoIdCompTmp;
                 xmlGenerado = XmlSriBuilder.construirFactura(ambienteSri, claveAcceso, empresa.getRuc(), empresa.getRazonSocial(), codEstab, codPtoEmi, secuencialFE, com.vendex.util.SucursalActual.direccionEstablecimiento(empresa.getDireccionCallePrincipal() + " y " + empresa.getDireccionCalleSecundaria()), empresa.getAgenteRetencion(), obligadoSri(empresa), tipoIdComp, cliente.getNombre(), cliente.getIdentificacion(), cliente.getDireccion(), sub.setScale(2, RoundingMode.HALF_UP).toString(), descCalc.setScale(2, RoundingMode.HALF_UP).toString(), totCalc.setScale(2, RoundingMode.HALF_UP).toString(), "0.00", formaPago, fechaEmisionFE, filasDetalleSri);
                 try {
-                    FirmaDigital firma = new FirmaDigital();
-                    if (!firma.cargarCertificado(rutaP12, claveP12)) throw new IllegalStateException("No se pudo cargar el certificado. Verifique la ruta y la contraseña.");
-                    xmlFirmado = firma.firmarXml(xmlGenerado);
+                    xmlFirmado = firmarXmlFactura(xmlGenerado, rutaP12, claveP12);
                     firmaOk = true;
                 } catch (Exception e) {
                     logDAO.guardar("FacturaService", "firmarXml", e.getMessage(), e);
@@ -220,6 +226,7 @@ public class FacturaService {
                 }
                 comprobanteDAO.insertar(con, claveAcceso, null, numComprobante, ambienteSri, xmlFirmado);
                 con.commit();
+                itemsRegistrados = detallesDb;
             } catch (Exception e) {
                 try { con.rollback(); } catch (SQLException re) { /* ignore */ }
                 throw e;
@@ -243,6 +250,13 @@ public class FacturaService {
 
         String tipoIdComp = tipoIdCompTmp;
 
+        // Las alertas usan su propia conexión: se emiten únicamente después del commit.
+        if (alertaDAO != null) {
+            try (Connection con = DatabaseConnection.getConnection()) {
+                registrarAlertasStockNegativo(con, facturaId, numComprobante, itemsRegistrados);
+            } catch (Exception e) { logDAO.guardar("FacturaService", "alertaStockNegativo", e.getMessage(), e); }
+        }
+
         String rutaPDF = directorioEscritorio.getAbsolutePath() + File.separator
                 + AppConstants.PREFIJO_PDF_FACTURA + numComprobante.replace("-", "") + AppConstants.EXTENSION_PDF;
         String rutaXML = directorioEscritorio.getAbsolutePath() + File.separator
@@ -258,8 +272,16 @@ public class FacturaService {
                 claveAcceso, numComprobante, xmlFirmado, ambienteSri,
                 codEstab, codPtoEmi, secuencialFE, fechaEmisionFE, tipoIdComp,
                 rutaPDF, rutaXML, firmaOk, sub, ivaCalc, descCalc, totCalc,
-                itemsDetalle, cliente, empresa, formaPago
+                itemsRegistrados, cliente, empresa, formaPago
         );
+    }
+
+    /** Punto de firma separado para verificar la transacción sin certificados reales ni SRI. */
+    protected String firmarXmlFactura(String xml, String rutaP12, String claveP12) throws Exception {
+        FirmaDigital firma = new FirmaDigital();
+        if (!firma.cargarCertificado(rutaP12, claveP12))
+            throw new IllegalStateException("No se pudo cargar el certificado. Verifique la ruta y la contraseña.");
+        return firma.firmarXml(xml);
     }
 
     public SRIWebService.SRIResponse enviarYSolicitarAutorizacion(String ambienteSri, String xmlFirmado, String claveAcceso) {

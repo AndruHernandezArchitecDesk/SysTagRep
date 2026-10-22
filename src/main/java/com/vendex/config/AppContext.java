@@ -95,6 +95,7 @@ public class AppContext {
     public final InventarioVehiculoDAO inventarioVehiculoDAO;
     public final SecuenciaBloqueDAO secuenciaBloqueDAO;
     public final VendexiConsumoDAO vendexiConsumoDAO;
+    public final VetxiHistorialDAO vetxiHistorialDAO;
     public final LicenciaCentralDAO licenciaCentralDAO;
     public final UsuarioPermisoDAO usuarioPermisoDAO;
     public final UsuarioSucursalDAO usuarioSucursalDAO;
@@ -112,6 +113,7 @@ public class AppContext {
     public final CertificadoAlertaService certificadoAlertaService;
     public final ServicioReintentoSri servicioReintentoSri;
     public final VendexiConsumoService vendexiConsumoService;
+    public final VetxiHistorialService vetxiHistorialService;
     public final AnalisisEmpresarialService analisisEmpresarialService;
 
     private AppContext() {
@@ -177,6 +179,7 @@ public class AppContext {
         this.inventarioVehiculoDAO = dao(() -> new InventarioVehiculoDAOPostgres(), () -> new InventarioVehiculoDAORest(restClient));
         // Medición Vendexi (solo local por ahora; modalidad central llega con Fase 6)
         this.vendexiConsumoDAO = new VendexiConsumoDAOPostgres();
+        this.vetxiHistorialDAO = dao(() -> new VetxiHistorialDAOPostgres(), () -> new VetxiHistorialDAORest(restClient));
         // Fase 6b: administración central de licencias (siempre local en la instancia central)
         this.licenciaCentralDAO = new LicenciaCentralDAOPostgres();
         // Fase 7: permisos y sucursales por usuario (siempre local; modo remoto los resuelve el server)
@@ -218,6 +221,7 @@ public class AppContext {
                 notaCreditoRegistroDAO, notaDebitoRegistroDAO, guiaRemisionRegistroDAO, retencionRegistroDAO
         );
         this.vendexiConsumoService = new VendexiConsumoService(vendexiConsumoDAO);
+        this.vetxiHistorialService = new VetxiHistorialService(vetxiHistorialDAO);
         this.analisisEmpresarialService = new AnalisisEmpresarialService(
                 inventarioDAO, dashboardDAO, historialProductoDAO, vendexiConsumoService);
     }

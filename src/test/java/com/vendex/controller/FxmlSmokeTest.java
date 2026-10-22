@@ -213,6 +213,117 @@ class FxmlSmokeTest {
         java.lang.reflect.Field f4 = controller.getClass().getDeclaredField("colIngMonto");
         f4.setAccessible(true);
         assertNotNull(f4.get(controller), "colIngMonto cableada desde FXML");
+        java.lang.reflect.Field f5 = controller.getClass().getDeclaredField("paneIngresos");
+        f5.setAccessible(true);
+        assertNotNull(f5.get(controller), "paneIngresos cableada desde FXML");
+        java.lang.reflect.Field f6 = controller.getClass().getDeclaredField("btnToggleIngresos");
+        f6.setAccessible(true);
+        assertNotNull(f6.get(controller), "btnToggleIngresos cableada desde FXML");
+        AtomicReference<Throwable> err = new AtomicReference<>();
+        CountDownLatch fin = new CountDownLatch(1);
+        Platform.runLater(() -> {
+            try {
+                var btn = (javafx.scene.control.Button) f6.get(controller);
+                var pane = (javafx.scene.control.TitledPane) f5.get(controller);
+                org.junit.jupiter.api.Assertions.assertEquals("Ingresos recientes", btn.getText(),
+                        "rótulo del botón de ingresos recientes");
+                org.junit.jupiter.api.Assertions.assertNotNull(btn.getTooltip(),
+                        "tooltip instalado desde FXML (patrón <tooltip>)");
+                org.junit.jupiter.api.Assertions.assertFalse(btn.getText().contains("javafx.scene"),
+                        "el botón no debe mostrar la clase del tooltip");
+                btn.fire();
+                org.junit.jupiter.api.Assertions.assertFalse(pane.isVisible(), "panel oculto tras toggle");
+                org.junit.jupiter.api.Assertions.assertFalse(pane.isManaged(), "panel no ocupa espacio tras toggle");
+                btn.fire();
+                org.junit.jupiter.api.Assertions.assertTrue(pane.isVisible(), "panel visible tras segundo toggle");
+                org.junit.jupiter.api.Assertions.assertTrue(pane.isManaged(), "panel ocupa espacio tras segundo toggle");
+            } catch (Throwable t) { err.set(t); } finally { fin.countDown(); }
+        });
+        org.junit.jupiter.api.Assertions.assertTrue(fin.await(60, TimeUnit.SECONDS));
+        if (err.get() != null) throw new AssertionError("Toggle de ingresos recientes inválido", err.get());
+    }
+
+    @Test
+    @Order(16)
+    void factura_productoTemporalSeAgregaAlBorradorConPrecioIvaIncluido() throws Exception {
+        var controller = (FacturaController) cargar("/view/FacturaView.fxml");
+        AtomicReference<Throwable> error = new AtomicReference<>();
+        CountDownLatch fin = new CountDownLatch(1);
+        Platform.runLater(() -> {
+            try {
+                var boton = FacturaController.class.getDeclaredField("btnProductoTemporal"); boton.setAccessible(true);
+                var accion = (javafx.scene.control.Button) boton.get(controller);
+                assertNotNull(accion.getParent(), "Botón montado junto al buscador");
+                String codigo = "TMP-" + java.util.UUID.randomUUID().toString();
+                var d = controller.agregarTemporalFactura(codigo, "REPUESTO DE PRUEBA", 3, new java.math.BigDecimal("11.50"));
+                org.junit.jupiter.api.Assertions.assertEquals(0, d.getInventarioId());
+                var contexto = controller.contextoVendexi();
+                org.junit.jupiter.api.Assertions.assertEquals(1, contexto.lineas.size());
+                org.junit.jupiter.api.Assertions.assertEquals(3, contexto.lineas.get(0).cantidad);
+                org.junit.jupiter.api.Assertions.assertFalse(contexto.lineas.get(0).codigo.contains("TEMPORAL"));
+                var total = FacturaController.class.getDeclaredField("lblTotal"); total.setAccessible(true);
+                org.junit.jupiter.api.Assertions.assertEquals("34.50", ((javafx.scene.control.Label) total.get(controller)).getText());
+                org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                        () -> controller.agregarTemporalFactura(codigo.toLowerCase(), "OTRO", 1, java.math.BigDecimal.TEN));
+            } catch (Throwable t) { error.set(t); } finally { fin.countDown(); }
+        });
+        org.junit.jupiter.api.Assertions.assertTrue(fin.await(60, TimeUnit.SECONDS));
+        if (error.get() != null) throw new AssertionError("Producto temporal de factura inválido", error.get());
+    }
+
+    @Test
+    @Order(16)
+    void ingresoMercaderia_montaPanelStockNegativoEnLateralDerecho() throws Exception {
+        AtomicReference<Throwable> error = new AtomicReference<>();
+        CountDownLatch fin = new CountDownLatch(1);
+        AtomicReference<javafx.stage.Stage> stageRef = new AtomicReference<>();
+        AtomicReference<Object> controllerRef = new AtomicReference<>();
+        Platform.runLater(() -> {
+            try {
+                var loader = new javafx.fxml.FXMLLoader(getClass().getResource("/view/IngresoMercaderiaView.fxml"));
+                javafx.scene.Parent root = loader.load();
+                controllerRef.set(loader.getController());
+                var stage = new javafx.stage.Stage(); stage.setScene(new javafx.scene.Scene(root, 1100, 720));
+                stageRef.set(stage); stage.show();
+            } catch (Throwable t) { error.set(t); fin.countDown(); return; }
+            Platform.runLater(() -> Platform.runLater(() -> {
+                try {
+                    Object controller = controllerRef.get();
+                    stageRef.get().getScene().getRoot().applyCss();
+                    stageRef.get().getScene().getRoot().layout();
+                    java.lang.reflect.Field f = controller.getClass().getDeclaredField("stockNegativo");
+                    f.setAccessible(true);
+                    StockNegativoPane panel = (StockNegativoPane) f.get(controller);
+                    assertNotNull(panel, "panel instanciado");
+                    java.lang.reflect.Field div = controller.getClass().getDeclaredField("divisorioStock"); div.setAccessible(true);
+                    var divisor = (javafx.scene.control.SplitPane) div.get(controller);
+                    org.junit.jupiter.api.Assertions.assertSame(panel, divisor.getItems().get(1), "panel a la derecha del formulario");
+                    org.junit.jupiter.api.Assertions.assertTrue(divisor.getDividerPositions()[0] > 0.5);
+                    controller.getClass().getMethod("setCerrarAlGuardar", boolean.class).invoke(controller, true);
+                    org.junit.jupiter.api.Assertions.assertEquals(1, divisor.getItems().size(), "Edición modal no muestra el panel global");
+                    controller.getClass().getMethod("setCerrarAlGuardar", boolean.class).invoke(controller, false);
+                    org.junit.jupiter.api.Assertions.assertEquals(2, divisor.getItems().size(), "Formulario principal recupera el panel");
+                    java.lang.reflect.Field btnF = controller.getClass().getDeclaredField("btnTogglePanelStock");
+                    btnF.setAccessible(true);
+                    var btnToggle = (javafx.scene.control.Button) btnF.get(controller);
+                    assertNotNull(btnToggle.getParent(), "botón de ocultar panel montado en el encabezado");
+                    org.junit.jupiter.api.Assertions.assertEquals("Stock negativo", btnToggle.getText(),
+                            "rótulo del botón de stock negativo");
+                    org.junit.jupiter.api.Assertions.assertNotNull(btnToggle.getTooltip(),
+                            "tooltip instalado desde FXML (patrón <tooltip>)");
+                    org.junit.jupiter.api.Assertions.assertFalse(btnToggle.getText().contains("javafx.scene"),
+                            "el botón no debe mostrar la clase del tooltip");
+                    btnToggle.fire();
+                    org.junit.jupiter.api.Assertions.assertEquals(1, divisor.getItems().size(), "toggle oculta el panel de stock negativo");
+                    btnToggle.fire();
+                    org.junit.jupiter.api.Assertions.assertEquals(2, divisor.getItems().size(), "segundo toggle vuelve a mostrar el panel");
+                    org.junit.jupiter.api.Assertions.assertTrue(divisor.getDividerPositions()[0] > 0.5, "divider restablecido al mostrar");
+                } catch (Throwable t) { error.set(t); }
+                finally { stageRef.get().close(); fin.countDown(); }
+            }));
+        });
+        org.junit.jupiter.api.Assertions.assertTrue(fin.await(60, TimeUnit.SECONDS));
+        if (error.get() != null) throw new AssertionError("Panel lateral de stock negativo inválido", error.get());
     }
 
     @Test

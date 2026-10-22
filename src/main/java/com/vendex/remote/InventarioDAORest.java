@@ -176,6 +176,14 @@ public class InventarioDAORest extends RestDao<Inventario> implements Inventario
     }
 
     @Override
+    public List<com.vendex.model.StockNegativoItem> listarStockNegativoPorFecha(int sucursalId) throws Exception {
+        if (sucursalId <= 0) throw new IllegalArgumentException("Sucursal inválida");
+        return rest.get("/api/inventario/stock-negativo?sucursalId=" + sucursalId,
+                new com.fasterxml.jackson.core.type.TypeReference<List<com.vendex.model.StockNegativoItem>>() {},
+                java.time.Duration.ofSeconds(15));
+    }
+
+    @Override
     public List<Inventario> listarActivosConStock() {
         throw new UnsupportedOperationException("Inventario.listarActivosConStock rest");
     }

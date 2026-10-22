@@ -12,6 +12,7 @@ import com.vendex.dao.ClienteDAO;
 import com.vendex.dao.InventarioDAO;
 import com.vendex.dao.LogDAO;
 import com.vendex.service.FacturaService;
+import com.vendex.service.ProductoTemporalFactura;
 import com.vendex.util.EmailService;
 import com.vendex.util.ElectronicoUtil;
 import com.vendex.dao.ComprobanteDAO;
@@ -119,6 +120,7 @@ public class FacturaController implements Initializable, DocumentoVendexi {
     @FXML private ComboBox<String> cmbInteres;
     @FXML private ComboBox<String> cmbAmbiente;
     private ChatWidgetController vendexi;
+    private Button btnProductoTemporal;
 
     private final EmpresaDAO daoEmpresa;
     private final ClienteDAO daoCliente;
@@ -162,6 +164,7 @@ public class FacturaController implements Initializable, DocumentoVendexi {
         SortTable.agregarBotones(tblDetalle);
 
         cargarAmbiente();
+        configurarProductoTemporal();
         cmbCliente.valueProperty().addListener((o, anterior, actual) -> {
             if (vendexi != null) vendexi.documentoModificado(this);
         });
@@ -349,7 +352,7 @@ public class FacturaController implements Initializable, DocumentoVendexi {
         colInvPrecio.setCellValueFactory(new PropertyValueFactory<>("precioVenta"));
         colInvUbicacion.setCellValueFactory(new PropertyValueFactory<>("ubicacionPercha"));
 
-        listaInventario.setAll(daoInventario.listar());
+        listaInventario.setAll(daoInventario.listarPorSucursal(com.vendex.util.SesionActual.getSucursalId()));
         FilteredList<Inventario> filtradosProd = new FilteredList<>(listaInventario, p -> true);
 
         txtBuscarProducto.textProperty().addListener((obs, old, val) -> {
@@ -369,6 +372,16 @@ public class FacturaController implements Initializable, DocumentoVendexi {
 
     private void iniciarTablaDetalle() {
         colCodigo.setCellValueFactory(new PropertyValueFactory<>("codigo"));
+        colCodigo.setCellFactory(c -> new TableCell<>() {
+            @Override protected void updateItem(String codigo, boolean vacio) {
+                super.updateItem(codigo, vacio);
+                FacturaDetalle d = getTableRow() == null ? null : getTableRow().getItem();
+                boolean temporal = !vacio && d != null && d.getInventarioId() == 0;
+                setText(vacio ? null : (temporal ? "[TEMPORAL] " : "") + codigo);
+                setTooltip(vacio ? null : new Tooltip((temporal ? "Producto temporal: " : "") + codigo));
+                setStyle(temporal ? "-fx-text-fill: #b45309; -fx-font-weight: bold;" : "");
+            }
+        });
         colDescripcion.setCellValueFactory(new PropertyValueFactory<>("descripcion"));
         colCantidad.setCellValueFactory(new PropertyValueFactory<>("cantidad"));
         colPrecioUnitario.setCellValueFactory(new PropertyValueFactory<>("precioUnitario"));
@@ -455,6 +468,68 @@ public class FacturaController implements Initializable, DocumentoVendexi {
         return stockTotal - cantidadEnDetalle;
     }
 
+    /** Se agrega por código para conservar el FXML compacto del formulario. */
+    private void configurarProductoTemporal() {
+        btnProductoTemporal = new Button("Producto temporal", new FontIcon("fas-plus"));
+        btnProductoTemporal.setId("btnProductoTemporal");
+        btnProductoTemporal.setTooltip(new Tooltip("Crear un código nuevo al guardar la factura, con stock negativo por las unidades vendidas"));
+        btnProductoTemporal.setOnAction(e -> mostrarModalProductoTemporal());
+        if (txtBuscarProducto.getParent() instanceof HBox fila) fila.getChildren().add(btnProductoTemporal);
+        else if (txtBuscarProducto.getParent() instanceof javafx.scene.layout.VBox columna)
+            columna.getChildren().add(columna.getChildren().indexOf(txtBuscarProducto) + 1, btnProductoTemporal);
+        else throw new IllegalStateException("No se encontró la fila de búsqueda para Producto temporal");
+    }
+
+    private void validarCodigoTemporal(String codigo) {
+        if (itemsDetalle.stream().anyMatch(d -> ProductoTemporalFactura.codigo(d.getCodigo()).equals(codigo)))
+            throw new IllegalArgumentException("El código " + codigo + " ya está en la factura.");
+        int sucursalId = com.vendex.util.SesionActual.getSucursalId();
+        if (listaInventario.stream().anyMatch(i -> i.getSucursalId() == sucursalId
+                && ProductoTemporalFactura.codigo(i.getCodigo()).equals(codigo)))
+            throw new IllegalArgumentException("El código " + codigo + " ya existe. Use el buscador de inventario o un código nuevo.");
+    }
+
+    FacturaDetalle agregarTemporalFactura(String codigo, String descripcion, int cantidad, BigDecimal precio) {
+        FacturaDetalle d = ProductoTemporalFactura.crear(codigo, descripcion, cantidad, precio);
+        validarCodigoTemporal(d.getCodigo());
+        itemsDetalle.add(d); tblDetalle.refresh(); calcularTotales();
+        return d;
+    }
+
+    private void mostrarModalProductoTemporal() {
+        Dialog<FacturaDetalle> dialog = new Dialog<>();
+        dialog.setTitle("Producto temporal — Factura de venta");
+        dialog.setHeaderText("Registrar un producto con código nuevo");
+        if (tblDetalle.getScene() != null) dialog.initOwner(tblDetalle.getScene().getWindow());
+        var grid = new javafx.scene.layout.GridPane(); grid.setHgap(12); grid.setVgap(10);
+        var codigo = new TextField(); codigo.setPromptText("Ej: TMP-001");
+        var descripcion = new TextField(); descripcion.setPromptText("Descripción del repuesto");
+        var cantidad = new TextField("1"); var precio = new TextField(); precio.setPromptText("0.00");
+        grid.addRow(0, new Label("Código:"), codigo);
+        grid.addRow(1, new Label("Descripción:"), descripcion);
+        grid.addRow(2, new Label("Cantidad:"), cantidad);
+        grid.addRow(3, new Label("P. unitario (IVA incluido):"), precio);
+        Label detalle = new Label("Se creará en inventario al guardar. Vender 3 unidades dejará stock −3."); detalle.setWrapText(true);
+        Label error = new Label(); error.setWrapText(true); error.setStyle("-fx-text-fill: #b00020;");
+        var contenido = new javafx.scene.layout.VBox(12, grid, detalle, error); contenido.setStyle("-fx-padding: 14;");
+        dialog.getDialogPane().setContent(contenido);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        Button aceptar = (Button) dialog.getDialogPane().lookupButton(ButtonType.OK); aceptar.setText("Añadir");
+        var validado = new java.util.concurrent.atomic.AtomicReference<FacturaDetalle>();
+        aceptar.addEventFilter(javafx.event.ActionEvent.ACTION, e -> {
+            try {
+                int cant;
+                BigDecimal valor;
+                try { cant = Integer.parseInt(cantidad.getText().trim()); valor = new BigDecimal(precio.getText().trim()); }
+                catch (NumberFormatException ex) { throw new IllegalArgumentException("Cantidad entera y precio numérico obligatorios."); }
+                var d = ProductoTemporalFactura.crear(codigo.getText(), descripcion.getText(), cant, valor);
+                validarCodigoTemporal(d.getCodigo()); validado.set(d);
+            } catch (IllegalArgumentException ex) { error.setText(ex.getMessage()); e.consume(); }
+        });
+        dialog.setResultConverter(bt -> bt == ButtonType.OK ? validado.get() : null);
+        dialog.showAndWait().ifPresent(d -> agregarTemporalFactura(d.getCodigo(), d.getDescripcion(), d.getCantidad(), d.getPrecioUnitario()));
+    }
+
     private void calcularTotales() {
         // Convencion C (igual que FacturaService): subtotal = S bases sin IVA (neto),
         // descuento solo cabecera, IVA 15% sobre base bruta, total = base - desc + iva.
@@ -523,6 +598,7 @@ public class FacturaController implements Initializable, DocumentoVendexi {
                     ambienteSri, rutaP12Config, claveP12Config, directorioEscritorio,
                     obtenerDescuentoValor()
             );
+            listaInventario.setAll(daoInventario.listarPorSucursal(com.vendex.util.SesionActual.getSucursalId()));
 
             // Contingencia SRI: todo a cola — entrega inmediata sin esperar SRI (LINEAMIENTO_CONTINGENCIA_SRI §1 y §2)
             // Generar PDF provisional PENDIENTE y encolar para reintento de fondo (ServicioReintentoSri cada 2min)
@@ -579,16 +655,13 @@ public class FacturaController implements Initializable, DocumentoVendexi {
             body.put("descuentoValor", obtenerDescuentoValor());
             java.util.List<java.util.Map<String, Object>> items = new java.util.ArrayList<>();
             for (FacturaDetalle d : itemsDetalle) {
-                java.util.Map<String, Object> it = new java.util.LinkedHashMap<>();
-                it.put("inventarioId", d.getInventarioId());
-                it.put("cantidad", d.getCantidad());
-                it.put("precioUnitario", d.getPrecioUnitario().toString());
-                items.add(it);
+                items.add(ProductoTemporalFactura.payload(d));
             }
             body.put("items", items);
 
             java.util.Map<String, Object> resp = client.post("/api/facturas", body, java.util.Map.class);
             if (resp == null) throw new RuntimeException("Respuesta vacía del backend");
+            listaInventario.setAll(daoInventario.listarPorSucursal(com.vendex.util.SesionActual.getSucursalId()));
 
             String numComprobante = (String) resp.get("numComprobante");
             String claveAcceso = (String) resp.get("claveAcceso");
@@ -628,11 +701,7 @@ public class FacturaController implements Initializable, DocumentoVendexi {
             body.put("descuentoValor", obtenerDescuentoValor());
             java.util.List<java.util.Map<String, Object>> items = new java.util.ArrayList<>();
             for (FacturaDetalle d : itemsDetalle) {
-                java.util.Map<String, Object> it = new java.util.LinkedHashMap<>();
-                it.put("inventarioId", d.getInventarioId());
-                it.put("cantidad", d.getCantidad());
-                it.put("precioUnitario", d.getPrecioUnitario().toString());
-                items.add(it);
+                items.add(ProductoTemporalFactura.payload(d));
             }
             body.put("items", items);
 
@@ -659,6 +728,7 @@ public class FacturaController implements Initializable, DocumentoVendexi {
     }
 
     private void validarCamposObligatorios() {
+        ProductoTemporalFactura.copiarYValidar(itemsDetalle);
         if (cmbCliente.getValue() == null) {
             throw new IllegalArgumentException("Debe seleccionar un cliente.");
         }

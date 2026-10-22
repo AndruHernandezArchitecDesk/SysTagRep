@@ -86,3 +86,44 @@ estás leyendo el chat, hay sugerencias pendientes o la ventana está minimizada
 o sin foco. Los movimientos automáticos no cambian la posición manual guardada.
 
 Detalle técnico: `docs/fase9_vendexi_capibara_flotante.md`.
+
+## 9. Historial personal de Vetxi
+
+El chat recupera la conversación más reciente del usuario y sucursal actuales.
+Usa **Conversaciones anteriores** para elegir otra y **Nueva** para comenzar una
+conversación sin borrar las previas. Se guardan preguntas, respuestas, roles y
+fuentes web desde esta versión, tanto en acceso directo a BD como por API REST.
+
+El esquema se incorpora con la migración **V40** y el fallback habitual de arranque.
+El historial no consume tokens al recuperarse. Si el almacenamiento no está
+disponible, el estado del chat indica que los mensajes no pudieron guardarse.
+
+Detalle técnico: `docs/fase10_vetxi_historial_conversaciones.md`.
+
+## 10. Producto temporal en Factura de Venta
+
+Usa **Producto temporal** junto al buscador para capturar código nuevo, descripción,
+cantidad y precio unitario con IVA incluido. Al guardar la factura, el producto queda
+registrado en el inventario de la sucursal y su stock se descuenta: vender 3 unidades
+de una referencia nueva deja **stock −3**. Cancelar o quitar la línea antes de guardar
+no crea el producto. Si el código ya existe en la sucursal, debe agregarse desde el
+buscador normal o utilizarse otro código.
+
+En modo offline, el alta se realiza al sincronizar y registrar la factura en el servidor.
+Detalle técnico: `docs/factura_productos_temporales.md`.
+
+## 11. Stock negativo al ingresar facturas de proveedor
+
+En **Ingreso de Facturas** revisa el panel derecho **Stock negativo**. Presenta
+los productos activos con saldo bajo cero de la sucursal actual, ordenados por
+fecha de alta descendente. Tras registrar un ingreso pulsa **Actualizar** si el
+listado no se ha actualizado todavía. En edición de producto/factura el panel se
+oculta para dejar espacio al formulario.
+
+El botón **«Stock negativo»** junto al título **Ingreso de Factura** oculta y
+vuelve a mostrar ese panel derecho cuando necesitas más ancho para el formulario.
+En la pantalla **Préstamos Financieros**, el botón **«Ingresos recientes»** junto
+al título oculta y muestra el panel de ingresos. En ambos casos la preferencia
+dura mientras la pantalla permanece abierta.
+
+Detalle técnico: `docs/ingreso_panel_stock_negativo.md`.

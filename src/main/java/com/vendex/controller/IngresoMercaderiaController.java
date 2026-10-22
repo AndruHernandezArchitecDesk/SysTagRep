@@ -48,6 +48,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import javafx.util.StringConverter;
+import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.io.File;
 import java.math.BigDecimal;
@@ -160,6 +161,13 @@ public class IngresoMercaderiaController implements Initializable {
     private final ObservableList<String> listaDescripciones = FXCollections.observableArrayList();
     private final ObservableList<FilaProducto> listaProductos = FXCollections.observableArrayList();
     private Timeline debounceDescripciones;
+    private StockNegativoPane stockNegativo;
+    private SplitPane divisorioStock;
+    private javafx.scene.layout.BorderPane raizPanelStock;
+    private javafx.scene.Node centroOriginalStock;
+    private boolean preparandoPanelStock;
+    @FXML private Button btnTogglePanelStock;
+    private boolean panelStockOculto;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -177,6 +185,114 @@ public class IngresoMercaderiaController implements Initializable {
         configurarCodigoAuto();
         configurarTablaProductos();
         limpiarFrm();
+        btnGuardar.sceneProperty().addListener((o, anterior, escena) -> {
+            if (anterior != null && escena == null && !preparandoPanelStock) desmontarPanelStock();
+            if (escena != null && !preparandoPanelStock) javafx.application.Platform.runLater(this::configurarStockNegativo);
+        });
+        if (btnGuardar.getScene() != null) javafx.application.Platform.runLater(this::configurarStockNegativo);
+    }
+
+    private void configurarStockNegativo() {
+        if (stockNegativo != null || preparandoPanelStock || btnGuardar.getScene() == null) return;
+        javafx.scene.layout.BorderPane raiz = encontrarRaizIngreso(btnGuardar.getScene().getRoot(), btnGuardar);
+        if (raiz == null) { LOG.warning("No se encontró la raíz BorderPane de Ingreso de Facturas; escena="
+                + btnGuardar.getScene().getRoot().getClass().getName()); return; }
+        raizPanelStock = raiz;
+        centroOriginalStock = raiz.getCenter();
+        preparandoPanelStock = true;
+        raiz.setCenter(null);
+        javafx.application.Platform.runLater(this::montarPanelStockNegativo);
+    }
+
+    private void montarPanelStockNegativo() {
+        if (raizPanelStock == null || centroOriginalStock == null) { desmontarPanelStock(); return; }
+        javafx.scene.Node formulario = centroOriginalStock;
+        if (formulario instanceof javafx.scene.layout.Region region) region.setMinWidth(0);
+        stockNegativo = new StockNegativoPane(dao::listarStockNegativoPorFecha,
+                com.vendex.util.SesionActual::getSucursalId, () -> {
+                    var usuario = com.vendex.util.SesionActual.getUsuario();
+                    return usuario == null ? null : usuario.getId();
+                });
+        divisorioStock = new SplitPane(formulario, stockNegativo);
+        divisorioStock.setDividerPositions(0.68);
+        raizPanelStock.setCenter(divisorioStock);
+        actualizarModoPanelStock();
+        // La salida/entrada del contenido de BorderPane puede entregar los eventos
+        // scene=null/scene!=null en el siguiente pulso; no confundirlos con navegación.
+        javafx.application.Platform.runLater(() -> preparandoPanelStock = false);
+    }
+
+    private static javafx.scene.layout.BorderPane encontrarRaizIngreso(javafx.scene.Node nodo, javafx.scene.Node objetivo) {
+        if (nodo instanceof javafx.scene.layout.BorderPane border && contieneNodo(border.getCenter(), objetivo)) return border;
+        if (nodo instanceof javafx.scene.control.TitledPane titled && encontrarRaizIngreso(titled.getContent(), objetivo) != null)
+            return encontrarRaizIngreso(titled.getContent(), objetivo);
+        if (nodo instanceof javafx.scene.control.ScrollPane scroll && encontrarRaizIngreso(scroll.getContent(), objetivo) != null)
+            return encontrarRaizIngreso(scroll.getContent(), objetivo);
+        if (nodo instanceof javafx.scene.Parent parent) {
+            for (javafx.scene.Node hijo : parent.getChildrenUnmodifiable()) {
+                var raiz = encontrarRaizIngreso(hijo, objetivo);
+                if (raiz != null) return raiz;
+            }
+        }
+        return null;
+    }
+
+    private static boolean contieneNodo(javafx.scene.Node raiz, javafx.scene.Node objetivo) {
+        if (raiz == objetivo) return true;
+        if (raiz instanceof javafx.scene.control.TitledPane titled) return contieneNodo(titled.getContent(), objetivo);
+        if (raiz instanceof javafx.scene.control.ScrollPane scroll) return contieneNodo(scroll.getContent(), objetivo);
+        if (raiz instanceof javafx.scene.Parent parent)
+            for (javafx.scene.Node hijo : parent.getChildrenUnmodifiable()) if (contieneNodo(hijo, objetivo)) return true;
+        return false;
+    }
+
+    private void desmontarPanelStock() {
+        if (stockNegativo != null) stockNegativo.cancelar();
+        if (raizPanelStock != null && raizPanelStock.getCenter() == divisorioStock)
+            raizPanelStock.setCenter(centroOriginalStock);
+        stockNegativo = null;
+        divisorioStock = null;
+        raizPanelStock = null;
+        centroOriginalStock = null;
+        preparandoPanelStock = false;
+    }
+
+    private void actualizarModoPanelStock() {
+        if (stockNegativo == null) return;
+        boolean mostrar = !modoEdicion && !modoEdicionFactura && !cerrarAlGuardar && !panelStockOculto;
+        if (!mostrar) {
+            stockNegativo.cancelar();
+            if (divisorioStock.getItems().contains(stockNegativo)) divisorioStock.getItems().remove(stockNegativo);
+        } else if (!divisorioStock.getItems().contains(stockNegativo)) {
+            divisorioStock.getItems().add(stockNegativo);
+            divisorioStock.setDividerPositions(0.68);
+        }
+        actualizarIconoPanelStock();
+    }
+
+    @FXML
+    private void togglePanelStock() {
+        panelStockOculto = !panelStockOculto;
+        actualizarIconoPanelStock();
+        actualizarModoPanelStock();
+        if (!panelStockOculto && divisorioStock != null && stockNegativo != null
+                && divisorioStock.getItems().contains(stockNegativo))
+            stockNegativo.actualizar();
+    }
+
+    private void actualizarIconoPanelStock() {
+        if (btnTogglePanelStock == null) return;
+        boolean oculto = panelStockOculto || modoEdicion || modoEdicionFactura || cerrarAlGuardar;
+        if (btnTogglePanelStock.getGraphic() instanceof FontIcon icono)
+            icono.setIconLiteral(oculto ? "fas-chevron-left" : "fas-chevron-right");
+        String texto = oculto ? "Mostrar el panel de stock negativo" : "Ocultar el panel de stock negativo";
+        if (btnTogglePanelStock.getTooltip() == null) btnTogglePanelStock.setTooltip(new Tooltip(texto));
+        else btnTogglePanelStock.getTooltip().setText(texto);
+    }
+
+    private void refrescarStockNegativo() {
+        if (stockNegativo != null && divisorioStock != null && divisorioStock.getItems().contains(stockNegativo))
+            stockNegativo.actualizar();
     }
 
     private void iniciarCbDescripciones() {
@@ -615,6 +731,7 @@ public class IngresoMercaderiaController implements Initializable {
                 lineasFactura.add(linea);
             }
             facturaProveedorDAO.insertar(lineasFactura);
+            refrescarStockNegativo();
 
             // Generar hoja A4 en background para no colgar la UI (como InventarioController)
             final String facturaNumFinal = numFactura;
@@ -798,6 +915,7 @@ public class IngresoMercaderiaController implements Initializable {
     public void cargarFacturaParaEdicion(String numeroFactura, int proveedorId) {
         modoEdicion = false;
         modoEdicionFactura = true;
+        actualizarModoPanelStock();
         facturaEditadaNumero = numeroFactura;
         facturaEditadaProveedorId = proveedorId;
 
@@ -874,6 +992,7 @@ public class IngresoMercaderiaController implements Initializable {
      */
     public void cargarParaEdicion(Inventario i) {
         modoEdicion = true;
+        actualizarModoPanelStock();
         txtId.setText(String.valueOf(i.getId()));
         cmbDescripcion.setValue(i.getDescripcion());
         cmbDescripcion.getEditor().setText(i.getDescripcion() == null ? "" : i.getDescripcion());
@@ -932,6 +1051,7 @@ public class IngresoMercaderiaController implements Initializable {
 
     public void setCerrarAlGuardar(boolean cerrar) {
         this.cerrarAlGuardar = cerrar;
+        actualizarModoPanelStock();
     }
 
     private void cerrarVentana() {
@@ -987,6 +1107,7 @@ public class IngresoMercaderiaController implements Initializable {
         btnAgregar.setManaged(true);
         hbTotalFactura.setVisible(true);
         hbTotalFactura.setManaged(true);
+        actualizarModoPanelStock();
     }
 
     private void iniciarCbMargen(){

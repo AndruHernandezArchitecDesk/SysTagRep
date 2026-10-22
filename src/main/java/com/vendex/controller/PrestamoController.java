@@ -87,6 +87,9 @@ public class PrestamoController implements Initializable {
     @FXML private TableView<Object[]> tblIngresos;
     @FXML private TableColumn<Object[], String> colIngFecha, colIngOrigen, colIngRef, colIngForma;
     @FXML private TableColumn<Object[], BigDecimal> colIngMonto;
+    @FXML private TitledPane paneIngresos;
+    @FXML private Button btnToggleIngresos;
+    private boolean ingresosOcultos;
 
     private final ObservableList<Object[]> listaPrestamos = FXCollections.observableArrayList();
     private final ObservableList<Object[]> listaIngresos = FXCollections.observableArrayList();
@@ -120,6 +123,23 @@ public class PrestamoController implements Initializable {
             mostrarError("Error al cargar préstamos", ex);
         }
         cargarIngresos();
+    }
+
+    @FXML
+    private void toggleIngresos() {
+        ingresosOcultos = !ingresosOcultos;
+        if (paneIngresos != null) {
+            paneIngresos.setVisible(!ingresosOcultos);
+            paneIngresos.setManaged(!ingresosOcultos);
+        }
+        if (btnToggleIngresos != null && btnToggleIngresos.getGraphic() instanceof FontIcon icono)
+            icono.setIconLiteral(ingresosOcultos ? "fas-chevron-left" : "fas-chevron-right");
+        if (btnToggleIngresos != null) {
+            String texto = ingresosOcultos ? "Mostrar el panel de ingresos recientes"
+                    : "Ocultar el panel de ingresos recientes";
+            if (btnToggleIngresos.getTooltip() == null) btnToggleIngresos.setTooltip(new Tooltip(texto));
+            else btnToggleIngresos.getTooltip().setText(texto);
+        }
     }
 
     // ==================== Tabla de préstamos ====================

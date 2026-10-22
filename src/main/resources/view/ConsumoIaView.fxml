@@ -11,7 +11,7 @@
       <Region HBox.hgrow="ALWAYS"/>
       <Button fx:id="btnRenovar" text="Renovar periodo" onAction="#onRenovarPeriodo">
         <graphic><FontIcon iconLiteral="fas-redo"/></graphic>
-        <Tooltip text="Reinicia el contador del periodo de capacidad (administrador)"/>
+        <tooltip><Tooltip text="Reinicia el contador del periodo de capacidad (administrador)"/></tooltip>
       </Button>
       <Button fx:id="btnActualizar" text="Actualizar" onAction="#onActualizar">
         <graphic><FontIcon iconLiteral="fas-sync-alt"/></graphic>

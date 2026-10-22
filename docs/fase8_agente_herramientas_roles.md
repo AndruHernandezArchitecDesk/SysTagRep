@@ -79,9 +79,10 @@ roles §4 (7). Suite total: **350 tests, 0 fallos** (25 skipped).
 
 ## 6. Pendientes / siguientes
 
-- Historial de conversación al reabrir el widget.
 - `HerramientasAgenteDAORest` para paridad en modo remoto (fase 6).
 - Plan completo: `~/Escritorio/plan-vendexi-agente.md`.
+
+El historial persistente se completa en `docs/fase10_vetxi_historial_conversaciones.md`.
 
 ## 7. Panel contextual en Nota de Crédito (22/10/2026)
 

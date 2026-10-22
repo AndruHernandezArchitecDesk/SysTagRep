@@ -169,3 +169,6 @@ Verificación: revisión visual de reposo, anotación, rascado y paseo;
 
 Por indicación del usuario, el portable no se actualiza con este rediseño.
 Las futuras regeneraciones del portable requieren que el usuario las solicite.
+
+Siguiente fase implementada: `docs/fase10_vetxi_historial_conversaciones.md`,
+historial persistente por usuario y sucursal integrado en el asistente flotante.

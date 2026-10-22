@@ -15,6 +15,8 @@ import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 import com.vendex.model.Inventario;
 import com.vendex.service.VendexiSugerenciaService;
+import com.vendex.service.VetxiHistorialService;
+import com.vendex.model.VetxiHistorial.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,11 +31,28 @@ public class ChatWidgetController {
     }
 
     ChatWidgetController(com.vendex.config.AppContext ctx, VendexiSugerenciaService sugerencias) {
-        this.chatbotService = new com.vendex.chatbot.GeminiChatbotService(ctx.repuestoChatbotDAO, ctx.herramientasAgente);
+        this(ctx, sugerencias, ctx.vetxiHistorialService);
+    }
+
+    ChatWidgetController(com.vendex.config.AppContext ctx, VendexiSugerenciaService sugerencias, VetxiHistorialService historial) {
+        this(ctx, sugerencias, historial, new GeminiChatbotService(ctx.repuestoChatbotDAO, ctx.herramientasAgente));
+    }
+
+    ChatWidgetController(com.vendex.config.AppContext ctx, VendexiSugerenciaService sugerencias,
+                         VetxiHistorialService historial, GeminiChatbotService chatbot) {
+        this(ctx, sugerencias, historial, chatbot, ctx.vendexiConsumoService);
+    }
+
+    ChatWidgetController(com.vendex.config.AppContext ctx, VendexiSugerenciaService sugerencias,
+                         VetxiHistorialService historial, GeminiChatbotService chatbot,
+                         com.vendex.service.VendexiConsumoService medicion) {
+        this.chatbotService = chatbot;
         this.vehiculoDAO = ctx.vehiculoDAO;
         this.repuestoChatbotDAO = ctx.repuestoChatbotDAO;
         this.investigacionService = new com.vendex.service.InvestigacionWebService(ctx.vendexiConsumoService);
         this.servicioSugerencias = sugerencias;
+        this.historial = historial;
+        this.medicionChat = medicion;
     }
 
     @FXML private StackPane rootStack;
@@ -49,6 +68,9 @@ public class ChatWidgetController {
     @FXML private Label contadorSugerencias, lblSugerenciaTitulo, lblSugerenciaResumen, lblSugerenciaDetalle, lblSugerenciaNumero;
     @FXML private Label lblContexto;
     @FXML private Button btnAgregarSugerencia, btnVerificar, btnPendientes, btnDetalles;
+    @FXML private javafx.scene.control.ComboBox<Conversacion> cmbConversaciones;
+    @FXML private Button btnNuevaConversacion;
+    @FXML private Label lblHistorial;
     @FXML private javafx.scene.control.ComboBox<String> cmbMarca;
     @FXML private javafx.scene.control.ComboBox<String> cmbModelo;
     @FXML private javafx.scene.control.ComboBox<Integer> cmbAnio;
@@ -58,6 +80,15 @@ public class ChatWidgetController {
     private final com.vendex.dao.RepuestoChatbotDAO repuestoChatbotDAO;
     private final com.vendex.service.InvestigacionWebService investigacionService;
     private final VendexiSugerenciaService servicioSugerencias;
+    private final VetxiHistorialService historial;
+    private final com.vendex.service.VendexiConsumoService medicionChat;
+    private java.util.concurrent.ExecutorService hiloHistorial;
+    private Ambito ambitoChat;
+    private String conversacionChat = java.util.UUID.randomUUID().toString();
+    private String tituloChat = "";
+    private long versionChat;
+    private boolean historialCargado, cargandoHistorial, consultaEnCurso, actualizandoCombo, cerrado, falloPersistencia;
+    record TurnoChat(Ambito ambito, String conversacion, String titulo, long version) {}
     private DocumentoVendexi documentoActivo;
     private long revisionDocumento;
     private final List<VendexiSugerenciaService.Sugerencia> pendientes = new ArrayList<>();
@@ -94,6 +125,16 @@ public class ChatWidgetController {
             if (!lblSugerenciaDetalle.isVisible()) ocultarBurbuja.playFromStart();
         });
         actualizarContexto();
+        cmbConversaciones.setConverter(new javafx.util.StringConverter<>() {
+            @Override public String toString(Conversacion c) {
+                if (c == null) return "";
+                String fecha = c.actualizada() == null ? "" : c.actualizada().replace('T', ' ');
+                if (fecha.length() > 16) fecha = fecha.substring(0, 16);
+                return c.titulo() + (fecha.isBlank() ? "" : " · " + fecha);
+            }
+            @Override public Conversacion fromString(String texto) { return null; }
+        });
+        cmbConversaciones.valueProperty().addListener((o, anterior, actual) -> seleccionarConversacion());
     }
 
     private void iniciarFiltrosVehiculo() {
@@ -224,6 +265,14 @@ public class ChatWidgetController {
     }
 
     private void liberar() {
+        cerrado = true;
+        versionChat++;
+        historialCargado = false;
+        cargandoHistorial = false;
+        consultaEnCurso = false;
+        chatPanel.setVisible(false);
+        mensajesBox.getChildren().clear(); inputField.clear();
+        if (hiloHistorial != null) hiloHistorial.shutdown();
         animaciones.setActivo(false);
         setDocumentoActivo(null);
         finalizarSesionVendexi();
@@ -446,27 +495,192 @@ public class ChatWidgetController {
         actualizarBadge();
         // Fase 3: registro de tiempo de interacción (estadística, no es límite — spec §12)
         if (mostrar) {
-            sesionVendexi = com.vendex.config.AppContext.getInstance().vendexiConsumoService
-                    .iniciarSesion("chat", "CONSULTA");
+            sesionVendexi = medicionChat.iniciarSesion("chat", "CONSULTA");
         } else {
             finalizarSesionVendexi();
         }
-        if (mostrar && mensajesBox.getChildren().isEmpty()) {
-            agregarMensaje("¡Hola! Soy Vetxi, tu capibara de repuestos y negocio.\n"
-                    + "• Repuestos: \"tapa radiador CHEV AVEO\" o síntoma \"ruido al frenar\"\n"
-                    + "• Stock/precio: \"¿cuánto stock tiene el filtro aceite?\"\n"
-                    + "• Clientes: \"¿cuánto me compró Juan?\" / \"¿cuánto me debe Juan?\"\n"
-                    + "• Negocio: \"¿cuáles son mis productos más rentables?\"\n"
-                    + "Filtros Marca/Modelo/Año afinan la búsqueda por vehículo.", false, false);
-            inputField.requestFocus();
-        } else if (mostrar) {
+        if (mostrar) {
+            cerrado = false;
+            sincronizarIdentidad();
+            if (!historialCargado && !cargandoHistorial) cargarHistorial();
+            else if (mensajesBox.getChildren().isEmpty()) saludar();
             inputField.requestFocus();
         }
     }
 
+    private void saludar() {
+        agregarMensaje("¡Hola! Soy Vetxi, tu capibara de repuestos y negocio.\n"
+                    + "• Repuestos: \"tapa radiador CHEV AVEO\" o síntoma \"ruido al frenar\"\n"
+                    + "• Stock/precio: \"¿cuánto stock tiene el filtro aceite?\"\n"
+                    + "• Clientes: \"¿cuánto me compró Juan?\" / \"¿cuánto me debe Juan?\"\n"
+                    + "• Negocio: \"¿cuáles son mis productos más rentables?\"\n"
+                    + "Puedes recuperar tus conversaciones o iniciar una nueva desde el historial.", false, false);
+    }
+
+    private void sincronizarIdentidad() {
+        Ambito actual = historial.ambitoActual();
+        if (java.util.Objects.equals(actual, ambitoChat)) return;
+        ambitoChat = actual;
+        versionChat++;
+        conversacionChat = java.util.UUID.randomUUID().toString();
+        tituloChat = "";
+        historialCargado = false; cargandoHistorial = false; consultaEnCurso = false;
+        falloPersistencia = false;
+        mensajesBox.getChildren().clear(); inputField.clear();
+        actualizarListaConversaciones(List.of(), null);
+        actualizarControlesChat();
+    }
+
+    private TurnoChat turnoActual() { return new TurnoChat(ambitoChat, conversacionChat, tituloChat, versionChat); }
+    private boolean vigente(TurnoChat turno) {
+        return !cerrado && turno.version() == versionChat && turno.conversacion().equals(conversacionChat)
+                && java.util.Objects.equals(turno.ambito(), ambitoChat)
+                && java.util.Objects.equals(turno.ambito(), historial.ambitoActual());
+    }
+
+    private void ejecutarHistorial(Runnable accion) {
+        if (hiloHistorial == null || hiloHistorial.isShutdown()) {
+            hiloHistorial = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
+                Thread hilo = new Thread(r, "vetxi-historial"); hilo.setDaemon(true); return hilo;
+            });
+        }
+        hiloHistorial.execute(accion);
+    }
+
+    private void actualizarControlesChat() {
+        boolean ocupado = cargandoHistorial || consultaEnCurso;
+        inputField.setDisable(ocupado);
+        btnNuevaConversacion.setDisable(ocupado);
+        cmbConversaciones.setDisable(ocupado || ambitoChat == null);
+    }
+
+    private void actualizarListaConversaciones(List<Conversacion> lista, String seleccionar) {
+        actualizandoCombo = true;
+        try {
+            cmbConversaciones.getItems().setAll(lista);
+            cmbConversaciones.setValue(lista.stream().filter(c -> c.id().equals(seleccionar)).findFirst().orElse(null));
+        } finally { actualizandoCombo = false; }
+    }
+
+    private void cargarHistorial() {
+        if (ambitoChat == null) {
+            historialCargado = true;
+            lblHistorial.setText("Sin sesión: conversación no persistente");
+            if (mensajesBox.getChildren().isEmpty()) saludar();
+            actualizarControlesChat(); return;
+        }
+        TurnoChat turno = turnoActual();
+        cargandoHistorial = true; actualizarControlesChat();
+        lblHistorial.setText("Recuperando tus conversaciones…");
+        ejecutarHistorial(() -> {
+            try {
+                var lista = historial.conversaciones(turno.ambito());
+                Conversacion reciente = lista.isEmpty() ? null : lista.get(0);
+                var mensajes = reciente == null ? List.<Mensaje>of() : historial.mensajes(turno.ambito(), reciente.id());
+                Platform.runLater(() -> {
+                    if (!vigente(turno)) return;
+                    if (reciente != null) { conversacionChat = reciente.id(); tituloChat = reciente.titulo(); }
+                    actualizarListaConversaciones(lista, reciente == null ? null : reciente.id());
+                    restaurarMensajes(mensajes);
+                });
+            } catch (Exception e) { falloHistorial(turno, "No se pudo recuperar el historial. Puedes seguir conversando.", e); }
+        });
+    }
+
+    private void restaurarMensajes(List<Mensaje> mensajes) {
+        mensajesBox.getChildren().clear();
+        for (Mensaje m : mensajes) {
+            if (m.usuario()) agregarMensaje(m.texto(), true, false);
+            else if (!m.fuentes().isEmpty()) agregarMensajeConFuentes(m.texto(), m.fuentes().stream()
+                    .map(f -> new com.vendex.service.InvestigacionWebService.Fuente(f.titulo(), f.uri())).toList(), m.sinIA(),
+                    etiquetaRol(m.rolIA(), m.rolesBloqueados()), !m.rolesBloqueados().isEmpty());
+            else agregarRespuesta(new GeminiChatbotService.RespuestaChat(m.texto(), GeminiChatbotService.EstadoIA.IA_ACTIVA,
+                    m.sinIA(), m.rolIA(), m.rolesBloqueados()));
+        }
+        if (mensajes.isEmpty()) saludar();
+        historialCargado = true; cargandoHistorial = false;
+        falloPersistencia = false;
+        lblHistorial.setText(mensajes.isEmpty() ? "Nueva conversación" :
+                "Conversación recuperada · " + mensajes.size() + " mensajes" + (mensajes.size() == 100 ? " recientes" : ""));
+        actualizarControlesChat();
+    }
+
+    @FXML void nuevaConversacion() {
+        if (consultaEnCurso || cargandoHistorial) return;
+        sincronizarIdentidad();
+        versionChat++; conversacionChat = java.util.UUID.randomUUID().toString(); tituloChat = "";
+        falloPersistencia = false;
+        historialCargado = true;
+        actualizarListaConversaciones(new ArrayList<>(cmbConversaciones.getItems()), null);
+        mensajesBox.getChildren().clear(); saludar();
+        lblHistorial.setText(ambitoChat == null ? "Sin sesión: conversación no persistente" : "Nueva conversación");
+        inputField.requestFocus();
+    }
+
+    @FXML void seleccionarConversacion() {
+        if (actualizandoCombo || cargandoHistorial || consultaEnCurso || cmbConversaciones.getValue() == null) return;
+        if (!java.util.Objects.equals(ambitoChat, historial.ambitoActual())) {
+            sincronizarIdentidad(); cargarHistorial(); return;
+        }
+        Conversacion seleccionada = cmbConversaciones.getValue();
+        versionChat++; conversacionChat = seleccionada.id(); tituloChat = seleccionada.titulo();
+        TurnoChat turno = turnoActual();
+        cargandoHistorial = true; actualizarControlesChat();
+        mensajesBox.getChildren().clear(); lblHistorial.setText("Recuperando conversación…");
+        ejecutarHistorial(() -> {
+            try {
+                var mensajes = historial.mensajes(turno.ambito(), turno.conversacion());
+                Platform.runLater(() -> { if (vigente(turno)) restaurarMensajes(mensajes); });
+            } catch (Exception e) { falloHistorial(turno, "No se pudo recuperar la conversación. Puedes seguir conversando.", e); }
+        });
+    }
+
+    private void falloHistorial(TurnoChat turno, String mensaje, Exception error) {
+        falloHistorial(turno, mensaje, error, false);
+    }
+
+    private void falloHistorial(TurnoChat turno, String mensaje, Exception error, boolean guardando) {
+        if (error instanceof InterruptedException) Thread.currentThread().interrupt();
+        java.util.logging.Logger.getLogger(ChatWidgetController.class.getName()).log(error instanceof SecurityException
+                        ? java.util.logging.Level.FINE : java.util.logging.Level.WARNING,
+                "Vetxi: historial no disponible (" + error.getClass().getSimpleName() + ")", error);
+        Platform.runLater(() -> {
+            if (!vigente(turno)) return;
+            cargandoHistorial = false; historialCargado = true;
+            if (guardando) falloPersistencia = true;
+            lblHistorial.setText(mensaje); actualizarControlesChat();
+            if (mensajesBox.getChildren().isEmpty()) saludar();
+        });
+    }
+
+    private void guardarMensaje(TurnoChat turno, boolean usuario, String texto, boolean sinIA, String rol,
+                                List<String> bloqueados, List<Fuente> fuentes) {
+        if (turno.ambito() == null) return;
+        Mensaje mensaje;
+        try {
+            mensaje = new Mensaje(java.util.UUID.randomUUID().toString(), turno.conversacion(), turno.titulo(),
+                    usuario, texto, sinIA, rol, bloqueados, fuentes, null);
+        } catch (IllegalArgumentException e) { falloHistorial(turno, "El mensaje no pudo guardarse en el historial.", e, true); return; }
+        ejecutarHistorial(() -> {
+            try {
+                historial.guardar(turno.ambito(), mensaje);
+                Platform.runLater(() -> {
+                    if (!vigente(turno)) return;
+                    lblHistorial.setText(falloPersistencia ? "Hay mensajes sin guardar; siguen visibles en este chat."
+                            : "Historial guardado · usuario y sucursal actuales");
+                    var lista = new ArrayList<>(cmbConversaciones.getItems());
+                    lista.removeIf(c -> c.id().equals(turno.conversacion()));
+                    lista.add(0, new Conversacion(turno.conversacion(), turno.titulo(), java.time.LocalDateTime.now().toString()));
+                    if (lista.size() > 20) lista.subList(20, lista.size()).clear();
+                    actualizarListaConversaciones(lista, turno.conversacion());
+                });
+            } catch (Exception e) { falloHistorial(turno, "No se pudo guardar el historial. La conversación sigue disponible aquí.", e, true); }
+        });
+    }
+
     private void finalizarSesionVendexi() {
         if (sesionVendexi > 0) {
-            com.vendex.config.AppContext.getInstance().vendexiConsumoService.finalizarSesion(sesionVendexi);
+            medicionChat.finalizarSesion(sesionVendexi);
             sesionVendexi = -1;
         }
     }
@@ -477,8 +691,13 @@ public class ChatWidgetController {
 
     @FXML
     public void onEnviar() {
+        if (cargandoHistorial || consultaEnCurso) return;
+        if (!java.util.Objects.equals(ambitoChat, historial.ambitoActual())) {
+            sincronizarIdentidad(); cargarHistorial(); return;
+        }
         String texto = inputField.getText();
         if (texto == null || texto.isBlank()) return;
+        if (texto.length() > 30000) { lblHistorial.setText("La consulta es demasiado larga."); return; }
 
         String vehMarca = filtroMarca();
         String vehModelo = filtroModelo();
@@ -490,15 +709,21 @@ public class ChatWidgetController {
             textoMostrar = sb.toString();
         }
         agregarMensaje(textoMostrar, true, false);
+        if (tituloChat.isBlank()) {
+            String titulo = texto.trim().replaceAll("\\s+", " ");
+            tituloChat = titulo.substring(0, Math.min(100, titulo.length()));
+        }
+        TurnoChat turno = turnoActual();
+        guardarMensaje(turno, true, textoMostrar, false, null, List.of(), List.of());
         inputField.clear();
-        inputField.setDisable(true);
+        consultaEnCurso = true; actualizarControlesChat();
         badgeIA.setText("⏳ consultando...");
 
         // Fase 4: investigación web (§8) — códigos/números de parte o petición explícita
         if (com.vendex.service.InvestigacionWebService.esConsultaInvestigacion(texto)
                 && com.vendex.util.LicenseManager.licenciaIncluyeIA()
                 && GeminiConfig.tieneApiKey()) {
-            investigarEnWeb(texto, vehMarca, vehModelo, vehAnio);
+            investigarEnWeb(texto, vehMarca, vehModelo, vehAnio, turno);
             return;
         }
 
@@ -511,10 +736,12 @@ public class ChatWidgetController {
             }
             GeminiChatbotService.RespuestaChat finalRc = rc;
             Platform.runLater(() -> {
+                if (!vigente(turno)) return;
                 agregarRespuesta(finalRc);
+                guardarMensaje(turno, false, finalRc.texto, finalRc.esSinIA, finalRc.rolIA, finalRc.rolesBloqueados, List.of());
                 actualizarBadge();
-                inputField.setDisable(false);
-                inputField.requestFocus();
+                consultaEnCurso = false; actualizarControlesChat();
+                if (chatPanel.isVisible()) inputField.requestFocus();
             });
         });
         hilo.setDaemon(true);
@@ -522,7 +749,7 @@ public class ChatWidgetController {
     }
 
     /** Fase 4: investigación web de repuestos con fuentes verificables (spec §8). */
-    private void investigarEnWeb(String texto, String vehMarca, String vehModelo, Integer vehAnio) {
+    private void investigarEnWeb(String texto, String vehMarca, String vehModelo, Integer vehAnio, TurnoChat turno) {
         badgeIA.setText("⏳ investigando web...");
         Thread hilo = new Thread(() -> {
             String resumenLocal = "";
@@ -533,9 +760,17 @@ public class ChatWidgetController {
                     resumenLocal = r.getCodigo() + " | " + r.getNombre() + " | stock " + r.getStock();
                 }
             } catch (Exception ignored) {}
-            com.vendex.service.InvestigacionWebService.Resultado res =
-                    investigacionService.investigar(texto, resumenLocal, vehMarca, vehModelo, vehAnio);
+            com.vendex.service.InvestigacionWebService.Resultado resultado;
+            try {
+                resultado = investigacionService.investigar(texto, resumenLocal, vehMarca, vehModelo, vehAnio);
+            } catch (Exception e) {
+                resultado = new com.vendex.service.InvestigacionWebService.Resultado(
+                        com.vendex.service.InvestigacionWebService.Estado.ERROR,
+                        "No se pudo completar la investigación web. Intenta nuevamente.", List.of(), true);
+            }
+            final var res = resultado;
             Platform.runLater(() -> {
+                if (!vigente(turno)) return;
                 boolean sinIa = res.estado == com.vendex.service.InvestigacionWebService.Estado.SIN_LICENCIA
                         || res.estado == com.vendex.service.InvestigacionWebService.Estado.SIN_CAPACIDAD
                         || res.estado == com.vendex.service.InvestigacionWebService.Estado.SIN_API_KEY
@@ -546,9 +781,11 @@ public class ChatWidgetController {
                         ? "🔍 Investigación web de \"" + texto + "\"\n\n"
                         : "";
                 agregarMensajeConFuentes(encabezado + res.texto, res.fuentes, sinIa);
+                guardarMensaje(turno, false, encabezado + res.texto, sinIa, null, List.of(), res.fuentes.stream()
+                        .map(f -> new Fuente(f.titulo, f.uri)).toList());
                 actualizarBadge();
-                inputField.setDisable(false);
-                inputField.requestFocus();
+                consultaEnCurso = false; actualizarControlesChat();
+                if (chatPanel.isVisible()) inputField.requestFocus();
             });
         });
         hilo.setDaemon(true);
@@ -558,7 +795,14 @@ public class ChatWidgetController {
     private void agregarMensajeConFuentes(String texto,
                                           java.util.List<com.vendex.service.InvestigacionWebService.Fuente> fuentes,
                                           boolean esSinIA) {
+        agregarMensajeConFuentes(texto, fuentes, esSinIA, null, false);
+    }
+
+    private void agregarMensajeConFuentes(String texto,
+                                          java.util.List<com.vendex.service.InvestigacionWebService.Fuente> fuentes,
+                                          boolean esSinIA, String etiqueta, boolean bloqueada) {
         javafx.scene.layout.VBox cuerpo = new javafx.scene.layout.VBox(3);
+        agregarEtiquetaRol(cuerpo, etiqueta, bloqueada);
         Label label = new Label(texto);
         label.setWrapText(true);
         label.getStyleClass().add(esSinIA ? "mensaje-bot-sin-ia" : "mensaje-bot");
@@ -572,7 +816,7 @@ public class ChatWidgetController {
                         (f.titulo != null && !f.titulo.isBlank()) ? f.titulo : f.uri);
                 link.setWrapText(true);
                 link.setStyle("-fx-font-size: 11px; -fx-padding: 0 4 0 8;");
-                if (f.tieneUri()) {
+                if (enlaceWebValido(f.uri)) {
                     final String uri = f.uri;
                     link.setOnAction(e -> abrirEnlace(uri));
                     link.setTooltip(new javafx.scene.control.Tooltip(uri));
@@ -595,6 +839,7 @@ public class ChatWidgetController {
 
     private void abrirEnlace(String uri) {
         try {
+            if (!enlaceWebValido(uri)) throw new IllegalArgumentException("La fuente no es un enlace web válido");
             if (java.awt.Desktop.isDesktopSupported()) {
                 java.awt.Desktop.getDesktop().browse(java.net.URI.create(uri));
             }
@@ -604,6 +849,15 @@ public class ChatWidgetController {
                     "No se pudo abrir el enlace:\n" + uri);
             a.showAndWait();
         }
+    }
+
+    private boolean enlaceWebValido(String uri) {
+        if (uri == null) return false;
+        try {
+            var enlace = java.net.URI.create(uri);
+            return ("http".equalsIgnoreCase(enlace.getScheme()) || "https".equalsIgnoreCase(enlace.getScheme()))
+                    && enlace.getHost() != null;
+        } catch (IllegalArgumentException e) { return false; }
     }
 
     private void actualizarBadge() {
@@ -665,10 +919,20 @@ public class ChatWidgetController {
     /** La etiqueta procede de la autorización local, nunca del texto generado por la IA. */
     void agregarRespuesta(GeminiChatbotService.RespuestaChat respuesta) {
         boolean bloqueada = !respuesta.rolesBloqueados.isEmpty();
-        String etiqueta = bloqueada
-                ? "🔒 Licencia: requiere " + String.join(" o ", respuesta.rolesBloqueados)
-                : (respuesta.rolIA != null ? "Rol IA: " + respuesta.rolIA : null);
-        agregarMensaje(respuesta.texto, false, respuesta.esSinIA, etiqueta, bloqueada);
+        agregarMensaje(respuesta.texto, false, respuesta.esSinIA, etiquetaRol(respuesta.rolIA, respuesta.rolesBloqueados), bloqueada);
+    }
+
+    private String etiquetaRol(String rol, List<String> bloqueados) {
+        return !bloqueados.isEmpty() ? "🔒 Licencia: requiere " + String.join(" o ", bloqueados)
+                : (rol != null ? "Rol IA: " + rol : null);
+    }
+
+    private void agregarEtiquetaRol(VBox cuerpo, String etiqueta, boolean bloqueada) {
+        if (etiqueta == null) return;
+        Label rol = new Label(etiqueta);
+        rol.setWrapText(true);
+        rol.getStyleClass().add(bloqueada ? "mensaje-rol-bloqueado" : "mensaje-rol-ia");
+        cuerpo.getChildren().add(rol);
     }
 
     private void agregarMensaje(String texto, boolean esUsuario, boolean esSinIA,
@@ -680,12 +944,7 @@ public class ChatWidgetController {
         else label.getStyleClass().add("mensaje-bot");
 
         VBox cuerpo = new VBox(3);
-        if (etiqueta != null) {
-            Label rol = new Label(etiqueta);
-            rol.setWrapText(true);
-            rol.getStyleClass().add(bloqueada ? "mensaje-rol-bloqueado" : "mensaje-rol-ia");
-            cuerpo.getChildren().add(rol);
-        }
+        agregarEtiquetaRol(cuerpo, etiqueta, bloqueada);
         cuerpo.getChildren().add(label);
         HBox contenedor = new HBox(cuerpo);
         contenedor.setFillHeight(false);

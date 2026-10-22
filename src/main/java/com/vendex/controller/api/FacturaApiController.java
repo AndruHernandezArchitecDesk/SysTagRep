@@ -4,6 +4,7 @@ import com.vendex.config.AppContext;
 import com.vendex.dao.*;
 import com.vendex.model.*;
 import com.vendex.service.FacturaService;
+import com.vendex.service.ProductoTemporalFactura;
 import com.vendex.util.*;
 import io.javalin.http.Context;
 
@@ -26,11 +27,16 @@ public class FacturaApiController {
     }
 
     public FacturaApiController(AppContext ctx) {
-        this.facturaService = ctx.facturaService;
-        this.empresaDAO = ctx.empresaDAO;
-        this.clienteDAO = ctx.clienteDAO;
-        this.inventarioDAO = ctx.inventarioDAO;
-        this.facturaRegistroDAO = ctx.facturaRegistroDAO;
+        this(ctx.facturaService, ctx.empresaDAO, ctx.clienteDAO, ctx.inventarioDAO, ctx.facturaRegistroDAO);
+    }
+
+    public FacturaApiController(FacturaService facturaService, EmpresaDAO empresaDAO, ClienteDAO clienteDAO,
+                                InventarioDAO inventarioDAO, FacturaRegistroDAO facturaRegistroDAO) {
+        this.facturaService = facturaService;
+        this.empresaDAO = empresaDAO;
+        this.clienteDAO = clienteDAO;
+        this.inventarioDAO = inventarioDAO;
+        this.facturaRegistroDAO = facturaRegistroDAO;
     }
 
     public void listar(Context ctx) {
@@ -196,13 +202,31 @@ public class FacturaApiController {
 
             List<FacturaDetalle> items = new ArrayList<>();
             for (Map<String, Object> it : itemsRaw) {
-                int invId = ((Number) it.get("inventarioId")).intValue();
-                int cant = ((Number) it.get("cantidad")).intValue();
-                BigDecimal pUnit = new BigDecimal(it.get("precioUnitario").toString());
-                Inventario inv = inventarioDAO.obtenerPorId(invId);
-                if (inv == null) { ctx.status(400).json(Map.of("error", "Inventario no encontrado id=" + invId)); return; }
-                items.add(new FacturaDetalle(invId, inv.getCodigo(), inv.getDescripcion(), cant, pUnit));
+                if (it == null) throw new IllegalArgumentException("Detalle de factura inválido.");
+                int invId, cant;
+                BigDecimal pUnit;
+                try {
+                    invId = new BigDecimal(String.valueOf(it.get("inventarioId"))).intValueExact();
+                    cant = new BigDecimal(String.valueOf(it.get("cantidad"))).intValueExact();
+                    pUnit = new BigDecimal(String.valueOf(it.get("precioUnitario")));
+                } catch (ArithmeticException | NumberFormatException e) {
+                    throw new IllegalArgumentException("Identificador y cantidad enteros, y precio numérico obligatorios.");
+                }
+                if (cant <= 0 || pUnit.signum() <= 0 || invId < 0) throw new IllegalArgumentException("Cantidad y precio deben ser mayores a cero.");
+                boolean temporal = Boolean.TRUE.equals(it.get("temporal"));
+                if (temporal && invId == 0) {
+                    items.add(ProductoTemporalFactura.crear(it.get("codigo") instanceof String cod ? cod : null,
+                            it.get("descripcion") instanceof String desc ? desc : null, cant, pUnit));
+                } else {
+                    if (temporal || invId == 0) throw new IllegalArgumentException("El producto temporal debe indicar temporal=true e inventarioId=0.");
+                    Inventario inv = inventarioDAO.obtenerPorId(invId);
+                    if (inv == null) throw new IllegalArgumentException("Inventario no encontrado id=" + invId);
+                    if (inv.getSucursalId() != SesionActual.getSucursalId())
+                        throw new IllegalArgumentException("El producto no pertenece a la sucursal de la sesión.");
+                    items.add(new FacturaDetalle(invId, inv.getCodigo(), inv.getDescripcion(), cant, pUnit));
+                }
             }
+            items = ProductoTemporalFactura.copiarYValidar(items);
 
             String rutaP12 = ConfigFirma.cargar()[0];
             String claveP12 = ConfigFirma.cargar()[1];
@@ -215,7 +239,7 @@ public class FacturaApiController {
             );
 
             Map<String, Object> resp = new LinkedHashMap<>();
-            resp.put("id", resultado.itemsDetalle != null && !resultado.itemsDetalle.isEmpty() ? resultado.itemsDetalle.get(0).getId() : -1);
+            resp.put("id", resultado.itemsDetalle != null && !resultado.itemsDetalle.isEmpty() ? resultado.itemsDetalle.get(0).getFacturaRegistroId() : -1);
             resp.put("claveAcceso", resultado.claveAcceso);
             resp.put("numComprobante", resultado.numComprobante);
             resp.put("ambienteSri", resultado.ambienteSri);
@@ -228,6 +252,8 @@ public class FacturaApiController {
             resp.put("rutaPDF", resultado.rutaPDF);
             resp.put("rutaXML", resultado.rutaXML);
             ctx.json(resp);
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("error", e.getMessage() != null ? e.getMessage() : "Datos de factura inválidos"));
         } catch (Exception e) {
             ctx.status(500).json(Map.of("error", e.getMessage() != null ? e.getMessage() : "Error interno", "type", e.getClass().getName()));
         }
