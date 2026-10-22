@@ -376,9 +376,9 @@
                     <!-- Asistente IA -->
                     <Button text="Asistente IA" onAction="#irAsistenteRepuestos" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 10 12 10 12;">
                         <graphic>
-                            <FontIcon iconLiteral="fas-robot" iconSize="16"/>
+                            <FontIcon iconLiteral="fas-paw" iconSize="16"/>
                         </graphic>
-                        <Tooltip text="Chatbot/Asistente IA para consulta de repuestos"/>
+                        <Tooltip text="Abrir Vetxi, tu capibara de repuestos, negocio y sugerencias"/>
                     </Button>
                     <Button text="Configurar IA" onAction="#irConfigurarIA" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                         <graphic>
@@ -390,7 +390,7 @@
                         <graphic>
                             <FontIcon iconLiteral="fas-chart-line" iconSize="16"/>
                         </graphic>
-                        <Tooltip text="Tokens, costos y capacidad de la licencia de Vendexi AI"/>
+                        <Tooltip text="Tokens, costos y capacidad de la licencia de Vetxi AI"/>
                     </Button>
                     <Button text="Análisis IA" onAction="#irAnalisisIa" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                         <graphic>
@@ -429,6 +429,6 @@
 </BorderPane>
 
     <!-- Widget flotante chatbot (pickOnBounds=false no bloquea clicks) -->
-    <fx:include source="ChatWidget.fxml"/>
+    <fx:include fx:id="asistente" source="ChatWidget.fxml"/>
 
 </StackPane>

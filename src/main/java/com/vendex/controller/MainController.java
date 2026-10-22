@@ -73,6 +73,8 @@ public class MainController implements Initializable {
     @FXML
     private StackPane contenedor;
 
+    @FXML private ChatWidgetController asistenteController;
+
     @FXML
     private Label lblUsuarioSesion;
 
@@ -362,35 +364,14 @@ public class MainController implements Initializable {
 
     @FXML
     private void irAsistenteRepuestos() {
-        try {
-            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/view/ChatWidget.fxml"));
-            VendexControllerFactory.aplicar(loader);
-            Parent root = loader.load();
-            Object ctrl = loader.getController();
-            if (ctrl instanceof ChatWidgetController cwc) {
-                javafx.application.Platform.runLater(cwc::abrir);
-            }
-            Stage stage = new Stage();
-            stage.setTitle("Asistente de Repuestos - Vendex");
-            stage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
-            stage.initOwner(contenedor.getScene().getWindow());
-            Scene scene = new Scene(root, 400, 500);
-            ThemeManager.aplicarTemaGuardado(scene);
-            stage.setScene(scene);
-            stage.setResizable(false);
-            stage.show();
-        } catch (Exception e) {
-            logDAO.guardar("MainController", "irAsistenteRepuestos", e.getMessage(), e);
-            Alert alert = new Alert(Alert.AlertType.ERROR, "No se pudo abrir el asistente: " + e.getMessage(), ButtonType.OK);
-            alert.showAndWait();
-        }
+        if (asistenteController != null) asistenteController.abrir();
     }
 
     @FXML
     private void irConfigurarIA() {
         if (!com.vendex.util.LicenseManager.licenciaIncluyeIA()) {
             new Alert(Alert.AlertType.INFORMATION,
-                    "La licencia de esta instalación no incluye Vendexi AI.\n" +
+                    "La licencia de esta instalación no incluye Vetxi AI.\n" +
                     "Para habilitar el asistente inteligente, contacte al administrador de Vendex.",
                     ButtonType.OK).showAndWait();
             return;
@@ -1016,6 +997,9 @@ public class MainController implements Initializable {
             }
             aplicarMayusculas(vista);
             contenedor.getChildren().setAll(vista);
+            if (asistenteController != null) {
+                asistenteController.setDocumentoActivo(loader.getController() instanceof DocumentoVendexi documento ? documento : null);
+            }
         } catch (Exception e) {
             java.io.StringWriter sw = new java.io.StringWriter();
             e.printStackTrace(new java.io.PrintWriter(sw));

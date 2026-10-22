@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
-public class NotaCreditoController implements Initializable {
+public class NotaCreditoController implements Initializable, DocumentoVendexi {
 
     public NotaCreditoController() {
         this(com.vendex.config.AppContext.getInstance());
@@ -83,7 +83,7 @@ public class NotaCreditoController implements Initializable {
 
     private final ObservableList<NotaCreditoService.DetalleNCInput> detallesNc = FXCollections.observableArrayList();
     private String rutaP12 = ""; private String claveP12 = "";
-    private VendexiSugerenciasPane vendexi;
+    private ChatWidgetController vendexi;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -96,28 +96,15 @@ public class NotaCreditoController implements Initializable {
         cargarFacturasAutorizadas();
         iniciarTablas();
         actualizarSecuencial();
-        configurarVendexi();
     }
 
-    private void configurarVendexi() {
-        try {
-            vendexi = new VendexiSugerenciasPane();
-            vendexi.setModulo("nota de crédito");
-            vendexi.setContextoProvider(this::contextoVendexi);
-            vendexi.setOnCopiarTexto(t -> {
-                javafx.scene.input.ClipboardContent contenido = new javafx.scene.input.ClipboardContent();
-                contenido.putString(t);
-                javafx.scene.input.Clipboard.getSystemClipboard().setContent(contenido);
-            });
-            vendexi.insertarEn(VendexiSugerenciasPane.localizarContenidoDesde(cmbFactura), 0);
-        } catch (Exception e) {
-            Logger.getLogger(NotaCreditoController.class.getName()).log(
-                    java.util.logging.Level.WARNING, "No se pudo montar el panel Vendexi en nota de crédito", e);
-            vendexi = null;
-        }
+    @Override
+    public void conectarVendexi(ChatWidgetController asistente) {
+        vendexi = asistente;
     }
 
-    private VendexiSugerenciaService.Contexto contextoVendexi() {
+    @Override
+    public VendexiSugerenciaService.Contexto contextoVendexi() {
         List<VendexiSugerenciaService.Linea> lineas = new ArrayList<>();
         for (NotaCreditoService.DetalleNCInput d : detallesNc) {
             lineas.add(new VendexiSugerenciaService.Linea(d.inventarioId, d.codigo, d.descripcion,
@@ -211,6 +198,7 @@ public class NotaCreditoController implements Initializable {
         lblSubtotal.setText("$ "+sub.toPlainString());
         lblIva.setText("$ "+iva.toPlainString());
         lblTotal.setText("$ "+tot.toPlainString());
+        if (vendexi != null) vendexi.documentoModificado(this);
     }
 
     private void actualizarSecuencial() {

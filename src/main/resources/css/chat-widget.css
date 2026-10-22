@@ -45,8 +45,6 @@
     -fx-border-color: -border;
     -fx-border-radius: 10;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 12, 0, 0, 4);
-    -fx-translate-x: -20;
-    -fx-translate-y: -90;
 }
 
 .chat-header { -fx-padding: 6 4 10 4; }
@@ -121,6 +119,24 @@
     -fx-border-radius: 12 12 12 2;
 }
 
+.mensaje-rol-ia, .mensaje-rol-bloqueado {
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-padding: 2 8;
+    -fx-max-width: 240px;
+    -fx-background-radius: 6;
+}
+
+.mensaje-rol-ia {
+    -fx-background-color: -selection-bg;
+    -fx-text-fill: -selection-text;
+}
+
+.mensaje-rol-bloqueado {
+    -fx-background-color: #FEF3C7;
+    -fx-text-fill: #7c2d12;
+}
+
 .input-bar { -fx-padding: 8 0 0 0; }
 
 .veh-filter-bar {
@@ -146,3 +162,57 @@
 }
 
 .btn-enviar:hover { -fx-background-color: -accent-hover; }
+
+/* Vetxi: mascota vectorial y globos anclados a su posición. */
+.capibara-boton {
+    -fx-background-color: transparent;
+    -fx-padding: 3 4;
+    -fx-cursor: open-hand;
+    -fx-min-width: 100;
+    -fx-min-height: 86;
+    -fx-effect: dropshadow(gaussian, rgba(45, 30, 20, 0.20), 8, 0.15, 0, 3);
+}
+.capibara-boton:pressed { -fx-cursor: closed-hand; }
+.capibara-boton:hover { -fx-effect: dropshadow(gaussian, rgba(106, 151, 80, 0.45), 12, 0.25, 0, 2); }
+.capibara-boton:focused { -fx-border-color: -accent-primary; -fx-border-radius: 18; }
+.capibara-nombre {
+    -fx-background-color: #F5EBDD;
+    -fx-background-radius: 12;
+    -fx-padding: 2 12;
+    -fx-text-fill: #65452E;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+.capibara-contador {
+    -fx-background-color: #5B8051;
+    -fx-background-radius: 20;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 3 8;
+    -fx-border-color: #F5EBDD;
+    -fx-border-width: 2;
+    -fx-border-radius: 20;
+}
+.capibara-globo {
+    -fx-background-color: -bg-card;
+    -fx-border-color: #ADBE9D;
+    -fx-border-width: 1;
+    -fx-background-radius: 18 18 4 18;
+    -fx-border-radius: 18 18 4 18;
+    -fx-padding: 12;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.20), 12, 0.1, 0, 4);
+}
+.capibara-globo-cabecera { -fx-text-fill: #719361; -fx-font-weight: bold; -fx-font-size: 12px; }
+.capibara-globo-titulo { -fx-text-fill: -text-primary; -fx-font-weight: bold; -fx-font-size: 14px; }
+.capibara-subtitulo { -fx-text-fill: -text-secondary; -fx-font-size: 11px; }
+.capibara-contexto { -fx-text-fill: -text-secondary; -fx-font-size: 11px; -fx-padding: 3 0; }
+.capibara-detalle { -fx-text-fill: -text-primary; -fx-font-size: 12px; }
+.capibara-accion {
+    -fx-background-color: -bg-card-alt;
+    -fx-text-fill: -text-primary;
+    -fx-background-radius: 7;
+    -fx-font-size: 11px;
+    -fx-cursor: hand;
+}
+.capibara-enlace { -fx-background-color: transparent; -fx-text-fill: -accent-primary; -fx-padding: 2 0; -fx-font-size: 11px; -fx-cursor: hand; }
+.chat-panel .btn-enviar .text, .capibara-globo .btn-enviar .text { -fx-fill: white; }

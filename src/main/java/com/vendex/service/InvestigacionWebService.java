@@ -113,7 +113,7 @@ public class InvestigacionWebService {
         }
         if (!LicenseManager.licenciaIncluyeIA()) {
             return new Resultado(Estado.SIN_LICENCIA,
-                    "La licencia de esta instalación no incluye Vendexi AI: no se realiza investigación web.",
+                    "La licencia de esta instalación no incluye Vetxi AI: no se realiza investigación web.",
                     List.of(), true);
         }
         if (!consumoService().hayCapacidadDisponible()) {
@@ -237,7 +237,7 @@ public class InvestigacionWebService {
     public String construirPrompt(String consulta, String resumenInventarioLocal,
                                   String vehMarca, String vehModelo, Integer vehAnio) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Eres Vendexi AI, especialista en repuestos automotrices del ERP Vendex (Ecuador). ");
+        sb.append("Eres Vetxi AI, especialista en repuestos automotrices del ERP Vendex (Ecuador). ");
         sb.append("Tu tarea: investigar en internet el codigo o numero de parte solicitado usando la busqueda web.\n");
         sb.append("Consulta: \"").append(limpiar(consulta)).append("\"\n");
         if (vehMarca != null || vehModelo != null || vehAnio != null) {

@@ -56,7 +56,7 @@ public class LicenseActivatorController {
     private String detallesVendexi(LicenseManager.LicenseInfo info) {
         if (info == null || !info.version2) return "";
         StringBuilder sb = new StringBuilder(" · ").append(info.modalidad);
-        sb.append(info.incluyeIA ? " · Vendexi AI incluida" : " · sin Vendexi AI");
+        sb.append(info.incluyeIA ? " · Vetxi AI incluida" : " · sin Vetxi AI");
         if (info.incluyeIA && !info.rolesIA.isEmpty()) {
             sb.append(" · roles: ").append(String.join(",", info.rolesIA));
         }

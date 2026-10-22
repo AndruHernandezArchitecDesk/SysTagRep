@@ -1,5 +1,8 @@
 # Fase 8 — Vendexi agente: herramientas de lectura y roles contextuales
 
+> Actualización de interfaz: los paneles incrustados descritos en esta fase fueron
+> sustituidos por el capibara flotante de `docs/fase9_vendexi_capibara_flotante.md`.
+
 **Fecha:** 21/10/2026 · Spec Vendexi §4 (roles IA), §5 (contexto), §16 Fase 8 · Anteriores: `docs/fase7_multiusuario_sucursales.md`
 
 ## Objetivo
@@ -76,7 +79,7 @@ roles §4 (7). Suite total: **350 tests, 0 fallos** (25 skipped).
 
 ## 6. Pendientes / siguientes
 
-- Indicador de rol IA en las respuestas; historial de conversación al reabrir el widget.
+- Historial de conversación al reabrir el widget.
 - `HerramientasAgenteDAORest` para paridad en modo remoto (fase 6).
 - Plan completo: `~/Escritorio/plan-vendexi-agente.md`.
 
@@ -117,3 +120,51 @@ verificación NC y 1 de montaje/contexto NC en FxmlSmoke.
 La suite también imprime una aserción en un hilo secundario de
 `SesionActualAislamientoTest` que Surefire no contabiliza como fallo. Corresponde a
 un test existente, ajeno a estos cambios; el resultado de Maven no detecta ese caso.
+
+## 9. Indicador de rol IA por respuesta (22/10/2026)
+
+- `RespuestaChat` transporta el `rolIA` autorizado y una lista inmutable
+  `rolesBloqueados`. Los metadatos pertenecen a cada respuesta, sin reutilizar el
+  rol de la consulta anterior.
+- El widget muestra una etiqueta `Rol IA: VENTAS`, `INVENTARIO` o `FINANCIERO`
+  encima del mensaje. La etiqueta se construye localmente, fuera del texto de Gemini.
+- En consultas de repuestos/stock se prefiere `INVENTARIO` si está habilitado;
+  una licencia solo `VENTAS` utiliza `VENTAS` tanto en el prompt como en la etiqueta.
+- Si falta el rol, muestra `Licencia: requiere FINANCIERO` o
+  `Licencia: requiere VENTAS o INVENTARIO`, junto con la explicación del bloqueo.
+  No se ejecuta la herramienta ni la llamada de redacción.
+- Saludos (`GENERAL`), búsqueda local y errores sin clasificación no muestran rol.
+  Si solo falla la redacción, se conservan los datos locales y el rol autorizado.
+- Se conserva la API de texto `preguntar(...)`; el widget recibe la respuesta
+  estructurada mediante `preguntarConEstado(...)`. No se añaden llamadas IA.
+
+### Verificación del indicador
+
+`./mvnw -Dtest=GeminiChatbotServiceHerramientasTest,FxmlSmokeTest test`:
+**52 tests, 0 fallos, 0 errores, 0 omitidos**. Incluye 8 pruebas nuevas: 7 de
+selección de rol, prompt, bloqueos y degradaciones; 1 de renderizado en el widget.
+
+## 10. Recuperación ante indisponibilidad de Gemini (22/10/2026)
+
+El chat reiniciaba la cadena de modelos en cada llamada, por lo que la redacción
+volvía a consultar inmediatamente el principal aunque la clasificación acabara de
+recibir HTTP 503. Ahora cada instancia del servicio mantiene una pausa por modelo:
+
+- HTTP 500/502/503/504: omitir el modelo durante 60 segundos y probar el siguiente.
+- HTTP 404: omitirlo durante 10 minutos, manteniendo los respaldos disponibles.
+- La clasificación, la redacción y las consultas siguientes comparten las pausas.
+  Al vencer la pausa, la siguiente llamada puede volver a probar el principal.
+- Si todos están en pausa, devolver el control inmediatamente al fallback local,
+  sin volver a realizar las tres peticiones ni dormir el hilo de interfaz.
+- HTTP 400/401/403/429 mantienen su tratamiento de payload, clave o cuota, sin
+  cambiar de modelo por números o palabras encontrados en el cuerpo del error.
+- El código HTTP se conserva explícitamente en la excepción. El registro indica
+  modelo, código y duración de la pausa.
+
+Esto evita peticiones repetidas a modelos que acaban de fallar; no elimina una
+indisponibilidad del proveedor. La búsqueda local permanece disponible.
+
+Verificación:
+`./mvnw -Dtest=GeminiChatbotServiceDisponibilidadTest,GeminiChatbotServiceHerramientasTest,FxmlSmokeTest test`
+→ **59 tests, 0 fallos, 0 errores, 0 omitidos**. Las 7 pruebas nuevas utilizan un
+servidor HTTP local y un reloj controlado, sin acceso a Google ni esperas de un minuto.

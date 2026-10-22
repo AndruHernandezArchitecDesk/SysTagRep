@@ -1,69 +1,71 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.ComboBox?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.ScrollPane?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.control.Tooltip?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.StackPane?>
-<?import javafx.scene.layout.VBox?>
-<?import javafx.scene.shape.Circle?>
-<?import org.kordamp.ikonli.javafx.FontIcon?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
 
-<StackPane fx:id="rootStack" pickOnBounds="false" alignment="BOTTOM_RIGHT"
-           xmlns="http://javafx.com/javafx"
-           xmlns:fx="http://javafx.com/fxml"
-           fx:controller="com.vendex.controller.ChatWidgetController"
-           stylesheets="@../css/chat-widget.css">
-
-    <!-- Panel de chat (oculto por defecto) -->
-    <VBox fx:id="chatPanel" styleClass="chat-panel" visible="false" managed="false"
-          maxWidth="360" maxHeight="480" StackPane.alignment="BOTTOM_RIGHT">
-        <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
-
-        <HBox styleClass="chat-header" alignment="CENTER_LEFT" spacing="6">
-            <FontIcon iconLiteral="fas-robot" styleClass="chat-header-icon"/>
-            <Label text="Asistente de repuestos" styleClass="chat-header-label"/>
+<StackPane fx:id="rootStack" pickOnBounds="false" style="-fx-background-color: null;"
+           xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.vendex.controller.ChatWidgetController" stylesheets="@../css/chat-widget.css">
+    <VBox fx:id="chatPanel" styleClass="chat-panel" visible="false" managed="false" spacing="8">
+        <padding><Insets top="12" right="12" bottom="12" left="12"/></padding>
+        <HBox alignment="CENTER_LEFT" spacing="8">
+            <VBox HBox.hgrow="ALWAYS" spacing="2">
+                <Label text="Vetxi" styleClass="chat-header-label"/>
+                <Label text="Tu capibara de repuestos y negocio" styleClass="capibara-subtitulo"/>
+            </VBox>
             <Label fx:id="badgeIA" text="○ Local" styleClass="badge-local"/>
-            <HBox HBox.hgrow="ALWAYS"/>
-            <Button text="✕" onAction="#onToggleChat" styleClass="btn-cerrar"/>
+            <Button text="✕" onAction="#onToggleChat" styleClass="btn-cerrar" accessibleText="Cerrar chat"/>
         </HBox>
-
-        <ScrollPane fx:id="scrollPane" fitToWidth="true" styleClass="chat-scroll" VBox.vgrow="ALWAYS">
+        <Label fx:id="lblContexto" wrapText="true" styleClass="capibara-contexto"/>
+        <HBox spacing="6">
+            <Button fx:id="btnVerificar" text="Verificar documento" onAction="#verificarDocumento" disable="true" styleClass="capibara-accion"/>
+            <Button fx:id="btnPendientes" text="Sugerencias (0)" onAction="#mostrarSugerencias" disable="true" styleClass="capibara-accion"/>
+        </HBox>
+        <ScrollPane fx:id="scrollPane" fitToWidth="true" hbarPolicy="NEVER" styleClass="chat-scroll" VBox.vgrow="ALWAYS" minHeight="0">
             <VBox fx:id="mensajesBox" styleClass="mensajes-box" spacing="8">
                 <padding><Insets top="8" right="8" bottom="8" left="8"/></padding>
             </VBox>
         </ScrollPane>
-
-        <HBox spacing="6" styleClass="veh-filter-bar" alignment="CENTER_LEFT" visible="false" managed="false">
-            <padding><Insets top="6" left="6" right="6"/></padding>
-            <FontIcon iconLiteral="fas-car" iconSize="12"/>
-            <ComboBox fx:id="cmbMarca" promptText="Marca" prefWidth="82" HBox.hgrow="ALWAYS"/>
-            <ComboBox fx:id="cmbModelo" promptText="Modelo" prefWidth="82" HBox.hgrow="ALWAYS"/>
-            <ComboBox fx:id="cmbAnio" promptText="Año" prefWidth="58"/>
+        <HBox spacing="6" visible="false" managed="false">
+            <ComboBox fx:id="cmbMarca" promptText="Marca" prefWidth="90"/>
+            <ComboBox fx:id="cmbModelo" promptText="Modelo" prefWidth="90"/>
+            <ComboBox fx:id="cmbAnio" promptText="Año" prefWidth="65"/>
         </HBox>
-
-        <HBox spacing="6" styleClass="input-bar">
-            <padding><Insets top="8"/></padding>
-            <TextField fx:id="inputField" promptText="Ej: tapa radiador CHEV AVEO" HBox.hgrow="ALWAYS"
-                       onAction="#onEnviar"/>
+        <HBox spacing="6">
+            <TextField fx:id="inputField" promptText="Pregúntame por un repuesto…" HBox.hgrow="ALWAYS" onAction="#onEnviar" minWidth="0"/>
             <Button text="Enviar" onAction="#onEnviar" styleClass="btn-enviar"/>
         </HBox>
     </VBox>
 
-       <!-- Botón burbuja asistente con pulso - ambos en esquina inferior derecha -->
-    <Circle fx:id="pulseCircle" styleClass="chat-bubble-pulse" radius="32" managed="false" mouseTransparent="true" opacity="0.35" StackPane.alignment="BOTTOM_RIGHT" style="-fx-translate-x: -52; -fx-translate-y: -52;"/>
-    <Button fx:id="bubbleButton" styleClass="chat-bubble chat-bubble-assistant" onAction="#onToggleChat"
-            StackPane.alignment="BOTTOM_RIGHT" style="-fx-translate-x: -20; -fx-translate-y: -20;">
-        <graphic>
-            <FontIcon iconLiteral="fas-robot" iconSize="26" styleClass="chat-bubble-icon"/>
-        </graphic>
-        <tooltip>
-            <Tooltip text="Asistente IA — pregunta por repuestos"/>
-        </tooltip>
-    </Button>
+    <VBox fx:id="sugerenciaBubble" styleClass="capibara-globo" visible="false" managed="false" spacing="8">
+        <HBox alignment="CENTER_LEFT" spacing="8">
+            <Label text="Vetxi tiene una idea" styleClass="capibara-globo-cabecera" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+            <Label fx:id="lblSugerenciaNumero" styleClass="capibara-subtitulo"/>
+            <Button text="✕" onAction="#ocultarSugerencias" styleClass="btn-cerrar" accessibleText="Ocultar sugerencias"/>
+        </HBox>
+        <Label fx:id="lblSugerenciaTitulo" wrapText="true" maxWidth="310" styleClass="capibara-globo-titulo"/>
+        <Label fx:id="lblSugerenciaResumen" wrapText="true" maxWidth="310" styleClass="capibara-subtitulo"/>
+        <Label fx:id="lblSugerenciaDetalle" wrapText="true" maxWidth="310" maxHeight="160" visible="false" managed="false" styleClass="capibara-detalle"/>
+        <HBox spacing="6" alignment="CENTER_LEFT">
+            <Button fx:id="btnAgregarSugerencia" text="Agregar 1" onAction="#agregarSugerencia" styleClass="btn-enviar"/>
+            <Button text="Descartar" onAction="#descartarSugerencia" styleClass="capibara-accion"/>
+            <Button text="Siguiente ›" onAction="#siguienteSugerencia" styleClass="capibara-accion"/>
+        </HBox>
+        <HBox spacing="8">
+            <Button fx:id="btnDetalles" text="Ver detalles" onAction="#detallesSugerencia" styleClass="capibara-enlace"/>
+            <Button text="Copiar" onAction="#copiarSugerencia" styleClass="capibara-enlace"/>
+            <Button text="Abrir chat" onAction="#onToggleChat" styleClass="capibara-enlace"/>
+        </HBox>
+    </VBox>
 
+    <StackPane fx:id="mascota" managed="false" pickOnBounds="false" prefWidth="104" prefHeight="108">
+        <Button fx:id="bubbleButton" onAction="#onMascota" styleClass="capibara-boton" StackPane.alignment="TOP_CENTER"
+                accessibleText="Vetxi, capibara asistente. Arrastra para mover; pulsa para abrir.">
+            <graphic><fx:include fx:id="capibara" source="Capibara.fxml"/></graphic>
+            <tooltip><Tooltip text="Soy Vetxi. Arrástrame o pulsa para conversar y ver sugerencias."/></tooltip>
+        </Button>
+        <Label text="Vetxi" styleClass="capibara-nombre" mouseTransparent="true" StackPane.alignment="BOTTOM_CENTER"/>
+        <Label fx:id="contadorSugerencias" text="0" visible="false" mouseTransparent="true"
+               styleClass="capibara-contador" StackPane.alignment="TOP_RIGHT"/>
+    </StackPane>
 </StackPane>

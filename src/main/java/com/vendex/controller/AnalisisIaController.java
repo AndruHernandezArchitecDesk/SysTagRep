@@ -67,7 +67,7 @@ public class AnalisisIaController {
                 lblEstado.setText(switch (res.estado) {
                     case OK -> "✅ Análisis generado.";
                     case SIN_CAPACIDAD -> "⚠️ Capacidad de IA agotada.";
-                    case SIN_LICENCIA -> "⚠️ La licencia no incluye Vendexi AI.";
+                    case SIN_LICENCIA -> "⚠️ La licencia no incluye Vetxi AI.";
                     case SIN_API_KEY -> "⚠️ Sin API key de Gemini.";
                     default -> "⚠️ " + res.texto;
                 });

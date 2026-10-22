@@ -109,6 +109,9 @@ class FxmlSmokeTest {
             Object controller = cargar("/view/MainView.fxml");
             assertNotNull(controller, "controller MainController");
             assertNotNull(controller.getClass().getDeclaredField("quickAccessBar"), "campo quickAccessBar");
+            java.lang.reflect.Field asistente = controller.getClass().getDeclaredField("asistenteController");
+            asistente.setAccessible(true);
+            assertNotNull(asistente.get(controller), "asistente único inyectado desde fx:include");
         } finally {
             com.vendex.util.SesionActual.cerrar();
         }
@@ -213,23 +216,61 @@ class FxmlSmokeTest {
     }
 
     @Test
+    @Order(15)
+    void chatWidget_muestraRolYBloqueoPorRespuesta() throws Exception {
+        ChatWidgetController controller = (ChatWidgetController) cargar("/view/ChatWidget.fxml");
+        AtomicReference<Throwable> error = new AtomicReference<>();
+        CountDownLatch latch = new CountDownLatch(1);
+        Platform.runLater(() -> {
+            try {
+                var estado = com.vendex.chatbot.GeminiChatbotService.EstadoIA.IA_ACTIVA;
+                controller.agregarRespuesta(new com.vendex.chatbot.GeminiChatbotService.RespuestaChat(
+                        "Stock real", estado, false, "VENTAS", java.util.List.of()));
+                controller.agregarRespuesta(new com.vendex.chatbot.GeminiChatbotService.RespuestaChat(
+                        "Licencia sin acceso", estado, false, null, java.util.List.of("FINANCIERO")));
+                controller.agregarRespuesta(new com.vendex.chatbot.GeminiChatbotService.RespuestaChat(
+                        "Hola", estado, false));
+                controller.agregarRespuesta(new com.vendex.chatbot.GeminiChatbotService.RespuestaChat(
+                        "Búsqueda local", com.vendex.chatbot.GeminiChatbotService.EstadoIA.SIN_API_KEY, true));
+                java.lang.reflect.Field campo = ChatWidgetController.class.getDeclaredField("mensajesBox");
+                campo.setAccessible(true);
+                var mensajes = ((javafx.scene.layout.VBox) campo.get(controller)).getChildren();
+                org.junit.jupiter.api.Assertions.assertEquals(4, mensajes.size());
+                var venta = (javafx.scene.layout.VBox) ((javafx.scene.layout.HBox) mensajes.get(0)).getChildren().get(0);
+                var bloqueo = (javafx.scene.layout.VBox) ((javafx.scene.layout.HBox) mensajes.get(1)).getChildren().get(0);
+                org.junit.jupiter.api.Assertions.assertEquals("Rol IA: VENTAS",
+                        ((javafx.scene.control.Label) venta.getChildren().get(0)).getText());
+                org.junit.jupiter.api.Assertions.assertTrue(bloqueo.getChildren().get(0).getStyleClass().contains("mensaje-rol-bloqueado"));
+                org.junit.jupiter.api.Assertions.assertTrue(((javafx.scene.control.Label) bloqueo.getChildren().get(0)).getText().contains("FINANCIERO"));
+                for (int i = 2; i < 4; i++) {
+                    var cuerpo = (javafx.scene.layout.VBox) ((javafx.scene.layout.HBox) mensajes.get(i)).getChildren().get(0);
+                    org.junit.jupiter.api.Assertions.assertEquals(1, cuerpo.getChildren().size(), "Sin etiqueta de rol heredada");
+                }
+            } catch (Throwable t) {
+                error.set(t);
+            } finally {
+                latch.countDown();
+            }
+        });
+        org.junit.jupiter.api.Assertions.assertTrue(latch.await(60, TimeUnit.SECONDS));
+        if (error.get() != null) throw new AssertionError("Indicador de rol inválido", error.get());
+    }
+
+    @Test
     @Order(14)
-    void cargaNotaCreditoConPanelVendexiYContexto() throws Exception {
+    void cargaNotaCreditoSinPanelYConContextoParaMascota() throws Exception {
         Object controller = cargar("/view/NotaCreditoView.fxml");
         java.lang.reflect.Field f = controller.getClass().getDeclaredField("vendexi");
         f.setAccessible(true);
-        VendexiSugerenciasPane panel = (VendexiSugerenciasPane) f.get(controller);
-        assertNotNull(panel, "panel contextual creado");
-        assertNotNull(panel.getParent(), "panel insertado en la vista real");
-        java.lang.reflect.Field provider = VendexiSugerenciasPane.class.getDeclaredField("contextoProvider");
-        provider.setAccessible(true);
-        var contexto = (java.util.function.Supplier<?>) provider.get(panel);
+        org.junit.jupiter.api.Assertions.assertNull(f.get(controller), "Sin panel ni asistente propio en el formulario");
+        DocumentoVendexi documento = (DocumentoVendexi) controller;
+        org.junit.jupiter.api.Assertions.assertNull(documento.accionAgregarVendexi(), "NC no agrega referencias ajenas");
         AtomicReference<com.vendex.service.VendexiSugerenciaService.Contexto> ctx = new AtomicReference<>();
         AtomicReference<Throwable> error = new AtomicReference<>();
         CountDownLatch latch = new CountDownLatch(1);
         Platform.runLater(() -> {
             try {
-                ctx.set((com.vendex.service.VendexiSugerenciaService.Contexto) contexto.get());
+                ctx.set(documento.contextoVendexi());
                 org.junit.jupiter.api.Assertions.assertFalse(ctx.get().clienteSeleccionado);
                 java.lang.reflect.Field detalles = controller.getClass().getDeclaredField("detallesNc");
                 detalles.setAccessible(true);
@@ -237,7 +278,7 @@ class FxmlSmokeTest {
                 var lineas = (java.util.List<com.vendex.service.NotaCreditoService.DetalleNCInput>) detalles.get(controller);
                 lineas.add(new com.vendex.service.NotaCreditoService.DetalleNCInput(7, 9, "NC-7", "FILTRO",
                         new java.math.BigDecimal("2"), new java.math.BigDecimal("12.50")));
-                ctx.set((com.vendex.service.VendexiSugerenciaService.Contexto) contexto.get());
+                ctx.set(documento.contextoVendexi());
             } catch (Throwable t) {
                 error.set(t);
             } finally {
@@ -255,30 +296,38 @@ class FxmlSmokeTest {
 
     @Test
     @Order(13)
-    void vendexiSugerenciasPane_cargaConRaizFxRoot() throws Exception {
-        // Regresion: el FXML declaraba <BorderPane> pero el constructor usa setRoot(this),
-        // lo que provocaba "Root value already specified" y el panel nunca se montaba.
-        AtomicReference<VendexiSugerenciasPane> pane = new AtomicReference<>();
+    void formulariosSinPanelesVendexiIncrustados() throws Exception {
         AtomicReference<Throwable> err = new AtomicReference<>();
         CountDownLatch latch = new CountDownLatch(1);
         Platform.runLater(() -> {
             try {
-                pane.set(new VendexiSugerenciasPane());
+                for (String ruta : new String[]{"/view/FacturaView.fxml", "/view/NotaVentaView.fxml", "/view/NotaCreditoView.fxml"}) {
+                    var loader = new javafx.fxml.FXMLLoader(getClass().getResource(ruta));
+                    javafx.scene.Parent raiz = loader.load();
+                    org.junit.jupiter.api.Assertions.assertTrue(loader.getController() instanceof DocumentoVendexi);
+                    org.junit.jupiter.api.Assertions.assertFalse(contienePanelVendexi(raiz), ruta);
+                }
             } catch (Throwable t) {
                 err.set(t);
             } finally {
                 latch.countDown();
             }
         });
-        org.junit.jupiter.api.Assertions.assertTrue(latch.await(60, TimeUnit.SECONDS), "timeout creando el panel");
+        org.junit.jupiter.api.Assertions.assertTrue(latch.await(60, TimeUnit.SECONDS), "timeout cargando formularios");
         if (err.get() != null) {
-            throw new AssertionError("VendexiSugerenciasPane no pudo cargarse", err.get());
+            throw new AssertionError("Formulario sin panel inválido", err.get());
         }
-        VendexiSugerenciasPane p = pane.get();
-        assertNotNull(p, "panel creado");
-        assertNotNull(p.getTop(), "top inyectado desde FXML");
-        java.lang.reflect.Field f = VendexiSugerenciasPane.class.getDeclaredField("sugerenciasBox");
-        f.setAccessible(true);
-        assertNotNull(f.get(p), "sugerenciasBox cableado desde FXML");
+    }
+
+    private boolean contienePanelVendexi(javafx.scene.Node nodo) {
+        if (nodo.getStyleClass().contains("vendexi-panel")) return true;
+        if (nodo instanceof javafx.scene.control.ScrollPane scroll && scroll.getContent() != null
+                && contienePanelVendexi(scroll.getContent())) return true;
+        if (nodo instanceof javafx.scene.control.TitledPane titulo && titulo.getContent() != null
+                && contienePanelVendexi(titulo.getContent())) return true;
+        if (nodo instanceof javafx.scene.Parent padre) {
+            for (var hijo : padre.getChildrenUnmodifiable()) if (contienePanelVendexi(hijo)) return true;
+        }
+        return false;
     }
 }

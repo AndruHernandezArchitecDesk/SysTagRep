@@ -8,18 +8,18 @@ import java.util.List;
 public class LicenseGenerator {
     public static void main(String[] args) {
         if (args.length == 0) {
-            System.out.println("=== SYS-TAG License Generator (v1 + v2 Vendexi) ===");
+            System.out.println("=== SYS-TAG License Generator (v1 + v2 Vetxi) ===");
             System.out.println("Machine Code: " + LicenseManager.getMachineCode());
             System.out.println();
             System.out.println("Las licencias normales vencen " + LicenseManager.getFechaVencimiento());
             System.out.println();
-            System.out.println("Usage (v1, sin IA Vendexi):");
+            System.out.println("Usage (v1, sin IA Vetxi):");
             System.out.println("  java -cp Vendex.jar com.vendex.util.LicenseGenerator <machine-code>");
             System.out.println("  java -cp Vendex.jar com.vendex.util.LicenseGenerator <machine-code> vitalicia");
             System.out.println("  java -cp Vendex.jar com.vendex.util.LicenseGenerator <machine-code> <dias>");
             System.out.println("  java -cp Vendex.jar com.vendex.util.LicenseGenerator <machine-code> <YYYYMMDD>");
             System.out.println();
-            System.out.println("Uso v2 (añade dimensiones Vendexi; con cualquier flag -- se genera v2):");
+            System.out.println("Uso v2 (añade dimensiones Vetxi; con cualquier flag -- se genera v2):");
             System.out.println("  ... <machine-code> [vitalicia|dias|YYYYMMDD] [--central] [--ia|--no-ia]");
             System.out.println("      [--roles=OPERATIVO,FACTURACION,PROFORMAS,VENTAS,INVENTARIO,FINANCIERO,ASESOR,INVESTIGADOR]");
             System.out.println("      [--capacidad=N]   (0 = sin límite definido; la medición llega en Fase 3)");
@@ -80,7 +80,7 @@ public class LicenseGenerator {
                     machineCode, vencimiento, modalidad, incluyeIA, roles, capacidad);
             System.out.println("License Key (v2): " + licenseKey);
             System.out.println("Modalidad:  " + modalidad);
-            System.out.println("Vendexi AI: " + (incluyeIA ? "SÍ" : "NO"));
+            System.out.println("Vetxi AI: " + (incluyeIA ? "SÍ" : "NO"));
             if (incluyeIA) {
                 System.out.println("Roles IA:   " + (roles.isEmpty() ? "(todos)" : String.join(",", roles)));
                 System.out.println("Capacidad:  " + (capacidad == 0 ? "(sin límite definido)" : capacidad));

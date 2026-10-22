@@ -293,6 +293,96 @@ class GeminiChatbotServiceHerramientasTest {
 
     // ---------- Fase B: roles contextuales §4 ----------
 
+    @Test
+    void rolEfectivo_soloVentas_coincideConLaEtiquetaYElPrompt() throws Exception {
+        var fake = new ConGeminiFake(new HerramientasFalsas());
+        fake.bloquearRol("INVENTARIO");
+        fake.ofrecer("{\"accion\":\"CONSULTAR_PRODUCTO\",\"descripcion\":\"filtro aceite\"}", "Stock disponible");
+        var respuesta = fake.preguntarConGeminiRespuesta("stock filtro", "fake-key", null, null, null);
+        assertEquals("VENTAS", respuesta.rolIA);
+        assertTrue(respuesta.rolesBloqueados.isEmpty());
+        assertTrue(fake.prompts.get(1).contains("rol VENTAS"));
+        assertFalse(fake.prompts.get(1).contains("rol INVENTARIO"));
+        assertEquals("Stock disponible", respuesta.texto, "La etiqueta no se mezcla con el texto generado");
+        assertEquals(2, fake.prompts.size());
+    }
+
+    @Test
+    void rolEfectivo_soloInventario_permiteRepuestos() throws Exception {
+        var fake = new ConGeminiFake(new HerramientasFalsas());
+        fake.bloquearRol("VENTAS");
+        fake.ofrecer("{\"descripcion\":\"tapa radiador\"}", "Tapa disponible");
+        var respuesta = fake.preguntarConGeminiRespuesta("tapa", "fake-key", null, null, null);
+        assertEquals("INVENTARIO", respuesta.rolIA);
+        assertTrue(fake.prompts.get(1).contains("rol INVENTARIO"));
+    }
+
+    @Test
+    void rolEfectivo_ventasYFinanciero_correspondenALaAccion() throws Exception {
+        var fake = new ConGeminiFake(new HerramientasFalsas());
+        fake.ofrecer("{\"accion\":\"VENTAS_CLIENTE\",\"cliente\":\"Maria\"}", "Ventas de Maria");
+        var ventas = fake.preguntarConGeminiRespuesta("ventas Maria", "fake-key", null, null, null);
+        fake.ofrecer("{\"accion\":\"CUENTAS_COBRAR\",\"cliente\":\"Maria\"}", "Saldo de Maria");
+        var saldo = fake.preguntarConGeminiRespuesta("saldo Maria", "fake-key", null, null, null);
+        assertEquals("VENTAS", ventas.rolIA);
+        assertEquals("FINANCIERO", saldo.rolIA);
+        assertTrue(fake.prompts.get(3).contains("rol FINANCIERO"));
+    }
+
+    @Test
+    void rolBloqueado_noEjecutaHerramientasNiRedaccion() throws Exception {
+        var herramientas = new HerramientasFalsas() {
+            @Override
+            public List<Producto> productos(String criterio, int limite) {
+                fail("No debe consultar productos sin un rol autorizado");
+                return List.of();
+            }
+        };
+        var fake = new ConGeminiFake(herramientas);
+        fake.bloquearRol("VENTAS");
+        fake.bloquearRol("INVENTARIO");
+        fake.ofrecer("{\"accion\":\"CONSULTAR_PRODUCTO\",\"descripcion\":\"filtro\"}");
+        var respuesta = fake.preguntarConGeminiRespuesta("stock filtro", "fake-key", null, null, null);
+        assertNull(respuesta.rolIA);
+        assertEquals(List.of("VENTAS", "INVENTARIO"), respuesta.rolesBloqueados);
+        assertTrue(respuesta.texto.contains("roles IA [VENTAS, INVENTARIO]"));
+        assertEquals(1, fake.prompts.size(), "No se intenta redactar el bloqueo con IA");
+    }
+
+    @Test
+    void rolFinancieroBloqueado_informaRolRequerido() throws Exception {
+        var fake = new ConGeminiFake(new HerramientasFalsas());
+        fake.bloquearRol("FINANCIERO");
+        fake.ofrecer("{\"accion\":\"RENTABILIDAD\"}");
+        var respuesta = fake.preguntarConGeminiRespuesta("rentabilidad", "fake-key", null, null, null);
+        assertNull(respuesta.rolIA);
+        assertEquals(List.of("FINANCIERO"), respuesta.rolesBloqueados);
+        assertEquals(1, fake.prompts.size());
+    }
+
+    @Test
+    void rolEfectivo_redaccionFalla_conservaRolYDatosLocales() throws Exception {
+        var fake = new ConGeminiFake(new HerramientasFalsas());
+        fake.ofrecer("{\"accion\":\"CONSULTAR_PRODUCTO\",\"descripcion\":\"filtro aceite\"}");
+        var respuesta = fake.preguntarConGeminiRespuesta("stock filtro", "fake-key", null, null, null);
+        assertEquals("INVENTARIO", respuesta.rolIA);
+        assertTrue(respuesta.texto.contains("FIL-01"));
+    }
+
+    @Test
+    void generalYEntradaVacia_noHeredanElRolDeOtraRespuesta() throws Exception {
+        var fake = new ConGeminiFake(new HerramientasFalsas());
+        fake.ofrecer("{\"accion\":\"VENTAS_CLIENTE\",\"cliente\":\"Maria\"}", "Ventas de Maria",
+                "{\"accion\":\"GENERAL\"}", "Hola");
+        var primera = fake.preguntarConGeminiRespuesta("ventas Maria", "fake-key", null, null, null);
+        var general = fake.preguntarConGeminiRespuesta("hola", "fake-key", null, null, null);
+        assertEquals("VENTAS", primera.rolIA);
+        assertNull(general.rolIA);
+        assertTrue(general.rolesBloqueados.isEmpty());
+        assertNull(fake.preguntarConEstado(null).rolIA);
+        assertNull(fake.preguntarConEstado(" ").rolIA);
+    }
+
     private static com.vendex.model.Inventario complemento(int id, String codigo, String nombre, int stock) {
         var i = new com.vendex.model.Inventario();
         i.setId(id);

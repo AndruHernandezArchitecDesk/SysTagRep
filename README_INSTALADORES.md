@@ -54,3 +54,35 @@ Pulsa **Probar conexión**, espera el ✓ verde y luego **Guardar**. La config q
 * **Portable Windows (puente sin MSI):** `dist\Vendex-portable-win.zip` (JAR + `run.bat` + `Reconfigurar-Vendex-BD.bat` + LEEME). Requiere JRE 17 en destino.
 * **Ubuntu:** `./empaquetar_instalador.sh` → `dist/vendex_2.0.0_amd64.deb` (`sudo apt install ./vendex_*.deb`).
 * **Updates:** instalar/reemplazar encima; `db.properties` y licencia se conservan. Nunca desinstalar marcando borrar datos.
+
+## 7. Mensajes de Gemini y Java
+
+* **Gemini HTTP 503:** indisponibilidad temporal del proveedor. El chat prueba los
+  modelos de respaldo y omite durante 60 segundos los modelos que acaban de fallar.
+  Si ninguno responde, conserva la búsqueda local. No implica por sí solo una clave
+  inválida ni cuota agotada (se informan como 401/403 y 429, respectivamente).
+* **`sun.misc.Unsafe::allocateMemory will be removed in a future release`:** advertencia
+  de una API usada por alguna dependencia al ejecutar con Java reciente; no es la
+  causa del HTTP 503. Para este paquete con JavaFX 21, se recomienda ejecutar con
+  Java 17 o 21 LTS. En la validación visual se reprodujo desde
+  `com.sun.marlin.OffHeapArray`, el renderizador incluido con JavaFX, usando Java 25.
+  La línea `has been called by ...` permite confirmar el origen en cada instalación.
+
+## 8. Vetxi capibara
+
+Vetxi aparece como capibara flotante en la ventana principal. Arrástralo
+para colocarlo donde prefieras; recordará su posición. Pulsa para abrir el chat
+o recuperar las sugerencias indicadas por el contador.
+
+Las sugerencias de Factura y Proforma aparecen en globos no modales, con acciones
+para ver detalles, agregar una unidad o descartar. Se ocultan automáticamente sin
+perder los pendientes. Desde el chat, **Verificar documento** revisa el formulario
+activo; también funciona en Nota de Crédito y sin conexión al proveedor IA.
+
+En Factura y Proforma se pone lentes y toma notas en su libreta. En reposo se
+rasca ocasionalmente. Después de 60 segundos sin actividad puede pasear por la
+ventana; se detiene al mover el mouse o pulsar una tecla. El paseo se pausa si
+estás leyendo el chat, hay sugerencias pendientes o la ventana está minimizada
+o sin foco. Los movimientos automáticos no cambian la posición manual guardada.
+
+Detalle técnico: `docs/fase9_vendexi_capibara_flotante.md`.

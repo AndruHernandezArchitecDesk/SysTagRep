@@ -205,7 +205,7 @@ public class AnalisisEmpresarialService {
         int d = Math.max(1, Math.min(730, dias));
         if (!LicenseManager.licenciaIncluyeIA()) {
             return new Resultado(Estado.SIN_LICENCIA,
-                    "La licencia no incluye Vendexi AI.", "");
+                    "La licencia no incluye Vetxi AI.", "");
         }
         if (consumo != null && !consumo.hayCapacidadDisponible()) {
             return new Resultado(Estado.SIN_CAPACIDAD, VendexiConsumoService.mensajeCapacidadAgotada(), "");
@@ -236,7 +236,7 @@ public class AnalisisEmpresarialService {
 
     public String construirPrompt(Tipo tipo, int dias, String datos) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Eres Vendexi AI, analista empresarial del ERP Vendex (Ecuador, repuestos automotrices).\n");
+        sb.append("Eres Vetxi AI, analista empresarial del ERP Vendex (Ecuador, repuestos automotrices).\n");
         sb.append("Analiza el siguiente tema: ").append(tipo.name()).append(" (últimos ").append(dias).append(" días).\n\n");
         sb.append("DATOS INTERNOS AUTORIZADOS (solo estos; son hechos del ERP, no los inventes ni los contradigas):\n");
         sb.append(datos).append('\n');
@@ -297,7 +297,7 @@ public class AnalisisEmpresarialService {
 
     private static String tipoOperacion(String prompt) {
         for (Tipo t : Tipo.values()) {
-            if (prompt.startsWith("Eres Vendexi AI") && prompt.contains("tema: " + t.name())) {
+            if (prompt.startsWith("Eres Vetxi AI") && prompt.contains("tema: " + t.name())) {
                 return t.name().toLowerCase();
             }
         }

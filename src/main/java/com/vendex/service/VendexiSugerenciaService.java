@@ -237,7 +237,7 @@ public class VendexiSugerenciaService {
 
     public String construirPrompt(Inventario base, List<Inventario> candidatos, String contextoVehiculo) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Eres Vendexi AI, asistente de ventas de repuestos automotrices en el ERP Vendex.\n");
+        sb.append("Eres Vetxi AI, asistente de ventas de repuestos automotrices en el ERP Vendex.\n");
         sb.append("Producto recién agregado al documento: \"").append(limpiar(base.getDescripcion())).append('"');
         if (base.getMarca() != null) sb.append(" (marca ").append(limpiar(base.getMarca())).append(')');
         sb.append(".\n");

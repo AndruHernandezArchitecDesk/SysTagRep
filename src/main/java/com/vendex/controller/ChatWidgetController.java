@@ -2,10 +2,6 @@ package com.vendex.controller;
 
 import com.vendex.chatbot.GeminiChatbotService;
 import com.vendex.config.GeminiConfig;
-import com.vendex.dao.RepuestoChatbotDAO;
-import javafx.animation.Animation;
-import javafx.animation.FadeTransition;
-import javafx.animation.ScaleTransition;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -16,9 +12,11 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.shape.Circle;
 import javafx.util.Duration;
-import com.vendex.dao.RepuestoChatbotDAOPostgres;
+import com.vendex.model.Inventario;
+import com.vendex.service.VendexiSugerenciaService;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ChatWidgetController {
 
@@ -27,10 +25,15 @@ public class ChatWidgetController {
     }
 
     public ChatWidgetController(com.vendex.config.AppContext ctx) {
+        this(ctx, new VendexiSugerenciaService(ctx.vendexiConsumoService));
+    }
+
+    ChatWidgetController(com.vendex.config.AppContext ctx, VendexiSugerenciaService sugerencias) {
         this.chatbotService = new com.vendex.chatbot.GeminiChatbotService(ctx.repuestoChatbotDAO, ctx.herramientasAgente);
         this.vehiculoDAO = ctx.vehiculoDAO;
         this.repuestoChatbotDAO = ctx.repuestoChatbotDAO;
         this.investigacionService = new com.vendex.service.InvestigacionWebService(ctx.vendexiConsumoService);
+        this.servicioSugerencias = sugerencias;
     }
 
     @FXML private StackPane rootStack;
@@ -40,7 +43,12 @@ public class ChatWidgetController {
     @FXML private TextField inputField;
     @FXML private Button bubbleButton;
     @FXML private Label badgeIA;
-    @FXML private Circle pulseCircle;
+    @FXML private StackPane mascota;
+    @FXML private javafx.scene.Group capibara;
+    @FXML private VBox sugerenciaBubble;
+    @FXML private Label contadorSugerencias, lblSugerenciaTitulo, lblSugerenciaResumen, lblSugerenciaDetalle, lblSugerenciaNumero;
+    @FXML private Label lblContexto;
+    @FXML private Button btnAgregarSugerencia, btnVerificar, btnPendientes, btnDetalles;
     @FXML private javafx.scene.control.ComboBox<String> cmbMarca;
     @FXML private javafx.scene.control.ComboBox<String> cmbModelo;
     @FXML private javafx.scene.control.ComboBox<Integer> cmbAnio;
@@ -49,6 +57,28 @@ public class ChatWidgetController {
     private final com.vendex.dao.VehiculoDAO vehiculoDAO;
     private final com.vendex.dao.RepuestoChatbotDAO repuestoChatbotDAO;
     private final com.vendex.service.InvestigacionWebService investigacionService;
+    private final VendexiSugerenciaService servicioSugerencias;
+    private DocumentoVendexi documentoActivo;
+    private long revisionDocumento;
+    private final List<VendexiSugerenciaService.Sugerencia> pendientes = new ArrayList<>();
+    private int indiceSugerencia;
+    private Thread consultaComplementarios;
+    private final javafx.animation.PauseTransition esperaComplementarios = new javafx.animation.PauseTransition(Duration.millis(650));
+    private final javafx.animation.PauseTransition ocultarBurbuja = new javafx.animation.PauseTransition(Duration.seconds(12));
+    private VetxiAnimaciones animaciones;
+    private boolean arrastrando;
+    private double inicioMouseX, inicioMouseY, inicioMascotaX, inicioMascotaY;
+    private double posicionX, posicionY;
+    private final java.util.prefs.Preferences preferencias = java.util.prefs.Preferences.userRoot().node("/com/tag/vendex/asistente");
+    private final javafx.beans.value.ChangeListener<Boolean> visibilidadVentana = (o, antes, visible) -> {
+        if (visible) actualizarReposo(); else liberar();
+    };
+    private final javafx.beans.value.ChangeListener<javafx.stage.Window> ventanaListener =
+             (o, antes, actual) -> vincularVentana(antes, actual);
+    private final javafx.beans.value.ChangeListener<Boolean> focoVentana = (o, antes, actual) -> actualizarReposo();
+    private final javafx.event.EventHandler<javafx.scene.input.InputEvent> actividadUsuario = e -> {
+        if (animaciones != null) animaciones.registrarActividad();
+    };
     private static final String TODAS = "Todas";
     private static final String TODOS = "Todos";
     private long sesionVendexi = -1;
@@ -56,8 +86,14 @@ public class ChatWidgetController {
     @FXML
     public void initialize() {
         actualizarBadge();
-        iniciarPulso();
+        configurarMascota();
         iniciarFiltrosVehiculo();
+        ocultarBurbuja.setOnFinished(e -> ocultarSugerencias());
+        sugerenciaBubble.setOnMouseEntered(e -> ocultarBurbuja.stop());
+        sugerenciaBubble.setOnMouseExited(e -> {
+            if (!lblSugerenciaDetalle.isVisible()) ocultarBurbuja.playFromStart();
+        });
+        actualizarContexto();
     }
 
     private void iniciarFiltrosVehiculo() {
@@ -117,23 +153,296 @@ public class ChatWidgetController {
     private String filtroModelo() { return cmbModelo != null ? valorSeleccionado(cmbModelo.getValue()) : null; }
     private Integer filtroAnio() { return cmbAnio != null ? cmbAnio.getValue() : null; }
 
-    private void iniciarPulso() {
-        if (pulseCircle == null) return;
-        ScaleTransition scale = new ScaleTransition(Duration.seconds(1.4), pulseCircle);
-        scale.setFromX(0.9); scale.setToX(1.25);
-        scale.setFromY(0.9); scale.setToY(1.25);
-        scale.setAutoReverse(true); scale.setCycleCount(Animation.INDEFINITE);
-        FadeTransition fade = new FadeTransition(Duration.seconds(1.4), pulseCircle);
-        fade.setFromValue(0.45); fade.setToValue(0.0);
-        fade.setAutoReverse(true); fade.setCycleCount(Animation.INDEFINITE);
-        scale.play(); fade.play();
+    private void configurarMascota() {
+        posicionX = limitar(preferencias.getDouble("x", 0.97), 0, 1);
+        posicionY = limitar(preferencias.getDouble("y", 0.90), 0, 1);
+        animaciones = new VetxiAnimaciones(capibara, mascota, rootStack,
+                () -> !arrastrando && !bubbleButton.isHover() && !chatPanel.isVisible()
+                        && !sugerenciaBubble.isVisible() && pendientes.isEmpty() && !inputField.isDisabled(),
+                this::moverMascota);
+        bubbleButton.addEventFilter(javafx.scene.input.MouseEvent.MOUSE_PRESSED, e -> {
+            if (!e.isPrimaryButtonDown()) return;
+            arrastrando = false;
+            inicioMouseX = e.getSceneX(); inicioMouseY = e.getSceneY();
+            inicioMascotaX = mascota.getLayoutX(); inicioMascotaY = mascota.getLayoutY();
+        });
+        bubbleButton.addEventFilter(javafx.scene.input.MouseEvent.MOUSE_DRAGGED, e -> {
+            if (!e.isPrimaryButtonDown()) return;
+            double dx = e.getSceneX() - inicioMouseX, dy = e.getSceneY() - inicioMouseY;
+            if (!arrastrando && Math.hypot(dx, dy) < 5) return;
+            arrastrando = true;
+            animaciones.registrarActividad();
+            moverMascota(inicioMascotaX + dx, inicioMascotaY + dy);
+            e.consume();
+        });
+        bubbleButton.addEventFilter(javafx.scene.input.MouseEvent.MOUSE_RELEASED, e -> {
+            if (arrastrando) {
+                preferencias.putDouble("x", posicionX); preferencias.putDouble("y", posicionY);
+                // Consume la liberación para que el skin del botón no genere ActionEvent.
+                bubbleButton.disarm();
+                e.consume();
+                actualizarReposo();
+                Platform.runLater(() -> arrastrando = false);
+            }
+        });
+        rootStack.widthProperty().addListener((o, a, b) -> { animaciones.registrarActividad(); posicionarAsistente(); });
+        rootStack.heightProperty().addListener((o, a, b) -> { animaciones.registrarActividad(); posicionarAsistente(); });
+        rootStack.sceneProperty().addListener((o, antes, actual) -> {
+            if (antes != null) {
+                vincularActividad(antes, false);
+                antes.windowProperty().removeListener(ventanaListener);
+                vincularVentana(antes.getWindow(), null);
+            }
+            if (actual != null) {
+                vincularActividad(actual, true);
+                actual.windowProperty().addListener(ventanaListener);
+                vincularVentana(null, actual.getWindow());
+            } else if (antes != null) liberar();
+        });
+    }
+
+    private void vincularVentana(javafx.stage.Window anterior, javafx.stage.Window actual) {
+        if (anterior != null) {
+            anterior.showingProperty().removeListener(visibilidadVentana);
+            anterior.focusedProperty().removeListener(focoVentana);
+            if (anterior instanceof javafx.stage.Stage stage) stage.iconifiedProperty().removeListener(focoVentana);
+        }
+        if (actual != null) {
+            actual.showingProperty().addListener(visibilidadVentana);
+            actual.focusedProperty().addListener(focoVentana);
+            if (actual instanceof javafx.stage.Stage stage) stage.iconifiedProperty().addListener(focoVentana);
+        }
+        if (anterior != null && actual == null) liberar();
+        actualizarReposo();
+    }
+
+    private void actualizarReposo() {
+        boolean visible = rootStack.getScene() != null && rootStack.getScene().getWindow() != null
+                && rootStack.getScene().getWindow().isShowing() && rootStack.getScene().getWindow().isFocused()
+                && !(rootStack.getScene().getWindow() instanceof javafx.stage.Stage stage && stage.isIconified());
+        animaciones.setActivo(visible);
+    }
+
+    private void liberar() {
+        animaciones.setActivo(false);
+        setDocumentoActivo(null);
+        finalizarSesionVendexi();
+    }
+
+    private void vincularActividad(javafx.scene.Scene escena, boolean conectar) {
+        for (javafx.event.EventType<? extends javafx.scene.input.InputEvent> tipo : List.of(
+                javafx.scene.input.MouseEvent.MOUSE_MOVED, javafx.scene.input.MouseEvent.MOUSE_PRESSED,
+                javafx.scene.input.MouseEvent.MOUSE_DRAGGED, javafx.scene.input.ScrollEvent.SCROLL,
+                javafx.scene.input.KeyEvent.KEY_PRESSED, javafx.scene.input.TouchEvent.TOUCH_PRESSED)) {
+            if (conectar) escena.addEventFilter(tipo, actividadUsuario);
+            else escena.removeEventFilter(tipo, actividadUsuario);
+        }
+    }
+
+    static double limitar(double valor, double minimo, double maximo) {
+        return Double.isFinite(valor) ? Math.max(minimo, Math.min(maximo, valor)) : minimo;
+    }
+
+    void moverMascota(double x, double y) {
+        double ancho = Math.max(0, rootStack.getWidth() - 104);
+        double alto = Math.max(0, rootStack.getHeight() - 108);
+        posicionX = ancho > 0 ? limitar(x, 0, ancho) / ancho : 0;
+        posicionY = alto > 0 ? limitar(y, 0, alto) / alto : 0;
+        posicionarAsistente();
+    }
+
+    void posicionarAsistente() {
+        double w = rootStack.getWidth(), h = rootStack.getHeight();
+        if (w <= 0 || h <= 0) return;
+        mascota.resize(104, 108);
+        mascota.relocate(posicionX * Math.max(0, w - 104), posicionY * Math.max(0, h - 108));
+        posicionarCuadro(chatPanel, Math.min(380, w - 16), Math.min(490, h - 16));
+        sugerenciaBubble.setPrefWidth(Math.max(0, Math.min(340, w - 16)));
+        if (sugerenciaBubble.isVisible() && rootStack.getScene() != null
+                && !rootStack.getScene().getStylesheets().isEmpty()) sugerenciaBubble.applyCss();
+        double altoBurbuja = Math.min(sugerenciaBubble.prefHeight(sugerenciaBubble.getPrefWidth()), h - 16);
+        posicionarCuadro(sugerenciaBubble, sugerenciaBubble.getPrefWidth(), altoBurbuja);
+    }
+
+    private void posicionarCuadro(javafx.scene.layout.Region cuadro, double ancho, double alto) {
+        ancho = Math.max(0, ancho); alto = Math.max(0, alto);
+        cuadro.resize(ancho, alto);
+        double x = mascota.getLayoutX() + 104 - ancho;
+        double y = mascota.getLayoutY() - alto - 10;
+        if (y < 8) y = mascota.getLayoutY() + 108 + 10;
+        cuadro.relocate(limitar(x, 8, Math.max(8, rootStack.getWidth() - ancho - 8)),
+                limitar(y, 8, Math.max(8, rootStack.getHeight() - alto - 8)));
+    }
+
+    @FXML private void onMascota() {
+        if (arrastrando) { arrastrando = false; return; }
+        if (!pendientes.isEmpty()) mostrarSugerencias(); else onToggleChat();
+    }
+
+    public void setDocumentoActivo(DocumentoVendexi documento) {
+        if (documentoActivo != null) documentoActivo.conectarVendexi(null);
+        documentoActivo = documento;
+        documentoModificado(documento);
+        if (documento != null) documento.conectarVendexi(this);
+        actualizarContexto();
+    }
+
+    public void documentoModificado(DocumentoVendexi origen) {
+        if (origen != documentoActivo) return;
+        revisionDocumento++;
+        esperaComplementarios.stop();
+        esperaComplementarios.setOnFinished(null);
+        if (consultaComplementarios != null) { consultaComplementarios.interrupt(); consultaComplementarios = null; }
+        pendientes.clear();
+        indiceSugerencia = 0;
+        ocultarSugerencias();
+        actualizarContador();
+    }
+
+    private void actualizarContexto() {
+        btnVerificar.setDisable(documentoActivo == null);
+        String modulo = documentoActivo == null ? "" : documentoActivo.contextoVendexi().modulo;
+        animaciones.setTrabajando("factura".equals(modulo) || "proforma".equals(modulo));
+        lblContexto.setText(documentoActivo == null ? "Repuestos y negocio, a tu lado" :
+                "Documento: " + documentoActivo.contextoVendexi().modulo.replace('_', ' '));
+    }
+
+    public void consultarComplementarios(DocumentoVendexi origen, Inventario agregado,
+                                         List<Inventario> inventario, String vehiculo) {
+        if (origen != documentoActivo || origen.accionAgregarVendexi() == null || !servicioSugerencias.esIaDisponible()) return;
+        long revision = revisionDocumento;
+        java.util.Set<Integer> ids = new java.util.HashSet<>();
+        for (var linea : origen.contextoVendexi().lineas) ids.add(linea.inventarioId);
+        List<Inventario> snapshot = List.copyOf(inventario);
+        esperaComplementarios.setOnFinished(e -> {
+            consultaComplementarios = new Thread(() -> {
+                List<VendexiSugerenciaService.Sugerencia> sugerencias = servicioSugerencias
+                        .sugerenciasComplementarias(agregado, snapshot, ids, vehiculo);
+                Platform.runLater(() -> recibirSugerencias(origen, revision, sugerencias));
+            }, "vetxi-complementos");
+            consultaComplementarios.setDaemon(true);
+            consultaComplementarios.start();
+        });
+        esperaComplementarios.playFromStart();
+    }
+
+    /** Solo publica resultados del formulario y versión que originaron la consulta. */
+    void recibirSugerencias(DocumentoVendexi origen, long revision, List<VendexiSugerenciaService.Sugerencia> sugerencias) {
+        if (origen != documentoActivo || revision != revisionDocumento || sugerencias == null) return;
+        java.util.Set<Integer> ids = new java.util.HashSet<>();
+        for (var linea : origen.contextoVendexi().lineas) ids.add(linea.inventarioId);
+        pendientes.clear();
+        for (var s : sugerencias) {
+            if (s == null) continue;
+            if (s.producto != null && (origen.accionAgregarVendexi() == null
+                    || s.producto.getCantidad() <= 0 || !ids.add(s.producto.getId()))) continue;
+            pendientes.add(s);
+        }
+        indiceSugerencia = 0;
+        actualizarContador();
+        if (!pendientes.isEmpty()) {
+            animaciones.avisar();
+            // No desplazar un chat que el usuario está leyendo o escribiendo.
+            if (!chatPanel.isVisible()) mostrarSugerencias();
+        }
+    }
+
+    @FXML void verificarDocumento() {
+        if (documentoActivo == null) return;
+        documentoModificado(documentoActivo);
+        var checks = servicioSugerencias.verificarDocumento(documentoActivo.contextoVendexi());
+        if (checks.isEmpty()) checks = List.of(new VendexiSugerenciaService.Sugerencia(
+                VendexiSugerenciaService.Tipo.VERIFICACION, "Todo listo por aquí",
+                "El documento no tiene observaciones locales. No se utilizó IA para esta verificación.", null));
+        recibirSugerencias(documentoActivo, revisionDocumento, checks);
+        mostrarSugerencias();
+    }
+
+    private void actualizarContador() {
+        contadorSugerencias.setText(Integer.toString(pendientes.size()));
+        contadorSugerencias.setVisible(!pendientes.isEmpty());
+        btnPendientes.setText("Sugerencias (" + pendientes.size() + ")");
+        btnPendientes.setDisable(pendientes.isEmpty());
+    }
+
+    @FXML void mostrarSugerencias() {
+        if (pendientes.isEmpty()) return;
+        if (chatPanel.isVisible()) onToggleChat();
+        var sugerencia = pendientes.get(indiceSugerencia);
+        lblSugerenciaTitulo.setText(sugerencia.titulo);
+        lblSugerenciaNumero.setText((indiceSugerencia + 1) + " / " + pendientes.size());
+        Inventario producto = sugerencia.producto;
+        lblSugerenciaResumen.setText(producto == null ? "Verificación local · " + documentoActivo.contextoVendexi().modulo.replace('_', ' ')
+                : producto.getCodigo() + " · Stock: " + producto.getCantidad() + " · "
+                + (producto.getPrecioVenta() == null ? "precio n/d" : String.format(java.util.Locale.US, "$%.2f", producto.getPrecioVenta())));
+        String evidencia = switch (sugerencia.evidencia) {
+            case VendexiSugerenciaService.EVIDENCIA_CONFIRMADA -> "Compatibilidad confirmada";
+            case VendexiSugerenciaService.EVIDENCIA_PROBABLE -> "Coincidencia probable: verificar compatibilidad";
+            default -> "Asociación de ventas: compatibilidad sin confirmar";
+        };
+        lblSugerenciaDetalle.setText(sugerencia.motivo + (producto != null ? "\n\n" + evidencia : ""));
+        lblSugerenciaDetalle.setVisible(false); lblSugerenciaDetalle.setManaged(false);
+        btnDetalles.setText("Ver detalles");
+        btnAgregarSugerencia.setVisible(producto != null); btnAgregarSugerencia.setManaged(producto != null);
+        sugerenciaBubble.setVisible(true);
+        posicionarAsistente();
+        ocultarBurbuja.playFromStart();
+    }
+
+    @FXML private void detallesSugerencia() {
+        boolean mostrar = !lblSugerenciaDetalle.isVisible();
+        lblSugerenciaDetalle.setVisible(mostrar); lblSugerenciaDetalle.setManaged(mostrar);
+        btnDetalles.setText(mostrar ? "Menos detalles" : "Ver detalles");
+        ocultarBurbuja.stop();
+        if (!mostrar) ocultarBurbuja.playFromStart();
+        posicionarAsistente();
+    }
+
+    @FXML void ocultarSugerencias() {
+        ocultarBurbuja.stop();
+        sugerenciaBubble.setVisible(false);
+    }
+
+    @FXML private void siguienteSugerencia() {
+        if (!pendientes.isEmpty()) { indiceSugerencia = (indiceSugerencia + 1) % pendientes.size(); mostrarSugerencias(); }
+    }
+
+    @FXML void descartarSugerencia() {
+        if (pendientes.isEmpty()) return;
+        pendientes.remove(indiceSugerencia);
+        indiceSugerencia = 0;
+        actualizarContador();
+        if (pendientes.isEmpty()) ocultarSugerencias(); else mostrarSugerencias();
+    }
+
+    @FXML private void copiarSugerencia() {
+        if (pendientes.isEmpty()) return;
+        var sugerencia = pendientes.get(indiceSugerencia);
+        var contenido = new javafx.scene.input.ClipboardContent();
+        contenido.putString(sugerencia.producto != null ? sugerencia.producto.getCodigo()
+                : sugerencia.titulo + "\n" + sugerencia.motivo);
+        javafx.scene.input.Clipboard.getSystemClipboard().setContent(contenido);
+    }
+
+    @FXML void agregarSugerencia() {
+        if (documentoActivo == null || pendientes.isEmpty()) return;
+        var producto = pendientes.get(indiceSugerencia).producto;
+        var agregar = documentoActivo.accionAgregarVendexi();
+        if (producto == null || agregar == null || producto.getCantidad() <= 0) return;
+        if (documentoActivo.contextoVendexi().lineas.stream().anyMatch(l -> l.inventarioId == producto.getId())) {
+            descartarSugerencia(); return;
+        }
+        documentoModificado(documentoActivo);
+        agregar.accept(producto);
     }
 
     @FXML
     public void onToggleChat() {
+        animaciones.registrarActividad();
         boolean mostrar = !chatPanel.isVisible();
+        if (mostrar) ocultarSugerencias();
         chatPanel.setVisible(mostrar);
-        chatPanel.setManaged(mostrar);
+        posicionarAsistente();
         actualizarBadge();
         // Fase 3: registro de tiempo de interacción (estadística, no es límite — spec §12)
         if (mostrar) {
@@ -143,7 +452,7 @@ public class ChatWidgetController {
             finalizarSesionVendexi();
         }
         if (mostrar && mensajesBox.getChildren().isEmpty()) {
-            agregarMensaje("¡Hola! Soy Vendexi, tu asistente de repuestos y negocio.\n"
+            agregarMensaje("¡Hola! Soy Vetxi, tu capibara de repuestos y negocio.\n"
                     + "• Repuestos: \"tapa radiador CHEV AVEO\" o síntoma \"ruido al frenar\"\n"
                     + "• Stock/precio: \"¿cuánto stock tiene el filtro aceite?\"\n"
                     + "• Clientes: \"¿cuánto me compró Juan?\" / \"¿cuánto me debe Juan?\"\n"
@@ -202,7 +511,7 @@ public class ChatWidgetController {
             }
             GeminiChatbotService.RespuestaChat finalRc = rc;
             Platform.runLater(() -> {
-                agregarMensaje(finalRc.texto, false, finalRc.esSinIA);
+                agregarRespuesta(finalRc);
                 actualizarBadge();
                 inputField.setDisable(false);
                 inputField.requestFocus();
@@ -304,7 +613,7 @@ public class ChatWidgetController {
             badgeIA.setText("○ Local (licencia)");
             badgeIA.getStyleClass().setAll("badge-local");
             badgeIA.setTooltip(new javafx.scene.control.Tooltip(
-                    "La licencia de esta instalación no incluye Vendexi AI. La búsqueda local en inventario sigue disponible."));
+                    "La licencia de esta instalación no incluye Vetxi AI. La búsqueda local en inventario sigue disponible."));
             return;
         }
         GeminiChatbotService.EstadoIA e = chatbotService.getEstado();
@@ -350,15 +659,37 @@ public class ChatWidgetController {
     }
 
     private void agregarMensaje(String texto, boolean esUsuario, boolean esSinIA) {
+        agregarMensaje(texto, esUsuario, esSinIA, null, false);
+    }
+
+    /** La etiqueta procede de la autorización local, nunca del texto generado por la IA. */
+    void agregarRespuesta(GeminiChatbotService.RespuestaChat respuesta) {
+        boolean bloqueada = !respuesta.rolesBloqueados.isEmpty();
+        String etiqueta = bloqueada
+                ? "🔒 Licencia: requiere " + String.join(" o ", respuesta.rolesBloqueados)
+                : (respuesta.rolIA != null ? "Rol IA: " + respuesta.rolIA : null);
+        agregarMensaje(respuesta.texto, false, respuesta.esSinIA, etiqueta, bloqueada);
+    }
+
+    private void agregarMensaje(String texto, boolean esUsuario, boolean esSinIA,
+                                String etiqueta, boolean bloqueada) {
         Label label = new Label(texto);
         label.setWrapText(true);
         if (esUsuario) label.getStyleClass().add("mensaje-usuario");
         else if (esSinIA) label.getStyleClass().add("mensaje-bot-sin-ia");
         else label.getStyleClass().add("mensaje-bot");
 
-        HBox contenedor = new HBox(label);
+        VBox cuerpo = new VBox(3);
+        if (etiqueta != null) {
+            Label rol = new Label(etiqueta);
+            rol.setWrapText(true);
+            rol.getStyleClass().add(bloqueada ? "mensaje-rol-bloqueado" : "mensaje-rol-ia");
+            cuerpo.getChildren().add(rol);
+        }
+        cuerpo.getChildren().add(label);
+        HBox contenedor = new HBox(cuerpo);
         contenedor.setFillHeight(false);
-        HBox.setHgrow(label, Priority.NEVER);
+        HBox.setHgrow(cuerpo, Priority.NEVER);
         contenedor.setStyle(esUsuario ? "-fx-alignment: CENTER_RIGHT;" : "-fx-alignment: CENTER_LEFT;");
 
         mensajesBox.getChildren().add(contenedor);
