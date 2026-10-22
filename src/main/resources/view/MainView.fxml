@@ -217,11 +217,17 @@
                             </graphic>
                             <Tooltip text="Gestión de cuentas corrientes de clientes y seguimiento de pagos"/>
                         </Button>
-                        <Button text="Cuentas por Pagar" onAction="#irPorPagar" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 10 24;">
+                        <Button text="Cuentas por Pagar" onAction="#irPorPagar" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-store" iconSize="14"/>
                             </graphic>
                             <Tooltip text="Gestión de cuentas corrientes con proveedores y fechas de pago"/>
+                        </Button>
+                        <Button text="Préstamos" onAction="#irPrestamos" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 10 24;">
+                            <graphic>
+                                <FontIcon iconLiteral="fas-university" iconSize="14"/>
+                            </graphic>
+                            <Tooltip text="Préstamos bancarios: cuotas, abonos desde caja y metas de venta"/>
                         </Button>
                     </VBox>
 

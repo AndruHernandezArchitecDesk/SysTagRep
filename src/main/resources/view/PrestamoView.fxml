@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.control.Tooltip?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.vendex.controller.PrestamoController" prefHeight="700.0" prefWidth="1100.0" style="-fx-padding: 15">
+    <top>
+        <VBox spacing="10">
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label text="Préstamos Financieros" styleClass="titulo">
+                    <graphic>
+                        <FontIcon iconLiteral="fas-university" styleClass="titulo-icono"/>
+                    </graphic>
+                </Label>
+                <HBox HBox.hgrow="ALWAYS"/>
+                <Button text="GESTIONAR ENTIDADES" onAction="#gestionarEntidades" styleClass="button-secondary" style="-fx-padding: 6 15">
+                    <graphic>
+                        <FontIcon iconLiteral="fas-building" iconColor="white"/>
+                    </graphic>
+                    <Tooltip text="Administrar bancos y entidades prestamistas"/>
+                </Button>
+                <Button text="NUEVO PRÉSTAMO" onAction="#nuevoPrestamo" styleClass="button-primary" style="-fx-padding: 6 15">
+                    <graphic>
+                        <FontIcon iconLiteral="fas-plus" iconColor="white"/>
+                    </graphic>
+                    <Tooltip text="Registrar un nuevo préstamo con tabla de amortización"/>
+                </Button>
+                <Button text="REFRESCAR" onAction="#refrescar" styleClass="btn-orden" style="-fx-padding: 6 15">
+                    <graphic>
+                        <FontIcon iconLiteral="fas-sync"/>
+                    </graphic>
+                    <Tooltip text="Actualizar la lista de préstamos"/>
+                </Button>
+            </HBox>
+            <Separator/>
+        </VBox>
+    </top>
+    <center>
+        <VBox spacing="15">
+            <TitledPane text="Préstamos Registrados" collapsible="false" styleClass="section-card" style="-fx-font-weight: bold">
+                <content>
+                    <VBox spacing="5">
+                        <TableView fx:id="tblPrestamos" prefHeight="180" VBox.vgrow="ALWAYS">
+                            <columns>
+                                <TableColumn fx:id="colEntidad" text="Entidad" minWidth="150"/>
+                                <TableColumn fx:id="colPrincipal" text="Principal" minWidth="100"/>
+                                <TableColumn fx:id="colTasa" text="Tasa/Per." minWidth="100"/>
+                                <TableColumn fx:id="colCuota" text="Cuota" minWidth="100"/>
+                                <TableColumn fx:id="colCuotas" text="Cuotas" minWidth="90"/>
+                                <TableColumn fx:id="colSaldo" text="Saldo" minWidth="100"/>
+                                <TableColumn fx:id="colProxVenc" text="Próx. Vence" minWidth="100"/>
+                                <TableColumn fx:id="colMeta" text="Meta" minWidth="140"/>
+                                <TableColumn fx:id="colEstado" text="Estado" minWidth="90"/>
+                                <TableColumn fx:id="colProgreso" text="Progreso" minWidth="160"/>
+                            </columns>
+                        </TableView>
+                    </VBox>
+                </content>
+            </TitledPane>
+            <TitledPane text="Detalle del Préstamo Seleccionado" collapsible="false" styleClass="section-card" style="-fx-font-weight: bold">
+                <content>
+                    <VBox spacing="10">
+                        <HBox spacing="25" alignment="CENTER_LEFT">
+                            <Label fx:id="lblResumen" text="Seleccione un préstamo para ver el detalle" style="-fx-font-weight: bold; -fx-font-size: 13px"/>
+                            <HBox HBox.hgrow="ALWAYS"/>
+                            <Button text="ABONAR" onAction="#abonar" styleClass="button-primary" style="-fx-padding: 6 15">
+                                <graphic>
+                                    <FontIcon iconLiteral="fas-hand-holding-usd" iconColor="white"/>
+                                </graphic>
+                                <Tooltip text="Registrar un abono al préstamo seleccionado"/>
+                            </Button>
+                            <Button text="META" onAction="#editarMeta" styleClass="button-secondary" style="-fx-padding: 6 15">
+                                <graphic>
+                                    <FontIcon iconLiteral="fas-bullseye" iconColor="white"/>
+                                </graphic>
+                                <Tooltip text="Configurar la meta de ventas del préstamo"/>
+                            </Button>
+                            <Button text="CANCELAR PRÉSTAMO" onAction="#cancelarPrestamo" styleClass="button-danger" style="-fx-padding: 6 15">
+                                <graphic>
+                                    <FontIcon iconLiteral="fas-ban" iconColor="white"/>
+                                </graphic>
+                                <Tooltip text="Marcar el préstamo seleccionado como cancelado"/>
+                            </Button>
+                        </HBox>
+                        <TabPane>
+                            <Tab text="Cuotas">
+                                <TableView fx:id="tblCuotas" prefHeight="220">
+                                    <columns>
+                                        <TableColumn fx:id="colCuoNum" text="#" minWidth="40" maxWidth="50"/>
+                                        <TableColumn fx:id="colCuoVence" text="Vence" minWidth="100"/>
+                                        <TableColumn fx:id="colCuoMonto" text="Cuota" minWidth="90"/>
+                                        <TableColumn fx:id="colCuoInteres" text="Interés" minWidth="90"/>
+                                        <TableColumn fx:id="colCuoCapital" text="Capital" minWidth="90"/>
+                                        <TableColumn fx:id="colCuoSaldoAnt" text="Saldo Ant." minWidth="90"/>
+                                        <TableColumn fx:id="colCuoSaldoRest" text="Saldo Rest." minWidth="90"/>
+                                        <TableColumn fx:id="colCuoPagado" text="Pagado" minWidth="90"/>
+                                        <TableColumn fx:id="colCuoEstado" text="Estado" minWidth="90"/>
+                                        <TableColumn fx:id="colCuoFechaPago" text="F. Pago" minWidth="90"/>
+                                    </columns>
+                                </TableView>
+                            </Tab>
+                            <Tab text="Historial de Pagos">
+                                <TableView fx:id="tblPagos" prefHeight="220">
+                                    <columns>
+                                        <TableColumn fx:id="colPagFecha" text="Fecha" minWidth="130"/>
+                                        <TableColumn fx:id="colPagCuota" text="Cuota" minWidth="60"/>
+                                        <TableColumn fx:id="colPagMonto" text="Monto" minWidth="90"/>
+                                        <TableColumn fx:id="colPagInteres" text="Interés" minWidth="90"/>
+                                        <TableColumn fx:id="colPagCapital" text="Capital" minWidth="90"/>
+                                        <TableColumn fx:id="colPagFuente" text="Fuente" minWidth="110"/>
+                                        <TableColumn fx:id="colPagNotas" text="Notas" minWidth="180"/>
+                                    </columns>
+                                </TableView>
+                            </Tab>
+                        </TabPane>
+                    </VBox>
+                </content>
+            </TitledPane>
+        </VBox>
+    </center>
+</BorderPane>

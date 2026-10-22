@@ -34,6 +34,7 @@ public final class CatalogoVistas {
         m.put("Crédito", "/view/PorCobrarView.fxml");
         m.put("Cuentas por Cobrar", "/view/PorCobrarView.fxml");
         m.put("Cuentas por Pagar", "/view/PorPagarView.fxml");
+        m.put("Préstamos", "/view/PrestamoView.fxml");
         m.put("Caja", "/view/CajaView.fxml");
         m.put("Historial", "/view/HistorialVentaView.fxml");
         m.put("Historial de Productos", "/view/HistorialProductoView.fxml");

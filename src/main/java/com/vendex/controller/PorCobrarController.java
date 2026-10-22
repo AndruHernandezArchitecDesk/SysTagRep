@@ -46,6 +46,7 @@ public class PorCobrarController implements Initializable {
 
     public PorCobrarController(com.vendex.config.AppContext ctx) {
         this.dao = ctx.cuentaPorCobrarDAO;
+        this.prestamoService = ctx.prestamoService;
     }
 
     @FXML private TableView<Object[]> tblCreditosActivos;
@@ -59,6 +60,7 @@ public class PorCobrarController implements Initializable {
     @FXML private TableColumn<Object[], Void> colDetAccion;
 
     private final CuentaPorCobrarDAO dao;
+    private final com.vendex.service.PrestamoService prestamoService;
     private ObservableList<Object[]> listaCreditos = FXCollections.observableArrayList();
     private ObservableList<Object[]> listaDetalle = FXCollections.observableArrayList();
 
@@ -243,6 +245,7 @@ public class PorCobrarController implements Initializable {
                         txtAdelanto.clear();
                         tblDetalleCredito.refresh();
                         cargarCreditos();
+                        ofrecerDestinarAPrestamo(monto, cpcId);
                     } catch (NumberFormatException ex) {
                         new Alert(Alert.AlertType.WARNING, "Ingrese un monto válido.").showAndWait();
                     }
@@ -271,6 +274,82 @@ public class PorCobrarController implements Initializable {
         });
         colDetAccion.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(null));
         tblDetalleCredito.setItems(listaDetalle);
+    }
+
+    /**
+     * Tras registrar un cobro, ofrece destinar (total o parcialmente) a un préstamo activo.
+     * Registra prestamo_pago con fuente COBRO_CLIENTE y referencia a la cuenta por cobrar.
+     */
+    private void ofrecerDestinarAPrestamo(BigDecimal montoCobrado, int cuentaPorCobrarId) {
+        try {
+            if (prestamoService == null) return;
+            if (!com.vendex.util.SesionActual.tienePermiso("PRESTAMO_ABONAR")) return;
+            List<Object[]> activos = prestamoService.listarPrestamos().stream()
+                    .filter(f -> "ACTIVO".equals(f[11]))
+                    .collect(java.util.stream.Collectors.toList());
+            if (activos.isEmpty()) return;
+
+            ComboBox<Object[]> cmb = new ComboBox<>(FXCollections.observableArrayList(activos));
+            cmb.setPrefWidth(320);
+            cmb.setConverter(new javafx.util.StringConverter<>() {
+                @Override public String toString(Object[] f) {
+                    if (f == null) return "";
+                    BigDecimal saldo = (BigDecimal) f[15];
+                    return f[2] + " — saldo $" + (saldo != null ? saldo.setScale(2) : "?");
+                }
+                @Override public Object[] fromString(String s) { return null; }
+            });
+            if (!activos.isEmpty()) cmb.setValue(activos.get(0));
+            TextField txtMonto = new TextField(montoCobrado.toPlainString());
+            txtMonto.setPromptText("0.00");
+            txtMonto.setPrefWidth(120);
+            Label info = new Label("Cobro registrado: $" + montoCobrado.setScale(2)
+                    + "\n¿Desea destinar parte de este cobro a un préstamo activo?");
+            info.setStyle("-fx-font-size: 13px");
+            GridPane form = new GridPane();
+            form.setHgap(10);
+            form.setVgap(8);
+            form.add(new Label("Préstamo:"), 0, 0);
+            form.add(cmb, 1, 0);
+            form.add(new Label("Monto a abonar ($):"), 0, 1);
+            form.add(txtMonto, 1, 1);
+
+            ButtonType btnAbonar = new ButtonType("Abonar", ButtonBar.ButtonData.OK_DONE);
+            ButtonType btnNo = new ButtonType("No, gracias", ButtonBar.ButtonData.CANCEL_CLOSE);
+            Alert dlg = new Alert(Alert.AlertType.CONFIRMATION);
+            dlg.setTitle("Destinar cobro a préstamo");
+            dlg.setHeaderText("Abono a préstamo desde cobro de cliente");
+            VBox root = new VBox(10, info, form);
+            root.setPadding(new Insets(5));
+            dlg.getDialogPane().setContent(root);
+            dlg.getButtonTypes().setAll(btnAbonar, btnNo);
+            dlg.showAndWait().ifPresent(bt -> {
+                if (bt != btnAbonar) return;
+                try {
+                    BigDecimal monto = new BigDecimal(txtMonto.getText().trim().replace(",", "."));
+                    if (monto.compareTo(BigDecimal.ZERO) <= 0) return;
+                    Object[] sel = cmb.getValue();
+                    if (sel == null) return;
+                    int prestamoId = (int) sel[0];
+                    BigDecimal saldo = (BigDecimal) sel[15];
+                    if (saldo != null && monto.compareTo(saldo) > 0) {
+                        new Alert(Alert.AlertType.WARNING,
+                                "El monto excede el saldo del préstamo ($" + saldo.setScale(2) + ").").showAndWait();
+                        return;
+                    }
+                    BigDecimal aplicado = prestamoService.registrarAbono(prestamoId, monto, null,
+                            "COBRO_CLIENTE", cuentaPorCobrarId, "Cobro de cliente destinar a préstamo");
+                    new Alert(Alert.AlertType.INFORMATION,
+                            "Abono de $" + aplicado.setScale(2) + " registrado al préstamo.").showAndWait();
+                } catch (NumberFormatException ex) {
+                    new Alert(Alert.AlertType.WARNING, "Monto inválido.").showAndWait();
+                } catch (Exception ex) {
+                    new Alert(Alert.AlertType.ERROR, "No se pudo abonar al préstamo:\n" + ex.getMessage()).showAndWait();
+                }
+            });
+        } catch (Exception ignore) {
+            // el diálogo es opcional: nunca debe romper el flujo de cobro
+        }
     }
 
     private void mostrarDetalleNota(Object[] fila) {

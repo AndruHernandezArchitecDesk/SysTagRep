@@ -55,6 +55,7 @@ public class CajaController implements Initializable {
         this.movimientoDAO = ctx.cajaMovimientoDAO;
         this.usuarioDAO = ctx.usuarioDAO;
         this.logDAO = ctx.logDAO;
+        this.prestamoService = ctx.prestamoService;
     }
 
     @FXML private Label lblEstado;
@@ -100,6 +101,7 @@ public class CajaController implements Initializable {
     private final CajaMovimientoDAO movimientoDAO;
     private final UsuarioDAO usuarioDAO;
     private final LogDAO logDAO;
+    private final com.vendex.service.PrestamoService prestamoService;
     private final ObservableList<CajaMovimiento> listaMovimientos = FXCollections.observableArrayList();
     private final ObservableList<CajaSesion> listaHistorial = FXCollections.observableArrayList();
     private CajaSesion sesionActual;
@@ -517,13 +519,27 @@ public class CajaController implements Initializable {
                 }
                 BigDecimal esperado = cajaService.calcularEsperado(sesionActual.getId());
                 BigDecimal diferencia = montoFisico.subtract(esperado);
+
+                // Abonos a préstamos con el efectivo disponible antes de cerrar
+                BigDecimal totalAbonado = BigDecimal.ZERO;
+                if (prestamoService != null && com.vendex.util.SesionActual.tienePermiso("PRESTAMO_ABONAR")) {
+                    totalAbonado = ofrecerAbonosPrestamos(montoFisico);
+                    if (totalAbonado.compareTo(BigDecimal.ZERO) > 0) {
+                        esperado = cajaService.calcularEsperado(sesionActual.getId());
+                        diferencia = montoFisico.subtract(esperado);
+                    }
+                }
+
                 Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
                 confirm.setTitle("Confirmar cierre");
                 confirm.setHeaderText("Resumen de arqueo");
-                confirm.setContentText(String.format("Esperado en caja: $%s\nMonto físico: $%s\nDiferencia: $%s\n\n¿Confirmar cierre?",
+                String infoAbono = totalAbonado.compareTo(BigDecimal.ZERO) > 0
+                        ? String.format("%nAbonos a préstamos: $%s", totalAbonado.setScale(2, BigDecimal.ROUND_HALF_UP)) : "";
+                confirm.setContentText(String.format("Esperado en caja: $%s\nMonto físico: $%s\nDiferencia: $%s%s\n\n¿Confirmar cierre?",
                         esperado.setScale(2, BigDecimal.ROUND_HALF_UP),
                         montoFisico.setScale(2, BigDecimal.ROUND_HALF_UP),
-                        diferencia.setScale(2, BigDecimal.ROUND_HALF_UP)));
+                        diferencia.setScale(2, BigDecimal.ROUND_HALF_UP),
+                        infoAbono));
                 confirm.getButtonTypes().setAll(ButtonType.YES, ButtonType.NO);
                 if (confirm.showAndWait().orElse(ButtonType.NO) == ButtonType.YES) {
                     try {
@@ -546,6 +562,164 @@ public class CajaController implements Initializable {
                 new Alert(Alert.AlertType.WARNING, "Monto inválido").showAndWait();
             }
         });
+    }
+
+    /**
+     * Diálogo previo al cierre: sugiere cuotas de préstamos a cubrir con el efectivo
+     * disponible (monto físico − monto inicial) y registra abonos (fuente CAJA) +
+     * movimientos EGRESO en la sesión actual.
+     * @return total efectivamente abonado (0 si se omite)
+     */
+    private BigDecimal ofrecerAbonosPrestamos(BigDecimal montoFisico) {
+        try {
+            List<Object[]> pendientes = prestamoService.listarCuotasPendientes();
+            if (pendientes == null || pendientes.isEmpty()) return BigDecimal.ZERO;
+
+            BigDecimal inicial = sesionActual.getMontoInicial() != null ? sesionActual.getMontoInicial() : BigDecimal.ZERO;
+            BigDecimal disponible = montoFisico.subtract(inicial).max(BigDecimal.ZERO);
+
+            Stage modal = new Stage();
+            modal.initModality(Modality.APPLICATION_MODAL);
+            modal.setTitle("Abonar a préstamos antes de cerrar caja");
+
+            // Fila editable
+            class Fila {
+                final int cuotaId; final int prestamoId; final String entidad; final int numero;
+                final java.time.LocalDate vence; final BigDecimal falta;
+                final javafx.beans.property.SimpleObjectProperty<BigDecimal> monto;
+                Fila(Object[] f, BigDecimal sugerido) {
+                    this.cuotaId = (int) f[0];
+                    this.prestamoId = (int) f[1];
+                    this.entidad = (String) f[2];
+                    this.numero = (int) f[3];
+                    this.vence = (java.time.LocalDate) f[4];
+                    this.falta = (BigDecimal) f[7];
+                    this.monto = new javafx.beans.property.SimpleObjectProperty<>(sugerido);
+                }
+            }
+            List<Fila> filas = new java.util.ArrayList<>();
+            BigDecimal restante = disponible;
+            for (Object[] f : pendientes) {
+                BigDecimal falta = (BigDecimal) f[7];
+                if (falta == null || falta.compareTo(BigDecimal.ZERO) <= 0) continue;
+                BigDecimal sugerido = falta.min(restante.max(BigDecimal.ZERO));
+                filas.add(new Fila(f, sugerido));
+                restante = restante.subtract(sugerido);
+            }
+            if (filas.isEmpty()) return BigDecimal.ZERO;
+
+            TableView<Fila> tbl = new TableView<>();
+            tbl.setPrefHeight(240);
+            TableColumn<Fila, String> cEnt = new TableColumn<>("Entidad");
+            cEnt.setCellValueFactory(d -> new javafx.beans.property.ReadOnlyObjectWrapper<>(d.getValue().entidad));
+            cEnt.setPrefWidth(150);
+            TableColumn<Fila, Integer> cNum = new TableColumn<>("Cuota");
+            cNum.setCellValueFactory(d -> new javafx.beans.property.ReadOnlyObjectWrapper<>(d.getValue().numero));
+            cNum.setMaxWidth(60);
+            TableColumn<Fila, String> cVence = new TableColumn<>("Vence");
+            cVence.setCellValueFactory(d -> new javafx.beans.property.ReadOnlyObjectWrapper<>(
+                    d.getValue().vence != null ? d.getValue().vence.toString() : ""));
+            cVence.setMaxWidth(90);
+            TableColumn<Fila, BigDecimal> cFalta = new TableColumn<>("Falta");
+            cFalta.setCellValueFactory(d -> new javafx.beans.property.ReadOnlyObjectWrapper<>(d.getValue().falta));
+            cFalta.setMaxWidth(90);
+            TableColumn<Fila, BigDecimal> cAbonar = new TableColumn<>("A abonar (editable)");
+            cAbonar.setCellValueFactory(d -> d.getValue().monto);
+            cAbonar.setCellFactory(col -> new TableCell<>() {
+                private final TextField txt = new TextField();
+                {
+                    txt.setStyle("-fx-padding: 2 4");
+                    txt.textProperty().addListener((o, a, b) -> {
+                        Fila f = getTableView().getItems().get(getIndex());
+                        try {
+                            BigDecimal v = b == null || b.trim().isEmpty() ? BigDecimal.ZERO : new BigDecimal(b.trim().replace(",", "."));
+                            f.monto.set(v.max(BigDecimal.ZERO));
+                        } catch (NumberFormatException ignore) {
+                        }
+                    });
+                }
+                @Override
+                protected void updateItem(BigDecimal item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty) {
+                        setGraphic(null);
+                    } else {
+                        if (!txt.getText().equals(item != null ? item.toPlainString() : "")) {
+                            txt.setText(item != null ? item.toPlainString() : "");
+                        }
+                        setGraphic(txt);
+                    }
+                }
+            });
+            cAbonar.setPrefWidth(120);
+            tbl.getColumns().addAll(cEnt, cNum, cVence, cFalta, cAbonar);
+            tbl.getItems().setAll(filas);
+
+            Label lblDisp = new Label(String.format("Disponible para abonar (físico − inicial): $%s", disponible.setScale(2)));
+            lblDisp.setStyle("-fx-font-weight: bold");
+            Label lblTotal = new Label("Total a abonar: $0.00");
+            lblTotal.setStyle("-fx-font-weight: bold; -fx-font-size: 13px");
+            Runnable recalcTotal = () -> {
+                BigDecimal t = BigDecimal.ZERO;
+                for (Fila f : filas) t = t.add(f.monto.get() != null ? f.monto.get() : BigDecimal.ZERO);
+                lblTotal.setText("Total a abonar: $" + t.setScale(2) + " (quedan en caja: $"
+                        + montoFisico.subtract(t).setScale(2) + ")");
+            };
+            for (Fila f : filas) f.monto.addListener((o, a, b) -> recalcTotal.run());
+            recalcTotal.run();
+
+            Button btnAplicar = new Button("APLICAR ABONOS Y CONTINUAR");
+            btnAplicar.setStyle("-fx-font-weight: bold; -fx-padding: 8 16");
+            Button btnOmitir = new Button("Omitir abonos");
+            HBox botones = new HBox(10, btnAplicar, btnOmitir);
+            botones.setAlignment(Pos.CENTER_RIGHT);
+            final BigDecimal[] resultado = {BigDecimal.ZERO};
+            btnOmitir.setOnAction(e -> modal.close());
+            btnAplicar.setOnAction(e -> {
+                int usuarioId = com.vendex.controller.LoginController.usuarioAutenticado != null
+                        ? com.vendex.controller.LoginController.usuarioAutenticado.getId() : 1;
+                BigDecimal total = BigDecimal.ZERO;
+                int aplicados = 0;
+                for (Fila f : filas) {
+                    BigDecimal m = f.monto.get();
+                    if (m == null || m.compareTo(BigDecimal.ZERO) <= 0) continue;
+                    try {
+                        BigDecimal aplicado = prestamoService.registrarAbono(f.prestamoId, m, f.cuotaId,
+                                "CAJA", sesionActual.getId(),
+                                "Abono desde cierre de caja #" + sesionActual.getId());
+                        if (aplicado.compareTo(BigDecimal.ZERO) > 0) {
+                            cajaService.registrarMovimiento(sesionActual.getId(), "EGRESO", aplicado,
+                                    "Abono préstamo " + f.entidad + " — cuota #" + f.numero, usuarioId);
+                            total = total.add(aplicado);
+                            aplicados++;
+                        }
+                    } catch (Exception ex) {
+                        logDAO.guardar("CajaController", "abonoPrestamoCierre",
+                                "Préstamo " + f.prestamoId + " cuota " + f.numero + ": " + ex.getMessage(), ex);
+                    }
+                }
+                resultado[0] = total;
+                modal.close();
+                if (aplicados > 0) {
+                    new Alert(Alert.AlertType.INFORMATION,
+                            "Se registraron " + aplicados + " abono(s) por $" + total.setScale(2)
+                                    + " a préstamos.\nEstos movimientos se descuentan del esperado en caja.").showAndWait();
+                    cargarEstado();
+                    cargarResumen();
+                    cargarMovimientos();
+                }
+            });
+            VBox contenido = new VBox(10,
+                    new Label("Hay cuotas de préstamos pendientes. Puede abonar con el efectivo disponible antes de cerrar:"),
+                    lblDisp, tbl, lblTotal, botones);
+            contenido.setPadding(new Insets(15));
+            modal.setScene(new javafx.scene.Scene(contenido, 700, 420));
+            modal.showAndWait();
+            return resultado[0];
+        } catch (Exception ex) {
+            logDAO.guardar("CajaController", "ofrecerAbonosPrestamos", ex.getMessage(), ex);
+            return BigDecimal.ZERO;
+        }
     }
 
     private void dispararBackupCierreCajaAsync() {

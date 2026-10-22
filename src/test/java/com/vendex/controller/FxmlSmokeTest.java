@@ -192,4 +192,17 @@ class FxmlSmokeTest {
         f.setAccessible(true);
         assertNotNull(f.get(controller), "colHistAcciones cableada desde FXML");
     }
+
+    @Test
+    @Order(12)
+    void cargaPrestamoViewConTooltipsYEstilo() throws Exception {
+        Object controller = cargar("/view/PrestamoView.fxml");
+        assertNotNull(controller, "controller PrestamoController");
+        java.lang.reflect.Field f = controller.getClass().getDeclaredField("tblPrestamos");
+        f.setAccessible(true);
+        assertNotNull(f.get(controller), "tblPrestamos cableada desde FXML");
+        java.lang.reflect.Field f2 = controller.getClass().getDeclaredField("lblResumen");
+        f2.setAccessible(true);
+        assertNotNull(f2.get(controller), "lblResumen cableada desde FXML");
+    }
 }

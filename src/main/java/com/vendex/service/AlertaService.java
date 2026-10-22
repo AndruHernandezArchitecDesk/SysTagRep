@@ -7,29 +7,45 @@ import com.vendex.model.Alerta;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import com.vendex.dao.InventarioDAOPostgres;
 import com.vendex.dao.CuentaPorCobrarDAOPostgres;
 import com.vendex.dao.AlertaDAOPostgres;
+import com.vendex.dao.PrestamoDAO;
+import com.vendex.dao.PrestamoDAOPostgres;
+import com.vendex.model.Prestamo;
 
 public class AlertaService {
 
     private static final int UMBRAL_STOCK_BAJO = 5;
+    private static final int DIAS_CUOTA_PROXIMA = 2;
 
     private final AlertaDAO alertaDAO;
     private final InventarioDAO inventarioDAO;
     private final CuentaPorCobrarDAO cuentaPorCobrarDAO;
+    private final PrestamoDAO prestamoDAO;
+    private final PrestamoService prestamoService;
 
     public AlertaService() {
-        this(new AlertaDAOPostgres(), new InventarioDAOPostgres(), new CuentaPorCobrarDAOPostgres());
+        this(new AlertaDAOPostgres(), new InventarioDAOPostgres(), new CuentaPorCobrarDAOPostgres(),
+             new PrestamoDAOPostgres(), null);
     }
 
     public AlertaService(AlertaDAO alertaDAO, InventarioDAO inventarioDAO, CuentaPorCobrarDAO cuentaPorCobrarDAO) {
+        this(alertaDAO, inventarioDAO, cuentaPorCobrarDAO, null, null);
+    }
+
+    public AlertaService(AlertaDAO alertaDAO, InventarioDAO inventarioDAO, CuentaPorCobrarDAO cuentaPorCobrarDAO,
+                         PrestamoDAO prestamoDAO, PrestamoService prestamoService) {
         this.alertaDAO = alertaDAO;
         this.inventarioDAO = inventarioDAO;
         this.cuentaPorCobrarDAO = cuentaPorCobrarDAO;
+        this.prestamoDAO = prestamoDAO;
+        this.prestamoService = prestamoService;
     }
 
     public void regenerarAlertas() {
@@ -38,6 +54,8 @@ public class AlertaService {
         alertas.addAll(generarAlertasStockBajo());
         alertas.addAll(generarAlertasStockNegativo());
         alertas.addAll(generarAlertasCuentasVencidas());
+        alertas.addAll(generarAlertasPrestamos());
+        alertas.addAll(generarAlertasMetas());
         for (Alerta a : alertas) {
             alertaDAO.insertar(a);
         }
@@ -126,6 +144,73 @@ public class AlertaService {
                 int id = ((Number) fila[0]).intValue();
                 Alerta a = new Alerta("CUENTA_VENCIDA", msg, id, "CUENTA_POR_COBRAR");
                 lista.add(a);
+            }
+        }
+        return lista;
+    }
+
+    /** Cuotas de préstamos vencidas y próximas a vencer. */
+    private List<Alerta> generarAlertasPrestamos() {
+        List<Alerta> lista = new ArrayList<>();
+        if (prestamoDAO == null) return lista;
+        List<Object[]> pendientes;
+        try {
+            pendientes = prestamoDAO.listarCuotasPendientes();
+        } catch (Exception e) {
+            return lista;
+        }
+        LocalDate hoy = LocalDate.now();
+        for (Object[] fila : pendientes) {
+            int cuotaId = ((Number) fila[0]).intValue();
+            String entidad = (String) fila[2];
+            int numero = ((Number) fila[3]).intValue();
+            LocalDate venc = (LocalDate) fila[4];
+            BigDecimal falta = (BigDecimal) fila[7];
+            if (venc == null) continue;
+            if (venc.isBefore(hoy)) {
+                long dias = ChronoUnit.DAYS.between(venc, hoy);
+                String msg = String.format("Préstamo cuota VENCIDA #%d — %s — falta $%s — vencida hace %d día(s)",
+                        numero, entidad, falta.setScale(2), dias);
+                lista.add(new Alerta("PRESTAMO_CUOTA_VENCIDA", msg, cuotaId, "PRESTAMO"));
+            } else if (!venc.isAfter(hoy.plusDays(DIAS_CUOTA_PROXIMA))) {
+                long dias = ChronoUnit.DAYS.between(hoy, venc);
+                String cuando = dias == 0 ? "vence HOY" : "vence en " + dias + " día(s)";
+                String msg = String.format("Préstamo cuota #%d — %s — $%s — %s",
+                        numero, entidad, falta.setScale(2), cuando);
+                lista.add(new Alerta("PRESTAMO_CUOTA_PROXIMA", msg, cuotaId, "PRESTAMO"));
+            }
+        }
+        return lista;
+    }
+
+    /** Metas de venta diarias/semanales configuradas por préstamo (período anterior completo). */
+    private List<Alerta> generarAlertasMetas() {
+        List<Alerta> lista = new ArrayList<>();
+        if (prestamoDAO == null || prestamoService == null) return lista;
+        List<Prestamo> prestamos;
+        try {
+            prestamos = prestamoDAO.listarPrestamosConMeta();
+        } catch (Exception e) {
+            return lista;
+        }
+        LocalDate hoy = LocalDate.now();
+        for (Prestamo p : prestamos) {
+            if (p.getMetaMonto() == null || p.getMetaPeriodicidad() == null) continue;
+            try {
+                LocalDate[] rango = PrestamoService.rangoPeriodoAnterior(p.getMetaPeriodicidad(), hoy);
+                Object[] res = prestamoService.verificarMeta(p, rango[0], rango[1]);
+                boolean cumplio = (Boolean) res[0];
+                BigDecimal total = (BigDecimal) res[1];
+                BigDecimal meta = (BigDecimal) res[2];
+                BigDecimal faltante = (BigDecimal) res[3];
+                if (!cumplio) {
+                    String periodo = "DIARIA".equalsIgnoreCase(p.getMetaPeriodicidad()) ? "diaria" : "semanal";
+                    String msg = String.format("Meta %s NO alcanzada — %s — ventas $%s / meta $%s (falta $%s)",
+                            periodo, p.getEntidadNombre(), total.setScale(2), meta.setScale(2), faltante.setScale(2));
+                    lista.add(new Alerta("META_NO_ALCANZADA", msg, p.getId(), "PRESTAMO"));
+                }
+            } catch (Exception ignore) {
+                // sin ventas registradas o DAO no disponible
             }
         }
         return lista;

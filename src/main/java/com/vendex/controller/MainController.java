@@ -261,6 +261,11 @@ public class MainController implements Initializable {
     }
 
     @FXML
+    private void irPrestamos() {
+        cargarVista("/view/PrestamoView.fxml");
+    }
+
+    @FXML
     private void irGrupos() {
         cargarVista("/view/GrupoView.fxml");
     }

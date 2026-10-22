@@ -59,6 +59,8 @@ public class AppContext {
     public final CajaMovimientoDAO cajaMovimientoDAO;
     public final ProveedorDAO proveedorDAO;
     public final CuentaPorPagarDAO cuentaPorPagarDAO;
+    public final EntidadFinancieraDAO entidadFinancieraDAO;
+    public final PrestamoDAO prestamoDAO;
     public final FacturaProveedorDAO facturaProveedorDAO;
     public final VendedorDAO vendedorDAO;
     public final UsuarioDAO usuarioDAO;
@@ -102,6 +104,7 @@ public class AppContext {
     public final TransferenciaInventarioService transferenciaInventarioService;
     public final AlertaService alertaService;
     public final CajaService cajaService;
+    public final PrestamoService prestamoService;
     public final CertificadoAlertaService certificadoAlertaService;
     public final ServicioReintentoSri servicioReintentoSri;
     public final VendexiConsumoService vendexiConsumoService;
@@ -133,6 +136,9 @@ public class AppContext {
         this.cajaMovimientoDAO = dao(() -> new CajaMovimientoDAOPostgres(), () -> new CajaMovimientoDAORest(restClient));
         this.proveedorDAO = dao(() -> new ProveedorDAOPostgres(), () -> new ProveedorDAORest(restClient));
         this.cuentaPorPagarDAO = dao(() -> new CuentaPorPagarDAOPostgres(), () -> new CuentaPorPagarDAORest(restClient));
+        // Préstamos: entidad siempre local (gestión central); préstamos con Rest en modo remoto
+        this.entidadFinancieraDAO = new EntidadFinancieraDAOPostgres();
+        this.prestamoDAO = dao(() -> new PrestamoDAOPostgres(), () -> new PrestamoDAORest(restClient));
         this.facturaProveedorDAO = dao(() -> new FacturaProveedorDAOPostgres(), () -> new FacturaProveedorDAORest(restClient));
         this.vendedorDAO = dao(() -> new VendedorDAOPostgres(), () -> new VendedorDAORest(restClient));
         this.usuarioDAO = dao(() -> new UsuarioDAOPostgres(), () -> new UsuarioDAORest(restClient));
@@ -195,7 +201,8 @@ public class AppContext {
         this.transferenciaInventarioService = new TransferenciaInventarioService(
                 inventarioDAO, sucursalDAO, transferenciaInventarioDAO, logDAO
         );
-        this.alertaService = new AlertaService(alertaDAO, inventarioDAO, cuentaPorCobrarDAO);
+        this.prestamoService = new PrestamoService(prestamoDAO, entidadFinancieraDAO, ventaResumenDAO);
+        this.alertaService = new AlertaService(alertaDAO, inventarioDAO, cuentaPorCobrarDAO, prestamoDAO, prestamoService);
         this.cajaService = new CajaService(cajaSesionDAO, cajaMovimientoDAO);
         this.certificadoAlertaService = new CertificadoAlertaService(certificadoEstadoDAO, empresaDAO);
         this.servicioReintentoSri = new ServicioReintentoSri(
