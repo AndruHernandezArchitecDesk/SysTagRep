@@ -103,9 +103,32 @@ public class FacturaServiceTest {
     }
 
     @Test
-    void sumarBasesSinIva_precioConIvaEntre115() {
+    void sumarBasesSinIva_precioNeto_sinDivision115() {
+        // Convención vigente: el precio YA es sin IVA, no se divide entre 1.15
         FacturaDetalle d = new FacturaDetalle(1, "4PK1210", "TEST12", 1, new BigDecimal("72.45"));
-        assertEquals(0, FacturaService.sumarBasesSinIva(List.of(d)).compareTo(new BigDecimal("63.00")));
+        assertEquals(0, FacturaService.sumarBasesSinIva(List.of(d)).compareTo(new BigDecimal("72.45")));
+    }
+
+    @Test
+    void usaConvencionAntigua_detectaSubtotalViejoYVigente() {
+        FacturaDetalle d = new FacturaDetalle(1, "COD", "DESC", 3, new BigDecimal("11.50"));
+        assertTrue(FacturaService.usaConvencionAntigua(new BigDecimal("30.00"), List.of(d)),
+                "subtotal antiguo (precio ÷ 1.15) ⇒ RIDE con convención vieja");
+        assertFalse(FacturaService.usaConvencionAntigua(new BigDecimal("34.50"), List.of(d)),
+                "subtotal vigente (3 x 11.50) ⇒ RIDE con convención nueva");
+        assertFalse(FacturaService.usaConvencionAntigua(null, List.of(d)),
+                "subtotal desconocido ⇒ convención vigente");
+    }
+
+    @Test
+    void armarDetallesConIva_facturaAntigua_divideEntre115() {
+        FacturaDetalle d = new FacturaDetalle(1, "COD", "DESC", 3, new BigDecimal("11.50"));
+        List<Object[]> antiguo = FacturaService.armarDetallesConIva(List.of(d));
+        assertEquals("10.00", antiguo.get(0)[3], "precioUnitario ÷ 1.15 (línea de factura antigua)");
+        assertEquals("30.00", antiguo.get(0)[5], "base antigua coherente con el resumen guardado");
+        List<Object[]> vigente = FacturaService.armarDetalles(List.of(d));
+        assertEquals("11.50", vigente.get(0)[3], "precio neto tal cual");
+        assertEquals("34.50", vigente.get(0)[5], "base vigente");
     }
 
     @Test

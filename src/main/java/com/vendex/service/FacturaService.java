@@ -92,14 +92,15 @@ public class FacturaService {
                 .map(FacturaDetalle::getPrecioTotal)
                 .reduce(AppConstants.CERO, BigDecimal::add);
         BigDecimal totalBrutoCalc = subBruto.add(subBruto.multiply(AppConstants.IVA_RATE).setScale(2, RoundingMode.HALF_UP));
-        // CONVENCION C (SRI): precios con IVA incluido; el descuento vive SOLO en
-        // cabecera (totalDescuento + descuentoAdicional). Las lineas van en bruto
-        // (descuento 0.00, neto = base) y el header es neto:
-        //   subtotal = S bases sin IVA; base = S netos (= S bases); iva = 15% x base;
-        //   total = base - descuento + iva.
+        // CONVENCION VIGENTE (SRI): el precio ingresado YA es sin IVA (subtotal de
+        // linea); el descuento vive SOLO en cabecera (totalDescuento + descuentoAdicional).
+        // Las lineas van en bruto (descuento 0.00, neto = cant x precio neto) y el
+        // header es neto:
+        //   subtotal = S bases (precio neto x cant); iva = 15% x (base - descuento);
+        //   total = base - descuento + iva.  Ej.: 3 x 11.50 => sub 34.50, iva 5.18, tot 39.68.
         // Asi se cumplen las 3 reglas SRI a la vez:
         //   R1 sub == S netos; R2 desc == S desc lineas + adicional; T total == sub - adic + iva.
-        // Descuento en VALOR FIJO ($), tope = suma de bases sin IVA.
+        // Descuento en VALOR FIJO ($), tope = suma de bases netas.
         BigDecimal sumaBasesSinIva = sumarBasesSinIva(borrador);
         if (descuentoValor != null && descuentoValor.compareTo(BigDecimal.ZERO) > 0) {
             com.vendex.util.SesionActual.exigirDescuento(descuentoValor, totalBrutoCalc);
@@ -404,6 +405,12 @@ public class FacturaService {
 
         List<FacturaDetalle> detallesDb = facturaDetalleDAO.listarPorFacturaRegistroId(fr.getId());
 
+        // Compatibilidad: facturas antiguas guardaron el subtotal con precio CON IVA
+        // incluido (precio ÷ 1.15). Si el subtotal en BD no coincide con la derivación
+        // vigente, las líneas del RIDE se rederivan con la convención vieja para que
+        // el resumen (guardado) y las líneas no queden desalineados.
+        boolean convencionAntigua = usaConvencionAntigua(fr.getSubtotal(), detallesDb);
+
         PdfElectronico.generar(rutaPDF, fr.getClaveAcceso(), numeroAutorizacion, fechaAutorizacion, fr.getAmbienteSri(),
                 empresa.getRuc(), empresa.getRazonSocial(),
                 com.vendex.util.SucursalActual.direccionEstablecimiento(empresa.getDireccionCallePrincipal() + " y " + empresa.getDireccionCalleSecundaria()),
@@ -415,7 +422,7 @@ public class FacturaService {
                 cliente.getNombre(), cliente.getIdentificacion(),
                 cliente.getDireccion(), cliente.getCorreo(), cliente.getTelefono(),
                 fr.getFormaPago(),
-                armarDetalles(detallesDb),
+                convencionAntigua ? armarDetallesConIva(detallesDb) : armarDetalles(detallesDb),
                 fr.getSubtotal() != null ? fr.getSubtotal() : AppConstants.CERO,
                 fr.getDescuento() != null ? fr.getDescuento() : AppConstants.CERO,
                 fr.getIva() != null ? fr.getIva() : AppConstants.CERO,
@@ -453,16 +460,27 @@ public class FacturaService {
         return fijo;
     }
 
-    /** Suma de bases sin IVA de las lineas (misma fórmula que armarDetalles). */
+    /** Suma de bases netas de las lineas (misma fórmula que armarDetalles): el precio ya es sin IVA. */
     static BigDecimal sumarBasesSinIva(List<FacturaDetalle> items) {
         BigDecimal suma = AppConstants.CERO.setScale(2, RoundingMode.HALF_UP);
         if (items == null) return suma;
         for (FacturaDetalle d : items) {
             if (d == null || d.getPrecioUnitario() == null) continue;
-            BigDecimal precioSinIva = com.vendex.util.ElectronicoUtil.precioSinIva2(d.getPrecioUnitario());
-            suma = suma.add(com.vendex.util.ElectronicoUtil.netoLinea(new BigDecimal(d.getCantidad()), precioSinIva, BigDecimal.ZERO));
+            BigDecimal precioNeto = com.vendex.util.ElectronicoUtil.precioNeto2(d.getPrecioUnitario());
+            suma = suma.add(com.vendex.util.ElectronicoUtil.netoLinea(new BigDecimal(d.getCantidad()), precioNeto, BigDecimal.ZERO));
         }
         return suma.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    /**
+     * true si el subtotal guardado no coincide con la derivación vigente: facturas
+     * antiguas emitidas con precio CON IVA incluido (subtotal = precio ÷ 1.15).
+     * Se usa en regenerarRide para rederivar las líneas del RIDE con su convención.
+     */
+    static boolean usaConvencionAntigua(BigDecimal subtotalGuardado, List<FacturaDetalle> detalles) {
+        return subtotalGuardado != null
+                && subtotalGuardado.subtract(sumarBasesSinIva(detalles)).abs()
+                        .compareTo(new BigDecimal("0.05")) > 0;
     }
 
     /**
@@ -610,24 +628,41 @@ public class FacturaService {
     }
 
     /**
-     * Arma filas para XML/RIDE en CONVENCION C (SRI): lineas en BRUTO
-     * (descuento 0.00, neto = base sin IVA); el descuento vive SOLO en cabecera
-     * (totalDescuento + descuentoAdicional). Asi se cumplen R1/R2/T a la vez.
+     * Arma filas para XML/RIDE (SRI): lineas en BRUTO con precio neto —el precio
+     * ingresado ya es sin IVA— (descuento 0.00, neto = cant x precio); el descuento
+     * vive SOLO en cabecera (totalDescuento + descuentoAdicional). Asi se cumplen
+     * R1/R2/T a la vez.
+     *
+     * <p>Visible para tests de reglas SRI.</p>
      */
-    /** Visible para tests de reglas SRI. */
     static List<Object[]> armarDetalles(List<FacturaDetalle> items) {
+        return armarDetalles(items, false);
+    }
+
+    /**
+     * Sólo para regenerarRide de facturas antiguas emitidas con precio CON IVA
+     * incluido: su subtotal en BD (suma de precios ÷ 1.15) no coincide con la
+     * derivación vigente, así que las líneas del RIDE se rederivan igual que entonces.
+     */
+    static List<Object[]> armarDetallesConIva(List<FacturaDetalle> items) {
+        return armarDetalles(items, true);
+    }
+
+    private static List<Object[]> armarDetalles(List<FacturaDetalle> items, boolean precioConIvaIncluido) {
         List<Object[]> resultado = new ArrayList<>();
         for (FacturaDetalle d : items) {
             // Fuente única: precio a 2 dec (el del XML) y neto = cant*precio2 - desc.
             // Antes el neto salía del precio a 6 dec mientras el XML llevaba el de 2 dec:
             // con cantidad>=2 eso descuadraba 1 centavo (cant*pu2 != tl) y el SRI rechaza.
-            BigDecimal precioSinIva = com.vendex.util.ElectronicoUtil.precioSinIva2(d.getPrecioUnitario());
-            BigDecimal baseDet = com.vendex.util.ElectronicoUtil.netoLinea(new BigDecimal(d.getCantidad()), precioSinIva, BigDecimal.ZERO);
+            BigDecimal precioNeto = precioConIvaIncluido
+                    ? com.vendex.util.ElectronicoUtil.precioSinIva2(d.getPrecioUnitario())
+                    : com.vendex.util.ElectronicoUtil.precioNeto2(d.getPrecioUnitario());
+            BigDecimal baseDet = com.vendex.util.ElectronicoUtil.netoLinea(new BigDecimal(d.getCantidad()), precioNeto, BigDecimal.ZERO);
             String desc = d.getDescripcion();
             if (desc.length() > AppConstants.MAX_DESCRIPCION_XML) desc = desc.substring(0, AppConstants.MAX_DESCRIPCION_XML);
             resultado.add(new Object[]{
                     d.getCodigo(), desc, String.valueOf(d.getCantidad()),
-                    precioSinIva.toPlainString(),
+                    precioNeto.toPlainString(),
                     "0.00",
                     baseDet.toString()
             });

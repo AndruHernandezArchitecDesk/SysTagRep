@@ -103,7 +103,7 @@ Detalle técnico: `docs/fase10_vetxi_historial_conversaciones.md`.
 ## 10. Producto temporal en Factura de Venta
 
 Usa **Producto temporal** junto al buscador para capturar código nuevo, descripción,
-cantidad y precio unitario con IVA incluido. Al guardar la factura, el producto queda
+cantidad y precio unitario **sin IVA** (sección 13). Al guardar la factura, el producto queda
 registrado en el inventario de la sucursal y su stock se descuenta: vender 3 unidades
 de una referencia nueva deja **stock −3**. Cancelar o quitar la línea antes de guardar
 no crea el producto. Si el código ya existe en la sucursal, debe agregarse desde el
@@ -145,3 +145,21 @@ usan las mismas fórmulas sobre el precio unitario, por lo que los totales del
 comprobante siguen coincidiendo exactamente con lo que se muestra.
 
 Detalle técnico: `docs/factura_productos_temporales.md`.
+
+## 13. Factura de Venta: precio sin IVA
+
+En **Factura de Venta** el precio unitario se captura y se muestra **sin IVA**; el
+IVA del 15 % se suma automáticamente sobre la base menos el descuento. Ejemplo:
+3 × 11.50 ⇒ **Subtotal 34.50, IVA 5.18, Total 39.68**. Las fórmulas SRI no cambian;
+solo deja de dividirse el precio entre 1.15.
+
+Aplica a la pantalla y al XML al mismo tiempo, por lo que los totales del comprobante
+siguen coincidiendo con lo que se muestra. **Proforma y Nota de Crédito no cambian**
+(Notas de Crédito siguen leyendo el precio tal cual; sobre facturas antiguas —que se
+emitieron con precio con IVA incluido— acreditan ~15 % menos). Los RIDE regenerados de
+facturas antiguas mantienen sus líneas originales.
+
+Cliente y servidor (ApiServer `/api/facturas` y modo offline) deben correr el mismo
+build, ya que ambos usan la misma fórmula de totales.
+
+Detalle técnico: `docs/convencion_precio_factura.md`.

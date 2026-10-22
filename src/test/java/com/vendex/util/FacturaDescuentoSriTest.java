@@ -17,12 +17,13 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Reglas del validador SRI para facturas CON descuento, CONVENCION C:
- *  el descuento vive SOLO en cabecera (totalDescuento + descuentoAdicional);
- *  las lineas van en BRUTO (descuento 0.00, neto = base sin IVA).
+ * Reglas del validador SRI para facturas CON descuento, convención vigente de
+ * Factura de Venta: el precio ingresado YA es sin IVA; el descuento vive SOLO
+ * en cabecera (totalDescuento + descuentoAdicional); las lineas van en BRUTO
+ * (descuento 0.00, neto = cant x precio neto).
  *  R1: sub == S netos; R2: desc == S lineas + adic; linea: cant*pu-desc == neto;
- *  iva == base*15%; T: importe == sub - adic + iva.
- * Ejemplo usuario: total 350 - descuento 200 = 150 (IVA sobre base bruta).
+ *  iva == (base - adic)*15%; T: importe == sub - adic + iva.
+ * Ejemplo: 3 x 11.50 => sub 34.50, iva 5.18, total 39.68.
  */
 class FacturaDescuentoSriTest {
 
@@ -34,17 +35,24 @@ class FacturaDescuentoSriTest {
         return (List<Object[]>) m.invoke(null, items);
     }
 
+    /** Invoca FacturaService.sumarBasesSinIva (package-visible static) por reflexion. */
+    private static BigDecimal sumarBases(List<FacturaDetalle> items) throws Exception {
+        Method m = FacturaService.class.getDeclaredMethod("sumarBasesSinIva", List.class);
+        m.setAccessible(true);
+        return (BigDecimal) m.invoke(null, items);
+    }
+
     @Test
     void armarDetalles_lineasEnBruto_descuentoCero() throws Exception {
-        // pu con IVA incluido 72.45 => sin IVA 63.00; linea en bruto, sin reparto
+        // precio 72.45 ya es neto (sin IVA): viaja tal cual al XML; linea en bruto, sin reparto
         FacturaDetalle d = new FacturaDetalle(1, "4PK1210", "TEST12", 1, new BigDecimal("72.45"));
         List<Object[]> filas = armar(List.of(d));
 
         assertEquals(1, filas.size());
         Object[] f = filas.get(0);
-        assertEquals("63.00", f[3], "precioUnitario sin IVA");
-        assertEquals("0.00", f[4], "descuento de linea siempre 0.00 (convencion C)");
-        assertEquals("63.00", f[5], "precioTotalSinImpuesto = base bruta");
+        assertEquals("72.45", f[3], "precioUnitario neto (el precio ya es sin IVA)");
+        assertEquals("0.00", f[4], "descuento de linea siempre 0.00 (descuento solo cabecera)");
+        assertEquals("72.45", f[5], "precioTotalSinImpuesto = base bruta");
 
         BigDecimal cant = new BigDecimal((String) f[2]);
         BigDecimal calc = cant.multiply(new BigDecimal((String) f[3]))
@@ -54,8 +62,8 @@ class FacturaDescuentoSriTest {
 
     @Test
     void armarDetalles_multiLinea_netosIgualanBases() throws Exception {
-        FacturaDetalle a = new FacturaDetalle(1, "4PK1210", "TEST12", 1, new BigDecimal("72.45")); // base 63.00
-        FacturaDetalle b = new FacturaDetalle(2, "X2", "OTRO", 2, new BigDecimal("11.50"));       // pu sin iva 10.00 x2
+        FacturaDetalle a = new FacturaDetalle(1, "4PK1210", "TEST12", 1, new BigDecimal("72.45")); // base 72.45
+        FacturaDetalle b = new FacturaDetalle(2, "X2", "OTRO", 2, new BigDecimal("11.50"));       // base 23.00 x2
         List<Object[]> filas = armar(List.of(a, b));
 
         BigDecimal sumaDesc = BigDecimal.ZERO;
@@ -71,7 +79,7 @@ class FacturaDescuentoSriTest {
             sumaNeto = sumaNeto.add(tot);
         }
         assertEquals(0, sumaDesc.compareTo(BigDecimal.ZERO), "Sin reparto: suma lineas 0.00");
-        assertEquals(0, sumaNeto.compareTo(new BigDecimal("83.00")), "63.00 + 20.00 brutos");
+        assertEquals(0, sumaNeto.compareTo(new BigDecimal("95.45")), "72.45 + 23.00 brutos");
     }
 
     @Test
@@ -233,18 +241,49 @@ class FacturaDescuentoSriTest {
 
     @Test
     void lineaDobleRedondeo_casoProduccion55245K_pasa() throws Exception {
-        // Producción: PVP 3.47 x2. Antes: total salía del precio a 6 dec
-        // (3.017391x2=6.03) pero el XML llevaba precio a 2 dec (3.02) y el
-        // validador recomputaba 2x3.02=6.04 -> "difiere del total 6.03".
-        // Ahora total y precio salen de la misma base a 2 dec: 6.04.
+        // Producción: PVP 3.47 (sin IVA) x2. El precio viaja tal cual a 2 dec al XML
+        // y el total se deriva de la MISMA base: 2 x 3.47 = 6.94, sin doble redondeo
+        // (antes precio ÷ 1.15 = 3.02 y 6.04 vs 6.03 descuadraban 1 centavo).
         FacturaDetalle d = new FacturaDetalle(1, "55245K", "ITEM", 2, new BigDecimal("3.47"));
         List<Object[]> filas = armar(List.of(d));
         assertEquals(1, filas.size());
         Object[] f = filas.get(0);
-        assertEquals("3.02", f[3], "precioUnitario sin IVA a 2 dec");
-        assertEquals("6.04", f[5], "precioTotalSinImpuesto = 2 x 3.02");
+        assertEquals("3.47", f[3], "precioUnitario neto a 2 dec");
+        assertEquals("6.94", f[5], "precioTotalSinImpuesto = 2 x 3.47");
         // header como lo calcula emitir: base=S netos, iva=15% base, total=base+iva
-        assertDoesNotThrow(() -> validar(filas, "6.04", "0.00", "0.00", "0.91", "6.95"));
+        assertDoesNotThrow(() -> validar(filas, "6.94", "0.00", "0.00", "1.04", "7.98"));
+    }
+
+    @Test
+    void coherenciaUiXml_precioSinIva_3x1150_sub3450_iva518_tot3968() throws Exception {
+        // Misma entrada en la UI (FacturaController.sumaBasesSinIva), en el servicio y
+        // en el XML: 3 x 11.50 (precio ya sin IVA) => sub 34.50, iva 5.18, total 39.68.
+        FacturaDetalle d = new FacturaDetalle(1, "REP", "REPUESTO", 3, new BigDecimal("11.50"));
+
+        BigDecimal sub = sumarBases(List.of(d));
+        assertEquals(0, sub.compareTo(new BigDecimal("34.50")), "subtotal = 3 x 11.50 sin ÷1.15");
+
+        List<Object[]> filas = armar(List.of(d));
+        assertEquals("11.50", filas.get(0)[3], "precioUnitario neto tal cual");
+        assertEquals("34.50", filas.get(0)[5], "precioTotalSinImpuesto = 3 x 11.50");
+
+        BigDecimal iva = sub.multiply(new BigDecimal("0.15")).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal tot = sub.add(iva);
+        assertEquals(0, iva.compareTo(new BigDecimal("5.18")), "IVA 15% sobre el subtotal");
+        assertEquals(0, tot.compareTo(new BigDecimal("39.68")), "total = sub + iva");
+        assertDoesNotThrow(() -> validar(filas, "34.50", "0.00", "0.00", "5.18", "39.68"),
+                "prevalidación SRI R1/R2/ImpuestoTotalizado/T con la convención nueva");
+
+        String xml = XmlSriBuilder.construirFactura("PRUEBAS", "1310202601171685454000110011000000016438804530017",
+                "1716854540001", "TAG Repuestos Automotrices", "001", "100", 1647, "Av. Principal",
+                "", "NO", "07", "Consumidor final", "9999999999999", "NA",
+                "34.50", "0.00", "39.68", "0.00", "01", "13/10/2026", filas);
+        DocumentBuilderFactory f = DocumentBuilderFactory.newInstance();
+        f.setNamespaceAware(true);
+        Document doc = f.newDocumentBuilder().parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+        assertEquals(0, num(doc, "totalSinImpuestos").compareTo(new BigDecimal("34.50")), "XML sub = UI sub");
+        assertEquals(0, num(doc, "valor").compareTo(new BigDecimal("5.18")), "XML IVA = UI IVA");
+        assertEquals(0, num(doc, "importeTotal").compareTo(new BigDecimal("39.68")), "XML total = UI total");
     }
 
     @Test

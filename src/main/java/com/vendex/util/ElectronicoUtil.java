@@ -51,6 +51,17 @@ public final class ElectronicoUtil {
     }
 
     /**
+     * Precio neto de Factura de Venta a 2 decimales: el precio ingresado YA es sin
+     * IVA (convención vigente), así que sólo se normaliza; el IVA 15% se suma en la
+     * cabecera (base − descuento) × 15%. `precioSinIva2` queda sólo para Nota de
+     * Crédito sobre facturas antiguas escritas con precio con IVA incluido.
+     */
+    public static BigDecimal precioNeto2(BigDecimal precioNeto) {
+        if (precioNeto == null) return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+        return precioNeto.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    /**
      * Neto de línea sin IVA: cantidad × precioSinIva2 − descuento, a 2 decimales.
      * Debe usarse para el total de línea (f[5]) y para suma de bases, de modo que
      * el XML (precioUnitario=f[3], precioTotalSinImpuesto=f[5]) siempre cumpla

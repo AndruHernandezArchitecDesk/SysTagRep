@@ -106,6 +106,14 @@ class ElectronicoUtilTest {
     }
 
     @Test
+    void precioNeto2_precioYaSinIva_soloNormalizaASinDividir() {
+        assertEquals(new BigDecimal("3.47"), ElectronicoUtil.precioNeto2(new BigDecimal("3.47")));
+        assertEquals(new BigDecimal("11.50"), ElectronicoUtil.precioNeto2(new BigDecimal("11.5")));
+        assertEquals(new BigDecimal("12.35"), ElectronicoUtil.precioNeto2(new BigDecimal("12.345")));
+        assertEquals(new BigDecimal("0.00"), ElectronicoUtil.precioNeto2(null));
+    }
+
+    @Test
     void netoLinea_cantidadPorPrecioMenosDescuento() {
         assertEquals(new BigDecimal("6.04"),
                 ElectronicoUtil.netoLinea(new BigDecimal("2"), new BigDecimal("3.02"), BigDecimal.ZERO));

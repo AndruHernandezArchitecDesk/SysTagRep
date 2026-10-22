@@ -300,12 +300,12 @@ public class FacturaController implements Initializable, DocumentoVendexi {
         return fijo;
     }
 
-    /** Suma de bases sin IVA (tope real del descuento en $). Misma fórmula que el servicio. */
+    /** Suma de bases netas (tope real del descuento en $). Misma fórmula que el servicio: el precio ya es sin IVA. */
     private BigDecimal sumaBasesSinIva() {
         BigDecimal suma = BigDecimal.ZERO.setScale(2, java.math.RoundingMode.HALF_UP);
         for (FacturaDetalle d : itemsDetalle) {
             if (d == null || d.getPrecioUnitario() == null) continue;
-            BigDecimal pu2 = com.vendex.util.ElectronicoUtil.precioSinIva2(d.getPrecioUnitario());
+            BigDecimal pu2 = com.vendex.util.ElectronicoUtil.precioNeto2(d.getPrecioUnitario());
             suma = suma.add(com.vendex.util.ElectronicoUtil.netoLinea(new BigDecimal(d.getCantidad()), pu2, BigDecimal.ZERO));
         }
         return suma.setScale(2, java.math.RoundingMode.HALF_UP);
@@ -528,7 +528,7 @@ public class FacturaController implements Initializable, DocumentoVendexi {
         grid.addRow(0, new Label("Código:"), codigo);
         grid.addRow(1, new Label("Descripción:"), descripcion);
         grid.addRow(2, new Label("Cantidad:"), cantidad);
-        grid.addRow(3, new Label("P. unitario (IVA incluido):"), precio);
+        grid.addRow(3, new Label("P. unitario (sin IVA):"), precio);
         Label detalle = new Label("Se creará en inventario al guardar. Vender 3 unidades dejará stock −3."); detalle.setWrapText(true);
         Label error = new Label(); error.setWrapText(true); error.setStyle("-fx-text-fill: #b00020;");
         var contenido = new javafx.scene.layout.VBox(12, grid, detalle, error); contenido.setStyle("-fx-padding: 14;");
@@ -551,8 +551,9 @@ public class FacturaController implements Initializable, DocumentoVendexi {
     }
 
     private void calcularTotales() {
-        // Convencion C (igual que FacturaService): subtotal = S bases sin IVA (neto),
-        // descuento solo cabecera, IVA 15% sobre base bruta, total = base - desc + iva.
+        // Igual que FacturaService: el precio ingresado ya es sin IVA, subtotal = S
+        // (precio x cant), descuento solo cabecera, IVA 15% sobre (base - desc),
+        // total = base - desc + iva.  Ej.: 3 x 11.50 => 34.50 / 5.18 / 39.68.
         BigDecimal base = sumaBasesSinIva();
         BigDecimal descuento = obtenerDescuentoFijo(base);
         // Regla SRI ImpuestoTotalizado: valor = 15% * (base - adicional).

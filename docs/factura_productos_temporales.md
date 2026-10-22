@@ -5,7 +5,8 @@
 ## Uso
 
 Factura de Venta incorpora **Producto temporal** junto al buscador, con los campos
-código, descripción, cantidad y precio unitario **con IVA incluido**. La captura es
+código, descripción, cantidad y precio unitario **sin IVA** (la factura suma el 15 %
+al total; ver `docs/convencion_precio_factura.md`). La captura es
 equivalente a la de Proforma; el destino del producto de Factura es inventario.
 
 - Se exige un código nuevo en la sucursal de la sesión. La comprobación ignora
@@ -91,11 +92,12 @@ El precio unitario es la única columna editable de la tabla de detalle, tanto e
 
 ### Facturación electrónica
 
-No hay cambios en `FacturaService` ni en los builders SRI. La UI (`sumaBasesSinIva`)
-y el XML (`sumarBasesSinIva`/`armarDetalles`) derivan del mismo `precioUnitario` con
-`ElectronicoUtil.precioSinIva2`/`netoLinea` (Convención C), así que editar el precio
-y recalcular mantiene pantalla == XML. El tope del descuento de cabecera se recalcula
-desde la nueva base y `copiarYValidar` vuelve a validar el precio al guardar.
+La UI (`sumaBasesSinIva` → `precioNeto2`) y el XML (`sumarBasesSinIva`/`armarDetalles`)
+derivan del mismo `precioUnitario` con la convención vigente de precio **sin IVA**
+(`ElectronicoUtil.precioNeto2`/`netoLinea`; ver `docs/convencion_precio_factura.md`),
+así que editar el precio y recalcular mantiene pantalla == XML. El tope del descuento
+de cabecera se recalcula desde la nueva base y `copiarYValidar` vuelve a validar el
+precio al guardar.
 
 ## Verificación
 
@@ -103,7 +105,7 @@ desde la nueva base y `copiarYValidar` vuelve a validar el precio al guardar.
 ./mvnw -Dtest=FacturaTemporalTransaccionTest,FacturaTemporalApiTest,FxmlSmokeTest,FacturaServiceTest,FacturaCalculatorTest,FacturaDescuentoSriTest test
 ```
 
-**53 tests, 0 fallos, 0 errores, 0 omitidos**, incluidas 13 pruebas nuevas
+**59 tests, 0 fallos, 0 errores, 0 omitidos**, incluidas 13 pruebas nuevas
 (8 transaccionales, 4 de API/contrato offline y 1 de interfaz).
 
 Las pruebas nuevas verifican emisión mixta, dos temporales independientes, stock −3,
@@ -114,9 +116,9 @@ HTTP y serialización offline, además del montaje del botón y los totales de l
 La edición de precio unitario se cubre en `FxmlSmokeTest` con los tests
 `factura_precioUnitarioEditableConDobleClicRecalculaTotales` y
 `proforma_precioUnitarioEditableConDobleClicRecalculaTotales`, que disparan eventos
-`TableColumn.CellEditEvent` reales: 11.50 → 12.00 ⇒ total 35.98 (base 31.29, IVA 4.69)
-en factura; 10.00 → 12.50 ⇒ total 25.00 sin IVA y 28.75 con IVA en proforma; y que
-precios inválidos (cero, negativos, más de 2 decimales, texto) no modifican el modelo.
+`TableColumn.CellEditEvent` reales: 11.50 → 12.00 ⇒ subtotal 36.00, IVA 5.40,
+total 41.40 en factura; 10.00 → 12.50 ⇒ total 25.00 sin IVA y 28.75 con IVA en proforma;
+y que precios inválidos (cero, negativos, más de 2 decimales, texto) no modifican el modelo.
 
 Se utiliza SQL HSQLDB aislado y HTTP local. La firma se sustituye por una implementación
 de prueba: no se usan certificados reales ni se envían comprobantes al SRI. El bloqueo

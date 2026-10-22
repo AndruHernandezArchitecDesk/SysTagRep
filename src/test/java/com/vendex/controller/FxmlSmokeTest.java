@@ -245,7 +245,7 @@ class FxmlSmokeTest {
 
     @Test
     @Order(16)
-    void factura_productoTemporalSeAgregaAlBorradorConPrecioIvaIncluido() throws Exception {
+    void factura_productoTemporalSeAgregaAlBorradorCalculandoIvaEncima() throws Exception {
         var controller = (FacturaController) cargar("/view/FacturaView.fxml");
         AtomicReference<Throwable> error = new AtomicReference<>();
         CountDownLatch fin = new CountDownLatch(1);
@@ -261,8 +261,15 @@ class FxmlSmokeTest {
                 org.junit.jupiter.api.Assertions.assertEquals(1, contexto.lineas.size());
                 org.junit.jupiter.api.Assertions.assertEquals(3, contexto.lineas.get(0).cantidad);
                 org.junit.jupiter.api.Assertions.assertFalse(contexto.lineas.get(0).codigo.contains("TEMPORAL"));
+                // Precio ya sin IVA: sub = 3 x 11.50 = 34.50; iva = 15%; total = sub + iva
+                var sub = FacturaController.class.getDeclaredField("lblSubtotal"); sub.setAccessible(true);
+                org.junit.jupiter.api.Assertions.assertEquals("34.50",
+                        ((javafx.scene.control.Label) sub.get(controller)).getText());
+                var iva = FacturaController.class.getDeclaredField("lblIva"); iva.setAccessible(true);
+                org.junit.jupiter.api.Assertions.assertEquals("5.18",
+                        ((javafx.scene.control.Label) iva.get(controller)).getText());
                 var total = FacturaController.class.getDeclaredField("lblTotal"); total.setAccessible(true);
-                org.junit.jupiter.api.Assertions.assertEquals("34.50", ((javafx.scene.control.Label) total.get(controller)).getText());
+                org.junit.jupiter.api.Assertions.assertEquals("39.68", ((javafx.scene.control.Label) total.get(controller)).getText());
                 org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
                         () -> controller.agregarTemporalFactura(codigo.toLowerCase(), "OTRO", 1, java.math.BigDecimal.TEN));
             } catch (Throwable t) { error.set(t); } finally { fin.countDown(); }
@@ -315,18 +322,21 @@ class FxmlSmokeTest {
                 org.junit.jupiter.api.Assertions.assertFalse(((javafx.scene.control.TableColumn<?, ?>) fCant.get(controller)).isEditable(),
                         "la columna cantidad no entra en modo edición");
 
-                // 11.50 → 12.00: base 31.29, IVA 4.69, total 35.98 (Convención C, igual que el XML)
+                // 11.50 → 12.00 (precio sin IVA): subtotal 36.00, IVA 5.40, total 41.40
                 dispararPrecioCommit(col, tabla, new java.math.BigDecimal("12.00"));
                 org.junit.jupiter.api.Assertions.assertEquals(0, new java.math.BigDecimal("12.00").compareTo(d.getPrecioUnitario()),
                         "precio unitario actualizado");
                 org.junit.jupiter.api.Assertions.assertEquals(0, new java.math.BigDecimal("36.00").compareTo(d.getPrecioTotal()),
                         "precio total = 3 × 12.00");
+                var fSub = FacturaController.class.getDeclaredField("lblSubtotal"); fSub.setAccessible(true);
+                org.junit.jupiter.api.Assertions.assertEquals("36.00",
+                        ((javafx.scene.control.Label) fSub.get(controller)).getText(), "subtotal recalculado");
                 var fTotal = FacturaController.class.getDeclaredField("lblTotal"); fTotal.setAccessible(true);
-                org.junit.jupiter.api.Assertions.assertEquals("35.98",
-                        ((javafx.scene.control.Label) fTotal.get(controller)).getText(), "total recalculado");
+                org.junit.jupiter.api.Assertions.assertEquals("41.40",
+                        ((javafx.scene.control.Label) fTotal.get(controller)).getText(), "total = sub + IVA, igual que el XML");
                 var fIva = FacturaController.class.getDeclaredField("lblIva"); fIva.setAccessible(true);
-                org.junit.jupiter.api.Assertions.assertEquals("4.69",
-                        ((javafx.scene.control.Label) fIva.get(controller)).getText(), "IVA 15% sobre la nueva base");
+                org.junit.jupiter.api.Assertions.assertEquals("5.40",
+                        ((javafx.scene.control.Label) fIva.get(controller)).getText(), "IVA 15% sobre el nuevo subtotal");
 
                 // Precios inválidos: revertir silencioso (el modelo no cambia)
                 dispararPrecioCommit(col, tabla, java.math.BigDecimal.ZERO);
