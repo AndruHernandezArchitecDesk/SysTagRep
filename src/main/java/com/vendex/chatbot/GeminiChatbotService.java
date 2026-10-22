@@ -407,7 +407,8 @@ public class GeminiChatbotService {
             case VENTAS_CLIENTE, CUENTAS_COBRAR, RENTABILIDAD, CONSULTAR_PRODUCTO ->
                     "Si hay datos, resume los montos/stock relevantes. Si no hay, di que no se encontraron. No inventes montos, stock ni precios.";
             case GENERAL -> "Responde amable y breve en español (max 3 lineas). Puedes ofrecer ayudar con repuestos, stock, ventas, saldos y rentabilidad.";
-            default -> "Si hay stock indica código, nombre, stock y precio. Si no hay, di que no hay stock pero mantén la sugerencia. No inventes stock/precios.";
+            default -> "Si hay stock indica código, nombre, stock y precio. Si no hay, di que no hay stock pero mantén la sugerencia. No inventes stock/precios. " +
+                    "Si los datos incluyen complementos, menciona hasta dos con su código; son asociaciones locales, no compatibilidad técnica confirmada.";
         };
         String motivo = c.motivo != null ? c.motivo : (c.esSintoma ? "sintoma" : "consulta directa");
         return """
@@ -465,6 +466,30 @@ public class GeminiChatbotService {
         if (!r.isEncontrado() && !descripcion.equals(texto)) r = repuestoDao.buscar(texto.trim(), null, null, null);
 
         String respuestaLocal = formatearRespuesta(r, descripcionBusqueda);
+        if (r.isEncontrado() && herramientas != null) {
+            try {
+                java.util.List<com.vendex.model.Inventario> complementos = herramientas.complementarios(r.getCodigo(), 2);
+                if (complementos != null && !complementos.isEmpty()) {
+                    StringBuilder sb = new StringBuilder(respuestaLocal);
+                    sb.append("\nComplementos por asociación local (compatibilidad sin confirmar):");
+                    java.util.Set<String> vistos = new java.util.HashSet<>();
+                    if (r.getCodigo() != null) vistos.add(r.getCodigo().trim().toUpperCase(java.util.Locale.ROOT));
+                    int agregados = 0;
+                    for (com.vendex.model.Inventario i : complementos) {
+                        if (i == null || i.getCantidad() <= 0 || i.getCodigo() == null || i.getCodigo().isBlank()) continue;
+                        if (!vistos.add(i.getCodigo().trim().toUpperCase(java.util.Locale.ROOT))) continue;
+                        sb.append("\n• ").append(i.getCodigo()).append(" - ").append(i.getDescripcion())
+                          .append(" | stock: ").append(i.getCantidad()).append(" | precio: ")
+                          .append(i.getPrecioVenta() != null
+                                  ? String.format(java.util.Locale.US, "$%.2f", i.getPrecioVenta()) : "n/d");
+                        if (++agregados >= 2) break;
+                    }
+                    if (agregados > 0) respuestaLocal = sb.toString();
+                }
+            } catch (Exception e) {
+                LOGGER.log(Level.FINE, "Complementos no disponibles; se conserva el repuesto encontrado", e);
+            }
+        }
         if (c.esSintoma && c.motivo != null) {
             respuestaLocal = "💡 Sugerencia IA: " + c.motivo + " → buscando \"" + descripcion + "\"\n" + respuestaLocal;
         }

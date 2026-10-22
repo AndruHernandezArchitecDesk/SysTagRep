@@ -14,6 +14,11 @@ public interface HerramientasAgente {
     /** Productos por código exacto o descripción (ILIKE). */
     List<Producto> productos(String criterio, int limite);
 
+    /** Complementos locales con stock; vacío si esta implementación no los soporta. */
+    default List<com.vendex.model.Inventario> complementarios(String codigo, int limite) {
+        return List.of();
+    }
+
     /** Clientes por nombre (LIKE) o identificación exacta. */
     List<Cliente> clientes(String criterio, int limite);
 

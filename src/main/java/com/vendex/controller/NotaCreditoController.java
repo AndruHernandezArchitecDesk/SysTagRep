@@ -11,6 +11,7 @@ import com.vendex.offline.LocalOperationQueue;
 import com.vendex.offline.OperacionOffline;
 import com.vendex.offline.OfflineUI;
 import com.vendex.service.NotaCreditoService;
+import com.vendex.service.VendexiSugerenciaService;
 import com.vendex.util.*;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
@@ -82,6 +83,7 @@ public class NotaCreditoController implements Initializable {
 
     private final ObservableList<NotaCreditoService.DetalleNCInput> detallesNc = FXCollections.observableArrayList();
     private String rutaP12 = ""; private String claveP12 = "";
+    private VendexiSugerenciasPane vendexi;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -94,6 +96,36 @@ public class NotaCreditoController implements Initializable {
         cargarFacturasAutorizadas();
         iniciarTablas();
         actualizarSecuencial();
+        configurarVendexi();
+    }
+
+    private void configurarVendexi() {
+        try {
+            vendexi = new VendexiSugerenciasPane();
+            vendexi.setModulo("nota de crédito");
+            vendexi.setContextoProvider(this::contextoVendexi);
+            vendexi.setOnCopiarTexto(t -> {
+                javafx.scene.input.ClipboardContent contenido = new javafx.scene.input.ClipboardContent();
+                contenido.putString(t);
+                javafx.scene.input.Clipboard.getSystemClipboard().setContent(contenido);
+            });
+            vendexi.insertarEn(VendexiSugerenciasPane.localizarContenidoDesde(cmbFactura), 0);
+        } catch (Exception e) {
+            Logger.getLogger(NotaCreditoController.class.getName()).log(
+                    java.util.logging.Level.WARNING, "No se pudo montar el panel Vendexi en nota de crédito", e);
+            vendexi = null;
+        }
+    }
+
+    private VendexiSugerenciaService.Contexto contextoVendexi() {
+        List<VendexiSugerenciaService.Linea> lineas = new ArrayList<>();
+        for (NotaCreditoService.DetalleNCInput d : detallesNc) {
+            lineas.add(new VendexiSugerenciaService.Linea(d.inventarioId, d.codigo, d.descripcion,
+                    d.cantidad.intValue(), d.precioUnitario, -1));
+        }
+        FacturaRegistro factura = cmbFactura.getValue();
+        return new VendexiSugerenciaService.Contexto("nota_credito",
+                factura != null && factura.getClienteId() > 0, lineas);
     }
 
     private void cargarFacturasAutorizadas() {

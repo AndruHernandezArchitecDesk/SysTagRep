@@ -213,6 +213,47 @@ class FxmlSmokeTest {
     }
 
     @Test
+    @Order(14)
+    void cargaNotaCreditoConPanelVendexiYContexto() throws Exception {
+        Object controller = cargar("/view/NotaCreditoView.fxml");
+        java.lang.reflect.Field f = controller.getClass().getDeclaredField("vendexi");
+        f.setAccessible(true);
+        VendexiSugerenciasPane panel = (VendexiSugerenciasPane) f.get(controller);
+        assertNotNull(panel, "panel contextual creado");
+        assertNotNull(panel.getParent(), "panel insertado en la vista real");
+        java.lang.reflect.Field provider = VendexiSugerenciasPane.class.getDeclaredField("contextoProvider");
+        provider.setAccessible(true);
+        var contexto = (java.util.function.Supplier<?>) provider.get(panel);
+        AtomicReference<com.vendex.service.VendexiSugerenciaService.Contexto> ctx = new AtomicReference<>();
+        AtomicReference<Throwable> error = new AtomicReference<>();
+        CountDownLatch latch = new CountDownLatch(1);
+        Platform.runLater(() -> {
+            try {
+                ctx.set((com.vendex.service.VendexiSugerenciaService.Contexto) contexto.get());
+                org.junit.jupiter.api.Assertions.assertFalse(ctx.get().clienteSeleccionado);
+                java.lang.reflect.Field detalles = controller.getClass().getDeclaredField("detallesNc");
+                detalles.setAccessible(true);
+                @SuppressWarnings("unchecked")
+                var lineas = (java.util.List<com.vendex.service.NotaCreditoService.DetalleNCInput>) detalles.get(controller);
+                lineas.add(new com.vendex.service.NotaCreditoService.DetalleNCInput(7, 9, "NC-7", "FILTRO",
+                        new java.math.BigDecimal("2"), new java.math.BigDecimal("12.50")));
+                ctx.set((com.vendex.service.VendexiSugerenciaService.Contexto) contexto.get());
+            } catch (Throwable t) {
+                error.set(t);
+            } finally {
+                latch.countDown();
+            }
+        });
+        org.junit.jupiter.api.Assertions.assertTrue(latch.await(60, TimeUnit.SECONDS));
+        if (error.get() != null) throw new AssertionError("Contexto NC inválido", error.get());
+        org.junit.jupiter.api.Assertions.assertEquals("nota_credito", ctx.get().modulo);
+        org.junit.jupiter.api.Assertions.assertEquals(1, ctx.get().lineas.size());
+        org.junit.jupiter.api.Assertions.assertEquals(7, ctx.get().lineas.get(0).inventarioId);
+        org.junit.jupiter.api.Assertions.assertEquals(2, ctx.get().lineas.get(0).cantidad);
+        org.junit.jupiter.api.Assertions.assertEquals(new java.math.BigDecimal("12.50"), ctx.get().lineas.get(0).precio);
+    }
+
+    @Test
     @Order(13)
     void vendexiSugerenciasPane_cargaConRaizFxRoot() throws Exception {
         // Regresion: el FXML declaraba <BorderPane> pero el constructor usa setRoot(this),

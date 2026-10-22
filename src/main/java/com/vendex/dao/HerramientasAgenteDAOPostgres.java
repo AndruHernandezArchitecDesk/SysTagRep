@@ -24,6 +24,44 @@ public class HerramientasAgenteDAOPostgres implements HerramientasAgente {
     private static final Logger LOGGER = Logger.getLogger(HerramientasAgenteDAOPostgres.class.getName());
 
     @Override
+    public List<com.vendex.model.Inventario> complementarios(String codigo, int limite) {
+        if (codigo == null || codigo.isBlank() || limite <= 0) return List.of();
+        // Solo datos necesarios para el selector compartido; incluye la base aunque no tenga stock.
+        String sql = "SELECT i.id, i.codigo, i.descripcion, i.cantidad, i.precio_venta, " +
+                "g.nombre AS grupo, m.nombre AS marca FROM inventario i " +
+                "LEFT JOIN grupo g ON g.id=i.grupo_id LEFT JOIN marca m ON m.id=i.marca_id " +
+                "WHERE i.estado=true AND (i.cantidad>0 OR UPPER(i.codigo)=UPPER(?)) ORDER BY i.id";
+        List<com.vendex.model.Inventario> inventario = new ArrayList<>();
+        com.vendex.model.Inventario base = null;
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, codigo.trim());
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    com.vendex.model.Inventario i = new com.vendex.model.Inventario();
+                    i.setId(rs.getInt("id"));
+                    i.setCodigo(rs.getString("codigo"));
+                    i.setDescripcion(rs.getString("descripcion"));
+                    i.setCantidad(rs.getInt("cantidad"));
+                    i.setPrecioVenta(rs.getBigDecimal("precio_venta"));
+                    i.setGrupo(rs.getString("grupo"));
+                    i.setMarca(rs.getString("marca"));
+                    inventario.add(i);
+                    if (codigo.trim().equalsIgnoreCase(i.getCodigo())) {
+                        if (base != null) return List.of(); // código ambiguo: no asociar a otra referencia
+                        base = i;
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.WARNING, "HerramientasAgente.complementarios", e);
+            return List.of();
+        }
+        return new com.vendex.service.VendexiSugerenciaService().seleccionarCandidatos(
+                base, inventario, java.util.Set.of(), Math.min(2, limite));
+    }
+
+    @Override
     public List<Producto> productos(String criterio, int limite) {
         if (criterio == null || criterio.isBlank()) return List.of();
         String sql = "SELECT codigo, descripcion, cantidad, precio_venta, costo_sin_iva FROM inventario " +

@@ -70,6 +70,22 @@ class VendexiSugerenciaServiceTest {
     // ===== seleccionarCandidatos =====
 
     @Test
+    void verificar_notaCredito_sinClienteYSinLineas() {
+        var ctx = new VendexiSugerenciaService.Contexto("nota_credito", false, List.of());
+        var res = svc.verificarDocumento(ctx);
+        assertEquals(2, res.size());
+        assertTrue(res.stream().anyMatch(s -> s.titulo.contains("Cliente")));
+        assertTrue(res.stream().anyMatch(s -> s.titulo.contains("Sin productos")));
+    }
+
+    @Test
+    void verificar_notaCredito_devuelveMercaderia_noRequiereStock() {
+        var linea = new VendexiSugerenciaService.Linea(1, "F001", "FILTRO", 10, new BigDecimal("5.00"), 0);
+        var ctx = new VendexiSugerenciaService.Contexto("nota_credito", true, List.of(linea));
+        assertTrue(svc.verificarDocumento(ctx).isEmpty(), "Una devolución no consume stock");
+    }
+
+    @Test
     void candidatos_excluyeBase_yYaEnDocumento_ySinStock() {
         Inventario base = inv(1, "B1", "BANDA DISTRIBUCION CHEV AVEO", "CHEV", "BANDAS", 4, "20");
         Inventario mismoGrupo = inv(2, "R1", "RUEDA DISTRIBUCION CHEV AVEO", "OTRA", "BANDAS", 2, "25");

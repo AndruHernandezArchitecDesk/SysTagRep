@@ -83,16 +83,20 @@ public class VendexiSugerenciasPane extends BorderPane {
     /**
      * Localiza el VBox central que contiene la sección del cliente subiendo por la
      * jerarquía desde el ComboBox de clientes: cmbCliente → HBox → VBox → TitledPane → VBox.
+     * Antes de crear el skin, el contenido del TitledPane puede no tener parent;
+     * en ese caso se usa el primer VBox que contiene al selector.
      */
     public static VBox localizarContenidoDesde(Node nodoCliente) {
         Node n = nodoCliente;
+        VBox primero = null;
         for (int i = 0; i < 6 && n != null; i++) {
             n = n.getParent();
-            if (n instanceof VBox v && v.getParent() instanceof javafx.scene.control.TitledPane) {
-                return v;
+            if (n instanceof VBox v) {
+                if (primero == null) primero = v;
+                if (v.getParent() instanceof javafx.scene.control.TitledPane) return v;
             }
         }
-        return null;
+        return primero;
     }
 
     @FXML

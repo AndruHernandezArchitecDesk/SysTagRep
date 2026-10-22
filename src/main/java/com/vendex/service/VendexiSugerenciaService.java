@@ -155,7 +155,7 @@ public class VendexiSugerenciaService {
                         "La línea tiene precio unitario en cero; el comprobante saldría sin valor. "
                         + "Fuente: detalle del documento (sin IA).", null));
             }
-            if (l.stockTotal >= 0 && l.cantidad > l.stockTotal) {
+            if (!"nota_credito".equals(ctx.modulo) && l.stockTotal >= 0 && l.cantidad > l.stockTotal) {
                 out.add(new Sugerencia(Tipo.VERIFICACION,
                         "Stock insuficiente: " + (l.codigo != null ? l.codigo : l.descripcion),
                         "Cantidad solicitada (" + l.cantidad + ") mayor al stock actual ("

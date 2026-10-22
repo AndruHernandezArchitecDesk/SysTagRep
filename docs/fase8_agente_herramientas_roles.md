@@ -76,8 +76,44 @@ roles §4 (7). Suite total: **350 tests, 0 fallos** (25 skipped).
 
 ## 6. Pendientes / siguientes
 
-- §5 panel Vendexi en NotaCredito (devoluciones).
-- Venta cruzada desde el chat (complementos por reglas locales, sin llamada extra).
 - Indicador de rol IA en las respuestas; historial de conversación al reabrir el widget.
 - `HerramientasAgenteDAORest` para paridad en modo remoto (fase 6).
 - Plan completo: `~/Escritorio/plan-vendexi-agente.md`.
+
+## 7. Panel contextual en Nota de Crédito (22/10/2026)
+
+- `NotaCreditoController` monta `VendexiSugerenciasPane` por código desde `cmbFactura`.
+  No requiere modificar el FXML del formulario.
+- Contexto `nota_credito`: cliente de la factura seleccionada y líneas de
+  `DetalleNCInput` (identificador, código, descripción, cantidad y precio).
+- Verifica cliente, líneas y precios. Omite stock insuficiente porque una devolución
+  no consume existencias, incluso si el contexto informa stock cero.
+- Copiar lleva la observación al portapapeles. La NC mantiene sus líneas vinculadas
+  a la factura de origen; el panel se usa para verificaciones del documento.
+- `localizarContenidoDesde` contempla que el contenido de un `TitledPane` aún no
+  tenga parent durante `initialize`, antes de crear el skin. Esto permite montar
+  el panel durante la carga del FXML también en los formularios existentes.
+
+## 8. Complementos locales desde el chat (22/10/2026)
+
+- Tras un hallazgo de `buscarRepuesto`, `HerramientasAgente.complementarios` obtiene
+  hasta dos referencias activas con stock y reutiliza `seleccionarCandidatos` del
+  servicio contextual: mismo grupo, marca o coincidencia de tokens.
+- El DAO consulta solo los campos necesarios del inventario y resuelve la base por
+  código exacto, sin distinguir mayúsculas. Si el código es ambiguo, omite complementos.
+- Se excluyen la referencia base, códigos duplicados y productos sin stock.
+- La redacción existente recibe los complementos y sus precios reales. Se mantienen
+  las dos llamadas IA (clasificación y redacción), sin una consulta IA adicional.
+- Se identifican como asociaciones locales con compatibilidad sin confirmar.
+- Sin hallazgo, sin herramientas (modo REST) o ante un error al obtener complementos,
+  se conserva el comportamiento de búsqueda anterior.
+
+### Verificación de esta ampliación
+
+`./mvnw test`: **361 tests, 0 fallos reportados por Maven, 0 errores, 25 omitidos**.
+Se añaden 11 pruebas: 5 de chat, 3 de DAO con inventario SQL en memoria, 2 de
+verificación NC y 1 de montaje/contexto NC en FxmlSmoke.
+
+La suite también imprime una aserción en un hilo secundario de
+`SesionActualAislamientoTest` que Surefire no contabiliza como fallo. Corresponde a
+un test existente, ajeno a estos cambios; el resultado de Maven no detecta ese caso.

@@ -27,7 +27,7 @@ class GeminiChatbotServiceHerramientasTest {
         }
     }
 
-    private static final class HerramientasFalsas implements HerramientasAgente {
+    private static class HerramientasFalsas implements HerramientasAgente {
         @Override
         public List<Producto> productos(String criterio, int limite) {
             if (criterio != null && criterio.toLowerCase().contains("filtro")) {
@@ -74,6 +74,7 @@ class GeminiChatbotServiceHerramientasTest {
     /** Proveedor Gemini falso: responde de una cola; si se vacía, lanza (la redacción es best-effort). */
     private static final class ConGeminiFake extends GeminiChatbotService {
         private final ArrayDeque<String> respuestas = new ArrayDeque<>();
+        private final java.util.List<String> prompts = new java.util.ArrayList<>();
         private final java.util.Set<String> rolesBloqueados = new java.util.HashSet<>();
 
         ConGeminiFake(HerramientasAgente herramientas) {
@@ -95,6 +96,7 @@ class GeminiChatbotServiceHerramientasTest {
 
         @Override
         protected String llamarGemini(String prompt, String apiKey) {
+            prompts.add(prompt);
             if (respuestas.isEmpty()) throw new RuntimeException("proveedor IA fake sin respuestas");
             return respuestas.poll();
         }
@@ -290,6 +292,98 @@ class GeminiChatbotServiceHerramientasTest {
     }
 
     // ---------- Fase B: roles contextuales §4 ----------
+
+    private static com.vendex.model.Inventario complemento(int id, String codigo, String nombre, int stock) {
+        var i = new com.vendex.model.Inventario();
+        i.setId(id);
+        i.setCodigo(codigo);
+        i.setDescripcion(nombre);
+        i.setCantidad(stock);
+        i.setPrecioVenta(new BigDecimal("14.50"));
+        return i;
+    }
+
+    @Test
+    void buscarRepuesto_complementosDeInventario_sinLlamadaIAExtra() throws Exception {
+        var base = complemento(1, "TAPA-01", "TAPA RADIADOR CHEV AVEO", 7);
+        var manguera = complemento(2, "MANG-02", "MANGUERA RADIADOR CHEV AVEO", 3);
+        var sinStock = complemento(3, "SIN-03", "LIQUIDO RADIADOR", 0);
+        var ajeno = complemento(4, "BAT-04", "BATERIA BOSCH", 4);
+        var herramientas = new HerramientasFalsas() {
+            @Override
+            public List<com.vendex.model.Inventario> complementarios(String codigo, int limite) {
+                assertEquals("TAPA-01", codigo);
+                return new com.vendex.service.VendexiSugerenciaService().seleccionarCandidatos(
+                        base, List.of(base, manguera, sinStock, ajeno), java.util.Set.of(), limite);
+            }
+        };
+        var fake = new ConGeminiFake(herramientas);
+        fake.ofrecer("{\"accion\":\"BUSCAR_REPUESTO\",\"descripcion\":\"tapa radiador\"}", "Respuesta final");
+        assertEquals("Respuesta final", fake.preguntarConGemini("tapa radiador", "fake-key", null, null, null));
+        assertEquals(2, fake.prompts.size(), "Solo clasificador y redacción");
+        String prompt = fake.prompts.get(1);
+        assertTrue(prompt.contains("MANG-02"), prompt);
+        assertTrue(prompt.contains("$14.50"), prompt);
+        assertFalse(prompt.contains("SIN-03"), prompt);
+        assertFalse(prompt.contains("BAT-04"), prompt);
+    }
+
+    @Test
+    void buscarRepuesto_excluyeBaseDuplicadosYSinStock_limitaADos() {
+        var herramientas = new HerramientasFalsas() {
+            @Override
+            public List<com.vendex.model.Inventario> complementarios(String codigo, int limite) {
+                return List.of(complemento(1, "TAPA-01", "BASE", 7),
+                        complemento(2, "SIN-02", "SIN STOCK", 0),
+                        complemento(3, "A-03", "COMPLEMENTO A", 2),
+                        complemento(3, "a-03", "DUPLICADO", 2),
+                        complemento(4, "B-04", "COMPLEMENTO B", 1),
+                        complemento(5, "C-05", "EXCEDENTE", 3));
+            }
+        };
+        var servicio = new GeminiChatbotService(new RepuestoDaoFalso(), herramientas);
+        String out = servicio.ejecutarLocal(clasif("{\"descripcion\":\"tapa radiador\"}"), "tapa radiador");
+        assertTrue(out.contains("A-03") && out.contains("B-04"), out);
+        assertFalse(out.contains("SIN-02") || out.contains("DUPLICADO") || out.contains("C-05"), out);
+        assertTrue(out.contains("compatibilidad sin confirmar"), out);
+    }
+
+    @Test
+    void buscarRepuesto_sinHallazgo_noConsultaComplementos() {
+        var herramientas = new HerramientasFalsas() {
+            @Override
+            public List<com.vendex.model.Inventario> complementarios(String codigo, int limite) {
+                fail("No consultar complementos sin hallazgo");
+                return List.of();
+            }
+        };
+        String out = new GeminiChatbotService(new RepuestoDaoFalso(), herramientas)
+                .ejecutarLocal(clasif("{\"descripcion\":\"inexistente\"}"), "inexistente");
+        assertTrue(out.contains("No encontré"), out);
+        assertFalse(out.contains("Complementos"), out);
+    }
+
+    @Test
+    void buscarRepuesto_falloComplementos_conservaHallazgo() {
+        var herramientas = new HerramientasFalsas() {
+            @Override
+            public List<com.vendex.model.Inventario> complementarios(String codigo, int limite) {
+                throw new IllegalStateException("BD no disponible");
+            }
+        };
+        String out = new GeminiChatbotService(new RepuestoDaoFalso(), herramientas)
+                .ejecutarLocal(clasif("{\"descripcion\":\"tapa radiador\"}"), "tapa radiador");
+        assertTrue(out.contains("TAPA-01"), out);
+        assertFalse(out.contains("Complementos"), out);
+    }
+
+    @Test
+    void buscarRepuesto_modoRest_conservaBusquedaSinComplementos() {
+        String out = new GeminiChatbotService(new RepuestoDaoFalso())
+                .ejecutarLocal(clasif("{\"descripcion\":\"tapa radiador\"}"), "tapa radiador");
+        assertTrue(out.contains("TAPA-01"), out);
+        assertFalse(out.contains("Complementos"), out);
+    }
 
     @Test
     void rolesDeAccion_mapeaAccionesARolesDeLicencia() {
