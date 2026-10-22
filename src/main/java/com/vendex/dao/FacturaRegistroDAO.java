@@ -32,4 +32,6 @@ public interface FacturaRegistroDAO {
 
     List<FacturaRegistro> listarPaginado(int page, int pageSize, String filtro);
 
+    List<FacturaRegistro> listarContadoReciente(int limite);
+
 }

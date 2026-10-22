@@ -204,5 +204,11 @@ class FxmlSmokeTest {
         java.lang.reflect.Field f2 = controller.getClass().getDeclaredField("lblResumen");
         f2.setAccessible(true);
         assertNotNull(f2.get(controller), "lblResumen cableada desde FXML");
+        java.lang.reflect.Field f3 = controller.getClass().getDeclaredField("tblIngresos");
+        f3.setAccessible(true);
+        assertNotNull(f3.get(controller), "tblIngresos cableada desde FXML");
+        java.lang.reflect.Field f4 = controller.getClass().getDeclaredField("colIngMonto");
+        f4.setAccessible(true);
+        assertNotNull(f4.get(controller), "colIngMonto cableada desde FXML");
     }
 }

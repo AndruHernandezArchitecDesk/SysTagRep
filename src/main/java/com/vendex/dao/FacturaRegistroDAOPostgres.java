@@ -197,6 +197,31 @@ public class FacturaRegistroDAOPostgres implements FacturaRegistroDAO {
         return lista;
     }
 
+    public List<FacturaRegistro> listarContadoReciente(int limite) {
+        List<FacturaRegistro> lista = new ArrayList<>();
+        String sql = "SELECT fr.*, ce.mensaje_sri AS mensaje_sri, " +
+                     "COALESCE(ce.estado_sri, fr.estado_sri) AS estado_sri_actual " +
+                     "FROM factura_registro fr " +
+                     "LEFT JOIN comprobantes_electronicos ce ON ce.clave_acceso = fr.clave_acceso " +
+                     "WHERE LOWER(COALESCE(fr.forma_pago, '')) <> 'tag crédito' " +
+                     "ORDER BY COALESCE(fr.fecha, fr.fecha_registro) DESC NULLS LAST, fr.id DESC " +
+                     "LIMIT ?";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, limite);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    FacturaRegistro f = new FacturaRegistro();
+                    mapear(rs, f);
+                    lista.add(f);
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Error en FacturaRegistroDAO.listarContadoReciente", e);
+        }
+        return lista;
+    }
+
     private String buildWhereClause(String filtro) {
         if (filtro == null || filtro.trim().isEmpty()) return "";
         return "WHERE (LOWER(fr.codigo) LIKE ? OR LOWER(COALESCE(fr.num_comprobante, '')) LIKE ? " +

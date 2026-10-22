@@ -1,7 +1,11 @@
 package com.vendex.controller;
 
 import com.vendex.config.AppContext;
+import com.vendex.dao.CajaMovimientoDAO;
+import com.vendex.dao.FacturaRegistroDAO;
+import com.vendex.model.CajaMovimiento;
 import com.vendex.model.EntidadFinanciera;
+import com.vendex.model.FacturaRegistro;
 import com.vendex.model.Prestamo;
 import com.vendex.model.PrestamoCuota;
 import com.vendex.model.PrestamoPago;
@@ -33,7 +37,9 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URL;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
@@ -42,10 +48,14 @@ public class PrestamoController implements Initializable {
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter FMT_HM = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private static final DateTimeFormatter FMT_HM_CORTO = DateTimeFormatter.ofPattern("dd/MM HH:mm");
+    private static final int LIMITE_INGRESOS = 50;
     private static final String[] PERIODICIDADES = {"SEMANAL", "MENSUAL"};
     private static final String[] META_PERIODICIDADES = {"NINGUNA", "DIARIA", "SEMANAL"};
 
     private final PrestamoService prestamoService;
+    private final FacturaRegistroDAO facturaRegistroDAO;
+    private final CajaMovimientoDAO cajaMovimientoDAO;
 
     public PrestamoController() {
         this(AppContext.getInstance());
@@ -53,6 +63,8 @@ public class PrestamoController implements Initializable {
 
     public PrestamoController(AppContext ctx) {
         this.prestamoService = ctx.prestamoService;
+        this.facturaRegistroDAO = ctx.facturaRegistroDAO;
+        this.cajaMovimientoDAO = ctx.cajaMovimientoDAO;
     }
 
     @FXML private TableView<Object[]> tblPrestamos;
@@ -72,7 +84,12 @@ public class PrestamoController implements Initializable {
     @FXML private TableColumn<PrestamoPago, Integer> colPagCuota;
     @FXML private TableColumn<PrestamoPago, BigDecimal> colPagMonto, colPagInteres, colPagCapital;
 
+    @FXML private TableView<Object[]> tblIngresos;
+    @FXML private TableColumn<Object[], String> colIngFecha, colIngOrigen, colIngRef, colIngForma;
+    @FXML private TableColumn<Object[], BigDecimal> colIngMonto;
+
     private final ObservableList<Object[]> listaPrestamos = FXCollections.observableArrayList();
+    private final ObservableList<Object[]> listaIngresos = FXCollections.observableArrayList();
     private Prestamo prestamoSeleccionado;
     private Stage modalAbierto;
 
@@ -81,6 +98,7 @@ public class PrestamoController implements Initializable {
         configurarTablaPrestamos();
         configurarTablaCuotas();
         configurarTablaPagos();
+        configurarTablaIngresos();
         SortTable.agregarBotones(tblPrestamos);
         SortTable.agregarBotones(tblCuotas);
         SortTable.agregarBotones(tblPagos);
@@ -101,6 +119,7 @@ public class PrestamoController implements Initializable {
         } catch (Exception ex) {
             mostrarError("Error al cargar préstamos", ex);
         }
+        cargarIngresos();
     }
 
     // ==================== Tabla de préstamos ====================
@@ -204,6 +223,87 @@ public class PrestamoController implements Initializable {
         colPagCapital.setCellValueFactory(d -> new ReadOnlyObjectWrapper<>(d.getValue().getCapitalParte()));
         colPagFuente.setCellValueFactory(d -> new ReadOnlyObjectWrapper<>(d.getValue().getFuente()));
         colPagNotas.setCellValueFactory(d -> new ReadOnlyObjectWrapper<>(d.getValue().getNotas()));
+    }
+
+    // ==================== Panel de ingresos recientes ====================
+
+    private void configurarTablaIngresos() {
+        tblIngresos.setTooltip(new Tooltip("Últimos ingresos: ventas de contado y movimientos de caja (tipo INGRESO)"));
+        colIngFecha.setCellValueFactory(d -> new ReadOnlyObjectWrapper<>(
+                d.getValue()[0] instanceof LocalDateTime f ? f.format(FMT_HM_CORTO) : ""));
+        colIngOrigen.setCellValueFactory(d -> new ReadOnlyObjectWrapper<>((String) d.getValue()[1]));
+        colIngRef.setCellValueFactory(d -> new ReadOnlyObjectWrapper<>(
+                d.getValue()[2] != null ? String.valueOf(d.getValue()[2]) : ""));
+        colIngForma.setCellValueFactory(d -> new ReadOnlyObjectWrapper<>(
+                d.getValue()[3] != null ? String.valueOf(d.getValue()[3]) : ""));
+        colIngMonto.setCellValueFactory(d -> new ReadOnlyObjectWrapper<>((BigDecimal) d.getValue()[4]));
+        colIngMonto.setCellFactory(param -> new TableCell<>() {
+            @Override
+            protected void updateItem(BigDecimal item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    setText(item.setScale(2, RoundingMode.HALF_UP).toPlainString());
+                    setStyle("-fx-alignment: CENTER-RIGHT;");
+                }
+            }
+        });
+        colIngOrigen.setCellFactory(param -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    setText(item);
+                    setStyle("-fx-font-weight: bold; -fx-alignment: CENTER;");
+                }
+            }
+        });
+        tblIngresos.setItems(listaIngresos);
+    }
+
+    private void cargarIngresos() {
+        try {
+            List<FacturaRegistro> facturas = facturaRegistroDAO.listarContadoReciente(LIMITE_INGRESOS);
+            List<CajaMovimiento> movimientos = cajaMovimientoDAO.listarIngresosRecientes(LIMITE_INGRESOS);
+            listaIngresos.setAll(mezclarIngresos(facturas, movimientos, LIMITE_INGRESOS));
+        } catch (Exception ex) {
+            listaIngresos.clear();
+        }
+    }
+
+    /**
+     * Intercala ventas de contado y movimientos de caja de tipo INGRESO,
+     * ordenados por fecha descendente y recortados al límite indicado.
+     * Fila: [0]=LocalDateTime, [1]=origen, [2]=referencia, [3]=forma/tipo, [4]=monto.
+     */
+    static List<Object[]> mezclarIngresos(List<FacturaRegistro> facturas, List<CajaMovimiento> movimientos, int limite) {
+        List<Object[]> filas = new ArrayList<>();
+        if (facturas != null) {
+            for (FacturaRegistro f : facturas) {
+                LocalDateTime fecha = f.getFecha() != null ? f.getFecha() : f.getFechaRegistro();
+                filas.add(new Object[]{fecha, "VENTA", f.getCodigo(), f.getFormaPago(), f.getTotal()});
+            }
+        }
+        if (movimientos != null) {
+            for (CajaMovimiento m : movimientos) {
+                filas.add(new Object[]{m.getFecha(), "CAJA", m.getDescripcion(), m.getTipo(), m.getMonto()});
+            }
+        }
+        filas.sort((a, b) -> {
+            LocalDateTime fa = (LocalDateTime) a[0];
+            LocalDateTime fb = (LocalDateTime) b[0];
+            if (fa == null && fb == null) return 0;
+            if (fa == null) return 1;
+            if (fb == null) return -1;
+            return fb.compareTo(fa);
+        });
+        if (filas.size() > limite) return new ArrayList<>(filas.subList(0, limite));
+        return filas;
     }
 
     // ==================== Detalle ====================

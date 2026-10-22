@@ -114,4 +114,9 @@ public class FacturaRegistroDAORest extends RestDao<FacturaRegistro> implements 
             return List.of();
         }
     }
+
+    @Override
+    public List<FacturaRegistro> listarContadoReciente(int limite) {
+        throw new UnsupportedOperationException("FacturaRegistro.listarContadoReciente rest");
+    }
 }

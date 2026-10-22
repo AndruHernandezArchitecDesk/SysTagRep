@@ -134,4 +134,45 @@ public class FacturaRegistroDAOTestcontainersTest {
             assertNull(noDebeExistir, "Rollback debe descartar el insert");
         }
     }
+
+    @Test
+    void listarContadoReciente_excluyeCreditoYOrdenaDesc() {
+        FacturaRegistro contado = new FacturaRegistro();
+        contado.setEmpresaId(1);
+        contado.setClienteId(1);
+        contado.setFecha(LocalDateTime.of(2026, 10, 21, 9, 0));
+        contado.setCodigo("F-CO");
+        contado.setFormaPago("Efectivo");
+        contado.setSubtotal(new BigDecimal("100.00"));
+        contado.setIva(new BigDecimal("15.00"));
+        contado.setDescuento(BigDecimal.ZERO);
+        contado.setTotal(new BigDecimal("115.00"));
+        contado.setClaveAcceso("4234567890123456789012345678901234567890123456789");
+        contado.setNumComprobante("001-001-000000004");
+        contado.setAmbienteSri("PRUEBAS");
+        contado.setEstadoSri("PENDIENTE");
+        contado.setFechaRegistro(LocalDateTime.of(2026, 10, 21, 9, 0));
+        assertTrue(dao.insertar(contado) > 0);
+
+        FacturaRegistro credito = new FacturaRegistro();
+        credito.setEmpresaId(1);
+        credito.setClienteId(1);
+        credito.setFecha(LocalDateTime.of(2026, 10, 21, 10, 0));
+        credito.setCodigo("F-CR");
+        credito.setFormaPago("TAG Crédito");
+        credito.setSubtotal(new BigDecimal("50.00"));
+        credito.setIva(new BigDecimal("7.50"));
+        credito.setDescuento(BigDecimal.ZERO);
+        credito.setTotal(new BigDecimal("57.50"));
+        credito.setClaveAcceso("5234567890123456789012345678901234567890123456789");
+        credito.setNumComprobante("001-001-000000005");
+        credito.setAmbienteSri("PRUEBAS");
+        credito.setEstadoSri("PENDIENTE");
+        credito.setFechaRegistro(LocalDateTime.of(2026, 10, 21, 10, 0));
+        assertTrue(dao.insertar(credito) > 0);
+
+        java.util.List<FacturaRegistro> recientes = dao.listarContadoReciente(50);
+        assertEquals(1, recientes.size(), "Solo la factura de contado debe aparecer");
+        assertEquals("F-CO", recientes.get(0).getCodigo());
+    }
 }

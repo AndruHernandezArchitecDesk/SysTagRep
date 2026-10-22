@@ -82,6 +82,21 @@ public class CajaMovimientoDAOPostgres implements CajaMovimientoDAO {
         return BigDecimal.ZERO;
     }
 
+    public List<CajaMovimiento> listarIngresosRecientes(int limite) {
+        List<CajaMovimiento> lista = new ArrayList<>();
+        String sql = "SELECT * FROM caja_movimiento WHERE tipo = 'INGRESO' ORDER BY fecha DESC, id DESC LIMIT ?";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, limite);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) lista.add(mapear(rs));
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Error en CajaMovimientoDAO.listarIngresosRecientes", e);
+        }
+        return lista;
+    }
+
     private CajaMovimiento mapear(ResultSet rs) throws SQLException {
         CajaMovimiento m = new CajaMovimiento();
         m.setId(rs.getInt("id"));

@@ -40,14 +40,15 @@
                     <graphic>
                         <FontIcon iconLiteral="fas-sync"/>
                     </graphic>
-                    <Tooltip text="Actualizar la lista de préstamos"/>
+                    <Tooltip text="Actualizar la lista de préstamos y los ingresos recientes"/>
                 </Button>
             </HBox>
             <Separator/>
         </VBox>
     </top>
     <center>
-        <VBox spacing="15">
+        <HBox spacing="15">
+        <VBox spacing="15" HBox.hgrow="ALWAYS">
             <TitledPane text="Préstamos Registrados" collapsible="false" styleClass="section-card" style="-fx-font-weight: bold">
                 <content>
                     <VBox spacing="5">
@@ -128,5 +129,27 @@
                 </content>
             </TitledPane>
         </VBox>
+        <TitledPane text="Ingresos recientes" collapsible="false" styleClass="section-card" style="-fx-font-weight: bold" prefWidth="400.0" minWidth="300.0">
+            <content>
+                <TableView fx:id="tblIngresos" style="-fx-font-size: 11px">
+                    <columns>
+                        <TableColumn fx:id="colIngFecha" text="Fecha" prefWidth="95.0">
+                        </TableColumn>
+                        <TableColumn fx:id="colIngOrigen" text="Origen" prefWidth="60.0">
+                        </TableColumn>
+                        <TableColumn fx:id="colIngRef" text="Referencia" prefWidth="75.0">
+                        </TableColumn>
+                        <TableColumn fx:id="colIngForma" text="Forma/Tipo" prefWidth="85.0">
+                        </TableColumn>
+                        <TableColumn fx:id="colIngMonto" text="Monto" prefWidth="85.0">
+                        </TableColumn>
+                    </columns>
+                    <placeholder>
+                        <Label text="Sin ingresos registrados."/>
+                    </placeholder>
+                </TableView>
+            </content>
+        </TitledPane>
+        </HBox>
     </center>
 </BorderPane>

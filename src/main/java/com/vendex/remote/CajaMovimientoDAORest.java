@@ -12,4 +12,5 @@ public class CajaMovimientoDAORest extends RestDao<CajaMovimiento> implements Ca
     public List<CajaMovimiento> listarPorSesion(int sesionId) { throw new UnsupportedOperationException("CajaMovimiento.listarPorSesion rest"); }
     public List<CajaMovimiento> listarPorFecha(java.time.LocalDate desde, java.time.LocalDate hasta) { throw new UnsupportedOperationException("CajaMovimiento.listarPorFecha rest"); }
     public BigDecimal totalPorTipo(int sesionId, String tipo) { throw new UnsupportedOperationException("CajaMovimiento.totalPorTipo rest"); }
+    public List<CajaMovimiento> listarIngresosRecientes(int limite) { throw new UnsupportedOperationException("CajaMovimiento.listarIngresosRecientes rest"); }
 }

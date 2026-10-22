@@ -19,4 +19,6 @@ public interface CajaMovimientoDAO {
 
     BigDecimal totalPorTipo(int sesionId, String tipo);
 
+    List<CajaMovimiento> listarIngresosRecientes(int limite);
+
 }
