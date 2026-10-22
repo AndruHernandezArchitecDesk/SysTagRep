@@ -71,6 +71,32 @@ En offline no se adelanta un alta en inventario: el producto se crea al procesar
 la factura en el servidor. El payload conserva código, descripción e indicador temporal;
 el mecanismo existente de sincronización conserva su clave de idempotencia.
 
+## Edición de precio unitario (doble clic)
+
+El precio unitario es la única columna editable de la tabla de detalle, tanto en
+`FacturaController` (Factura de Venta) como en `NotaVentaController` (Proforma):
+
+- `tblDetalle.setEditable(true)` y el resto de columnas con `setEditable(false)`,
+  de modo que el doble clic solo abra edición en el precio.
+- Celda `TextFieldTableCell` con `PrecioCeldaConverter`: acepta `,` o `.` decimal y
+  devuelve `null` ante texto no numérico (no lanza `NumberFormatException`) mostrando
+  siempre 2 decimales.
+- `setOnEditCommit` valida con `ProductoTemporalFactura.precioValido` (misma regla que
+  el guardado temporal y el XML: mayor a cero, hasta 2 decimales, máximo 10 cifras
+  enteras). Si es válido aplica `setPrecioUnitario` (que recalcula `precioTotal`) y
+  `calcularTotales()`; si no, no se modifica el modelo (**revertir silencioso**).
+- `tblDetalle.refresh()` tras cada intento: `TableCell.commitEdit` ejecuta
+  `updateItem(newValue)` después de disparar el evento, por lo que sin refrescar la
+  celda quedaría mostrando el valor descartado.
+
+### Facturación electrónica
+
+No hay cambios en `FacturaService` ni en los builders SRI. La UI (`sumaBasesSinIva`)
+y el XML (`sumarBasesSinIva`/`armarDetalles`) derivan del mismo `precioUnitario` con
+`ElectronicoUtil.precioSinIva2`/`netoLinea` (Convención C), así que editar el precio
+y recalcular mantiene pantalla == XML. El tope del descuento de cabecera se recalcula
+desde la nueva base y `copiarYValidar` vuelve a validar el precio al guardar.
+
 ## Verificación
 
 ```bash
@@ -84,6 +110,13 @@ Las pruebas nuevas verifican emisión mixta, dos temporales independientes, stoc
 relación entre detalle e historial, rollback por firma/comprobante, reintento con el
 mismo borrador, códigos existentes/inactivos y otra sucursal, validaciones, emisión
 HTTP y serialización offline, además del montaje del botón y los totales de la UI.
+
+La edición de precio unitario se cubre en `FxmlSmokeTest` con los tests
+`factura_precioUnitarioEditableConDobleClicRecalculaTotales` y
+`proforma_precioUnitarioEditableConDobleClicRecalculaTotales`, que disparan eventos
+`TableColumn.CellEditEvent` reales: 11.50 → 12.00 ⇒ total 35.98 (base 31.29, IVA 4.69)
+en factura; 10.00 → 12.50 ⇒ total 25.00 sin IVA y 28.75 con IVA en proforma; y que
+precios inválidos (cero, negativos, más de 2 decimales, texto) no modifican el modelo.
 
 Se utiliza SQL HSQLDB aislado y HTTP local. La firma se sustituye por una implementación
 de prueba: no se usan certificados reales ni se envían comprobantes al SRI. El bloqueo

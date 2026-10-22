@@ -21,6 +21,7 @@ import com.vendex.model.*;
 import com.vendex.util.ConfigFirma;
 import com.vendex.util.ConfigAmbiente;
 import com.vendex.util.SRIWebService;
+import com.vendex.util.PrecioCeldaConverter;
 import com.vendex.util.SortTable;
 import com.vendex.util.ComboFilter;
 import com.vendex.util.AppConstants;
@@ -39,6 +40,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
@@ -386,6 +388,24 @@ public class FacturaController implements Initializable, DocumentoVendexi {
         colCantidad.setCellValueFactory(new PropertyValueFactory<>("cantidad"));
         colPrecioUnitario.setCellValueFactory(new PropertyValueFactory<>("precioUnitario"));
         colPrecioTotal.setCellValueFactory(new PropertyValueFactory<>("precioTotal"));
+        // Precio unitario editable con doble clic; las demás columnas no entran en modo edición.
+        tblDetalle.setEditable(true);
+        colCodigo.setEditable(false);
+        colDescripcion.setEditable(false);
+        colCantidad.setEditable(false);
+        colPrecioTotal.setEditable(false);
+        colAcciones.setEditable(false);
+        colPrecioUnitario.setCellFactory(TextFieldTableCell.forTableColumn(new PrecioCeldaConverter()));
+        colPrecioUnitario.setOnEditCommit(event -> {
+            FacturaDetalle d = event.getRowValue();
+            BigDecimal nuevo = event.getNewValue();
+            if (ProductoTemporalFactura.precioValido(nuevo)) {
+                d.setPrecioUnitario(nuevo.setScale(2));
+                calcularTotales();
+            }
+            // Precio inválido: se revierte (el modelo no cambió).
+            tblDetalle.refresh();
+        });
 
         colAcciones.setCellFactory(param -> new TableCell<>() {
             private final Button btn = new Button();

@@ -18,7 +18,9 @@ import com.vendex.offline.LocalOperationQueue;
 import com.vendex.offline.OperacionOffline;
 import com.vendex.offline.OfflineUI;
 import com.vendex.model.*;
+import com.vendex.service.ProductoTemporalFactura;
 import com.vendex.util.NotaVentaPDF;
+import com.vendex.util.PrecioCeldaConverter;
 import com.vendex.util.SortTable;
 import com.vendex.util.ComboFilter;
 import com.vendex.util.ThemeManager;
@@ -35,6 +37,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
@@ -488,6 +491,24 @@ public class NotaVentaController implements Initializable, DocumentoVendexi {
             }
         });
         colAcciones.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(null));
+        // Precio unitario editable con doble clic; las demás columnas no entran en modo edición.
+        tblDetalle.setEditable(true);
+        colCodigo.setEditable(false);
+        colDescripcion.setEditable(false);
+        colCantidad.setEditable(false);
+        colPrecioTotal.setEditable(false);
+        colAcciones.setEditable(false);
+        colPrecioUnitario.setCellFactory(TextFieldTableCell.forTableColumn(new PrecioCeldaConverter()));
+        colPrecioUnitario.setOnEditCommit(event -> {
+            DetalleVenta d = event.getRowValue();
+            BigDecimal nuevo = event.getNewValue();
+            if (ProductoTemporalFactura.precioValido(nuevo)) {
+                d.setPrecioUnitario(nuevo.setScale(2));
+                calcularTotales();
+            }
+            // Precio inválido: se revierte (el modelo no cambió).
+            tblDetalle.refresh();
+        });
         tblDetalle.setItems(itemsDetalle);
         tblDetalle.setRowFactory(tv -> new TableRow<DetalleVenta>() {
             @Override protected void updateItem(DetalleVenta item, boolean empty) {

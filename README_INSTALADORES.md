@@ -127,3 +127,21 @@ al título oculta y muestra el panel de ingresos. En ambos casos la preferencia
 dura mientras la pantalla permanece abierta.
 
 Detalle técnico: `docs/ingreso_panel_stock_negativo.md`.
+
+## 12. Editar precio unitario con doble clic
+
+En **Factura de Venta** y en **Proforma (Nota de Venta)**, el **precio unitario** de
+la tabla de detalle se edita con **doble clic** sobre la celda: se abre un campo de
+texto, se escribe el nuevo precio (acepta coma o punto decimal) y se confirma con
+**Enter**. La línea, el subtotal, el IVA, el descuento y el total se recalculan al
+instante; Vetxi recibe el documento actualizado.
+
+Los precios inválidos —cero, negativos o con más de 2 decimales— **no se aplican**:
+la celda vuelve silenciosamente al valor anterior. Las demás columnas (cantidad,
+código, descripción) no se editan de esta forma.
+
+En la factura electrónica no cambia nada del XML: la pantalla y el XML construido
+usan las mismas fórmulas sobre el precio unitario, por lo que los totales del
+comprobante siguen coincidiendo exactamente con lo que se muestra.
+
+Detalle técnico: `docs/factura_productos_temporales.md`.

@@ -271,6 +271,133 @@ class FxmlSmokeTest {
         if (error.get() != null) throw new AssertionError("Producto temporal de factura inválido", error.get());
     }
 
+    /** Simula el commit del doble clic en la celda de precio unitario (TableCell.commitEdit). */
+    private static <S> void dispararPrecioCommit(javafx.scene.control.TableColumn<S, java.math.BigDecimal> col,
+            javafx.scene.control.TableView<S> tabla, java.math.BigDecimal nuevo) {
+        var posicion = new javafx.scene.control.TablePosition<S, java.math.BigDecimal>(tabla, 0, col);
+        var evento = new javafx.scene.control.TableColumn.CellEditEvent<S, java.math.BigDecimal>(tabla, posicion,
+                javafx.scene.control.TableColumn.<S, java.math.BigDecimal>editCommitEvent(), nuevo);
+        col.getOnEditCommit().handle(evento);
+    }
+
+    @Test
+    @Order(16)
+    void factura_precioUnitarioEditableConDobleClicRecalculaTotales() throws Exception {
+        var controller = (FacturaController) cargar("/view/FacturaView.fxml");
+        AtomicReference<Throwable> error = new AtomicReference<>();
+        CountDownLatch fin = new CountDownLatch(1);
+        Platform.runLater(() -> {
+            try {
+                var converter = new com.vendex.util.PrecioCeldaConverter();
+                org.junit.jupiter.api.Assertions.assertNull(converter.fromString("abc"),
+                        "texto no numérico no lanza excepción: devuelve null");
+                org.junit.jupiter.api.Assertions.assertEquals(0, new java.math.BigDecimal("11.50")
+                        .compareTo(converter.fromString("11,50")), "acepta coma decimal");
+                org.junit.jupiter.api.Assertions.assertEquals("12.00", converter.toString(new java.math.BigDecimal("12")),
+                        "la celda muestra 2 decimales");
+                org.junit.jupiter.api.Assertions.assertTrue(
+                        com.vendex.service.ProductoTemporalFactura.precioValido(new java.math.BigDecimal("10.500")));
+                org.junit.jupiter.api.Assertions.assertFalse(
+                        com.vendex.service.ProductoTemporalFactura.precioValido(new java.math.BigDecimal("10.555")));
+                org.junit.jupiter.api.Assertions.assertFalse(
+                        com.vendex.service.ProductoTemporalFactura.precioValido(java.math.BigDecimal.ZERO));
+
+                String codigo = "TMP-" + java.util.UUID.randomUUID().toString();
+                var d = controller.agregarTemporalFactura(codigo, "REPUESTO DE PRUEBA", 3, new java.math.BigDecimal("11.50"));
+
+                var fTabla = FacturaController.class.getDeclaredField("tblDetalle"); fTabla.setAccessible(true);
+                var tabla = (javafx.scene.control.TableView<com.vendex.model.FacturaDetalle>) fTabla.get(controller);
+                var fCol = FacturaController.class.getDeclaredField("colPrecioUnitario"); fCol.setAccessible(true);
+                var col = (javafx.scene.control.TableColumn<com.vendex.model.FacturaDetalle, java.math.BigDecimal>) fCol.get(controller);
+                var fCant = FacturaController.class.getDeclaredField("colCantidad"); fCant.setAccessible(true);
+                org.junit.jupiter.api.Assertions.assertTrue(tabla.isEditable(), "tabla habilitada para edición");
+                org.junit.jupiter.api.Assertions.assertNotNull(col.getOnEditCommit(), "editor de precio unitario cableado");
+                org.junit.jupiter.api.Assertions.assertFalse(((javafx.scene.control.TableColumn<?, ?>) fCant.get(controller)).isEditable(),
+                        "la columna cantidad no entra en modo edición");
+
+                // 11.50 → 12.00: base 31.29, IVA 4.69, total 35.98 (Convención C, igual que el XML)
+                dispararPrecioCommit(col, tabla, new java.math.BigDecimal("12.00"));
+                org.junit.jupiter.api.Assertions.assertEquals(0, new java.math.BigDecimal("12.00").compareTo(d.getPrecioUnitario()),
+                        "precio unitario actualizado");
+                org.junit.jupiter.api.Assertions.assertEquals(0, new java.math.BigDecimal("36.00").compareTo(d.getPrecioTotal()),
+                        "precio total = 3 × 12.00");
+                var fTotal = FacturaController.class.getDeclaredField("lblTotal"); fTotal.setAccessible(true);
+                org.junit.jupiter.api.Assertions.assertEquals("35.98",
+                        ((javafx.scene.control.Label) fTotal.get(controller)).getText(), "total recalculado");
+                var fIva = FacturaController.class.getDeclaredField("lblIva"); fIva.setAccessible(true);
+                org.junit.jupiter.api.Assertions.assertEquals("4.69",
+                        ((javafx.scene.control.Label) fIva.get(controller)).getText(), "IVA 15% sobre la nueva base");
+
+                // Precios inválidos: revertir silencioso (el modelo no cambia)
+                dispararPrecioCommit(col, tabla, java.math.BigDecimal.ZERO);
+                dispararPrecioCommit(col, tabla, null);
+                org.junit.jupiter.api.Assertions.assertEquals(0, new java.math.BigDecimal("12.00").compareTo(d.getPrecioUnitario()),
+                        "precio inválido no modifica el modelo");
+            } catch (Throwable t) { error.set(t); } finally { fin.countDown(); }
+        });
+        org.junit.jupiter.api.Assertions.assertTrue(fin.await(60, TimeUnit.SECONDS));
+        if (error.get() != null) throw new AssertionError("Edición de precio unitario en factura inválida", error.get());
+    }
+
+    @Test
+    @Order(16)
+    void proforma_precioUnitarioEditableConDobleClicRecalculaTotales() throws Exception {
+        var controller = (NotaVentaController) cargar("/view/NotaVentaView.fxml");
+        AtomicReference<Throwable> error = new AtomicReference<>();
+        CountDownLatch fin = new CountDownLatch(1);
+        Platform.runLater(() -> {
+            try {
+                var fItems = NotaVentaController.class.getDeclaredField("itemsDetalle"); fItems.setAccessible(true);
+                @SuppressWarnings("unchecked")
+                var items = (javafx.collections.ObservableList<com.vendex.model.DetalleVenta>) fItems.get(controller);
+                var d = new com.vendex.model.DetalleVenta(1, "P-1", "PIEZA DE PRUEBA", 2, new java.math.BigDecimal("10.00"));
+                items.add(d);
+
+                var fTabla = NotaVentaController.class.getDeclaredField("tblDetalle"); fTabla.setAccessible(true);
+                var tabla = (javafx.scene.control.TableView<com.vendex.model.DetalleVenta>) fTabla.get(controller);
+                var fCol = NotaVentaController.class.getDeclaredField("colPrecioUnitario"); fCol.setAccessible(true);
+                var col = (javafx.scene.control.TableColumn<com.vendex.model.DetalleVenta, java.math.BigDecimal>) fCol.get(controller);
+                var fCant = NotaVentaController.class.getDeclaredField("colCantidad"); fCant.setAccessible(true);
+                org.junit.jupiter.api.Assertions.assertTrue(tabla.isEditable(), "tabla habilitada para edición");
+                org.junit.jupiter.api.Assertions.assertNotNull(col.getOnEditCommit(), "editor de precio unitario cableado");
+                org.junit.jupiter.api.Assertions.assertFalse(((javafx.scene.control.TableColumn<?, ?>) fCant.get(controller)).isEditable(),
+                        "la columna cantidad no entra en modo edición");
+
+                // 10.00 → 12.50 sin IVA: subtotal y total = 25.00
+                dispararPrecioCommit(col, tabla, new java.math.BigDecimal("12.50"));
+                org.junit.jupiter.api.Assertions.assertEquals(0, new java.math.BigDecimal("12.50").compareTo(d.getPrecioUnitario()),
+                        "precio unitario actualizado");
+                org.junit.jupiter.api.Assertions.assertEquals(0, new java.math.BigDecimal("25.00").compareTo(d.getPrecioTotal()),
+                        "precio total = 2 × 12.50");
+                var fSub = NotaVentaController.class.getDeclaredField("lblSubtotal"); fSub.setAccessible(true);
+                org.junit.jupiter.api.Assertions.assertEquals("25.00",
+                        ((javafx.scene.control.Label) fSub.get(controller)).getText(), "subtotal recalculado");
+                var fTotal = NotaVentaController.class.getDeclaredField("lblTotal"); fTotal.setAccessible(true);
+                org.junit.jupiter.api.Assertions.assertEquals("25.00",
+                        ((javafx.scene.control.Label) fTotal.get(controller)).getText(), "total sin IVA");
+
+                // Con IVA 15%: iva 3.75, total 28.75
+                var fChk = NotaVentaController.class.getDeclaredField("chkIva"); fChk.setAccessible(true);
+                var chk = (javafx.scene.control.CheckBox) fChk.get(controller);
+                chk.setSelected(true);
+                chk.getOnAction().handle(new javafx.event.ActionEvent());
+                var fIva = NotaVentaController.class.getDeclaredField("lblIva"); fIva.setAccessible(true);
+                org.junit.jupiter.api.Assertions.assertEquals("3.75",
+                        ((javafx.scene.control.Label) fIva.get(controller)).getText(), "IVA 15% recalculado");
+                org.junit.jupiter.api.Assertions.assertEquals("28.75",
+                        ((javafx.scene.control.Label) fTotal.get(controller)).getText(), "total con IVA");
+
+                // Precio inválido: revertir silencioso
+                dispararPrecioCommit(col, tabla, java.math.BigDecimal.ZERO);
+                dispararPrecioCommit(col, tabla, null);
+                org.junit.jupiter.api.Assertions.assertEquals(0, new java.math.BigDecimal("12.50").compareTo(d.getPrecioUnitario()),
+                        "precio inválido no modifica el modelo");
+            } catch (Throwable t) { error.set(t); } finally { fin.countDown(); }
+        });
+        org.junit.jupiter.api.Assertions.assertTrue(fin.await(60, TimeUnit.SECONDS));
+        if (error.get() != null) throw new AssertionError("Edición de precio unitario en proforma inválida", error.get());
+    }
+
     @Test
     @Order(16)
     void ingresoMercaderia_montaPanelStockNegativoEnLateralDerecho() throws Exception {

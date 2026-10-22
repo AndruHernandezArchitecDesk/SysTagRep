@@ -18,10 +18,15 @@ public final class ProductoTemporalFactura {
         if (cod.isEmpty() || cod.length() > 50) throw new IllegalArgumentException("Código obligatorio, máximo 50 caracteres.");
         if (desc.isEmpty() || desc.length() > 300) throw new IllegalArgumentException("Descripción obligatoria, máximo 300 caracteres.");
         if (cantidad <= 0) throw new IllegalArgumentException("La cantidad debe ser un entero mayor a cero.");
-        if (precio == null || precio.signum() <= 0 || precio.compareTo(new BigDecimal("10000000000")) >= 0
-                || precio.stripTrailingZeros().scale() > 2)
+        if (!precioValido(precio))
             throw new IllegalArgumentException("Precio unitario mayor a cero, con hasta 2 decimales y máximo 10 cifras enteras.");
         return new FacturaDetalle(0, cod, desc, cantidad, precio.setScale(2));
+    }
+
+    /** Misma regla que el guardado temporal y el XML: > 0, hasta 2 decimales, máximo 10 cifras enteras. */
+    public static boolean precioValido(BigDecimal precio) {
+        return precio != null && precio.signum() > 0 && precio.compareTo(new BigDecimal("10000000000")) < 0
+                && precio.stripTrailingZeros().scale() <= 2;
     }
 
     /** Copia el borrador sin asignarle IDs que podrían quedar inválidos tras un rollback. */
