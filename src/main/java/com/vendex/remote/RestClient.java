@@ -124,19 +124,24 @@ public class RestClient {
     }
 
     public String postString(String path, String body, String idempotencyKey) throws IOException, InterruptedException {
-        HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(baseUrl + path))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(body));
-        if (idempotencyKey != null && !idempotencyKey.isBlank()) {
-            builder.header("Idempotency-Key", idempotencyKey);
-        }
-        auth(builder);
-        HttpResponse<String> resp = CLIENT.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> resp = postStringRespuesta(path, body, idempotencyKey);
         int code = resp.statusCode();
         if (code >= 500 && code < 600) {
             throw new IOException("Servidor en mantenimiento: " + path + " -> " + code);
         }
         return resp.body();
+    }
+
+    /** Fase 7: envío con Idempotency-Key y reintento ante 401 (token vencido), exponiendo el status. */
+    public HttpResponse<String> postStringRespuesta(String path, String body, String idempotencyKey) throws IOException, InterruptedException {
+        HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(baseUrl + path))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body));
+        if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+            builder.setHeader("Idempotency-Key", idempotencyKey);
+        }
+        auth(builder);
+        return enviar(builder.build());
     }
 
     private <T> T execute(HttpRequest req, Class<T> type) throws IOException, InterruptedException {

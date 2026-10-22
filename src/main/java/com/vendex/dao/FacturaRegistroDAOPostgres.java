@@ -44,8 +44,8 @@ public class FacturaRegistroDAOPostgres implements FacturaRegistroDAO {
 
     public int insertar(Connection con, FacturaRegistro fr) throws SQLException {
         String sql = "INSERT INTO factura_registro(empresa_id, cliente_id, fecha, codigo, forma_pago, " +
-                     "subtotal, iva, descuento, total, clave_acceso, num_comprobante, ambiente_sri, estado_sri, fecha_registro, sucursal_id) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id";
+                     "subtotal, iva, descuento, total, clave_acceso, num_comprobante, ambiente_sri, estado_sri, fecha_registro, sucursal_id, usuario_id) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, fr.getEmpresaId());
             ps.setInt(2, fr.getClienteId());
@@ -62,10 +62,22 @@ public class FacturaRegistroDAOPostgres implements FacturaRegistroDAO {
             ps.setString(13, fr.getEstadoSri());
             ps.setObject(14, fr.getFechaRegistro());
             ps.setInt(15, fr.getSucursalId() > 0 ? fr.getSucursalId() : 1);
+            Integer usuarioId = usuarioDeSesion();
+            if (usuarioId != null) ps.setInt(16, usuarioId); else ps.setNull(16, java.sql.Types.INTEGER);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) return rs.getInt("id");
         }
         return -1;
+    }
+
+    /** Fase 7: atribución del comprobante al usuario de la sesión (o null si no hay sesión). */
+    private static Integer usuarioDeSesion() {
+        try {
+            var u = com.vendex.util.SesionActual.getUsuario();
+            return u != null ? u.getId() : null;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public void actualizarEstado(Connection con, String claveAcceso, String estado) throws SQLException {

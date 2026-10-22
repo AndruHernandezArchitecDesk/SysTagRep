@@ -63,6 +63,7 @@ public class MainApp extends Application {
         DatabaseConnection.ensureAccesoDirectoSchema();
         try { DatabaseConnection.ensureVendexiSchema(); } catch (Exception e) { System.err.println("No se pudo asegurar esquema Vendexi: " + e.getMessage()); }
         try { DatabaseConnection.ensureLicenciasCentralSchema(); } catch (Exception e) { System.err.println("No se pudo asegurar esquema licencias centrales: " + e.getMessage()); }
+        try { DatabaseConnection.ensureFase7Schema(); } catch (Exception e) { System.err.println("No se pudo asegurar esquema Fase 7: " + e.getMessage()); }
         try { DatabaseConnection.ensurePrestamoSchema(); } catch (Exception e) { System.err.println("No se pudo asegurar esquema préstamos: " + e.getMessage()); }
         // SRI contingencia: cola persistente todo a cola (desacople mostrador)
         try { com.vendex.service.ServicioReintentoSri.getInstance().start(); } catch (Exception e) { System.err.println("No se pudo iniciar SRI reintento: " + e.getMessage()); }

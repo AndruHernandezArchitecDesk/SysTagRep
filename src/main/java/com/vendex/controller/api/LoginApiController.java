@@ -50,14 +50,21 @@ public class LoginApiController {
                 return;
             }
             usuarioDAO.resetearIntentos(u.getId());
+            // Fase 7: validar sucursal del usuario contra usuario_sucursal (multi-sucursal)
+            Integer sucursalId = u.getSucursalId();
+            try {
+                sucursalId = com.vendex.config.AppContext.getInstance().usuarioSucursalDAO
+                        .sucursalValidaPara(u.getId(), sucursalId);
+            } catch (Exception ignored) {}
             // Sesión por-hilo (aislamiento API) — no altera la sesión global de la UI local
-            SesionActual.iniciarApi(u, u.getSucursalId(), null);
-            String token = com.vendex.api.ApiAuthService.crearToken(u, u.getSucursalId(), null);
+            SesionActual.iniciarApi(u, sucursalId, null);
+            String token = com.vendex.api.ApiAuthService.crearToken(u, sucursalId, null);
             Map<String, Object> resp = new java.util.LinkedHashMap<>();
             resp.put("token", token);
             resp.put("tokenType", "Bearer");
             resp.put("expiraEnMinutos", Long.getLong("api.token.ttl.minutos", 720L));
             resp.put("id", u.getId());
+            resp.put("sucursalId", sucursalId);
             resp.put("username", u.getUsername());
             resp.put("nombre", u.getNombre() + " " + (u.getApellido() != null ? u.getApellido() : ""));
             resp.put("rol", u.getRol());

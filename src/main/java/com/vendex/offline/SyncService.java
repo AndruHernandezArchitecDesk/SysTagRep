@@ -87,13 +87,18 @@ public class SyncService {
                     cola.marcarEnviada(op.getId());
                     enviadas++;
                 } else {
-                    String error = leerRespuestaError(op);
-                    cola.marcarConflicto(op.getId(), error != null ? error : "Error en servidor");
+                    // 4xx: error de negocio — estado terminal CONFLICTO, resuelto desde la cola
+                    String error = ultimoError;
+                    cola.marcarConflicto(op.getId(), error != null ? error : "Error de negocio en servidor");
                     conflictos++;
                 }
             } catch (Exception e) {
-                cola.marcarConflicto(op.getId(), e.getMessage());
-                conflictos++;
+                // Fallo de conexión o 5xx: sigue PENDIENTE y se reintenta en el próximo ciclo
+                cola.registrarIntento(op.getId(), e.getMessage());
+                if (op.getIntentos() + 1 >= MAX_INTENTOS) {
+                    cola.marcarFallida(op.getId(), "Maximo de intentos alcanzado: " + e.getMessage());
+                }
+                fallidas++;
             }
         }
 
@@ -109,16 +114,22 @@ public class SyncService {
         if (endpoint == null) {
             throw new IOException("Tipo de operacion no soportado: " + op.getTipo());
         }
+        // Clave estable entre reintentos: el server la usa para no duplicar (Idempotency-Key)
         String idempotencyKey = op.getTipo() + "-" + op.getId() + "-" + op.getCreadoEn();
-        String responseBody = client.postString(endpoint, op.getPayload(), idempotencyKey);
-        if (responseBody == null || responseBody.isBlank()) {
+        java.net.http.HttpResponse<String> resp = client.postStringRespuesta(endpoint, op.getPayload(), idempotencyKey);
+        int code = resp.statusCode();
+        String responseBody = resp.body();
+        if (code >= 200 && code < 300) {
             return true;
         }
-        if (responseBody.toLowerCase().contains("error")) {
-            ultimoError = responseBody.length() > 500 ? responseBody.substring(0, 500) : responseBody;
-            return false;
+        if (code >= 500) {
+            // Servidor/caída transitoria → excepción para reintentar (sigue PENDIENTE)
+            throw new IOException("HTTP " + code + " en " + endpoint);
         }
-        return true;
+        // 4xx: error de negocio (payload inválido, duplicado, etc.)
+        ultimoError = "HTTP " + code + ": " + (responseBody != null && responseBody.length() > 500
+                ? responseBody.substring(0, 500) : responseBody);
+        return false;
     }
 
     private String leerRespuestaError(OperacionOffline op) {

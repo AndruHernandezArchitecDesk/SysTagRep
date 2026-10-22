@@ -94,6 +94,8 @@ public class AppContext {
     public final SecuenciaBloqueDAO secuenciaBloqueDAO;
     public final VendexiConsumoDAO vendexiConsumoDAO;
     public final LicenciaCentralDAO licenciaCentralDAO;
+    public final UsuarioPermisoDAO usuarioPermisoDAO;
+    public final UsuarioSucursalDAO usuarioSucursalDAO;
 
     // Servicios
     public final FacturaService facturaService;
@@ -174,6 +176,9 @@ public class AppContext {
         this.vendexiConsumoDAO = new VendexiConsumoDAOPostgres();
         // Fase 6b: administración central de licencias (siempre local en la instancia central)
         this.licenciaCentralDAO = new LicenciaCentralDAOPostgres();
+        // Fase 7: permisos y sucursales por usuario (siempre local; modo remoto los resuelve el server)
+        this.usuarioPermisoDAO = new UsuarioPermisoDAOPostgres();
+        this.usuarioSucursalDAO = new UsuarioSucursalDAOPostgres();
 
         // Servicios con inyección por constructor
         this.facturaService = new FacturaService(

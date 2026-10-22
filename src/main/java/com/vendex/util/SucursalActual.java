@@ -28,7 +28,19 @@ public final class SucursalActual {
     }
 
     public static int getId() {
-        return sucursal != null ? sucursal.getId() : getIdPersistido();
+        if (sucursal != null) return sucursal.getId();
+        // Fase 7: si hay sesión activa, la sucursal de los servicios sigue a la del usuario
+        // (corrige el bug de usar siempre la sucursal 1 de Preferences)
+        if (sesionActiva()) return com.vendex.util.SesionActual.getSucursalId();
+        return getIdPersistido();
+    }
+
+    private static boolean sesionActiva() {
+        try {
+            return com.vendex.util.SesionActual.getUsuario() != null;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public static String getCodigo() {

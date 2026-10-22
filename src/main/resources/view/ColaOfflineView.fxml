@@ -11,7 +11,9 @@
         <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-padding: 10 12 10 12;">
             <Label text="Cola offline" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
             <Label fx:id="lblPendientes" text="Pendientes: 0"/>
-            <HBox alignment="CENTER_RIGHT" HBox.hgrow="ALWAYS">
+            <HBox alignment="CENTER_RIGHT" HBox.hgrow="ALWAYS" spacing="8">
+                <Button fx:id="btnReencolar" text="Reintentar seleccionada"/>
+                <Button fx:id="btnDescartar" text="Descartar seleccionada"/>
                 <Button fx:id="btnSincronizar" text="Sincronizar ahora"/>
                 <Button fx:id="btnCerrar" text="Cerrar"/>
             </HBox>

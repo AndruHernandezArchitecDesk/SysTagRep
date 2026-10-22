@@ -96,12 +96,29 @@ public final class SesionActual {
         if (rolId != 0) {
             ses.permisos = new HashSet<>(new PermisoDAOPostgres().listarPorRol(rolId));
         } else {
-            ses.permisos = Collections.emptySet();
+            ses.permisos = new HashSet<>();
         }
         if (u.getPermisos() != null && !u.getPermisos().isBlank()) {
             for (String p : u.getPermisos().split(",")) {
                 if (!p.isBlank()) ses.permisos.add(p.trim().toUpperCase());
             }
+        }
+        // Fase 7: permisos granulares por usuario — amplían (otorgar) o restringen (denegar) los del rol
+        try {
+            java.util.Map<String, Boolean> extras =
+                    new com.vendex.dao.UsuarioPermisoDAOPostgres().listarPorUsuario(u.getId());
+            aplicarPermisosDeUsuario(ses.permisos, extras);
+        } catch (Exception ignored) {}
+    }
+
+    /** Fase 7: aplica los permisos granulares por usuario sobre los permisos efectivos. */
+    static void aplicarPermisosDeUsuario(Set<String> permisos, java.util.Map<String, Boolean> extras) {
+        if (extras == null || extras.isEmpty()) return;
+        for (java.util.Map.Entry<String, Boolean> e : extras.entrySet()) {
+            String cod = e.getKey() != null ? e.getKey().trim().toUpperCase(java.util.Locale.ROOT) : "";
+            if (cod.isEmpty()) continue;
+            if (Boolean.TRUE.equals(e.getValue())) permisos.add(cod);
+            else permisos.remove(cod);
         }
     }
 

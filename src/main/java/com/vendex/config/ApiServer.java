@@ -76,6 +76,8 @@ public class ApiServer {
         LicenciaCentralApiController licenciasCtrl = new LicenciaCentralApiController(
                 new com.vendex.service.LicenciaCentralService(ctx.licenciaCentralDAO));
         BackupApiController backupCtrl = new BackupApiController();
+        com.vendex.controller.api.UsuarioAdminApiController usuarioAdminCtrl = new com.vendex.controller.api.UsuarioAdminApiController();
+        com.vendex.controller.api.OfflineSyncApiController offlineSyncCtrl = new com.vendex.controller.api.OfflineSyncApiController(ctx);
 
         app = Javalin.create(cfg -> {
             cfg.http.defaultContentType = "application/json";
@@ -116,8 +118,30 @@ public class ApiServer {
                 throw new com.vendex.api.ApiAuthException(403,
                         "Permiso requerido para esta operación: " + permiso);
             }
+            // Fase 7: idempotencia — si esta escritura ya se procesó, devolver la respuesta cacheada
+            if ("POST".equalsIgnoreCase(metodo)) {
+                String idem = c.header("Idempotency-Key");
+                if (idem != null && !idem.isBlank()) {
+                    com.vendex.api.IdempotencyStore.Entrada previa = com.vendex.api.IdempotencyStore.get(idem);
+                    if (previa != null) {
+                        throw new com.vendex.api.RespuestaIdempotente(previa.status(), previa.body());
+                    }
+                }
+            }
         });
-        app.after("/*", c -> com.vendex.util.SesionActual.cerrarApi());
+        app.after("/*", c -> {
+            // Fase 7: cachear respuesta exitosa de escrituras con Idempotency-Key
+            if ("POST".equalsIgnoreCase(c.method().name())) {
+                String idem = c.header("Idempotency-Key");
+                if (idem != null && !idem.isBlank()) {
+                    String resultado = c.result();
+                    if (resultado != null && !resultado.isBlank()) {
+                        com.vendex.api.IdempotencyStore.put(idem, c.status().getCode(), resultado);
+                    }
+                }
+            }
+            com.vendex.util.SesionActual.cerrarApi();
+        });
 
         app.get("/api/health", ctx2 -> ctx2.json(java.util.Map.of("status", "UP", "sucursales", ctx.sucursalDAO.listar().size())));
 
@@ -134,6 +158,19 @@ public class ApiServer {
         app.get("/api/licencias/revocadas", licenciasCtrl::listarRevocadas);
         app.post("/api/respaldos", backupCtrl::ejecutar);
         app.get("/api/respaldos", backupCtrl::listar);
+
+        // Fase 7: administración de permisos y sucursales por usuario
+        app.get("/api/usuarios/{id}/permisos", usuarioAdminCtrl::obtenerPermisos);
+        app.put("/api/usuarios/{id}/permisos", usuarioAdminCtrl::guardarPermisos);
+        app.get("/api/usuarios/{id}/sucursales", usuarioAdminCtrl::obtenerSucursales);
+        app.put("/api/usuarios/{id}/sucursales", usuarioAdminCtrl::guardarSucursales);
+
+        // Fase 7: endpoints que cierran los huecos del SyncService offline
+        app.post("/api/nota-debito", offlineSyncCtrl::emitirNotaDebito);
+        app.post("/api/inventario/eliminar", offlineSyncCtrl::eliminarInventario);
+        app.post("/api/ingreso-mercaderia", offlineSyncCtrl::ingresoMercaderia);
+        app.post("/api/cuentas-por-cobrar/adelanto", offlineSyncCtrl::adelantoCobrar);
+        app.post("/api/cuentas-por-pagar/adelanto", offlineSyncCtrl::adelantoPagar);
 
         app.get("/api/sucursales", sucursalCtrl::listar);
         app.get("/api/sucursales/{id}", sucursalCtrl::obtenerPorId);
@@ -244,6 +281,11 @@ public class ApiServer {
 
         app.exception(com.vendex.api.ApiAuthException.class, (e, ctx2) ->
                 ctx2.status(e.status).json(java.util.Map.of("error", e.getMessage())));
+
+        // Fase 7: replay de Idempotency-Key — devolver la respuesta original sin re-ejecutar
+        app.exception(com.vendex.api.RespuestaIdempotente.class, (e, ctx2) -> {
+            ctx2.status(e.getStatus()).contentType("application/json").result(e.getBody());
+        });
 
         app.exception(Exception.class, (e, ctx2) -> {
             LOG.log(Level.WARNING, "API error", e);

@@ -661,6 +661,59 @@ public class DatabaseConnection {
         } catch (SQLException e) { logIfPermissionDenied(e, "ensureLicenciasCentralSchema grants"); }
     }
 
+    /** Fase 7: permisos por usuario, multi-sucursal, trazabilidad y alineación de usuarios. */
+    public static void ensureFase7Schema() {
+        String[] ddls = new String[]{
+            "ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS activo BOOLEAN NOT NULL DEFAULT true",
+            "ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS email VARCHAR(120)",
+            "ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS password_hash VARCHAR(255)",
+            "ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS fecha_creacion TIMESTAMP NOT NULL DEFAULT now()",
+            "ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS ultimo_login TIMESTAMP",
+            "CREATE TABLE IF NOT EXISTS usuario_permiso (" +
+            "usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE, " +
+            "permiso_codigo VARCHAR(50) NOT NULL REFERENCES permiso(codigo) ON DELETE CASCADE, " +
+            "otorgar BOOLEAN NOT NULL DEFAULT true, " +
+            "PRIMARY KEY (usuario_id, permiso_codigo))",
+            "CREATE TABLE IF NOT EXISTS usuario_sucursal (" +
+            "usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE, " +
+            "sucursal_id INTEGER NOT NULL REFERENCES sucursal(id) ON DELETE CASCADE, " +
+            "PRIMARY KEY (usuario_id, sucursal_id))",
+            "CREATE INDEX IF NOT EXISTS idx_usuario_sucursal ON usuario_sucursal(sucursal_id)",
+            "ALTER TABLE factura_registro ADD COLUMN IF NOT EXISTS usuario_id INTEGER",
+            "ALTER TABLE nota_venta_registro ADD COLUMN IF NOT EXISTS usuario_id INTEGER",
+            "CREATE INDEX IF NOT EXISTS idx_factura_usuario ON factura_registro(usuario_id)",
+            "CREATE INDEX IF NOT EXISTS idx_nota_venta_usuario ON nota_venta_registro(usuario_id)",
+            "ALTER TABLE auditoria_accion ADD COLUMN IF NOT EXISTS sucursal_id INTEGER"
+        };
+        try (Connection con = getConnection(); java.sql.Statement st = con.createStatement()) {
+            for (String sql : ddls) try { st.execute(sql); } catch (SQLException e) { logIfPermissionDenied(e, "ensureFase7Schema"); }
+        } catch (SQLException e) { logIfPermissionDenied(e, "ensureFase7Schema conexion"); }
+        // HSQLDB fallback (sin IF NOT EXISTS en ALTER/INDEX; errores ya-existente se ignoran por sentencia)
+        String[][] hsqldb = new String[][]{
+            {"ALTER TABLE usuarios ADD COLUMN activo BOOLEAN NOT NULL DEFAULT true"},
+            {"ALTER TABLE usuarios ADD COLUMN email VARCHAR(120)"},
+            {"ALTER TABLE usuarios ADD COLUMN password_hash VARCHAR(255)"},
+            {"ALTER TABLE usuarios ADD COLUMN fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP"},
+            {"ALTER TABLE usuarios ADD COLUMN ultimo_login TIMESTAMP"},
+            {"CREATE TABLE IF NOT EXISTS usuario_permiso (" +
+                    "usuario_id INTEGER NOT NULL, permiso_codigo VARCHAR(50) NOT NULL, " +
+                    "otorgar BOOLEAN NOT NULL DEFAULT true, PRIMARY KEY (usuario_id, permiso_codigo))"},
+            {"CREATE TABLE IF NOT EXISTS usuario_sucursal (" +
+                    "usuario_id INTEGER NOT NULL, sucursal_id INTEGER NOT NULL, " +
+                    "PRIMARY KEY (usuario_id, sucursal_id))"},
+            {"ALTER TABLE factura_registro ADD COLUMN usuario_id INTEGER"},
+            {"ALTER TABLE nota_venta_registro ADD COLUMN usuario_id INTEGER"},
+            {"ALTER TABLE auditoria_accion ADD COLUMN sucursal_id INTEGER"}
+        };
+        try (Connection con = getConnection(); java.sql.Statement st = con.createStatement()) {
+            for (String[] sql : hsqldb) try { st.execute(sql[0]); } catch (SQLException e) { logIfPermissionDenied(e, "ensureFase7Schema hsqldb"); }
+        } catch (SQLException e) { logIfPermissionDenied(e, "ensureFase7Schema hsqldb conexion"); }
+        try (Connection con = getConnection(); java.sql.Statement st = con.createStatement()) {
+            try { st.execute("GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE usuario_permiso TO app_vendex"); } catch (SQLException e) { logIfPermissionDenied(e, "grant usuario_permiso"); }
+            try { st.execute("GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE usuario_sucursal TO app_vendex"); } catch (SQLException e) { logIfPermissionDenied(e, "grant usuario_sucursal"); }
+        } catch (SQLException e) { logIfPermissionDenied(e, "ensureFase7Schema grants"); }
+    }
+
     public static void ensureSucursalSchema() {
         String[] ddls = new String[]{
             "CREATE TABLE IF NOT EXISTS sucursal (id SERIAL PRIMARY KEY, codigo VARCHAR(3) UNIQUE NOT NULL, nombre VARCHAR(100) NOT NULL, direccion VARCHAR(300), telefono VARCHAR(20), es_central BOOLEAN NOT NULL DEFAULT false, activo BOOLEAN NOT NULL DEFAULT true, creado_en TIMESTAMP NOT NULL DEFAULT now())",

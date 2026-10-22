@@ -183,11 +183,23 @@ public class LoginController implements Initializable {
             LoginResult r = task.getValue();
                 if (r.exito != null) {
                     usuarioAutenticado = r.exito;
+                    // Fase 7: validar sucursal del usuario contra usuario_sucursal (multi-sucursal)
                     Integer sucursalId = r.exito.getSucursalId();
+                    try {
+                        var usDao = com.vendex.config.AppContext.getInstance().usuarioSucursalDAO;
+                        sucursalId = usDao.sucursalValidaPara(r.exito.getId(), sucursalId);
+                    } catch (Exception ignored) {}
                     Integer puntoEmisionId = null;
                     if (sucursalId != null) {
                         var pe = com.vendex.config.AppContext.getInstance().puntoEmisionDAO.listarPorSucursal(sucursalId).stream().findFirst();
                         puntoEmisionId = pe.map(PuntoEmision::getId).orElse(null);
+                    }
+                    // Fase 7: la sucursal activa de los servicios (SucursalActual) sigue al login
+                    if (sucursalId != null) {
+                        try {
+                            com.vendex.config.AppContext.getInstance().sucursalDAO.obtenerPorId(sucursalId)
+                                    .ifPresent(com.vendex.util.SucursalActual::set);
+                        } catch (Exception ignored) {}
                     }
                     try { com.vendex.util.SesionActual.iniciar(r.exito, sucursalId, puntoEmisionId); } catch (Exception ignored) {}
                     abrirMain();

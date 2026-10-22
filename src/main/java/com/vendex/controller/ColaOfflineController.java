@@ -24,6 +24,8 @@ public class ColaOfflineController implements Initializable {
     @FXML private Label lblPendientes;
     @FXML private Button btnSincronizar;
     @FXML private Button btnCerrar;
+    @FXML private Button btnReencolar;
+    @FXML private Button btnDescartar;
 
     private final ObservableList<OperacionOffline> items = FXCollections.observableArrayList();
     private final LocalOperationQueue cola = new LocalOperationQueue();
@@ -39,11 +41,42 @@ public class ColaOfflineController implements Initializable {
         cargar();
         btnSincronizar.setOnAction(e -> sincronizar());
         btnCerrar.setOnAction(e -> cerrar());
+        // Fase 7: resolución de conflictos — reencolar o descartar la operación seleccionada
+        btnReencolar.setOnAction(e -> reencolarSeleccionada());
+        btnDescartar.setOnAction(e -> descartarSeleccionada());
     }
 
     public void cargar() {
-        items.setAll(cola.listarPendientes());
-        lblPendientes.setText("Pendientes: " + items.size());
+        // Fase 7: mostrar TODAS las operaciones (pendientes, en conflicto y fallidas)
+        items.setAll(cola.listarTodas());
+        long pend = items.stream().filter(o -> o.getEstado() == OperacionOffline.Estado.PENDIENTE).count();
+        long conflicto = items.stream().filter(o -> o.getEstado() == OperacionOffline.Estado.CONFLICTO).count();
+        long fallida = items.stream().filter(o -> o.getEstado() == OperacionOffline.Estado.FALLIDA).count();
+        lblPendientes.setText("Pendientes: " + pend + " | En conflicto: " + conflicto + " | Fallidas: " + fallida);
+    }
+
+    private void reencolarSeleccionada() {
+        OperacionOffline sel = tabla.getSelectionModel().getSelectedItem();
+        if (sel == null) { aviso("Seleccione una operación de la tabla."); return; }
+        if (sel.getEstado() == OperacionOffline.Estado.ENVIADA) { aviso("La operación ya fue sincronizada."); return; }
+        cola.reencolar(sel.getId());
+        cargar();
+    }
+
+    private void descartarSeleccionada() {
+        OperacionOffline sel = tabla.getSelectionModel().getSelectedItem();
+        if (sel == null) { aviso("Seleccione una operación de la tabla."); return; }
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
+                "¿Descartar la operación #" + sel.getId() + " (" + sel.getTipo() + ")?\nNo volverá a enviarse al servidor.",
+                ButtonType.YES, ButtonType.NO);
+        if (confirm.showAndWait().orElse(ButtonType.NO) == ButtonType.YES) {
+            cola.descartar(sel.getId());
+            cargar();
+        }
+    }
+
+    private void aviso(String msg) {
+        new Alert(Alert.AlertType.INFORMATION, msg).showAndWait();
     }
 
     private void sincronizar() {
