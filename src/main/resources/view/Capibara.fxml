@@ -1,61 +1,98 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?import javafx.scene.Group?>
+<?import javafx.scene.paint.*?>
 <?import javafx.scene.shape.*?>
-<!-- Vetxi: piezas vectoriales independientes para caminar, rascarse y tomar notas. -->
+<!-- Vetxi de frente. Las piezas conservan su identidad para las animaciones locales. -->
 <Group xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" mouseTransparent="true">
+    <fx:define>
+        <LinearGradient fx:id="pelaje" startX="0" startY="0" endX="0" endY="1">
+            <stops>
+                <Stop offset="0" color="#E2BA88"/>
+                <Stop offset="0.55" color="#CCA16F"/>
+                <Stop offset="1" color="#B88859"/>
+            </stops>
+        </LinearGradient>
+        <LinearGradient fx:id="cuerpo" startX="0" startY="0" endX="0" endY="1">
+            <stops><Stop offset="0" color="#CDA373"/><Stop offset="1" color="#AA774E"/></stops>
+        </LinearGradient>
+        <LinearGradient fx:id="hocicoSuave" startX="0" startY="0" endX="0" endY="1">
+            <stops><Stop offset="0" color="#F1D2A7"/><Stop offset="1" color="#DEB787"/></stops>
+        </LinearGradient>
+    </fx:define>
+
+    <!-- Mantener el lienzo estable al cambiar de pose. -->
     <Rectangle width="100" height="82" fill="TRANSPARENT"/>
-    <Ellipse centerX="49" centerY="76" radiusX="39" radiusY="4" fill="#00000022"/>
-    <Rectangle x="22" y="60" width="14" height="16" arcWidth="10" arcHeight="10" fill="#80583F"/>
-    <Rectangle x="63" y="60" width="14" height="16" arcWidth="10" arcHeight="10" fill="#80583F"/>
-    <Ellipse centerX="45" centerY="49" radiusX="37" radiusY="25" fill="#B9895E"/>
-    <Ellipse centerX="43" centerY="48" radiusX="30" radiusY="18" fill="#C99A6B"/>
-    <Ellipse centerX="55" centerY="18" radiusX="9" radiusY="11" fill="#A77550"/>
-    <Ellipse centerX="55" centerY="18" radiusX="4" radiusY="6" fill="#E4B697"/>
-    <Ellipse centerX="79" centerY="16" radiusX="8" radiusY="10" fill="#A77550"/>
-    <Ellipse centerX="79" centerY="16" radiusX="3.5" radiusY="5" fill="#E4B697"/>
-    <Ellipse centerX="68" centerY="39" radiusX="26" radiusY="24" fill="#C99A6B"/>
-    <Ellipse centerX="79" centerY="47" radiusX="19" radiusY="15" fill="#DCAF7E"/>
-    <Ellipse centerX="84" centerY="43" radiusX="11" radiusY="8" fill="#80583F"/>
-    <Ellipse centerX="89" centerY="41" radiusX="2" radiusY="1.7" fill="#3C2C25"/>
-    <Circle centerX="70" centerY="32" radius="3.5" fill="#352B26"/>
-    <Circle centerX="71" centerY="31" radius="1" fill="#FFFFFF"/>
-    <Ellipse centerX="63" centerY="42" radiusX="5" radiusY="3" fill="#D98D7A" opacity="0.65"/>
-    <SVGPath content="M 77 52 Q 83 56 89 51" fill="TRANSPARENT" stroke="#6B4935" strokeWidth="1.5"/>
+    <Ellipse centerX="50" centerY="78" radiusX="28" radiusY="3" fill="#523B2920"/>
+    <Ellipse centerX="50" centerY="60" radiusX="23" radiusY="17" fill="$cuerpo" stroke="#A77750" strokeWidth="0.8"/>
+    <Ellipse centerX="50" centerY="64" radiusX="15" radiusY="10" fill="#E0B787" opacity="0.8"/>
+
     <Group fx:id="pataTrasera">
-        <Rectangle x="18" y="62" width="14" height="15" arcWidth="9" arcHeight="9" fill="#B9895E"/>
-        <SVGPath content="M 25 75 L 25 77" stroke="#80583F" strokeWidth="1.5"/>
+        <Rectangle x="29" y="66" width="16" height="12" arcWidth="10" arcHeight="10" fill="#B5865B" stroke="#A77750" strokeWidth="0.7"/>
+        <SVGPath content="M 34 75 L 34 77 M 39 75 L 39 77" stroke="#8C6245" strokeWidth="1.1" strokeLineCap="ROUND"/>
     </Group>
     <Group fx:id="pataDelantera">
-        <Rectangle x="57" y="62" width="14" height="15" arcWidth="9" arcHeight="9" fill="#B9895E"/>
-        <SVGPath content="M 64 75 L 64 77" stroke="#80583F" strokeWidth="1.5"/>
+        <Rectangle x="55" y="66" width="16" height="12" arcWidth="10" arcHeight="10" fill="#B5865B" stroke="#A77750" strokeWidth="0.7"/>
+        <SVGPath content="M 61 75 L 61 77 M 66 75 L 66 77" stroke="#8C6245" strokeWidth="1.1" strokeLineCap="ROUND"/>
     </Group>
-    <SVGPath content="M 37 24 Q 22 8 36 5 Q 47 9 37 24" fill="#7EAD66"/>
-    <SVGPath content="M 37 24 Q 41 8 51 13 Q 53 23 37 24" fill="#A7C887"/>
-    <SVGPath content="M 37 24 L 35 13" stroke="#527F49" strokeWidth="1.2"/>
+    <Ellipse centerX="28" centerY="58" radiusX="5.5" radiusY="10" rotate="12" fill="#BC9063"/>
+    <Ellipse centerX="72" centerY="58" radiusX="5.5" radiusY="10" rotate="-12" fill="#BC9063"/>
+
+    <!-- Orejas redondeadas y rostro simétrico mirando al usuario. -->
+    <Ellipse centerX="27" centerY="17" radiusX="8" radiusY="10" rotate="-20" fill="#B4845D" stroke="#9B6E4D" strokeWidth="0.8"/>
+    <Ellipse centerX="27" centerY="17" radiusX="4.5" radiusY="6" rotate="-20" fill="#E7B599"/>
+    <Ellipse centerX="73" centerY="17" radiusX="8" radiusY="10" rotate="20" fill="#B4845D" stroke="#9B6E4D" strokeWidth="0.8"/>
+    <Ellipse centerX="73" centerY="17" radiusX="4.5" radiusY="6" rotate="20" fill="#E7B599"/>
+    <SVGPath content="M 23 27 C 23 17 34 13 50 13 C 66 13 77 17 77 27 L 80 42 C 81 55 69 62 50 62 C 31 62 19 55 20 42 Z"
+             fill="$pelaje" stroke="#AA7B51" strokeWidth="0.9"/>
+    <SVGPath content="M 29 25 Q 31 20 39 19" fill="TRANSPARENT" stroke="#F4D7B0" strokeWidth="2" strokeLineCap="ROUND" opacity="0.8"/>
+    <SVGPath content="M 45 20 Q 50 23 55 20" fill="TRANSPARENT" stroke="#BB8A5B" strokeWidth="1.1" strokeLineCap="ROUND" opacity="0.6"/>
+
+    <Ellipse centerX="27" centerY="41" radiusX="5" radiusY="3" fill="#D98F7F" opacity="0.55"/>
+    <Ellipse centerX="73" centerY="41" radiusX="5" radiusY="3" fill="#D98F7F" opacity="0.55"/>
+    <SVGPath content="M 29 27 Q 32 25 35 27 M 65 27 Q 68 25 71 27" fill="TRANSPARENT" stroke="#A2734C" strokeWidth="1.2" strokeLineCap="ROUND"/>
+    <Circle centerX="33" centerY="33" radius="3.4" fill="#352A23"/>
+    <Circle centerX="67" centerY="33" radius="3.4" fill="#352A23"/>
+    <Circle centerX="32" centerY="31.8" radius="1.1" fill="#FFF9E9"/>
+    <Circle centerX="66" centerY="31.8" radius="1.1" fill="#FFF9E9"/>
+    <Rectangle x="29" y="36" width="42" height="22" arcWidth="20" arcHeight="18" fill="$hocicoSuave"/>
+    <SVGPath content="M 41 41 Q 50 37 59 41 L 57 45 Q 50 48 43 45 Z" fill="#80583E"/>
+    <Ellipse centerX="45" centerY="42.5" radiusX="1.6" radiusY="1.2" fill="#493326"/>
+    <Ellipse centerX="55" centerY="42.5" radiusX="1.6" radiusY="1.2" fill="#493326"/>
+    <SVGPath content="M 46 40 Q 50 39 54 40" fill="TRANSPARENT" stroke="#B48A65" strokeWidth="1" strokeLineCap="ROUND"/>
+    <SVGPath content="M 50 47 L 50 50 M 42 49 Q 46 54 50 50 Q 54 54 58 49" fill="TRANSPARENT" stroke="#8C6246" strokeWidth="1.2" strokeLineCap="ROUND"/>
+    <SVGPath content="M 32 45 L 35 46 M 31 49 L 34 49 M 68 45 L 65 46 M 69 49 L 66 49" stroke="#B38B62" strokeWidth="0.8" strokeLineCap="ROUND"/>
+
+    <!-- La pequeña planta identifica a Vetxi incluso sin accesorios. -->
+    <SVGPath content="M 50 14 Q 37 10 41 4 Q 50 1 50 14" fill="#6E9C65"/>
+    <SVGPath content="M 50 14 Q 50 2 60 5 Q 64 12 50 14" fill="#A4C47A"/>
+    <SVGPath content="M 50 15 L 47 8 M 50 14 L 56 8" fill="TRANSPARENT" stroke="#567F50" strokeWidth="0.8" strokeLineCap="ROUND"/>
+
     <Group fx:id="lentes" visible="false">
-        <Ellipse centerX="66" centerY="32" radiusX="8" radiusY="7" fill="#B8E5FF66" stroke="#293B4C" strokeWidth="2"/>
-        <Ellipse centerX="84" centerY="32" radiusX="7" radiusY="6" fill="#B8E5FF66" stroke="#293B4C" strokeWidth="2"/>
-        <SVGPath content="M 74 31 Q 76 29 77 31 M 58 30 L 51 27" fill="TRANSPARENT" stroke="#293B4C" strokeWidth="2"/>
+        <Circle centerX="33" centerY="33" radius="8.5" fill="#B8E5FF33" stroke="#3D514D" strokeWidth="1.8"/>
+        <Circle centerX="67" centerY="33" radius="8.5" fill="#B8E5FF33" stroke="#3D514D" strokeWidth="1.8"/>
+        <SVGPath content="M 41.5 32 Q 50 28 58.5 32 M 24.5 31 L 21 29 M 75.5 31 L 79 29" fill="TRANSPARENT" stroke="#3D514D" strokeWidth="1.7" strokeLineCap="ROUND"/>
+        <SVGPath content="M 28 30 L 30 28 M 62 30 L 64 28" stroke="#FFFFFF" strokeWidth="1.1" opacity="0.7" strokeLineCap="ROUND"/>
     </Group>
     <Group fx:id="libreta" visible="false" rotate="-8">
-        <Rectangle x="24" y="40" width="27" height="29" arcWidth="3" arcHeight="3" fill="#527F65"/>
-        <Rectangle x="27" y="42" width="22" height="25" fill="#FFF7DF"/>
-        <SVGPath content="M 31 48 L 44 48 M 31 53 L 44 53 M 31 58 L 40 58" stroke="#A7B4A1" strokeWidth="1.2"/>
-        <SVGPath content="M 25 44 L 29 44 M 25 50 L 29 50 M 25 56 L 29 56 M 25 62 L 29 62" stroke="#DCC48E" strokeWidth="2"/>
+        <Rectangle x="33" y="54" width="27" height="25" arcWidth="4" arcHeight="4" fill="#527F65" stroke="#3D6651" strokeWidth="0.7"/>
+        <Rectangle x="36" y="56" width="22" height="21" arcWidth="2" arcHeight="2" fill="#FFF7DF"/>
+        <SVGPath content="M 40 61 L 53 61 M 40 66 L 53 66 M 40 71 L 49 71" stroke="#A7B4A1" strokeWidth="1" strokeLineCap="ROUND"/>
+        <SVGPath content="M 34 58 L 38 58 M 34 64 L 38 64 M 34 70 L 38 70 M 34 76 L 38 76" stroke="#DCC48E" strokeWidth="1.6" strokeLineCap="ROUND"/>
     </Group>
     <Group fx:id="lapiz" visible="false">
-        <Ellipse centerX="53" centerY="55" radiusX="5" radiusY="9" rotate="-35" fill="#A77550"/>
-        <SVGPath content="M 43 39 L 47 41 L 37 59 L 33 61 L 33 57 Z" fill="#EBC66B" stroke="#80583F" strokeWidth="0.7"/>
-        <SVGPath content="M 33 61 L 34 57 L 37 59 Z" fill="#3C2C25"/>
-        <SVGPath content="M 43 39 L 47 41 L 49 37 L 45 35 Z" fill="#D98D7A"/>
+        <Ellipse centerX="66" centerY="65" radiusX="5" radiusY="8" rotate="-35" fill="#B38459"/>
+        <SVGPath content="M 64 52 L 67 55 L 53 73 L 49 75 L 50 70 Z" fill="#EBC66B" stroke="#80583F" strokeWidth="0.7"/>
+        <SVGPath content="M 49 75 L 50 70 L 53 73 Z" fill="#3C2C25"/>
+        <SVGPath content="M 64 52 L 67 55 L 70 51 L 67 48 Z" fill="#D98D7A"/>
     </Group>
     <Group fx:id="pataRascado" visible="false">
-        <SVGPath content="M 25 68 Q 34 49 46 31 Q 51 26 54 32 Q 52 43 41 56 L 35 70 Z" fill="#B9895E" stroke="#A77550" strokeWidth="1"/>
-        <SVGPath content="M 48 30 L 51 32 M 47 34 L 50 36" stroke="#80583F" strokeWidth="1.2"/>
+        <SVGPath content="M 29 70 Q 15 60 17 47 L 20 31 Q 22 25 26 29 Q 29 33 27 39 L 26 51 Q 27 57 34 63 Z"
+                 fill="#C49868" stroke="#A77750" strokeWidth="0.9"/>
+        <SVGPath content="M 21 31 L 25 32 M 21 35 L 25 36" stroke="#8C6245" strokeWidth="1.1" strokeLineCap="ROUND"/>
     </Group>
     <Group fx:id="pulgas" visible="false">
-        <Ellipse centerX="57" centerY="9" radiusX="1.7" radiusY="2.5" fill="#65452E"/>
-        <Ellipse centerX="67" centerY="5" radiusX="1.4" radiusY="2" fill="#65452E"/>
-        <SVGPath content="M 54 8 L 52 6 M 59 8 L 61 6 M 65 4 L 63 2 M 69 4 L 71 2" stroke="#80583F" strokeWidth="0.8"/>
+        <Ellipse centerX="12" centerY="16" radiusX="1.6" radiusY="2.2" fill="#65452E"/>
+        <Ellipse centerX="20" centerY="10" radiusX="1.3" radiusY="1.8" fill="#65452E"/>
+        <SVGPath content="M 10 15 L 8 13 M 14 15 L 16 13 M 18 9 L 16 7 M 22 9 L 24 7" stroke="#80583F" strokeWidth="0.8"/>
     </Group>
 </Group>

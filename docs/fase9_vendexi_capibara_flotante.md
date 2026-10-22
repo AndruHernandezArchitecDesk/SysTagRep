@@ -126,3 +126,46 @@ motor de animaciones con reloj controlado y 1 de identidad/interacción de la
 escena. Se comprueban lentes, movimiento del lápiz, rascado, tiempos, límites,
 interrupción de movimiento, bloqueo por interacción y suspensión de la ventana.
 También se revisaron visualmente las poses de reposo, escritura, rascado y paseo.
+
+## 7. Cancelación normal de venta cruzada y diagnóstico de errores
+
+Cambiar el producto o documento interrumpe el hilo contextual anterior. Si ocurre
+durante `HttpClient.send`, este puede lanzar `InterruptedException` sin mensaje.
+El manejador genérico anterior lo registraba como
+`Vendexi: venta cruzada IA no disponible: null`, ocultando que era una cancelación
+esperada del formulario.
+
+`VendexiSugerenciaService` ahora:
+
+- Omite trabajo si el hilo ya fue interrumpido y descarta resultados cancelados.
+- Captura `InterruptedException` por separado, restaura la señal de interrupción
+  y devuelve lista vacía sin advertencias. `CancellationException` también se trata
+  como finalización normal; el detalle queda en nivel `FINE`.
+- Conserva las advertencias de fallos reales, indicando el tipo de excepción y
+  su mensaje si existe, además de la causa técnica completa. Ya no concatena `null`.
+- Utiliza el nombre Vetxi en el diagnóstico.
+
+Verificado con:
+`./mvnw -Dtest=VendexiSugerenciaCancelacionTest,VendexiSugerenciaServiceTest,VendexiMascotaTest,FxmlSmokeTest test`
+→ **49 tests, 0 fallos, 0 errores, 0 omitidos**. Las 6 pruebas nuevas reproducen
+cancelaciones antes, durante y después de consultar, recuperación en la siguiente
+consulta y diagnóstico de errores con/sin mensaje, sin claves reales ni red.
+
+## 8. Rediseño frontal
+
+`Capibara.fxml` presenta a Vetxi mirando al usuario en su estado natural:
+rostro simétrico, dos ojos con reflejos, hocico centrado, sonrisa suave,
+orejas y mejillas equilibradas, pelaje con degradados cálidos y la planta
+característica en la parte superior.
+
+Los lentes se alinean sobre ambos ojos; la libreta y el lápiz se sitúan frente
+al cuerpo. La pata de rascado se levanta por el costado izquierdo, conservando
+la lectura de la cara. Se mantienen los identificadores de las piezas y el
+lienzo de 100 × 82 para conservar la integración con el motor de animaciones.
+
+Verificación: revisión visual de reposo, anotación, rascado y paseo;
+`./mvnw -Dtest=VetxiAnimacionesTest,VendexiMascotaTest,FxmlSmokeTest test`
+→ **31 tests, 0 fallos, 0 errores, 0 omitidos**.
+
+Por indicación del usuario, el portable no se actualiza con este rediseño.
+Las futuras regeneraciones del portable requieren que el usuario las solicite.

@@ -218,19 +218,32 @@ public class VendexiSugerenciaService {
      */
     public List<Sugerencia> sugerenciasComplementarias(Inventario agregado, List<Inventario> inventario,
                                                        Set<Integer> idsEnDocumento, String contextoVehiculo) {
+        if (Thread.currentThread().isInterrupted()) return List.of();
         if (agregado == null || !esIaDisponible()) return List.of();
         // Fase 3: gate de capacidad asignada — sin capacidad, no se llama al proveedor.
         if (!consumoService().hayCapacidadDisponible()) return List.of();
         List<Inventario> candidatos = seleccionarCandidatos(agregado, inventario, idsEnDocumento, MAX_CANDIDATOS);
         if (candidatos.isEmpty()) return List.of();
-        String apiKey = GeminiConfig.obtenerApiKey();
+        String apiKey = obtenerApiKey();
         if (apiKey == null || apiKey.isBlank()) return List.of();
         try {
+            if (Thread.currentThread().isInterrupted()) return List.of();
             String prompt = construirPrompt(agregado, candidatos, contextoVehiculo);
             String json = llamarGemini(prompt, apiKey);
+            if (Thread.currentThread().isInterrupted()) return List.of();
             return parsearSugerenciasIA(json, indexarPorCodigo(candidatos));
+        } catch (InterruptedException e) {
+            // Cambiar el documento cancela la consulta HTTP: es un final esperado, no un fallo de IA.
+            Thread.currentThread().interrupt();
+            LOGGER.log(Level.FINE, "Vetxi: consulta de complementos cancelada");
+            return List.of();
+        } catch (java.util.concurrent.CancellationException e) {
+            LOGGER.log(Level.FINE, "Vetxi: consulta de complementos cancelada");
+            return List.of();
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Vendexi: venta cruzada IA no disponible: " + e.getMessage());
+            String detalle = e.getMessage();
+            LOGGER.log(Level.WARNING, "Vetxi: venta cruzada IA no disponible (" + e.getClass().getSimpleName() + ")"
+                    + (detalle == null || detalle.isBlank() ? "" : ": " + detalle), e);
             return List.of();
         }
     }
@@ -284,7 +297,7 @@ public class VendexiSugerenciaService {
                 out.add(new Sugerencia(Tipo.COMPLEMENTARIO, inv.getDescripcion(), motivo, evidencia, inv));
             }
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Vendexi: JSON de sugerencias inválido", e);
+            LOGGER.log(Level.WARNING, "Vetxi: JSON de sugerencias inválido", e);
         }
         return out;
     }
@@ -304,7 +317,11 @@ public class VendexiSugerenciaService {
         return s.replace('"', '\'').replace("\n", " ").trim();
     }
 
-    private String llamarGemini(String prompt, String apiKey) throws Exception {
+    /** Permite probar el proveedor sin leer ni modificar la clave real de la instalación. */
+    protected String obtenerApiKey() { return GeminiConfig.obtenerApiKey(); }
+
+    /** Protected para probar cancelaciones y fallos del proveedor sin red. */
+    protected String llamarGemini(String prompt, String apiKey) throws Exception {
         String url = "https://generativelanguage.googleapis.com/v1beta/models/" + MODELO
                 + ":generateContent?key=" + apiKey;
         com.fasterxml.jackson.databind.node.ObjectNode root = MAPPER.createObjectNode();
