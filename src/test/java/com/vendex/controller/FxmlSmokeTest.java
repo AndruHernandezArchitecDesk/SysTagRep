@@ -211,4 +211,33 @@ class FxmlSmokeTest {
         f4.setAccessible(true);
         assertNotNull(f4.get(controller), "colIngMonto cableada desde FXML");
     }
+
+    @Test
+    @Order(13)
+    void vendexiSugerenciasPane_cargaConRaizFxRoot() throws Exception {
+        // Regresion: el FXML declaraba <BorderPane> pero el constructor usa setRoot(this),
+        // lo que provocaba "Root value already specified" y el panel nunca se montaba.
+        AtomicReference<VendexiSugerenciasPane> pane = new AtomicReference<>();
+        AtomicReference<Throwable> err = new AtomicReference<>();
+        CountDownLatch latch = new CountDownLatch(1);
+        Platform.runLater(() -> {
+            try {
+                pane.set(new VendexiSugerenciasPane());
+            } catch (Throwable t) {
+                err.set(t);
+            } finally {
+                latch.countDown();
+            }
+        });
+        org.junit.jupiter.api.Assertions.assertTrue(latch.await(60, TimeUnit.SECONDS), "timeout creando el panel");
+        if (err.get() != null) {
+            throw new AssertionError("VendexiSugerenciasPane no pudo cargarse", err.get());
+        }
+        VendexiSugerenciasPane p = pane.get();
+        assertNotNull(p, "panel creado");
+        assertNotNull(p.getTop(), "top inyectado desde FXML");
+        java.lang.reflect.Field f = VendexiSugerenciasPane.class.getDeclaredField("sugerenciasBox");
+        f.setAccessible(true);
+        assertNotNull(f.get(p), "sugerenciasBox cableado desde FXML");
+    }
 }

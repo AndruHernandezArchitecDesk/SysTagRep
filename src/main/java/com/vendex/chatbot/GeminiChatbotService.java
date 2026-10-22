@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vendex.config.GeminiConfig;
 
+import java.math.BigDecimal;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -40,13 +41,20 @@ public class GeminiChatbotService {
     }
 
     private final RepuestoDao repuestoDao;
+    private final HerramientasAgente herramientas;
     private final HttpClient httpClient;
     private volatile EstadoIA estado = EstadoIA.SIN_API_KEY;
     private volatile String ultimoError = "";
     private volatile com.vendex.service.VendexiConsumoService consumo;
 
     public GeminiChatbotService(RepuestoDao repuestoDao) {
+        this(repuestoDao, null);
+    }
+
+    /** Agente IA: herramientas de lectura del ERP (null = solo búsqueda de repuestos). */
+    public GeminiChatbotService(RepuestoDao repuestoDao, HerramientasAgente herramientas) {
         this.repuestoDao = repuestoDao;
+        this.herramientas = herramientas;
         this.httpClient = HttpClient.newBuilder().connectTimeout(TIMEOUT).build();
         actualizarEstadoInicial();
     }
@@ -108,6 +116,121 @@ public class GeminiChatbotService {
         public final boolean esSinIA; // true si fallback local
         public RespuestaChat(String texto, EstadoIA estado, boolean esSinIA) {
             this.texto = texto; this.estado = estado; this.esSinIA = esSinIA;
+        }
+    }
+
+    /** Acciones del agente: qué herramienta local ejecutar para la consulta. */
+    public enum Accion {
+        BUSCAR_REPUESTO,     // flujo clásico: síntoma/repuesto -> ILIKE inventario
+        CONSULTAR_PRODUCTO,  // stock/precio/costo/margen de un producto
+        VENTAS_CLIENTE,      // facturas totales de un cliente
+        CUENTAS_COBRAR,      // saldo pendiente de un cliente
+        RENTABILIDAD,        // top margen + top vendidos
+        GENERAL              // charla general, sin herramienta
+    }
+
+    static final class Clasificacion {
+        Accion accion = Accion.BUSCAR_REPUESTO;
+        String descripcion;
+        String marca;
+        String modelo;
+        Integer anio;
+        String motivo;
+        boolean esSintoma;
+        String cliente;
+    }
+
+    /**
+     * Roles IA de la licencia (spec §4) requeridos por cada acción. Lista vacía = sin rol.
+     * Repuestos/stock: acepta VENTAS <b>o</b> INVENTARIO (un vendedor también necesita
+     * consultar disponibilidad); ventas de cliente: VENTAS; saldos/rentabilidad: FINANCIERO.
+     */
+    static java.util.List<String> rolesDeAccion(Accion a) {
+        if (a == null) return java.util.List.of();
+        return switch (a) {
+            case BUSCAR_REPUESTO, CONSULTAR_PRODUCTO -> java.util.List.of(
+                    com.vendex.util.LicenseManager.ROL_VENTAS,
+                    com.vendex.util.LicenseManager.ROL_INVENTARIO);
+            case VENTAS_CLIENTE -> java.util.List.of(com.vendex.util.LicenseManager.ROL_VENTAS);
+            case CUENTAS_COBRAR, RENTABILIDAD -> java.util.List.of(com.vendex.util.LicenseManager.ROL_FINANCIERO);
+            case GENERAL -> java.util.List.of();
+        };
+    }
+
+    /** true si la licencia permite al menos uno de los roles requeridos (lista vacía = permitido). */
+    protected boolean rolesPermitidos(java.util.List<String> roles) {
+        if (roles == null || roles.isEmpty()) return true;
+        for (String r : roles) if (rolPermitido(r)) return true;
+        return false;
+    }
+
+    /**
+     * true si la licencia permite usar el rol dado. Por defecto consulta la licencia
+     * almacenada (v1 / sin IA / sin roles = permitido). Protected para tests.
+     */
+    protected boolean rolPermitido(String rol) {
+        return com.vendex.util.LicenseManager.licenciaPermiteRolIA(rol);
+    }
+
+    private String mensajeRolNoIncluido(Accion a, java.util.List<String> roles) {
+        String para = switch (a) {
+            case VENTAS_CLIENTE -> "consultas de ventas de clientes";
+            case CUENTAS_COBRAR -> "saldos por cobrar";
+            case RENTABILIDAD -> "ranking de rentabilidad";
+            case CONSULTAR_PRODUCTO -> "stock y precios de repuestos";
+            default -> "búsqueda de repuestos";
+        };
+        return "🔒 Tu licencia no incluye los roles IA [" + String.join(", ", roles) +
+               "] requeridos para " + para +
+               ".\nPídele al administrador que habilite uno de ellos en la licencia.";
+    }
+
+    /**
+     * Parsea la respuesta JSON del clasificador. Devuelve null si el JSON es inutilizable
+     * (el llamador degrada al flujo clásico de búsqueda de repuestos).
+     * Si falta "accion", asume BUSCAR_REPUESTO (compatibilidad con prompts/gemini cacheados).
+     */
+    static Clasificacion parsearClasificacion(String json) {
+        if (json == null || json.isBlank()) return null;
+        try {
+            JsonNode node = MAPPER.readTree(json);
+            Clasificacion c = new Clasificacion();
+            if (node.has("accion") && !node.get("accion").isNull()) {
+                String a = node.get("accion").asText().trim().toUpperCase(java.util.Locale.ROOT);
+                try {
+                    c.accion = Accion.valueOf(a);
+                } catch (IllegalArgumentException ignorada) {
+                    c.accion = Accion.BUSCAR_REPUESTO;
+                }
+            }
+            if (node.has("descripcion") && !node.get("descripcion").isNull()) {
+                String d = node.get("descripcion").asText().trim();
+                if (!d.isBlank() && !"null".equalsIgnoreCase(d)) c.descripcion = d;
+            }
+            if (node.has("marca") && !node.get("marca").isNull()) {
+                String v = node.get("marca").asText().trim();
+                if (!v.isBlank() && !"null".equalsIgnoreCase(v)) c.marca = v;
+            }
+            if (node.has("modelo") && !node.get("modelo").isNull()) {
+                String v = node.get("modelo").asText().trim();
+                if (!v.isBlank() && !"null".equalsIgnoreCase(v)) c.modelo = v;
+            }
+            if (node.has("anio") && !node.get("anio").isNull() && node.get("anio").isNumber()) {
+                c.anio = node.get("anio").asInt();
+            }
+            if (node.has("motivo") && !node.get("motivo").isNull()) {
+                String m = node.get("motivo").asText().trim();
+                if (!m.isBlank() && !"null".equalsIgnoreCase(m)) c.motivo = m;
+            }
+            if (node.has("esSintoma") && node.get("esSintoma").isBoolean()) c.esSintoma = node.get("esSintoma").asBoolean();
+            if (node.has("cliente") && !node.get("cliente").isNull()) {
+                String cl = node.get("cliente").asText().trim();
+                if (!cl.isBlank() && !"null".equalsIgnoreCase(cl)) c.cliente = cl;
+            }
+            return c;
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "No se pudo parsear JSON del clasificador: " + json, e);
+            return null;
         }
     }
 
@@ -199,85 +322,36 @@ public class GeminiChatbotService {
         return formatearRespuesta(r, texto);
     }
 
-    private String preguntarConGemini(String texto, String apiKey, String vehMarca, String vehModelo, Integer vehAnio) throws Exception {
-        // Prompt único: extracción + sugerencia por síntoma
-        String prompt = """
-                Eres asesor experto de repuestos automotrices para ERP Vendex.
-                Inventario: cada repuesto tiene descripcion con compatibilidad embedida ej: "TAPA RADIADOR CHEV AVEO/EMOTION/SPART", "FILTRO ACEITE TOYOTA HILUX".
-                Tarea: del mensaje del usuario extrae/sugiere el repuesto a buscar.
-                - Si menciona repuesto directo ("tapa radiador aveo") -> descripcion = ese repuesto.
-                - Si menciona síntoma ("ruido al frenar", "vibra al frenar", "no enciende") -> sugiere el repuesto más probable (pastilla freno, disco, batería, etc) y explica breve motivo.
-                - Extrae marca/modelo/anio si aparecen.
-                Responde SOLO JSON válido sin markdown:
-                {"descripcion":"pastilla freno","marca":"CHEV","modelo":"AVEO","anio":null,"motivo":"Ruido al frenar suele indicar desgaste de pastillas","esSintoma":true}
-                Si es repuesto directo, motivo=null y esSintoma=false.
-                Mensaje usuario: "%s"
-                Ejemplo síntoma: {"descripcion":"pastilla freno","marca":null,"modelo":null,"anio":null,"motivo":"Ruido metálico al frenar indica pastillas desgastadas","esSintoma":true}
-                Ejemplo directo: {"descripcion":"tapa radiador","marca":"CHEV","modelo":"AVEO","anio":2015,"motivo":null,"esSintoma":false}
-                """.formatted(texto.replace("\"", "'").replace("\n", " "));
+    String preguntarConGemini(String texto, String apiKey, String vehMarca, String vehModelo, Integer vehAnio) throws Exception {
+        // Paso 1: clasificar la intención + extraer parámetros (un solo JSON)
+        String json = llamarGemini(promptClasificacion(texto), apiKey);
 
-        String jsonExtraido = llamarGemini(prompt, apiKey);
-        String descripcion = texto;
-        String marca = null;
-        String modelo = null;
-        Integer anio = null;
-        String motivo = null;
-        boolean esSintoma = false;
-
-        try {
-            JsonNode node = MAPPER.readTree(jsonExtraido);
-            if (node.has("descripcion") && !node.get("descripcion").isNull()) {
-                String d = node.get("descripcion").asText().trim();
-                if (!d.isBlank() && !"null".equalsIgnoreCase(d)) descripcion = d;
-            }
-            if (node.has("marca") && !node.get("marca").isNull()) {
-                String v = node.get("marca").asText().trim();
-                if (!v.isBlank() && !"null".equalsIgnoreCase(v)) marca = v;
-            }
-            if (node.has("modelo") && !node.get("modelo").isNull()) {
-                String v = node.get("modelo").asText().trim();
-                if (!v.isBlank() && !"null".equalsIgnoreCase(v)) modelo = v;
-            }
-            if (node.has("anio") && !node.get("anio").isNull() && node.get("anio").isNumber()) anio = node.get("anio").asInt();
-            if (node.has("motivo") && !node.get("motivo").isNull()) {
-                String m = node.get("motivo").asText().trim();
-                if (!m.isBlank() && !"null".equalsIgnoreCase(m)) motivo = m;
-            }
-            if (node.has("esSintoma") && node.get("esSintoma").isBoolean()) esSintoma = node.get("esSintoma").asBoolean();
-        } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "No se pudo parsear JSON Gemini, usando texto bruto: " + jsonExtraido, e);
+        Clasificacion c = parsearClasificacion(json);
+        if (c == null) {
+            // JSON inutilizable: degradar al flujo clásico de búsqueda de repuestos
+            c = new Clasificacion();
+            c.descripcion = texto;
+        } else if (c.descripcion == null || c.descripcion.isBlank()) {
+            c.descripcion = texto;
         }
-
-        String descripcionBusqueda = descripcion;
         // Filtros explícitos de la UI tienen prioridad sobre lo extraído por Gemini
-        if (vehMarca != null && !vehMarca.isBlank()) marca = vehMarca;
-        if (vehModelo != null && !vehModelo.isBlank()) modelo = vehModelo;
-        if (vehAnio != null) anio = vehAnio;
-        if (marca != null) descripcionBusqueda += " " + marca;
-        if (modelo != null) descripcionBusqueda += " " + modelo;
-        if (anio != null) descripcionBusqueda += " " + anio;
+        if (vehMarca != null && !vehMarca.isBlank()) c.marca = vehMarca;
+        if (vehModelo != null && !vehModelo.isBlank()) c.modelo = vehModelo;
+        if (vehAnio != null) c.anio = vehAnio;
 
-        ResultadoBusqueda r = repuestoDao.buscar(descripcionBusqueda, marca, modelo, anio);
-        if (!r.isEncontrado() && !descripcionBusqueda.equals(descripcion)) r = repuestoDao.buscar(descripcion, marca, modelo, anio);
-        if (!r.isEncontrado() && !descripcion.equals(texto)) r = repuestoDao.buscar(texto, null, null, null);
+        // Rol IA de la licencia (§4): sin rol, no se ejecuta herramienta ni se gasta redacción
+        java.util.List<String> roles = rolesDeAccion(c.accion);
+        boolean rolOk = rolesPermitidos(roles);
 
-        String respuestaLocal = formatearRespuesta(r, descripcionBusqueda);
-
-        // Si es síntoma, anteponer motivo IA
-        if (esSintoma && motivo != null) {
-            respuestaLocal = "💡 Sugerencia IA: " + motivo + " → buscando \"" + descripcion + "\"\n" + respuestaLocal;
+        // Paso 2: ejecutar la herramienta local correspondiente (datos reales del ERP)
+        String respuestaLocal = ejecutarLocal(c, texto);
+        if (!rolOk) {
+            return respuestaLocal; // mensaje de rol no incluido, sin llamada de redacción
         }
 
-        // Redacción final breve con IA (best-effort, no invalida extracción)
+        // Paso 3: redacción breve con IA (best-effort, no invalida los datos locales)
         try {
-            String promptRespuesta = """
-                    Eres asistente Vendex. Responde breve en español (máx 3 líneas).
-                    Consulta: "%s"
-                    Sugerencia IA: %s
-                    Resultado inventario: %s
-                    Si hay stock indica código, nombre, stock y precio. Si no hay, di que no hay stock pero mantén la sugerencia.
-                    No inventes stock/precios.
-                    """.formatted(texto.replace("\"", "'"), motivo != null ? motivo : "repuesto directo", respuestaLocal.replace("\"", "'"));
+            String promptRespuesta = promptRedaccion(c, texto, respuestaLocal);
             String redaccion = llamarGemini(promptRespuesta, apiKey);
             if (redaccion != null && !redaccion.isBlank() && redaccion.length() < 700) {
                 return redaccion.trim();
@@ -287,16 +361,214 @@ public class GeminiChatbotService {
         } catch (Exception e) {
             LOGGER.log(Level.FINE, "Fallo redacción Gemini", e);
         }
+        if (respuestaLocal.isBlank()) {
+            // GENERAL sin redacción posible: ofrecer las capacidades reales del agente
+            return "Puedo ayudarte con repuestos y síntomas, stock y precios, ventas de un cliente, " +
+                   "saldos por cobrar y rentabilidad. Escribe tu consulta.";
+        }
         return respuestaLocal;
     }
+
+    private String promptClasificacion(String texto) {
+        return """
+                Eres clasificador de consultas para el ERP Vendex (asistente de repuestos automotrices).
+                Inventario: descripcion con compatibilidad embedida ej: "TAPA RADIADOR CHEV AVEO/EMOTION/SPART".
+                Clasifica el mensaje del usuario en UNA accion:
+                - "BUSCAR_REPUESTO": busca/describe un repuesto o menciona un sintoma (ruido al frenar, no enciende...)
+                - "CONSULTAR_PRODUCTO": pide stock, precio, costo, existencia o margen de un producto especifico
+                - "VENTAS_CLIENTE": pide ventas, compras, totales o facturas de un cliente
+                - "CUENTAS_COBRAR": pide saldo, cuanto debe, adelanto o creditos de un cliente
+                - "RENTABILIDAD": pide productos mas rentables, margenes, mas vendidos o ranking
+                - "GENERAL": saludos o preguntas generales ajenas a lo anterior
+                Extrae ademas: descripcion (repuesto a buscar), cliente (nombre o ruc si aparece),
+                marca, modelo, anio, motivo (si es sintoma), esSintoma.
+                Responde SOLO JSON valido sin markdown:
+                {"accion":"BUSCAR_REPUESTO","descripcion":"pastilla freno","cliente":null,"marca":"CHEV","modelo":"AVEO","anio":null,"motivo":null,"esSintoma":false}
+                Ejemplo venta cliente: {"accion":"VENTAS_CLIENTE","descripcion":null,"cliente":"Juan Perez",...}
+                Ejemplo stock: {"accion":"CONSULTAR_PRODUCTO","descripcion":"tapa radiador",...}
+                Ejemplo sintoma: {"accion":"BUSCAR_REPUESTO","descripcion":"pastilla freno","motivo":"Ruido al frenar suele indicar desgaste","esSintoma":true,...}
+                Mensaje usuario: "%s"
+                """.formatted(texto.replace("\"", "'").replace("\n", " "));
+    }
+
+    /** Personalidad del rol IA contextual según la acción clasificada (§4). */
+    String rolContextual(Accion a) {
+        if (a == null) a = Accion.GENERAL;
+        return switch (a) {
+            case VENTAS_CLIENTE -> "Actúas como asesor comercial de Vendex (rol VENTAS): céntrate en la relación con el cliente, facturas y montos.";
+            case CUENTAS_COBRAR, RENTABILIDAD -> "Actúas como analista financiero de Vendex (rol FINANCIERO): céntrate en cifras, saldos y márgenes, con tono preciso.";
+            case CONSULTAR_PRODUCTO, BUSCAR_REPUESTO -> "Actúas como especialista en inventario de repuestos (rol INVENTARIO): céntrate en disponibilidad, compatibilidad y precios.";
+            default -> "Actúas como asistente general de Vendex: sé amable y breve.";
+        };
+    }
+
+    String promptRedaccion(Clasificacion c, String texto, String datosLocales) {
+        String regla = switch (c.accion) {
+            case VENTAS_CLIENTE, CUENTAS_COBRAR, RENTABILIDAD, CONSULTAR_PRODUCTO ->
+                    "Si hay datos, resume los montos/stock relevantes. Si no hay, di que no se encontraron. No inventes montos, stock ni precios.";
+            case GENERAL -> "Responde amable y breve en español (max 3 lineas). Puedes ofrecer ayudar con repuestos, stock, ventas, saldos y rentabilidad.";
+            default -> "Si hay stock indica código, nombre, stock y precio. Si no hay, di que no hay stock pero mantén la sugerencia. No inventes stock/precios.";
+        };
+        String motivo = c.motivo != null ? c.motivo : (c.esSintoma ? "sintoma" : "consulta directa");
+        return """
+                Eres asistente Vendex. %s Responde breve en español (max 3 lineas).
+                Consulta: "%s"
+                Motivo/sugerencia IA: %s
+                Datos reales del ERP: %s
+                %s
+                """.formatted(rolContextual(c.accion), texto.replace("\"", "'"), motivo,
+                (datosLocales != null ? datosLocales : "").replace("\"", "'"), regla);
+    }
+
+    /**
+     * Ejecuta la herramienta local de la acción clasificada y formatea la respuesta con
+     * datos reales (no inventados). Package-private para tests sin red.
+     */
+    String ejecutarLocal(Clasificacion c, String texto) {
+        java.util.List<String> roles = rolesDeAccion(c.accion);
+        if (!rolesPermitidos(roles)) {
+            return mensajeRolNoIncluido(c.accion, roles);
+        }
+        try {
+            return switch (c.accion) {
+                case CONSULTAR_PRODUCTO -> herramientas != null
+                        ? formatearProductos(herramientas.productos(c.descripcion, 5), c.descripcion)
+                        : buscarRepuesto(c, texto);
+                case VENTAS_CLIENTE -> herramientas != null
+                        ? formatearVentas(c)
+                        : buscarRepuesto(c, texto);
+                case CUENTAS_COBRAR -> herramientas != null
+                        ? formatearSaldo(c)
+                        : buscarRepuesto(c, texto);
+                case RENTABILIDAD -> herramientas != null
+                        ? formatearRentabilidad()
+                        : buscarRepuesto(c, texto);
+                case GENERAL -> ""; // lo redacta la IA; si falla se ofrece ayuda general
+                default -> buscarRepuesto(c, texto);
+            };
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Herramienta local falló (" + c.accion + ")", e);
+            return buscarRepuesto(c, texto);
+        }
+    }
+
+    /** Flujo clásico (y fallback): búsqueda de repuestos con cadena de reintentos. */
+    private String buscarRepuesto(Clasificacion c, String texto) {
+        String descripcion = c.descripcion != null && !c.descripcion.isBlank() ? c.descripcion : texto;
+        String descripcionBusqueda = descripcion;
+        if (c.marca != null) descripcionBusqueda += " " + c.marca;
+        if (c.modelo != null) descripcionBusqueda += " " + c.modelo;
+        if (c.anio != null) descripcionBusqueda += " " + c.anio;
+
+        ResultadoBusqueda r = repuestoDao.buscar(descripcionBusqueda.trim(), c.marca, c.modelo, c.anio);
+        if (!r.isEncontrado() && !descripcionBusqueda.equals(descripcion)) r = repuestoDao.buscar(descripcion.trim(), c.marca, c.modelo, c.anio);
+        if (!r.isEncontrado() && !descripcion.equals(texto)) r = repuestoDao.buscar(texto.trim(), null, null, null);
+
+        String respuestaLocal = formatearRespuesta(r, descripcionBusqueda);
+        if (c.esSintoma && c.motivo != null) {
+            respuestaLocal = "💡 Sugerencia IA: " + c.motivo + " → buscando \"" + descripcion + "\"\n" + respuestaLocal;
+        }
+        return respuestaLocal;
+    }
+
+    private String formatearProductos(java.util.List<HerramientasAgente.Producto> ps, String criterio) {
+        if (ps == null || ps.isEmpty()) {
+            return "No encontré productos para \"" + (criterio != null ? criterio.trim() : "") + "\" en inventario. Prueba con código o descripción más simple.";
+        }
+        StringBuilder sb = new StringBuilder("Productos encontrados:\n");
+        for (HerramientasAgente.Producto p : ps) {
+            sb.append("• ").append(p.codigo() != null ? p.codigo() : "sin código")
+              .append(" - ").append(p.descripcion())
+              .append(" | stock: ").append(p.stock())
+              .append(" | precio: ").append(p.precioVenta() != null ? String.format(java.util.Locale.US,"$%.2f", p.precioVenta()) : "n/d");
+            if (p.margenPct() >= 0) sb.append(" | margen: ").append(String.format(java.util.Locale.US,"%.1f%%", p.margenPct()));
+            sb.append('\n');
+        }
+        return sb.toString().trim();
+    }
+
+    private String formatearVentas(Clasificacion c) {
+        HerramientasAgente.Cliente cli = resolverClienteUnico(c);
+        if (cli == null) return ultimoMensajeCliente;
+        HerramientasAgente.Ventas v = herramientas.ventas(cli.id());
+        if (v == null || v.facturas() == 0) {
+            return "El cliente \"" + cli.nombre() + "\" no tiene facturas registradas.";
+        }
+        return String.format(java.util.Locale.US,"%s (CI/RUC %s): %d factura(s) | total $%.2f | última compra: %s",
+                cli.nombre(), cli.identificacion() != null ? cli.identificacion() : "-",
+                v.facturas(), v.total(), v.ultimaFecha() != null ? v.ultimaFecha() : "s/f");
+    }
+
+    private String formatearSaldo(Clasificacion c) {
+        HerramientasAgente.Cliente cli = resolverClienteUnico(c);
+        if (cli == null) return ultimoMensajeCliente;
+        BigDecimal saldo = herramientas.saldo(cli.id());
+        if (saldo == null) return "No pude calcular el saldo de \"" + cli.nombre() + "\".";
+        if (saldo.signum() <= 0) return cli.nombre() + ": sin saldo pendiente (al día).";
+        return String.format(java.util.Locale.US,"%s (CI/RUC %s): debe $%.2f (cuentas por cobrar pendientes)",
+                cli.nombre(), cli.identificacion() != null ? cli.identificacion() : "-", saldo);
+    }
+
+    private String formatearRentabilidad() {
+        StringBuilder sb = new StringBuilder();
+        java.util.List<HerramientasAgente.Top> topM = herramientas.mejorMargen(5);
+        if (!topM.isEmpty()) {
+            sb.append("Mejor margen ((precio-costo)/precio):\n");
+            for (HerramientasAgente.Top t : topM) {
+                sb.append("• ").append(t.codigo()).append(" - ").append(t.descripcion())
+                  .append(" | margen: ").append(String.format(java.util.Locale.US,"%.1f%%", t.margenPct()))
+                  .append(" | precio: ").append(String.format(java.util.Locale.US,"$%.2f", t.monto())).append('\n');
+            }
+        }
+        java.util.List<HerramientasAgente.Top> topV = herramientas.masVendidos(5);
+        if (!topV.isEmpty()) {
+            sb.append("Más vendidos (por monto facturado):\n");
+            for (HerramientasAgente.Top t : topV) {
+                sb.append("• ").append(t.codigo()).append(" - ").append(t.descripcion())
+                  .append(" | ").append(t.cantidad()).append(" uds")
+                  .append(" | $").append(String.format(java.util.Locale.US,"%.2f", t.monto())).append('\n');
+            }
+        }
+        return sb.isEmpty() ? "Aún no hay datos suficientes de ventas o costos para calcular rentabilidad."
+                            : sb.toString().trim();
+    }
+
+    /** Resuelve el cliente único para las acciones de cliente; null si hay 0 o varios (mensaje en ultimoMensajeCliente). */
+    private HerramientasAgente.Cliente resolverClienteUnico(Clasificacion c) {
+        ultimoMensajeCliente = "";
+        String criterio = c.cliente != null && !c.cliente.isBlank() ? c.cliente
+                : (c.descripcion != null && !c.descripcion.isBlank() ? c.descripcion : "");
+        if (criterio.isBlank()) {
+            ultimoMensajeCliente = "¿De qué cliente hablas? Menciona su nombre o RUC.";
+            return null;
+        }
+        java.util.List<HerramientasAgente.Cliente> cands = herramientas.clientes(criterio, 5);
+        if (cands.isEmpty()) {
+            ultimoMensajeCliente = "No encontré al cliente \"" + criterio + "\" en el ERP.";
+            return null;
+        }
+        if (cands.size() > 1) {
+            StringBuilder sb = new StringBuilder("Encontré " + cands.size() + " clientes, ¿a cuál te refieres?\n");
+            for (HerramientasAgente.Cliente cl : cands) {
+                sb.append("• ").append(cl.nombre())
+                  .append(cl.identificacion() != null ? " (CI/RUC " + cl.identificacion() + ")" : "").append('\n');
+            }
+            ultimoMensajeCliente = sb.toString().trim();
+            return null;
+        }
+        return cands.get(0);
+    }
+
+    /** Mensaje del último resolverClienteUnico cuando no hubo match único. */
+    private String ultimoMensajeCliente = "";
 
     private String formatearRespuesta(ResultadoBusqueda r, String consulta) {
         if (r == null || !r.isEncontrado()) {
             return "No encontré repuestos para \"" + consulta.trim() + "\" en inventario. Prueba con código o descripción más simple ej: 'filtro aceite'.";
         }
-        String precioStr = r.getPrecio() != null ? String.format("$%.2f", r.getPrecio()) : "precio no registrado";
+        String precioStr = r.getPrecio() != null ? String.format(java.util.Locale.US,"$%.2f", r.getPrecio()) : "precio no registrado";
         String stockStr = r.getStock() > 0 ? r.getStock() + " unidades" : "sin stock";
-        return String.format("Encontrado: %s - %s | Stock: %s | Precio: %s",
+        return String.format(java.util.Locale.US,"Encontrado: %s - %s | Stock: %s | Precio: %s",
                 r.getCodigo() != null ? r.getCodigo() : "sin código", r.getNombre(), stockStr, precioStr);
     }
 
@@ -314,7 +586,8 @@ public class GeminiChatbotService {
         }
     }
 
-    private String llamarGemini(String prompt, String apiKey) throws Exception {
+    /** Protected para tests con proveedor IA falso (sin red). */
+    protected String llamarGemini(String prompt, String apiKey) throws Exception {
         try {
             return llamarGeminiConModelo(prompt, apiKey, GEMINI_MODEL_PRIMARY);
         } catch (GeminiException e) {

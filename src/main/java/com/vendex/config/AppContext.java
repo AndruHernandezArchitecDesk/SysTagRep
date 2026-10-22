@@ -83,6 +83,8 @@ public class AppContext {
     public final UbicacionPerchaDAO ubicacionPerchaDAO;
     public final CodigoDAO codigoDAO;
     public final RepuestoChatbotDAO repuestoChatbotDAO;
+    /** Agente IA: herramientas de lectura del ERP para el chatbot (null en modo remoto). */
+    public final com.vendex.chatbot.HerramientasAgente herramientasAgente;
     public final AlertaDAO alertaDAO;
     public final LoginIntentoLogDAO loginIntentoLogDAO;
     public final DashboardDAO dashboardDAO;
@@ -163,6 +165,7 @@ public class AppContext {
         this.ubicacionPerchaDAO = dao(() -> new UbicacionPerchaDAOPostgres(), () -> new UbicacionPerchaDAORest(restClient));
         this.codigoDAO = dao(() -> new CodigoDAOPostgres(), () -> new CodigoDAORest(restClient));
         this.repuestoChatbotDAO = dao(() -> new RepuestoChatbotDAOPostgres(), () -> new RepuestoChatbotDAORest(restClient));
+        this.herramientasAgente = dao(() -> new com.vendex.dao.HerramientasAgenteDAOPostgres(), () -> null);
         this.alertaDAO = dao(() -> new AlertaDAOPostgres(), () -> new AlertaDAORest(restClient));
         this.secuenciaBloqueDAO = dao(() -> new SecuenciaBloqueDAOPostgres(), () -> new SecuenciaBloqueDAORest(restClient));
         this.loginIntentoLogDAO = dao(() -> new LoginIntentoLogDAOPostgres(), () -> new LoginIntentoLogDAORest(restClient));

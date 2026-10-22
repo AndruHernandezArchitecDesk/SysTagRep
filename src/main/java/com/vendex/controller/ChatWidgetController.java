@@ -27,7 +27,7 @@ public class ChatWidgetController {
     }
 
     public ChatWidgetController(com.vendex.config.AppContext ctx) {
-        this.chatbotService = new com.vendex.chatbot.GeminiChatbotService(ctx.repuestoChatbotDAO);
+        this.chatbotService = new com.vendex.chatbot.GeminiChatbotService(ctx.repuestoChatbotDAO, ctx.herramientasAgente);
         this.vehiculoDAO = ctx.vehiculoDAO;
         this.repuestoChatbotDAO = ctx.repuestoChatbotDAO;
         this.investigacionService = new com.vendex.service.InvestigacionWebService(ctx.vendexiConsumoService);
@@ -143,7 +143,12 @@ public class ChatWidgetController {
             finalizarSesionVendexi();
         }
         if (mostrar && mensajesBox.getChildren().isEmpty()) {
-            agregarMensaje("¡Hola! Pregúntame por cualquier repuesto y verifico stock.\nEj: \"tapa radiador CHEV AVEO\"\nSíntoma: \"ruido al frenar\" → te sugiero repuesto\nUsa los filtros Marca/Modelo/Año para buscar por compatibilidad de vehículo.", false, false);
+            agregarMensaje("¡Hola! Soy Vendexi, tu asistente de repuestos y negocio.\n"
+                    + "• Repuestos: \"tapa radiador CHEV AVEO\" o síntoma \"ruido al frenar\"\n"
+                    + "• Stock/precio: \"¿cuánto stock tiene el filtro aceite?\"\n"
+                    + "• Clientes: \"¿cuánto me compró Juan?\" / \"¿cuánto me debe Juan?\"\n"
+                    + "• Negocio: \"¿cuáles son mis productos más rentables?\"\n"
+                    + "Filtros Marca/Modelo/Año afinan la búsqueda por vehículo.", false, false);
             inputField.requestFocus();
         } else if (mostrar) {
             inputField.requestFocus();
