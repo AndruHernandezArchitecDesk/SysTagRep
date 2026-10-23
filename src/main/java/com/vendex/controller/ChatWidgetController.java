@@ -96,7 +96,7 @@ public class ChatWidgetController {
     private Thread consultaComplementarios;
     private final javafx.animation.PauseTransition esperaComplementarios = new javafx.animation.PauseTransition(Duration.millis(650));
     private final javafx.animation.PauseTransition ocultarBurbuja = new javafx.animation.PauseTransition(Duration.seconds(12));
-    private VetxiAnimaciones animaciones;
+    private MascotaAnimaciones animaciones;
     private boolean arrastrando;
     private double inicioMouseX, inicioMouseY, inicioMascotaX, inicioMascotaY;
     private double posicionX, posicionY;
@@ -194,13 +194,44 @@ public class ChatWidgetController {
     private String filtroModelo() { return cmbModelo != null ? valorSeleccionado(cmbModelo.getValue()) : null; }
     private Integer filtroAnio() { return cmbAnio != null ? cmbAnio.getValue() : null; }
 
+    void cambiarMascota(String tipo) {
+        boolean robot = !"capibara".equals(tipo);
+        final javafx.scene.Group dibujo;
+        try {
+            dibujo = javafx.fxml.FXMLLoader.load(getClass().getResource(robot ? "/view/RobotVendexi.fxml" : "/view/Capibara.fxml"));
+        } catch (java.io.IOException e) {
+            throw new IllegalStateException("No se pudo cargar la mascota", e);
+        }
+        java.util.function.BooleanSupplier libre = () -> !arrastrando && !bubbleButton.isHover()
+                && !chatPanel.isVisible() && !sugerenciaBubble.isVisible()
+                && pendientes.isEmpty() && !inputField.isDisabled();
+        MascotaAnimaciones nuevo = robot ? new VendexiAnimaciones(dibujo, libre, mascota, rootStack, this::moverMascota)
+                : new VetxiAnimaciones(dibujo, mascota, rootStack, libre, this::moverMascota);
+        if (animaciones != null) animaciones.setActivo(false);
+        capibara = dibujo;
+        bubbleButton.setGraphic(dibujo);
+        bubbleButton.setAccessibleText("Vetxi, asistente. Arrastra para mover; pulsa para abrir. Menú contextual para cambiar mascota.");
+        animaciones = nuevo;
+        String modulo = documentoActivo == null ? "" : documentoActivo.contextoVendexi().modulo;
+        animaciones.setTrabajando("factura".equals(modulo) || "proforma".equals(modulo));
+        preferencias.put("mascota", robot ? "vendexi" : "capibara");
+        actualizarReposo();
+    }
+
     private void configurarMascota() {
         posicionX = limitar(preferencias.getDouble("x", 0.97), 0, 1);
         posicionY = limitar(preferencias.getDouble("y", 0.90), 0, 1);
-        animaciones = new VetxiAnimaciones(capibara, mascota, rootStack,
-                () -> !arrastrando && !bubbleButton.isHover() && !chatPanel.isVisible()
-                        && !sugerenciaBubble.isVisible() && pendientes.isEmpty() && !inputField.isDisabled(),
-                this::moverMascota);
+        cambiarMascota(preferencias.get("mascota", "vendexi"));
+        var grupo = new javafx.scene.control.ToggleGroup();
+        var menu = new javafx.scene.control.ContextMenu();
+        for (String tipo : new String[]{"vendexi", "capibara"}) {
+            var item = new javafx.scene.control.RadioMenuItem(tipo.equals("vendexi") ? "Vendexi (robot)" : "Vetxi (capibara)");
+            item.setToggleGroup(grupo);
+            item.setSelected(tipo.equals(preferencias.get("mascota", "vendexi")));
+            item.setOnAction(e -> cambiarMascota(tipo));
+            menu.getItems().add(item);
+        }
+        bubbleButton.setContextMenu(menu);
         bubbleButton.addEventFilter(javafx.scene.input.MouseEvent.MOUSE_PRESSED, e -> {
             if (!e.isPrimaryButtonDown()) return;
             arrastrando = false;
@@ -509,7 +540,7 @@ public class ChatWidgetController {
     }
 
     private void saludar() {
-        agregarMensaje("¡Hola! Soy Vetxi, tu capibara de repuestos y negocio.\n"
+        agregarMensaje("¡Hola! Soy Vetxi, el agente de Vendex. Estoy aquí para ayudarte con tu negocio.\n"
                     + "• Repuestos: \"tapa radiador CHEV AVEO\" o síntoma \"ruido al frenar\"\n"
                     + "• Stock/precio: \"¿cuánto stock tiene el filtro aceite?\"\n"
                     + "• Clientes: \"¿cuánto me compró Juan?\" / \"¿cuánto me debe Juan?\"\n"

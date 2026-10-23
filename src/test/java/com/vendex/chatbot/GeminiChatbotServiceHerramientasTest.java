@@ -544,6 +544,9 @@ class GeminiChatbotServiceHerramientasTest {
         GeminiChatbotService.Clasificacion inv = clasif("{\"accion\":\"CONSULTAR_PRODUCTO\",\"descripcion\":\"f\"}");
         assertTrue(s.promptRedaccion(inv, "stock", "x").contains("especialista en inventario de repuestos (rol INVENTARIO)"));
         GeminiChatbotService.Clasificacion gen = clasif("{\"accion\":\"GENERAL\"}");
-        assertTrue(s.promptRedaccion(gen, "hola", "").contains("asistente general"));
+        String prompt = s.promptRedaccion(gen, "hola", "");
+        assertTrue(prompt.contains("Eres Vetxi, el agente de Vendex"));
+        assertFalse(prompt.contains("capibara"));
+        assertTrue(prompt.contains("asistente general"));
     }
 }

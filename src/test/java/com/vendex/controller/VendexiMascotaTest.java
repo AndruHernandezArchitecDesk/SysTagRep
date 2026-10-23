@@ -26,6 +26,42 @@ import java.util.function.Consumer;
 import static org.junit.jupiter.api.Assertions.*;
 
 class VendexiMascotaTest {
+    private String mascotaAnterior;
+    @org.junit.jupiter.api.BeforeEach void guardarPreferenciaMascota() {
+        mascotaAnterior = java.util.prefs.Preferences.userRoot().node("/com/tag/vendex/asistente").get("mascota", null);
+    }
+    @org.junit.jupiter.api.AfterEach void restaurarPreferenciaMascota() {
+        var prefs = java.util.prefs.Preferences.userRoot().node("/com/tag/vendex/asistente");
+        if (mascotaAnterior == null) prefs.remove("mascota"); else prefs.put("mascota", mascotaAnterior);
+    }
+
+    @Test void cambiarMascota_conservaDocumentoYDetieneMotorAnterior() throws Exception {
+        fx(() -> {
+            var c = cargar(sinIa());
+            c.setDocumentoActivo(new Documento());
+            var anterior = (MascotaAnimaciones) campo(c, "animaciones");
+            anterior.setActivo(true);
+            c.cambiarMascota("vendexi");
+            var robot = (Parent) campo(c, "capibara");
+            assertTrue(robot.lookup("#holograma").isVisible());
+            assertTrue(robot.lookup("#escaneo").isVisible());
+            var motor = (VendexiAnimaciones) campo(c, "animaciones");
+            motor.setActivo(true);
+            motor.avisar();
+            var f = VendexiAnimaciones.class.getDeclaredField("saludo"); f.setAccessible(true);
+            var saludo = (javafx.animation.Animation) f.get(motor);
+            saludo.jumpTo(javafx.util.Duration.millis(250));
+            var brazo = (javafx.scene.transform.Rotate) robot.lookup("#brazoSaludo").getTransforms().get(0);
+            assertTrue(Math.abs(brazo.getAngle()) > 1);
+            motor.registrarActividad();
+            assertEquals(0, brazo.getAngle());
+            c.cambiarMascota("capibara");
+            assertEquals(javafx.animation.Animation.Status.STOPPED, saludo.getStatus());
+            assertTrue(((Parent) campo(c, "capibara")).lookup("#libreta").isVisible());
+            assertEquals("capibara", ((java.util.prefs.Preferences) campo(c, "preferencias")).get("mascota", ""));
+            c.setDocumentoActivo(null);
+        });
+    }
     @BeforeAll
     static void iniciarFx() {
         try { Platform.startup(() -> {}); } catch (IllegalStateException ignored) {}
@@ -79,7 +115,9 @@ class VendexiMascotaTest {
         raiz.applyCss();
         ((Region) raiz).resize(900, 650);
         raiz.layout();
-        return loader.getController();
+        ChatWidgetController controlador = loader.getController();
+        controlador.cambiarMascota("capibara");
+        return controlador;
     }
 
     private VendexiSugerenciaService sinIa() {
@@ -238,6 +276,7 @@ class VendexiMascotaTest {
                 var campoAsistente = MainController.class.getDeclaredField("asistenteController");
                 campoAsistente.setAccessible(true);
                 var c = (ChatWidgetController) campoAsistente.get(main);
+                c.cambiarMascota("capibara");
                 var navegar = MainController.class.getDeclaredMethod("cargarVista", String.class);
                 navegar.setAccessible(true);
                 navegar.invoke(main, "/view/FacturaView.fxml");

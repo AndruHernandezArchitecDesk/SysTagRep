@@ -11,7 +11,7 @@
         <HBox alignment="CENTER_LEFT" spacing="8">
             <VBox HBox.hgrow="ALWAYS" spacing="2">
                 <Label text="Vetxi" styleClass="chat-header-label"/>
-                <Label text="Tu capibara de repuestos y negocio" styleClass="capibara-subtitulo"/>
+                <Label text="Tu asistente de repuestos y negocio" styleClass="capibara-subtitulo"/>
             </VBox>
             <Label fx:id="badgeIA" text="○ Local" styleClass="badge-local"/>
             <Button text="✕" onAction="#onToggleChat" styleClass="btn-cerrar" accessibleText="Cerrar chat"/>
@@ -68,9 +68,8 @@
 
     <StackPane fx:id="mascota" managed="false" pickOnBounds="false" prefWidth="104" prefHeight="108">
         <Button fx:id="bubbleButton" onAction="#onMascota" styleClass="capibara-boton" StackPane.alignment="TOP_CENTER"
-                accessibleText="Vetxi, capibara asistente. Arrastra para mover; pulsa para abrir.">
-            <graphic><fx:include fx:id="capibara" source="Capibara.fxml"/></graphic>
-            <tooltip><Tooltip text="Soy Vetxi. Arrástrame o pulsa para conversar y ver sugerencias."/></tooltip>
+                accessibleText="Vetxi, asistente. Arrastra para mover; pulsa para abrir.">
+            <tooltip><Tooltip text="Soy Vetxi. Pulsa para conversar, arrastra para mover o haz clic derecho para cambiar mascota."/></tooltip>
         </Button>
         <Label text="Vetxi" styleClass="capibara-nombre" mouseTransparent="true" StackPane.alignment="BOTTOM_CENTER"/>
         <Label fx:id="contadorSugerencias" text="0" visible="false" mouseTransparent="true"

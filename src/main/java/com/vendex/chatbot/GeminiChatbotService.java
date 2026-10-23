@@ -453,7 +453,7 @@ public class GeminiChatbotService {
         };
         String motivo = c.motivo != null ? c.motivo : (c.esSintoma ? "sintoma" : "consulta directa");
         return """
-                Eres Vetxi, el capibara asistente de Vendex. %s Responde breve en español (max 3 lineas).
+                Eres Vetxi, el agente de Vendex. %s Responde breve en español (max 3 lineas).
                 Consulta: "%s"
                 Motivo/sugerencia IA: %s
                 Datos reales del ERP: %s

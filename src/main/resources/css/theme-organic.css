@@ -44,6 +44,11 @@
     -fx-faint-focus-color: transparent;
 }
 
+.sidebar-user-section, .sidebar-footer-section {
+    -fx-background-color: #F5F1E8;
+}
+.sidebar-footer-section { -fx-border-color: #E5E0D6 transparent transparent transparent; -fx-border-width: 1 0 0 0; }
+
 /* ========== TÍTULOS ========== */
 .titulo {
     -fx-text-fill: -text-primary;

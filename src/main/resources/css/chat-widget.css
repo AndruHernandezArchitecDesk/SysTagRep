@@ -1,5 +1,6 @@
 /* chat-widget.css - Tag Repuestos Automotrices */
-/* Usa variables definidas en base.css + theme-organic.css / theme-cyberpunk.css */
+/* Colores locales deliberados: este widget también puede cargarse en una escena
+   independiente, sin las variables CSS globales del ERP. */
 
 .chat-bubble {
     -fx-background-radius: 50%;
@@ -26,23 +27,23 @@
 }
 
 .chat-bubble-assistant {
-    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, -accent-primary, -gemini-blue);
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #087BFF, #8C3BFF);
 }
 
 .chat-bubble-pulse {
     -fx-fill: transparent;
-    -fx-stroke: -gemini-blue;
+    -fx-stroke: #4285F4;
     -fx-stroke-width: 2;
     -fx-opacity: 0.35;
 }
 
-.chat-bubble-icon { -fx-icon-color: -gemini-blue; -fx-icon-size: 26px; }
-.chat-header-icon { -fx-icon-color: -gemini-blue; -fx-icon-size: 18px; }
+.chat-bubble-icon { -fx-icon-color: #4285F4; -fx-icon-size: 26px; }
+.chat-header-icon { -fx-icon-color: #4285F4; -fx-icon-size: 18px; }
 
 .chat-panel {
-    -fx-background-color: -bg-card;
+    -fx-background-color: #FFFFFF;
     -fx-background-radius: 10;
-    -fx-border-color: -border;
+    -fx-border-color: #E5E0D6;
     -fx-border-radius: 10;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 12, 0, 0, 4);
 }
@@ -51,21 +52,21 @@
 .chat-header-label {
     -fx-font-weight: bold;
     -fx-font-size: 14px;
-    -fx-text-fill: -text-primary;
+    -fx-text-fill: #3F3A34;
 }
 
 .btn-cerrar {
     -fx-background-color: transparent;
-    -fx-text-fill: -text-secondary;
+    -fx-text-fill: #64748B;
     -fx-font-weight: bold;
     -fx-cursor: hand;
 }
 
-.btn-cerrar:hover { -fx-text-fill: -text-primary; }
+.btn-cerrar:hover { -fx-text-fill: #3F3A34; }
 
 .badge-ia {
-    -fx-background-color: -selection-bg;
-    -fx-text-fill: -selection-text;
+    -fx-background-color: #CCFBF1;
+    -fx-text-fill: #134E4A;
     -fx-font-size: 10px;
     -fx-font-weight: bold;
     -fx-padding: 2 6;
@@ -82,8 +83,8 @@
 }
 
 .badge-local {
-    -fx-background-color: -bg-card-alt;
-    -fx-text-fill: -text-secondary;
+    -fx-background-color: #F5F1E8;
+    -fx-text-fill: #64748B;
     -fx-font-size: 10px;
     -fx-font-weight: bold;
     -fx-padding: 2 6;
@@ -91,10 +92,10 @@
 }
 
 .chat-scroll { -fx-background-color: transparent; }
-.mensajes-box { -fx-background-color: -bg-card-alt; }
+.mensajes-box { -fx-background-color: #F5F1E8; }
 
 .mensaje-usuario {
-    -fx-background-color: -accent-primary;
+    -fx-background-color: #0F766E;
     -fx-text-fill: #FFFFFF;
     -fx-background-radius: 12 12 2 12;
     -fx-padding: 8 12 8 12;
@@ -102,8 +103,8 @@
 }
 
 .mensaje-bot {
-    -fx-background-color: -bg-card-alt;
-    -fx-text-fill: -text-primary;
+    -fx-background-color: #F5F1E8;
+    -fx-text-fill: #3F3A34;
     -fx-background-radius: 12 12 12 2;
     -fx-padding: 8 12 8 12;
     -fx-max-width: 240px;
@@ -115,7 +116,7 @@
     -fx-background-radius: 12 12 12 2;
     -fx-padding: 8 12 8 12;
     -fx-max-width: 240px;
-    -fx-border-color: -accent-warning;
+    -fx-border-color: #F59E0B;
     -fx-border-radius: 12 12 12 2;
 }
 
@@ -128,8 +129,8 @@
 }
 
 .mensaje-rol-ia {
-    -fx-background-color: -selection-bg;
-    -fx-text-fill: -selection-text;
+    -fx-background-color: #CCFBF1;
+    -fx-text-fill: #134E4A;
 }
 
 .mensaje-rol-bloqueado {
@@ -140,28 +141,28 @@
 .input-bar { -fx-padding: 8 0 0 0; }
 
 .veh-filter-bar {
-    -fx-background-color: -bg-card-alt;
-    -fx-border-color: transparent transparent -border transparent;
+    -fx-background-color: #F5F1E8;
+    -fx-border-color: transparent transparent #E5E0D6 transparent;
 }
 
 .veh-filter-bar .combo-box {
-    -fx-background-color: -bg-card;
-    -fx-border-color: -border;
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E5E0D6;
     -fx-border-radius: 4;
     -fx-background-radius: 4;
     -fx-font-size: 11px;
 }
 
-.veh-filter-bar .ikonli-font-icon { -fx-icon-color: -accent-primary; }
+.veh-filter-bar .ikonli-font-icon { -fx-icon-color: #0F766E; }
 
 .btn-enviar {
-    -fx-background-color: -accent-primary;
+    -fx-background-color: #0F766E;
     -fx-text-fill: #FFFFFF;
     -fx-background-radius: 6;
     -fx-cursor: hand;
 }
 
-.btn-enviar:hover { -fx-background-color: -accent-hover; }
+.btn-enviar:hover { -fx-background-color: #115E59; }
 
 /* Vetxi: mascota vectorial y globos anclados a su posición. */
 .capibara-boton {
@@ -174,7 +175,7 @@
 }
 .capibara-boton:pressed { -fx-cursor: closed-hand; }
 .capibara-boton:hover { -fx-effect: dropshadow(gaussian, rgba(106, 151, 80, 0.45), 12, 0.25, 0, 2); }
-.capibara-boton:focused { -fx-border-color: -accent-primary; -fx-border-radius: 18; }
+.capibara-boton:focused { -fx-border-color: #0F766E; -fx-border-radius: 18; }
 .capibara-nombre {
     -fx-background-color: #F5EBDD;
     -fx-background-radius: 12;
@@ -194,7 +195,7 @@
     -fx-border-radius: 20;
 }
 .capibara-globo {
-    -fx-background-color: -bg-card;
+    -fx-background-color: #FFFFFF;
     -fx-border-color: #ADBE9D;
     -fx-border-width: 1;
     -fx-background-radius: 18 18 4 18;
@@ -203,17 +204,43 @@
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.20), 12, 0.1, 0, 4);
 }
 .capibara-globo-cabecera { -fx-text-fill: #719361; -fx-font-weight: bold; -fx-font-size: 12px; }
-.capibara-globo-titulo { -fx-text-fill: -text-primary; -fx-font-weight: bold; -fx-font-size: 14px; }
-.capibara-subtitulo { -fx-text-fill: -text-secondary; -fx-font-size: 11px; }
-.capibara-contexto { -fx-text-fill: -text-secondary; -fx-font-size: 11px; -fx-padding: 3 0; }
-.capibara-detalle { -fx-text-fill: -text-primary; -fx-font-size: 12px; }
+.capibara-globo-titulo { -fx-text-fill: #3F3A34; -fx-font-weight: bold; -fx-font-size: 14px; }
+.capibara-subtitulo { -fx-text-fill: #64748B; -fx-font-size: 11px; }
+.capibara-contexto { -fx-text-fill: #64748B; -fx-font-size: 11px; -fx-padding: 3 0; }
+.capibara-detalle { -fx-text-fill: #3F3A34; -fx-font-size: 12px; }
 .capibara-accion {
-    -fx-background-color: -bg-card-alt;
-    -fx-text-fill: -text-primary;
+    -fx-background-color: #F5F1E8;
+    -fx-text-fill: #3F3A34;
     -fx-background-radius: 7;
     -fx-font-size: 11px;
     -fx-cursor: hand;
 }
-.capibara-enlace { -fx-background-color: transparent; -fx-text-fill: -accent-primary; -fx-padding: 2 0; -fx-font-size: 11px; -fx-cursor: hand; }
+.capibara-enlace { -fx-background-color: transparent; -fx-text-fill: #0F766E; -fx-padding: 2 0; -fx-font-size: 11px; -fx-cursor: hand; }
 .chat-panel .btn-enviar .text, .capibara-globo .btn-enviar .text { -fx-fill: white; }
 .chat-panel .mensaje-usuario .text { -fx-fill: white; }
+
+/* En modo claro se conserva la paleta original; solo el tema oscuro usa
+   superficies navy y acentos cyan para acompañar al robot. */
+.dark-mode .chat-panel { -fx-background-color: #071326; -fx-border-color: #263A5C; }
+.dark-mode .chat-header-label, .dark-mode .capibara-globo-titulo,
+.dark-mode .capibara-detalle { -fx-text-fill: #F4F8FF; }
+.dark-mode .btn-cerrar, .dark-mode .capibara-subtitulo,
+.dark-mode .capibara-contexto { -fx-text-fill: #B5C7E4; }
+.dark-mode .btn-cerrar:hover { -fx-text-fill: #FFFFFF; }
+.dark-mode .badge-ia, .dark-mode .badge-local, .dark-mode .mensaje-bot,
+.dark-mode .mensaje-rol-ia, .dark-mode .capibara-accion {
+    -fx-background-color: #16233F; -fx-text-fill: #F4F8FF;
+}
+.dark-mode .badge-ia, .dark-mode .badge-local, .dark-mode .mensaje-rol-ia { -fx-text-fill: #B5C7E4; }
+.dark-mode .mensajes-box, .dark-mode .veh-filter-bar { -fx-background-color: #0B1930; }
+.dark-mode .veh-filter-bar { -fx-border-color: transparent transparent #263A5C transparent; }
+.dark-mode .veh-filter-bar .combo-box { -fx-background-color: #071326; -fx-border-color: #263A5C; }
+.dark-mode .veh-filter-bar .ikonli-font-icon { -fx-icon-color: #19D9FF; }
+.dark-mode .mensaje-usuario, .dark-mode .btn-enviar { -fx-background-color: #087BFF; }
+.dark-mode .btn-enviar:hover { -fx-background-color: #0666D6; }
+.dark-mode .capibara-boton:hover { -fx-effect: dropshadow(gaussian, rgba(25, 217, 255, 0.45), 12, 0.25, 0, 2); }
+.dark-mode .capibara-boton:focused { -fx-border-color: #19D9FF; }
+.dark-mode .capibara-nombre { -fx-background-color: #071326; -fx-text-fill: #19D9FF; }
+.dark-mode .capibara-contador { -fx-background-color: linear-gradient(to bottom right, #087BFF, #8C3BFF); -fx-border-color: #071326; }
+.dark-mode .capibara-globo { -fx-background-color: #071326; -fx-border-color: #087BFF; }
+.dark-mode .capibara-globo-cabecera, .dark-mode .capibara-enlace { -fx-text-fill: #19D9FF; }

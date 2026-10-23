@@ -14,7 +14,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.LongSupplier;
 
 /** Animaciones locales de Vetxi. Todo el estado y las transiciones pertenecen al hilo FX. */
-final class VetxiAnimaciones {
+final class VetxiAnimaciones implements MascotaAnimaciones {
     enum Estado { REPOSO, RASCANDO, ANOTANDO, PASEANDO }
     static final long INACTIVIDAD_NANOS = java.time.Duration.ofSeconds(60).toNanos();
 
@@ -62,7 +62,7 @@ final class VetxiAnimaciones {
 
     Estado estado() { return estado; }
 
-    void setActivo(boolean valor) {
+    public void setActivo(boolean valor) {
         if (activo == valor) return;
         activo = valor;
         if (valor) {
@@ -79,7 +79,7 @@ final class VetxiAnimaciones {
         }
     }
 
-    void setTrabajando(boolean valor) {
+    public void setTrabajando(boolean valor) {
         if (trabajando == valor) return;
         trabajando = valor;
         detenerAccion();
@@ -87,7 +87,7 @@ final class VetxiAnimaciones {
         mostrarPose();
     }
 
-    void registrarActividad() {
+    public void registrarActividad() {
         ultimaActividad = reloj.getAsLong();
         if (estado == Estado.PASEANDO || estado == Estado.RASCANDO) {
             detenerAccion();
@@ -213,7 +213,7 @@ final class VetxiAnimaciones {
         if (caminaba) mover.accept(x, y); // Detenerse donde estaba; no saltar ni guardar posición automática.
     }
 
-    void avisar() {
+    public void avisar() {
         if (estado == Estado.PASEANDO || estado == Estado.RASCANDO) { detenerAccion(); mostrarPose(); }
         if (!activo) return;
         if (aviso != null) aviso.stop();

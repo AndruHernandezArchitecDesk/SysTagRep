@@ -82,7 +82,7 @@
     <left>
         <VBox fx:id="sidebarRoot" spacing="0" styleClass="sidebar" style="-fx-min-width: 220; -fx-max-width: 220;">
             <!-- Usuario y tema -->
-            <VBox spacing="6" style="-fx-padding: 16 12 12 12; -fx-background-color: -bg-card-alt;">
+            <VBox spacing="6" styleClass="sidebar-user-section" style="-fx-padding: 16 12 12 12;">
                 <Label fx:id="lblUsuarioSesion" text="Bienvenido" style="-fx-font-weight: bold; -fx-font-size: 13px;"/>
                 <Button text="Inicio" onAction="#irHome" styleClass="btn-orden" style="-fx-font-size: 11px; -fx-alignment: CENTER_LEFT; -fx-padding: 6 8 6 8;">
                     <graphic>
@@ -378,7 +378,7 @@
                         <graphic>
                             <FontIcon iconLiteral="fas-paw" iconSize="16"/>
                         </graphic>
-                        <tooltip><Tooltip text="Abrir Vetxi, tu capibara de repuestos, negocio y sugerencias"/></tooltip>
+                        <tooltip><Tooltip text="Abrir Vetxi, tu asistente de repuestos, negocio y sugerencias"/></tooltip>
                     </Button>
                     <Button text="Configurar IA" onAction="#irConfigurarIA" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                         <graphic>
@@ -402,7 +402,7 @@
             </ScrollPane>
 
             <!-- Pie del menú lateral -->
-            <VBox spacing="6" style="-fx-padding: 12; -fx-background-color: -bg-card-alt; -fx-border-color: -border; -fx-border-width: 1 0 0 0;">
+            <VBox spacing="6" styleClass="sidebar-footer-section" style="-fx-padding: 12;">
                 <Separator style="-fx-padding: 0 0 4 0;"/>
                 <Button text="Cerrar Sesión" onAction="#cerrarSesion" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 8 8 8 8;">
                     <graphic>

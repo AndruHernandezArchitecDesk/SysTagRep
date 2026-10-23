@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.Group?>
+<?import javafx.scene.paint.*?>
+<?import javafx.scene.shape.*?>
+<?import javafx.scene.effect.DropShadow?>
+<?import javafx.scene.transform.Rotate?>
+<!-- Arte vectorial inspirado en la referencia aprobada; fondo realmente transparente. -->
+<Group xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" mouseTransparent="true">
+  <fx:define>
+    <LinearGradient fx:id="shell" startX="0" startY="0" endX="0.8" endY="1">
+      <stops><Stop offset="0" color="#FFFFFF"/><Stop offset="0.4" color="#F4F8FF"/><Stop offset="0.75" color="#B8C8EE"/><Stop offset="1" color="#7666E7"/></stops>
+    </LinearGradient>
+    <LinearGradient fx:id="screen" startX="0" startY="0" endX="0.5" endY="1">
+      <stops><Stop offset="0" color="#285B8E"/><Stop offset="0.35" color="#071326"/><Stop offset="1" color="#02091C"/></stops>
+    </LinearGradient>
+    <LinearGradient fx:id="brand" startX="0" startY="1" endX="1" endY="0">
+      <stops><Stop offset="0" color="#19D9FF"/><Stop offset="0.45" color="#087BFF"/><Stop offset="1" color="#B737FF"/></stops>
+    </LinearGradient>
+  </fx:define>
+  <Rectangle width="100" height="86" fill="TRANSPARENT"/>
+  <Ellipse fx:id="halo" centerX="48" centerY="82" radiusX="20" radiusY="2" fill="#19D9FF" opacity="0.3"/>
+  <!-- Torso flotante y articulaciones. -->
+  <SVGPath content="M 30 57 Q 48 48 63 57 L 63 69 Q 58 83 48 84 Q 34 81 30 67 Z" fill="$shell" stroke="#8095D7" strokeWidth="0.6"/>
+  <SVGPath content="M 33 68 Q 48 78 63 67 L 60 75 Q 48 83 36 75 Z" fill="#16233F"/>
+  <SVGPath content="M 41 73 Q 48 76 55 72" fill="TRANSPARENT" stroke="#19D9FF" strokeWidth="2" strokeLineCap="ROUND"/>
+  <Ellipse centerX="30" centerY="59" radiusX="6" radiusY="8" fill="#16233F"/>
+  <SVGPath content="M 27 55 Q 16 60 19 70 L 26 76 L 31 71 Q 23 66 32 61 Z" fill="$shell" stroke="#087BFF" strokeWidth="0.7"/>
+  <SVGPath content="M 26 70 Q 31 68 35 73 Q 40 78 34 79 L 27 77 Q 23 75 26 70 Z" fill="$screen"/>
+  <Group fx:id="brazoSaludo">
+    <transforms><Rotate fx:id="giroSaludo" pivotX="62" pivotY="58"/></transforms>
+    <Circle centerX="63" centerY="58" radius="6" fill="#16233F"/>
+    <SVGPath content="M 64 53 Q 71 56 73 60 L 83 48 L 89 52 Q 81 70 72 67 Q 65 66 61 61 Z" fill="$shell" stroke="#087BFF" strokeWidth="0.7"/>
+    <SVGPath content="M 82 49 L 88 53" stroke="#19D9FF" strokeWidth="1.5"/>
+    <SVGPath content="M 82 49 Q 80 45 85 41 L 88 37 Q 91 35 91 39 L 88 44 L 94 41 Q 98 40 96 44 Q 101 41 99 46 Q 94 55 88 53 Z" fill="$screen" stroke="#3966A8" strokeWidth="0.6"/>
+  </Group>
+  <SVGPath content="M 33 53 Q 48 49 60 54 Q 66 63 60 72 Q 49 79 35 70 Z" fill="$shell" stroke="#CCD9EF" strokeWidth="0.6"/>
+  <SVGPath content="M 40 59 L 45 58 L 50 65 L 54 57 L 60 56 L 53 70 Q 52 72 49 71 Z" fill="$brand"/>
+  <Ellipse centerX="47" centerY="52" radiusX="10" radiusY="3" fill="#16233F"/>
+  <!-- Modules latéraux et grande tête nacrée en trois-quarts. -->
+  <Ellipse centerX="75" centerY="28" radiusX="7" radiusY="14" fill="#16233F" stroke="#087BFF" strokeWidth="1"/>
+  <Ellipse centerX="77" centerY="28" radiusX="4" radiusY="12" fill="#19D9FF"/>
+  <SVGPath content="M 14 24 Q 15 8 38 3 Q 63 -2 73 14 Q 81 28 75 43 Q 70 52 42 54 Q 18 55 14 42 Z" fill="$shell" stroke="#98A9EF" strokeWidth="0.7"/>
+  <SVGPath content="M 24 24 Q 27 15 48 12 Q 65 8 70 19 Q 76 34 69 43 Q 54 50 33 49 Q 22 48 22 36 Z" fill="$screen" stroke="#087BFF" strokeWidth="1.5"/>
+  <SVGPath content="M 25 25 Q 26 17 46 13 Q 64 9 68 18 Q 51 14 30 26 Z" fill="#96DFFF" opacity="0.12"/>
+  <SVGPath content="M 23 32 Q 21 45 32 48 Q 50 51 69 43" fill="TRANSPARENT" stroke="#19D9FF" strokeWidth="0.7"/>
+  <Ellipse centerX="13" centerY="32" radiusX="9" radiusY="14" fill="$screen" stroke="#087BFF" strokeWidth="1"/>
+  <Ellipse centerX="12" centerY="32" radiusX="6.5" radiusY="11.5" fill="#19D9FF"/>
+  <Ellipse centerX="11" centerY="33" radiusX="4.5" radiusY="8.5" fill="$screen" stroke="#087BFF" strokeWidth="1"/>
+  <Group fx:id="ojos">
+    <effect><DropShadow color="#087BFF" radius="3" spread="0.4"/></effect>
+    <SVGPath content="M 32 35 Q 36 25 42 33 M 55 31 Q 59 21 65 29" fill="TRANSPARENT" stroke="#19F1FF" strokeWidth="3.2" strokeLineCap="ROUND"/>
+    <SVGPath content="M 44 40 Q 50 42 55 37 Q 52 45 44 40 Z" fill="#19D9FF"/>
+  </Group>
+  <Group fx:id="escaneo" visible="false">
+    <SVGPath content="M 30 24 L 65 19" stroke="#19D9FF" strokeWidth="0.8" opacity="0.6"/>
+  </Group>
+  <Group fx:id="holograma" visible="false">
+    <Rectangle x="81" y="25" width="16" height="11" arcWidth="3" arcHeight="3" fill="#071326CC" stroke="#19D9FF" strokeWidth="0.6"/>
+    <SVGPath content="M 84 28 L 93 28 M 84 31 L 91 31 M 84 34 L 89 34" stroke="#19D9FF" strokeWidth="0.7"/>
+  </Group>
+</Group>
