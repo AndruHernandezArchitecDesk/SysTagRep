@@ -73,6 +73,11 @@ public class SeguimientoSriItem {
     public String getMensajeSri() { return mensajeSri; }
     public void setMensajeSri(String mensajeSri) { this.mensajeSri = mensajeSri; }
 
+    /** Explicación apta para usuario; el mensaje SRI original permanece disponible. */
+    public String getExplicacionSri() {
+        return com.vendex.util.MensajeSriUsuario.explicar(estadoSri, mensajeSri);
+    }
+
     public String getClaveAcceso() { return claveAcceso; }
     public void setClaveAcceso(String claveAcceso) { this.claveAcceso = claveAcceso; }
 

@@ -83,6 +83,7 @@ class ServicioReintentoSriTest {
         p.setAmbiente("PRUEBAS");
         p.setIntentos(5);
         p.setEstado(AppConstants.ESTADO_PENDIENTE);
+        when(pendienteDAO.siguePendiente(1)).thenReturn(true);
         when(comprobanteDAO.obtenerXmlFirmado("CLAVE123")).thenReturn(xml);
         when(pendienteDAO.listarParaReintentar(20)).thenReturn(List.of(p));
         return p;
@@ -192,5 +193,25 @@ class ServicioReintentoSriTest {
         String t = ServicioReintentoSri.truncarMensaje(largo);
         assertTrue(t.length() <= 470, "Truncado debe caber en VARCHAR(500)");
         assertTrue(t.endsWith("...[truncado]"));
+    }
+
+    @Test
+    void anularLocal_soloMarcaColaYRegistrosComoAnulados() {
+        when(pendienteDAO.anularLocal(eq("CLAVE123"), anyString())).thenReturn(true);
+
+        assertTrue(servicio.anularLocal("CLAVE123", "FACTURA"));
+
+        verify(comprobanteDAO).actualizarEstado(eq("CLAVE123"), eq("ANULADO"), contains("No equivale"),
+                isNull(), isNull(), isNull());
+        verify(facturaDAO).actualizarEstado("CLAVE123", "ANULADO");
+    }
+
+    @Test
+    void anularLocal_noActualizaDocumentoSiLaColaYaNoEsAnulable() {
+        when(pendienteDAO.anularLocal(anyString(), anyString())).thenReturn(false);
+
+        assertFalse(servicio.anularLocal("CLAVE123", "FACTURA"));
+
+        verifyNoInteractions(comprobanteDAO, facturaDAO);
     }
 }

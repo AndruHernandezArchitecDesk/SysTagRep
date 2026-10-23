@@ -29,4 +29,12 @@ public interface ComprobantePendienteSriDAO {
 
     void forzarReintentoAhora(String clave);
 
+    /** Anulación local atómica: solo cambia colas aún PENDIENTE o AGOTADA. */
+    default boolean anularLocal(String claveAcceso, String mensaje) {
+        throw new UnsupportedOperationException("Anulación local SRI no disponible en este DAO");
+    }
+
+    /** Revalida la fila al tomar el lock por clave para descartar listas obsoletas. */
+    default boolean siguePendiente(int id) { return true; }
+
 }

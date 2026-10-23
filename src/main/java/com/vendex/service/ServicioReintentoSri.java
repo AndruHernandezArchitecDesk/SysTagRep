@@ -49,6 +49,7 @@ public class ServicioReintentoSri {
     private final NotaDebitoRegistroDAO ndDAO;
     private final GuiaRemisionRegistroDAO grDAO;
     private final RetencionRegistroDAO retDAO;
+    private final Object[] locksPorClave = new Object[64];
 
     public ServicioReintentoSri() {
         this(new ComprobantePendienteSriDAOPostgres(), new ComprobanteDAOPostgres(),
@@ -68,6 +69,7 @@ public class ServicioReintentoSri {
         this.ndDAO = ndDAO;
         this.grDAO = grDAO;
         this.retDAO = retDAO;
+        java.util.Arrays.setAll(locksPorClave, i -> new Object());
     }
 
     /**
@@ -124,6 +126,14 @@ public class ServicioReintentoSri {
     }
 
     private void procesarUno(ComprobantePendienteSri p) {
+        String clave = p.getClaveAcceso() == null ? "id:" + p.getId() : p.getClaveAcceso();
+        synchronized (lockPara(clave)) {
+            if (!pendienteDAO.siguePendiente(p.getId())) return;
+            procesarUnoBloqueado(p);
+        }
+    }
+
+    private void procesarUnoBloqueado(ComprobantePendienteSri p) {
         try {
             String ambiente = p.getAmbiente();
             if (ambiente == null || ambiente.isBlank()) ambiente = AppConstants.AMBIENTE_PRUEBAS;
@@ -236,6 +246,36 @@ public class ServicioReintentoSri {
                 pendienteDAO.marcarReintento(p.getId(), nuevosIntentos, proximo, "Excepcion: " + e.getMessage());
             }
         }
+    }
+
+    /** Detiene reintentos y marca el estado local sin declarar anulación legal ante el SRI. */
+    public boolean anularLocal(String claveAcceso, String tipoComprobante) {
+        if (claveAcceso == null || claveAcceso.isBlank()) return false;
+        String mensaje = "Anulado localmente por el usuario. No equivale a una anulación legal ante el SRI.";
+        synchronized (lockPara(claveAcceso)) {
+            if (!pendienteDAO.anularLocal(claveAcceso, mensaje)) return false;
+            comprobanteDAO.actualizarEstado(claveAcceso, "ANULADO", mensaje, null, null, null);
+            ComprobantePendienteSri item = new ComprobantePendienteSri();
+            item.setClaveAcceso(claveAcceso);
+            item.setTipoComprobante(tipoCola(tipoComprobante));
+            actualizarRegistroTipo(item, "ANULADO", mensaje, null, null);
+            return true;
+        }
+    }
+
+    private Object lockPara(String clave) {
+        return locksPorClave[(clave.hashCode() & 0x7fffffff) % locksPorClave.length];
+    }
+
+    private String tipoCola(String tipo) {
+        return switch (tipo == null ? "" : tipo) {
+            case "FACTURA" -> "FACTURA";
+            case "NC", "NOTA_CREDITO" -> "NOTA_CREDITO";
+            case "ND", "NOTA_DEBITO" -> "NOTA_DEBITO";
+            case "GUIA", "GUIA_REMISION" -> "GUIA_REMISION";
+            case "RETENCION" -> "RETENCION";
+            default -> "";
+        };
     }
 
     static LocalDateTime calcularProximoIntento(int intentos) {

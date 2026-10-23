@@ -164,6 +164,32 @@ public class ComprobantePendienteSriDAOPostgres implements ComprobantePendienteS
         }
     }
 
+    @Override
+    public boolean anularLocal(String claveAcceso, String mensaje) {
+        String sql = "UPDATE comprobante_pendiente_sri SET estado='ANULADO', ultimo_mensaje_sri=? "
+                + "WHERE clave_acceso=? AND estado IN ('PENDIENTE','AGOTADA')";
+        try (Connection con = DatabaseConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, mensaje);
+            ps.setString(2, claveAcceso);
+            return ps.executeUpdate() == 1;
+        } catch (SQLException e) {
+            LOG.log(Level.WARNING, "anularLocal " + claveAcceso, e);
+            throw new IllegalStateException("No se pudo anular localmente la tarea de reintento SRI", e);
+        }
+    }
+
+    @Override
+    public boolean siguePendiente(int id) {
+        String sql = "SELECT 1 FROM comprobante_pendiente_sri WHERE id=? AND estado='PENDIENTE'";
+        try (Connection con = DatabaseConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) { return rs.next(); }
+        } catch (SQLException e) {
+            LOG.log(Level.WARNING, "siguePendiente " + id, e);
+            return false;
+        }
+    }
+
     private ComprobantePendienteSri mapear(ResultSet rs) throws SQLException {
         ComprobantePendienteSri c = new ComprobantePendienteSri();
         c.setId(rs.getInt("id"));

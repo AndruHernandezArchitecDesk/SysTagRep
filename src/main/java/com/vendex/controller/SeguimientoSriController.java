@@ -107,6 +107,7 @@ public class SeguimientoSriController implements Initializable {
     @FXML private TableColumn<SeguimientoSriItem, BigDecimal> colIva;
     @FXML private TableColumn<SeguimientoSriItem, BigDecimal> colTotal;
     @FXML private TableColumn<SeguimientoSriItem, String> colEstado;
+    @FXML private TableColumn<SeguimientoSriItem, String> colExplicacion;
     @FXML private TableColumn<SeguimientoSriItem, String> colMensaje;
 
     @FXML private Label lblPaginaInfo;
@@ -185,6 +186,21 @@ public class SeguimientoSriController implements Initializable {
                 super.updateItem(mensaje, empty);
                 setText(empty || mensaje == null ? null : mensaje);
                 setTooltip(mensaje != null && !mensaje.isEmpty() ? new Tooltip(mensaje) : null);
+            }
+        });
+        colExplicacion.setCellValueFactory(new PropertyValueFactory<>("explicacionSri"));
+        colExplicacion.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String explicacion, boolean empty) {
+                super.updateItem(explicacion, empty);
+                if (empty || explicacion == null) {
+                    setText(null); setTooltip(null); return;
+                }
+                setText(explicacion);
+                setWrapText(true);
+                SeguimientoSriItem item = getTableRow() == null ? null : getTableRow().getItem();
+                String detalle = item == null ? null : item.getMensajeSri();
+                setTooltip(detalle == null || detalle.isBlank() ? null : new Tooltip("Detalle original del SRI:\n" + detalle));
             }
         });
 
@@ -266,7 +282,8 @@ public class SeguimientoSriController implements Initializable {
         colAcciones.setCellFactory(col -> new TableCell<>() {
             private final Button btnImprimir = new Button("Imprimir");
             private final Button btnCorreo = new Button("Correo");
-            private final HBox box = new HBox(6, btnImprimir, btnCorreo);
+            private final Button btnAnular = new Button("Anular local");
+            private final HBox box = new HBox(6, btnImprimir, btnCorreo, btnAnular);
             {
                 // Texto negro sobre fondo gris: legible en modo claro y oscuro
                 // (el CSS global hereda texto claro en dark y no se leia).
@@ -280,6 +297,11 @@ public class SeguimientoSriController implements Initializable {
                     SeguimientoSriItem it = getTableRow() == null ? null : getTableRow().getItem();
                     if (it != null) enviarCorreoAutorizado(it);
                 });
+                btnAnular.setStyle("-fx-text-fill: black;");
+                btnAnular.setOnAction(e -> {
+                    SeguimientoSriItem it = getTableRow() == null ? null : getTableRow().getItem();
+                    if (it != null) anularLocal(it);
+                });
             }
             @Override
             protected void updateItem(String estado, boolean empty) {
@@ -289,15 +311,56 @@ public class SeguimientoSriController implements Initializable {
                     return;
                 }
                 boolean autorizada = AppConstants.ESTADO_AUTORIZADO.equals(getTableRow().getItem().getEstadoSri());
+                SeguimientoSriItem item = getTableRow().getItem();
+                boolean anulable = esAnulableLocal(item.getEstadoSri());
                 btnImprimir.setDisable(!autorizada);
                 btnCorreo.setDisable(!autorizada);
+                btnAnular.setDisable(!anulable);
                 String tip = autorizada ? "Comprobante autorizado: disponible"
                         : "Disponible al autorizarse por el SRI";
                 btnImprimir.setTooltip(new Tooltip(tip));
                 btnCorreo.setTooltip(new Tooltip(tip));
+                btnAnular.setTooltip(new Tooltip(anulable
+                        ? "Detiene los reintentos en Vendex; no anula legalmente ante el SRI"
+                        : "Disponible solo para pendientes o reintentos agotados"));
                 setGraphic(box);
             }
         });
+    }
+
+    private boolean esAnulableLocal(String estado) {
+        return "PENDIENTE".equalsIgnoreCase(estado) || "AGOTADA".equalsIgnoreCase(estado);
+    }
+
+    private void anularLocal(SeguimientoSriItem item) {
+        if (item == null || !esAnulableLocal(item.getEstadoSri())) return;
+        Alert confirmacion = new Alert(Alert.AlertType.CONFIRMATION,
+                "Se detendrán los reintentos de este comprobante en Vendex. Esta acción no lo anula legalmente ante el SRI.\n\n"
+                        + item.getTipoLabel() + " " + item.getNumComprobante(),
+                javafx.scene.control.ButtonType.CANCEL, javafx.scene.control.ButtonType.OK);
+        confirmacion.setTitle("Anulación local");
+        confirmacion.setHeaderText("¿Detener los reintentos SRI?");
+        ((Button) confirmacion.getDialogPane().lookupButton(javafx.scene.control.ButtonType.OK)).setText("Anular localmente");
+        if (confirmacion.showAndWait().orElse(javafx.scene.control.ButtonType.CANCEL)
+                != javafx.scene.control.ButtonType.OK) return;
+        try {
+            boolean anulado = AppContext.getInstance().servicioReintentoSri
+                    .anularLocal(item.getClaveAcceso(), item.getTipo());
+            if (!anulado) {
+                new Alert(Alert.AlertType.INFORMATION,
+                        "No se anuló: el comprobante ya no está PENDIENTE/AGOTADO en la cola SRI. Se actualizará la lista.").showAndWait();
+            } else {
+                logDAO.guardar("SeguimientoSriController", "anularLocal",
+                        "Anulación local de " + item.getTipoLabel() + " " + item.getNumComprobante()
+                                + " clave=" + item.getClaveAcceso() + "; no anulada ante el SRI");
+                new Alert(Alert.AlertType.INFORMATION,
+                        "Reintentos detenidos localmente. El estado no implica anulación legal ante el SRI.").showAndWait();
+            }
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "No se pudo anular localmente " + item.getClaveAcceso(), e);
+            new Alert(Alert.AlertType.ERROR, "No se pudo detener la tarea SRI: " + e.getMessage()).showAndWait();
+        }
+        cargarDatos();
     }
 
     /** Lee numero/fecha de autorizacion guardados; deduce de la clave si es AUTORIZADO sin número. */
@@ -869,6 +932,7 @@ public class SeguimientoSriController implements Initializable {
             case "AUTORIZADO": return "AUTORIZADA";
             case "RECHAZADA": return "RECHAZADA";
             case "DEVUELTA": return "DEVUELTA";
+            case "ANULADO": return "ANULADO LOCALMENTE";
             case "PENDIENTE": return m.contains("recibido") ? "RECIBIDO SRI (pendiente)" : "PENDIENTE";
             default: return e.isEmpty() ? "NO ENVIADO" : e;
         }
@@ -885,6 +949,7 @@ public class SeguimientoSriController implements Initializable {
             case "RECHAZADA":
             case "DEVUELTA": return "#dc3545";
             case "PENDIENTE": return "#fd7e14";
+            case "ANULADO": return "#6c757d";
             default: return "#0d6efd";
         }
     }

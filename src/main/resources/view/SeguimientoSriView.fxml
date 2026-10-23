@@ -39,9 +39,10 @@
           <TableColumn fx:id="colSubtotal" text="Subtotal" prefWidth="90"/>
           <TableColumn fx:id="colIva" text="IVA" prefWidth="70"/>
           <TableColumn fx:id="colTotal" text="Total" prefWidth="90"/>
-          <TableColumn fx:id="colEstado" text="Estado SRI" prefWidth="150"/>
-          <TableColumn fx:id="colMensaje" text="Mensaje SRI" prefWidth="240"/>
-          <TableColumn fx:id="colAcciones" text="Acciones" prefWidth="190"/>
+          <TableColumn fx:id="colEstado" text="Estado SRI" prefWidth="140"/>
+          <TableColumn fx:id="colExplicacion" text="Qué significa" prefWidth="220"/>
+          <TableColumn fx:id="colMensaje" text="Detalle original SRI" prefWidth="240"/>
+          <TableColumn fx:id="colAcciones" text="Acciones" prefWidth="255"/>
         </columns>
       </TableView>
       <HBox spacing="10" alignment="CENTER" style="-fx-padding: 5 0 0 0">
