@@ -13,9 +13,13 @@ fondo transparente para poder animar sus piezas.
 ## Recursos y comportamiento
 
 - `src/main/resources/view/RobotVendexi.fxml`: dibujo y piezas articuladas.
-- `src/main/java/com/vendex/controller/VendexiAnimaciones.java`: flotación suave,
-  halo, saludo de brazo, escaneo y holograma al trabajar en factura/proforma;
-  desplazamiento tras 60 segundos sin actividad.
+- `src/main/java/com/vendex/controller/VendexiAnimaciones.java`: flotación,
+  respiración de cabeza, parpadeo, miradas, asentimientos, saludos y cambios de
+  pose de ambos brazos en reposo; el brazo elevado parte de una pose más baja y
+  relajada. Paseo tras 60 segundos sin actividad. En
+  Factura/Proforma aparece una computadora con los brazos relajados y estables;
+  inclina lentamente la cabeza y parpadea en una pose de concentración, sin
+  tecleo exagerado, saludos ni paseo mientras está trabajando en el documento.
 - `MascotaAnimaciones.java`: contrato de ciclo de vida compartido.
 - `VetxiAnimaciones.java` y `view/Capibara.fxml`: motor y dibujo del capibara.
 - `ChatWidgetController.java`: selector, carga desde classpath y persistencia;
@@ -23,6 +27,8 @@ fondo transparente para poder animar sus piezas.
 - `ChatWidget.fxml`, `MainView.fxml` y `css/chat-widget.css`: textos neutros y
   acentos navy, cyan, azul y violeta.
 
+El robot se muestra espejado para mirar y señalar al lado contrario. Sus gestos
+locales son independientes del paseo y continúan variando mientras está en reposo.
 Las animaciones se detienen al perder foco u ocultar la ventana. La interacción
 interrumpe el paseo; el desplazamiento automático no guarda una nueva posición.
 El nombre conversacional sigue siendo Vetxi y cambiar mascota conserva el chat.

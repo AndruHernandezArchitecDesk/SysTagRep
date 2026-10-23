@@ -109,6 +109,7 @@ También se revisó visualmente el selector, el estado de recuperación y el cha
 El portable permanece sin actualizar por indicación del usuario. Los cambios
 se entregan en código, migración y documentación.
 
-Siguientes del plan: explicación de precios, compatibilidad real con vehículos,
-auditoría de sugerencias y paridad de herramientas del agente por REST. El DAO
-REST de esta fase cubre el historial; `HerramientasAgenteDAORest` sigue pendiente.
+Siguientes del plan: auditoría de sugerencias, mejoras de investigación web y
+completitud administrativa de licencias. La paridad de herramientas del agente
+por REST, explicación de precios y búsqueda de compatibilidad estructurada se
+completan en `docs/fase11_agente_rest_precios_compatibilidad.md`.

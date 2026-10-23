@@ -22,6 +22,13 @@ import java.util.logging.Logger;
 public class HerramientasAgenteDAOPostgres implements HerramientasAgente {
 
     private static final Logger LOGGER = Logger.getLogger(HerramientasAgenteDAOPostgres.class.getName());
+    private final Integer sucursalId;
+
+    /** Consultas locales sin restricción explícita de sucursal (compatibilidad legacy). */
+    public HerramientasAgenteDAOPostgres() { this(null); }
+
+    /** Consultas de agente usadas desde API: siempre acotadas a la sucursal de la sesión. */
+    public HerramientasAgenteDAOPostgres(Integer sucursalId) { this.sucursalId = sucursalId; }
 
     @Override
     public List<com.vendex.model.Inventario> complementarios(String codigo, int limite) {
@@ -30,12 +37,15 @@ public class HerramientasAgenteDAOPostgres implements HerramientasAgente {
         String sql = "SELECT i.id, i.codigo, i.descripcion, i.cantidad, i.precio_venta, " +
                 "g.nombre AS grupo, m.nombre AS marca FROM inventario i " +
                 "LEFT JOIN grupo g ON g.id=i.grupo_id LEFT JOIN marca m ON m.id=i.marca_id " +
-                "WHERE i.estado=true AND (i.cantidad>0 OR UPPER(i.codigo)=UPPER(?)) ORDER BY i.id";
+                "WHERE i.estado=true " + (sucursalId == null ? "" : "AND i.sucursal_id=? ")
+                + "AND (i.cantidad>0 OR UPPER(i.codigo)=UPPER(?)) ORDER BY i.id";
         List<com.vendex.model.Inventario> inventario = new ArrayList<>();
         com.vendex.model.Inventario base = null;
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, codigo.trim());
+            int param = 1;
+            if (sucursalId != null) ps.setInt(param++, sucursalId);
+            ps.setString(param, codigo.trim());
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     com.vendex.model.Inventario i = new com.vendex.model.Inventario();
@@ -64,17 +74,21 @@ public class HerramientasAgenteDAOPostgres implements HerramientasAgente {
     @Override
     public List<Producto> productos(String criterio, int limite) {
         if (criterio == null || criterio.isBlank()) return List.of();
-        String sql = "SELECT codigo, descripcion, cantidad, precio_venta, costo_sin_iva FROM inventario " +
-                     "WHERE estado=true AND (UPPER(codigo) = UPPER(?) OR UPPER(descripcion) LIKE UPPER(?)) " +
-                     "ORDER BY (UPPER(codigo) = UPPER(?)) DESC, cantidad DESC, descripcion LIMIT ?";
+        String sql = "SELECT i.codigo, i.descripcion, i.cantidad, i.precio_venta, i.costo_sin_iva, p.nombre AS proveedor " +
+                     "FROM inventario i LEFT JOIN proveedor p ON p.id=i.proveedor_id " +
+                     "WHERE i.estado=true " + (sucursalId == null ? "" : "AND i.sucursal_id=? ") +
+                     "AND (UPPER(i.codigo) = UPPER(?) OR UPPER(i.descripcion) LIKE UPPER(?)) " +
+                     "ORDER BY CASE WHEN UPPER(i.codigo) = UPPER(?) THEN 1 ELSE 0 END DESC, i.cantidad DESC, i.descripcion LIMIT ?";
         List<Producto> out = new ArrayList<>();
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             String like = "%" + criterio.trim() + "%";
-            ps.setString(1, criterio.trim());
-            ps.setString(2, like);
-            ps.setString(3, criterio.trim());
-            ps.setInt(4, Math.max(1, limite));
+            int param = 1;
+            if (sucursalId != null) ps.setInt(param++, sucursalId);
+            ps.setString(param++, criterio.trim());
+            ps.setString(param++, like);
+            ps.setString(param++, criterio.trim());
+            ps.setInt(param, Math.max(1, limite));
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) out.add(mapearProducto(rs));
             }
@@ -99,7 +113,59 @@ public class HerramientasAgenteDAOPostgres implements HerramientasAgente {
                 rs.getInt("cantidad"),
                 precio,
                 costo,
-                pct);
+                pct,
+                rs.getString("proveedor"));
+    }
+
+    @Override
+    public List<Producto> compatibles(String descripcion, String marca, String modelo,
+                                     Integer anio, String motor, int limite) {
+        if (((marca == null || marca.isBlank()) && (modelo == null || modelo.isBlank())) || anio == null) return List.of();
+        if (limite <= 0) return List.of();
+        StringBuilder sql = new StringBuilder("SELECT i.codigo, i.descripcion, i.cantidad, i.precio_venta, "
+                + "i.costo_sin_iva, p.nombre AS proveedor FROM inventario i "
+                + "JOIN inventario_vehiculo iv ON iv.inventario_id=i.id "
+                + "JOIN vehiculo v ON v.id=iv.vehiculo_id LEFT JOIN proveedor p ON p.id=i.proveedor_id "
+                + "WHERE i.estado=true");
+        List<Object> params = new ArrayList<>();
+        if (sucursalId != null) { sql.append(" AND i.sucursal_id=?"); params.add(sucursalId); }
+        if (marca != null && !marca.isBlank()) { sql.append(" AND UPPER(v.marca) LIKE UPPER(?)"); params.add("%" + marca.trim() + "%"); }
+        if (modelo != null && !modelo.isBlank()) { sql.append(" AND UPPER(v.modelo) LIKE UPPER(?)"); params.add("%" + modelo.trim() + "%"); }
+        // Sin año inicial registrado no se puede afirmar la compatibilidad para un año concreto.
+        sql.append(" AND v.anio_desde IS NOT NULL AND ? >= v.anio_desde AND (v.anio_hasta IS NULL OR ? <= v.anio_hasta)");
+        params.add(anio); params.add(anio);
+        if (motor != null && !motor.isBlank()) { sql.append(" AND UPPER(COALESCE(v.motor,'')) LIKE UPPER(?)"); params.add("%" + motor.trim() + "%"); }
+        for (String token : tokens(descripcion)) {
+            sql.append(" AND (UPPER(i.descripcion) LIKE UPPER(?) OR UPPER(i.codigo) LIKE UPPER(?))");
+            String like = "%" + token + "%";
+            params.add(like); params.add(like);
+        }
+        sql.append(" ORDER BY i.cantidad DESC, i.descripcion LIMIT ?");
+        params.add(Math.max(1, Math.min(20, limite)));
+        List<Producto> out = new ArrayList<>();
+        java.util.Set<String> vistos = new java.util.LinkedHashSet<>();
+        try (Connection con = DatabaseConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) ps.setObject(i + 1, params.get(i));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Producto producto = mapearProducto(rs);
+                    String key = producto.codigo() == null ? producto.descripcion() : producto.codigo().toUpperCase(java.util.Locale.ROOT);
+                    if (vistos.add(key)) out.add(producto);
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.WARNING, "HerramientasAgente.compatibles", e);
+        }
+        return out;
+    }
+
+    private static List<String> tokens(String descripcion) {
+        if (descripcion == null || descripcion.isBlank()) return List.of();
+        String normalizada = java.text.Normalizer.normalize(descripcion, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}+", "").toLowerCase(java.util.Locale.ROOT);
+        return java.util.Arrays.stream(normalizada.split("[^\\p{L}\\p{N}]+"))
+                .filter(t -> t.length() > 2 && !java.util.Set.of("para", "por", "del", "con", "una", "uno", "que").contains(t))
+                .distinct().toList();
     }
 
     @Override
@@ -127,10 +193,12 @@ public class HerramientasAgenteDAOPostgres implements HerramientasAgente {
 
     @Override
     public Ventas ventas(int clienteId) {
-        String sql = "SELECT COUNT(*), COALESCE(SUM(total),0), MAX(fecha) FROM factura_registro WHERE cliente_id = ?";
+        String sql = "SELECT COUNT(*), COALESCE(SUM(total),0), MAX(fecha) FROM factura_registro WHERE cliente_id = ?"
+                + (sucursalId == null ? "" : " AND sucursal_id=?");
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, clienteId);
+            if (sucursalId != null) ps.setInt(2, sucursalId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     java.sql.Timestamp ultima = rs.getTimestamp(3);
@@ -146,11 +214,14 @@ public class HerramientasAgenteDAOPostgres implements HerramientasAgente {
 
     @Override
     public BigDecimal saldo(int clienteId) {
-        String sql = "SELECT COALESCE(SUM(total - COALESCE(adelanto,0)),0) FROM cuentas_por_cobrar " +
-                     "WHERE cliente_id = ? AND estado = 'Pendiente'";
+        String sql = "SELECT COALESCE(SUM(cpc.total - COALESCE(cpc.adelanto,0)),0) FROM cuentas_por_cobrar cpc " +
+                     "WHERE cpc.cliente_id = ? AND cpc.estado = 'Pendiente'" + (sucursalId == null ? "" :
+                     " AND ((cpc.factura_registro_id IS NOT NULL AND EXISTS (SELECT 1 FROM factura_registro fr WHERE fr.id=cpc.factura_registro_id AND fr.sucursal_id=?)) " +
+                     "OR (cpc.nota_venta_id IS NOT NULL AND EXISTS (SELECT 1 FROM nota_venta_registro nvr WHERE nvr.id=cpc.nota_venta_id AND nvr.sucursal_id=?)))");
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, clienteId);
+            if (sucursalId != null) { ps.setInt(2, sucursalId); ps.setInt(3, sucursalId); }
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return rs.getBigDecimal(1);
             }
@@ -164,12 +235,16 @@ public class HerramientasAgenteDAOPostgres implements HerramientasAgente {
     public List<Top> masVendidos(int limite) {
         String sql = "SELECT COALESCE(NULLIF(TRIM(d.codigo),''), 'sin código') AS cod, d.descripcion, " +
                      "SUM(d.cantidad) AS q, SUM(d.precio_total) AS monto " +
-                     "FROM factura_detalle d " +
-                     "GROUP BY1, d.descripcion ORDER BY monto DESC LIMIT ?";
+                     "FROM factura_detalle d JOIN factura_registro fr ON fr.id=d.factura_registro_id " +
+                     (sucursalId == null ? "" : "WHERE fr.sucursal_id=? ") +
+                     "GROUP BY COALESCE(NULLIF(TRIM(d.codigo),''), 'sin código'), d.descripcion " +
+                     "ORDER BY monto DESC LIMIT ?";
         List<Top> out = new ArrayList<>();
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, Math.max(1, limite));
+            int param = 1;
+            if (sucursalId != null) ps.setInt(param++, sucursalId);
+            ps.setInt(param, Math.max(1, limite));
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     out.add(new Top(rs.getString("cod"), rs.getString("descripcion"),
@@ -185,13 +260,16 @@ public class HerramientasAgenteDAOPostgres implements HerramientasAgente {
     @Override
     public List<Top> mejorMargen(int limite) {
         String sql = "SELECT codigo, descripcion, precio_venta, costo_sin_iva FROM inventario " +
-                     "WHERE estado=true AND costo_sin_iva IS NOT NULL AND costo_sin_iva > 0 " +
+                     "WHERE estado=true " + (sucursalId == null ? "" : "AND sucursal_id=? ") +
+                     "AND costo_sin_iva IS NOT NULL AND costo_sin_iva > 0 " +
                      "AND precio_venta IS NOT NULL AND precio_venta > 0 " +
                      "ORDER BY (precio_venta - costo_sin_iva) / precio_venta DESC LIMIT ?";
         List<Top> out = new ArrayList<>();
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, Math.max(1, limite));
+            int param = 1;
+            if (sucursalId != null) ps.setInt(param++, sucursalId);
+            ps.setInt(param, Math.max(1, limite));
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     BigDecimal precio = rs.getBigDecimal("precio_venta");

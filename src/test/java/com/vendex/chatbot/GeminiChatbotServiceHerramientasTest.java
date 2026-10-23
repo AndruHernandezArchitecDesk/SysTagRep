@@ -32,7 +32,18 @@ class GeminiChatbotServiceHerramientasTest {
         public List<Producto> productos(String criterio, int limite) {
             if (criterio != null && criterio.toLowerCase().contains("filtro")) {
                 return List.of(new Producto("FIL-01", "FILTRO ACEITE TOYOTA HILUX", 12,
-                        new BigDecimal("15.50"), new BigDecimal("9.00"), 41.9));
+                        new BigDecimal("15.50"), new BigDecimal("9.00"), 41.9, "Filtros Quito"));
+            }
+            return List.of();
+        }
+
+        @Override
+        public List<Producto> compatibles(String descripcion, String marca, String modelo,
+                                          Integer anio, String motor, int limite) {
+            if ("TOYOTA".equalsIgnoreCase(marca) && "COROLLA".equalsIgnoreCase(modelo)
+                    && Integer.valueOf(2015).equals(anio) && "1.8".equals(motor)) {
+                return List.of(new Producto("BUJ-18", "BUJIA COROLLA 1.8", 6,
+                        new BigDecimal("8.00"), new BigDecimal("4.00"), 50.0, "Bodega Central"));
             }
             return List.of();
         }
@@ -157,6 +168,27 @@ class GeminiChatbotServiceHerramientasTest {
         assertTrue(out.contains("stock: 12"), out);
         assertTrue(out.contains("$15.50"), out);
         assertTrue(out.contains("margen"), out);
+        assertTrue(out.contains("costo registrado sin IVA: $9.00"), out);
+        assertTrue(out.contains("diferencia bruta precio-costo: $6.50"), out);
+        assertTrue(out.contains("proveedor: Filtros Quito"), out);
+    }
+
+    @Test
+    void compatibilidadVehicular_usaAsociacionExplicitaYAdvierteConfirmacionFabricante() {
+        GeminiChatbotService.Clasificacion c = clasif("""
+                {"accion":"BUSCAR_REPUESTO","descripcion":"bujías","marca":"Toyota","modelo":"Corolla","anio":2015,"motor":"1.8"}
+                """);
+        String out = nuevo().ejecutarLocal(c, "¿qué bujías para Corolla 2015 1.8?");
+        assertTrue(out.contains("BUJ-18"), out);
+        assertTrue(out.contains("asociados explícitamente"), out);
+        assertTrue(out.contains("confirma la especificación del fabricante"), out);
+        assertTrue(out.contains("Bodega Central"), out);
+
+        GeminiChatbotService.Clasificacion consulta = clasif("""
+                {"accion":"CONSULTAR_PRODUCTO","descripcion":"bujías","marca":"Toyota","modelo":"Corolla","anio":2015,"motor":"1.8"}
+                """);
+        assertTrue(nuevo().ejecutarLocal(consulta, "¿cuánto cuestan las bujías para Corolla 2015 1.8?")
+                .contains("BUJ-18"));
     }
 
     @Test
@@ -165,6 +197,18 @@ class GeminiChatbotServiceHerramientasTest {
                 "{\"accion\":\"CONSULTAR_PRODUCTO\",\"descripcion\":\"rueda espejo\"}");
         String out = nuevo().ejecutarLocal(c, "¿cuánto stock de rueda espejo?");
         assertTrue(out.toLowerCase().contains("no encontr"), out);
+    }
+
+    @Test
+    void herramientaRemotaCaida_degradaALaBusquedaClasica() {
+        HerramientasAgente remota = org.mockito.Mockito.mock(HerramientasAgente.class);
+        org.mockito.Mockito.when(remota.productos("tapa radiador", 5))
+                .thenThrow(new IllegalStateException("API fuera de servicio"));
+        GeminiChatbotService service = new GeminiChatbotService(new RepuestoDaoFalso(), remota);
+        GeminiChatbotService.Clasificacion c = clasif(
+                "{\"accion\":\"CONSULTAR_PRODUCTO\",\"descripcion\":\"tapa radiador\"}");
+
+        assertTrue(service.ejecutarLocal(c, "consulta tapa radiador").contains("TAPA-01"));
     }
 
     @Test

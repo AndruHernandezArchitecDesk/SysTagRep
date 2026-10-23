@@ -40,7 +40,8 @@ Filtros de la UI (marca/modelo/año) tienen prioridad sobre lo clasificado.
 ### Archivos nuevos
 - `chatbot/HerramientasAgente.java` — interfaz + records `Producto`, `Cliente`, `Ventas`, `Top`.
 - `dao/HerramientasAgenteDAOPostgres.java` — 6 consultas solo-SELECT, fail-soft.
-- `config/AppContext.java` — cableo `herramientasAgente` (local) / `null` (modo REST).
+- `config/AppContext.java` — cableo `HerramientasAgenteDAOPostgres` (local) /
+  `HerramientasAgenteDAORest` (modo REST; implementación añadida en fase 11).
 
 ## 2. Roles contextuales (Fase B, spec §4)
 
@@ -66,7 +67,7 @@ Corregido a `<fx:root type="javafx.scene.layout.BorderPane">` + test FxmlSmoke #
 ## 4. Comportamiento degradado
 
 - Sin IA / licencia sin Vendexi / capacidad agotada → búsqueda local (flujos previos intactos).
-- `herramientas == null` (modo REST) → todas las acciones caen al flujo clásico de búsqueda.
+- Fallo de consulta local o REST → degradación al flujo clásico de búsqueda.
 - Clasificador con JSON roto → flujo clásico; redacción que falla o devuelve basura → respuesta local.
 - Formateo monetario/porcentual con `Locale.US` (consistente en cualquier equipo).
 
@@ -79,7 +80,6 @@ roles §4 (7). Suite total: **350 tests, 0 fallos** (25 skipped).
 
 ## 6. Pendientes / siguientes
 
-- `HerramientasAgenteDAORest` para paridad en modo remoto (fase 6).
 - Plan completo: `~/Escritorio/plan-vendexi-agente.md`.
 
 El historial persistente se completa en `docs/fase10_vetxi_historial_conversaciones.md`.
@@ -144,6 +144,28 @@ un test existente, ajeno a estos cambios; el resultado de Maven no detecta ese c
 `./mvnw -Dtest=GeminiChatbotServiceHerramientasTest,FxmlSmokeTest test`:
 **52 tests, 0 fallos, 0 errores, 0 omitidos**. Incluye 8 pruebas nuevas: 7 de
 selección de rol, prompt, bloqueos y degradaciones; 1 de renderizado en el widget.
+
+## 11. Paridad REST de las herramientas del agente (23/10/2026)
+
+- `HerramientasAgenteDAORest` implementa búsquedas de productos, complementos,
+  clientes, ventas, saldo, más vendidos, margen y compatibilidad de vehículo.
+- El backend publica estas lecturas bajo `/api/vetxi/herramientas/*`. Requieren
+  autenticación API; no se acepta una sucursal de cliente en la petición: el backend
+  deriva la sucursal del token autenticado y limita inventario, ventas, cuentas,
+  rentabilidad y compatibilidades a esa sucursal.
+- Las consultas remotas conservan el comportamiento fail-soft del agente: si la API
+  no está disponible, el servicio vuelve al flujo de búsqueda local de repuestos.
+- El precio del producto ahora incluye, cuando están registrados, proveedor, costo
+  sin IVA, diferencia bruta precio-costo y margen sobre precio. El agente explica la
+  fórmula sin describir la diferencia como utilidad neta.
+- La compatibilidad vehicular se consulta solo mediante la asociación explícita de
+  `inventario_vehiculo` con `vehiculo`, verificando marca, modelo, año y motor cuando
+  están disponibles. Si solo encuentra una coincidencia de texto, avisa que no está
+  verificada; la asociación del catálogo Vendex tampoco sustituye la ficha oficial.
+
+Verificado con `HerramientasAgenteDAORestTest`, `HerramientasAgenteApiControllerTest`,
+`HerramientasAgenteVehiculoTest`, `HerramientasAgenteComplementariosTest` y
+`GeminiChatbotServiceHerramientasTest`.
 
 ## 10. Recuperación ante indisponibilidad de Gemini (22/10/2026)
 

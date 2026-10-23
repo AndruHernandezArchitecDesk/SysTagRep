@@ -158,6 +158,7 @@ public class GeminiChatbotService {
         String marca;
         String modelo;
         Integer anio;
+        String motor;
         String motivo;
         boolean esSintoma;
         String cliente;
@@ -251,6 +252,10 @@ public class GeminiChatbotService {
             }
             if (node.has("anio") && !node.get("anio").isNull() && node.get("anio").isNumber()) {
                 c.anio = node.get("anio").asInt();
+            }
+            if (node.has("motor") && !node.get("motor").isNull()) {
+                String v = node.get("motor").asText().trim();
+                if (!v.isBlank() && !"null".equalsIgnoreCase(v)) c.motor = v;
             }
             if (node.has("motivo") && !node.get("motivo").isNull()) {
                 String m = node.get("motivo").asText().trim();
@@ -415,11 +420,12 @@ public class GeminiChatbotService {
                 - "RENTABILIDAD": pide productos mas rentables, margenes, mas vendidos o ranking
                 - "GENERAL": saludos o preguntas generales ajenas a lo anterior
                 Extrae ademas: descripcion (repuesto a buscar), cliente (nombre o ruc si aparece),
-                marca, modelo, anio, motivo (si es sintoma), esSintoma.
+                marca, modelo, anio, motor (si el usuario lo menciona), motivo (si es sintoma), esSintoma.
                 Responde SOLO JSON valido sin markdown:
-                {"accion":"BUSCAR_REPUESTO","descripcion":"pastilla freno","cliente":null,"marca":"CHEV","modelo":"AVEO","anio":null,"motivo":null,"esSintoma":false}
+                {"accion":"BUSCAR_REPUESTO","descripcion":"pastilla freno","cliente":null,"marca":"CHEV","modelo":"AVEO","anio":null,"motor":null,"motivo":null,"esSintoma":false}
                 Ejemplo venta cliente: {"accion":"VENTAS_CLIENTE","descripcion":null,"cliente":"Juan Perez",...}
                 Ejemplo stock: {"accion":"CONSULTAR_PRODUCTO","descripcion":"tapa radiador",...}
+                Ejemplo compatibilidad vehicular: {"accion":"BUSCAR_REPUESTO","descripcion":"bujias","marca":"Toyota","modelo":"Corolla","anio":2015,"motor":"1.8",...}
                 Ejemplo sintoma: {"accion":"BUSCAR_REPUESTO","descripcion":"pastilla freno","motivo":"Ruido al frenar suele indicar desgaste","esSintoma":true,...}
                 Mensaje usuario: "%s"
                 """.formatted(texto.replace("\"", "'").replace("\n", " "));
@@ -445,7 +451,11 @@ public class GeminiChatbotService {
 
     private String promptRedaccion(Clasificacion c, String texto, String datosLocales, String rol) {
         String regla = switch (c.accion) {
-            case VENTAS_CLIENTE, CUENTAS_COBRAR, RENTABILIDAD, CONSULTAR_PRODUCTO ->
+            case CONSULTAR_PRODUCTO ->
+                    "Resume stock y precio. Si los datos incluyen costo registrado sin IVA, margen y proveedor, explica " +
+                    "esos valores; diferencia bruta = precio registrado menos costo registrado, margen = diferencia/precio. " +
+                    "No lo presentes como utilidad neta ni inventes descuentos, impuestos o componentes no incluidos en los datos.";
+            case VENTAS_CLIENTE, CUENTAS_COBRAR, RENTABILIDAD ->
                     "Si hay datos, resume los montos/stock relevantes. Si no hay, di que no se encontraron. No inventes montos, stock ni precios.";
             case GENERAL -> "Responde amable y breve en español (max 3 lineas). Puedes ofrecer ayudar con repuestos, stock, ventas, saldos y rentabilidad.";
             default -> "Si hay stock indica código, nombre, stock y precio. Si no hay, di que no hay stock pero mantén la sugerencia. No inventes stock/precios. " +
@@ -474,7 +484,7 @@ public class GeminiChatbotService {
         try {
             return switch (c.accion) {
                 case CONSULTAR_PRODUCTO -> herramientas != null
-                        ? formatearProductos(herramientas.productos(c.descripcion, 5), c.descripcion)
+                        ? consultarProducto(c, texto)
                         : buscarRepuesto(c, texto);
                 case VENTAS_CLIENTE -> herramientas != null
                         ? formatearVentas(c)
@@ -494,19 +504,51 @@ public class GeminiChatbotService {
         }
     }
 
+    private String consultarProducto(Clasificacion c, String texto) {
+        boolean vehicle = c.anio != null
+                && ((c.marca != null && !c.marca.isBlank()) || (c.modelo != null && !c.modelo.isBlank()));
+        if (vehicle) {
+            java.util.List<HerramientasAgente.Producto> compatibles = herramientas.compatibles(
+                    c.descripcion, c.marca, c.modelo, c.anio, c.motor, 5);
+            if (compatibles != null && !compatibles.isEmpty()) return formatearCompatibles(compatibles, c);
+        }
+        String criterio = c.descripcion != null ? c.descripcion : texto;
+        String productos = formatearProductos(herramientas.productos(criterio, 5), criterio);
+        return vehicle ? "No encontré asociaciones explícitas de este producto con el vehículo indicado. "
+                + "Los siguientes resultados son solo coincidencias de inventario; verifica la compatibilidad antes de instalar.\n"
+                + productos : productos;
+    }
+
     /** Flujo clásico (y fallback): búsqueda de repuestos con cadena de reintentos. */
     private String buscarRepuesto(Clasificacion c, String texto) {
         String descripcion = c.descripcion != null && !c.descripcion.isBlank() ? c.descripcion : texto;
+        if (herramientas != null && c.anio != null
+                && ((c.marca != null && !c.marca.isBlank()) || (c.modelo != null && !c.modelo.isBlank()))) {
+            try {
+                java.util.List<HerramientasAgente.Producto> compatibles = herramientas.compatibles(
+                        descripcion, c.marca, c.modelo, c.anio, c.motor, 5);
+                if (compatibles != null && !compatibles.isEmpty()) {
+                    return formatearCompatibles(compatibles, c);
+                }
+            } catch (Exception e) {
+                LOGGER.log(Level.FINE, "Compatibilidad estructurada no disponible; se usará la búsqueda de inventario", e);
+            }
+        }
         String descripcionBusqueda = descripcion;
         if (c.marca != null) descripcionBusqueda += " " + c.marca;
         if (c.modelo != null) descripcionBusqueda += " " + c.modelo;
         if (c.anio != null) descripcionBusqueda += " " + c.anio;
+        if (c.motor != null) descripcionBusqueda += " " + c.motor;
 
         ResultadoBusqueda r = repuestoDao.buscar(descripcionBusqueda.trim(), c.marca, c.modelo, c.anio);
         if (!r.isEncontrado() && !descripcionBusqueda.equals(descripcion)) r = repuestoDao.buscar(descripcion.trim(), c.marca, c.modelo, c.anio);
         if (!r.isEncontrado() && !descripcion.equals(texto)) r = repuestoDao.buscar(texto.trim(), null, null, null);
 
         String respuestaLocal = formatearRespuesta(r, descripcionBusqueda);
+        if (r.isEncontrado() && (c.marca != null || c.modelo != null || c.anio != null)) {
+            respuestaLocal = "Resultado de búsqueda de inventario; no se verificó la compatibilidad exacta con el vehículo, año y motor. "
+                    + "Confirma la aplicación en la ficha del fabricante antes de instalar.\n" + respuestaLocal;
+        }
         if (r.isEncontrado() && herramientas != null) {
             try {
                 java.util.List<com.vendex.model.Inventario> complementos = herramientas.complementarios(r.getCodigo(), 2);
@@ -537,6 +579,26 @@ public class GeminiChatbotService {
         return respuestaLocal;
     }
 
+    private String formatearCompatibles(java.util.List<HerramientasAgente.Producto> productos, Clasificacion c) {
+        StringBuilder sb = new StringBuilder("Vendex tiene estos repuestos asociados explícitamente al vehículo en su catálogo de compatibilidad: ")
+                .append(c.marca == null ? "" : c.marca).append(' ')
+                .append(c.modelo == null ? "" : c.modelo).append(' ').append(c.anio);
+        if (c.motor != null) sb.append(" motor ").append(c.motor);
+        sb.append(". Esta asociación proviene del catálogo Vendex; confirma la especificación del fabricante antes de instalar.");
+        for (HerramientasAgente.Producto p : productos) {
+            sb.append("\n• ").append(p.codigo() == null ? "sin código" : p.codigo()).append(" - ")
+                    .append(p.descripcion()).append(" | stock: ").append(p.stock()).append(" | precio: ")
+                    .append(p.precioVenta() == null ? "n/d" : String.format(java.util.Locale.US, "$%.2f", p.precioVenta()));
+            if (p.costoSinIva() != null && p.precioVenta() != null) {
+                sb.append(" | costo registrado sin IVA: ").append(String.format(java.util.Locale.US, "$%.2f", p.costoSinIva()))
+                        .append(" | diferencia bruta: ").append(String.format(java.util.Locale.US, "$%.2f", p.precioVenta().subtract(p.costoSinIva())));
+                if (p.margenPct() >= 0) sb.append(" | margen sobre precio: ").append(String.format(java.util.Locale.US, "%.1f%%", p.margenPct()));
+            }
+            if (p.proveedor() != null && !p.proveedor().isBlank()) sb.append(" | proveedor: ").append(p.proveedor());
+        }
+        return sb.toString();
+    }
+
     private String formatearProductos(java.util.List<HerramientasAgente.Producto> ps, String criterio) {
         if (ps == null || ps.isEmpty()) {
             return "No encontré productos para \"" + (criterio != null ? criterio.trim() : "") + "\" en inventario. Prueba con código o descripción más simple.";
@@ -547,7 +609,15 @@ public class GeminiChatbotService {
               .append(" - ").append(p.descripcion())
               .append(" | stock: ").append(p.stock())
               .append(" | precio: ").append(p.precioVenta() != null ? String.format(java.util.Locale.US,"$%.2f", p.precioVenta()) : "n/d");
-            if (p.margenPct() >= 0) sb.append(" | margen: ").append(String.format(java.util.Locale.US,"%.1f%%", p.margenPct()));
+            if (p.costoSinIva() != null && p.precioVenta() != null) {
+                BigDecimal diferencia = p.precioVenta().subtract(p.costoSinIva());
+                sb.append(" | costo registrado sin IVA: ").append(String.format(java.util.Locale.US, "$%.2f", p.costoSinIva()))
+                        .append(" | diferencia bruta precio-costo: ").append(String.format(java.util.Locale.US, "$%.2f", diferencia));
+                if (p.margenPct() >= 0) sb.append(" (margen sobre precio: ").append(String.format(java.util.Locale.US,"%.1f%%", p.margenPct())).append(')');
+            } else {
+                sb.append(" | costo no registrado; no puedo explicar la diferencia precio-costo");
+            }
+            if (p.proveedor() != null && !p.proveedor().isBlank()) sb.append(" | proveedor: ").append(p.proveedor());
             sb.append('\n');
         }
         return sb.toString().trim();

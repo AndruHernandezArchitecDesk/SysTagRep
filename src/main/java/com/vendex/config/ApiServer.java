@@ -77,6 +77,7 @@ public class ApiServer {
                 new com.vendex.service.LicenciaCentralService(ctx.licenciaCentralDAO));
         BackupApiController backupCtrl = new BackupApiController();
         var vetxiHistorialCtrl = new com.vendex.controller.api.VetxiHistorialApiController(ctx.vetxiHistorialService);
+        var vetxiHerramientasCtrl = new com.vendex.controller.api.HerramientasAgenteApiController();
         com.vendex.controller.api.UsuarioAdminApiController usuarioAdminCtrl = new com.vendex.controller.api.UsuarioAdminApiController();
         com.vendex.controller.api.OfflineSyncApiController offlineSyncCtrl = new com.vendex.controller.api.OfflineSyncApiController(ctx);
 
@@ -153,6 +154,14 @@ public class ApiServer {
         app.get("/api/vetxi/conversaciones", vetxiHistorialCtrl::conversaciones);
         app.get("/api/vetxi/conversaciones/{id}/mensajes", vetxiHistorialCtrl::mensajes);
         app.post("/api/vetxi/mensajes", vetxiHistorialCtrl::guardar);
+        app.get("/api/vetxi/herramientas/productos", vetxiHerramientasCtrl::productos);
+        app.get("/api/vetxi/herramientas/complementarios", vetxiHerramientasCtrl::complementarios);
+        app.get("/api/vetxi/herramientas/compatibles", vetxiHerramientasCtrl::compatibles);
+        app.get("/api/vetxi/herramientas/clientes", vetxiHerramientasCtrl::clientes);
+        app.get("/api/vetxi/herramientas/ventas/{clienteId}", vetxiHerramientasCtrl::ventas);
+        app.get("/api/vetxi/herramientas/saldo/{clienteId}", vetxiHerramientasCtrl::saldo);
+        app.get("/api/vetxi/herramientas/mas-vendidos", vetxiHerramientasCtrl::masVendidos);
+        app.get("/api/vetxi/herramientas/mejor-margen", vetxiHerramientasCtrl::mejorMargen);
 
         // Fase 6b: administración central de licencias + respaldos
         app.post("/api/licencias/emitir", licenciasCtrl::emitir);

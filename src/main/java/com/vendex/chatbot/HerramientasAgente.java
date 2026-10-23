@@ -19,6 +19,12 @@ public interface HerramientasAgente {
         return List.of();
     }
 
+    /** Productos explícitamente asociados al vehículo en inventario_vehiculo. */
+    default List<Producto> compatibles(String descripcion, String marca, String modelo,
+                                       Integer anio, String motor, int limite) {
+        return List.of();
+    }
+
     /** Clientes por nombre (LIKE) o identificación exacta. */
     List<Cliente> clientes(String criterio, int limite);
 
@@ -35,7 +41,8 @@ public interface HerramientasAgente {
     List<Top> mejorMargen(int limite);
 
     record Producto(String codigo, String descripcion, int stock,
-                    BigDecimal precioVenta, BigDecimal costoSinIva, double margenPct) {}
+                    BigDecimal precioVenta, BigDecimal costoSinIva, double margenPct,
+                    String proveedor) {}
 
     record Cliente(int id, String nombre, String identificacion) {}
 

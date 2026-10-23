@@ -5,7 +5,7 @@
 <?import javafx.scene.effect.DropShadow?>
 <?import javafx.scene.transform.Rotate?>
 <!-- Arte vectorial inspirado en la referencia aprobada; fondo realmente transparente. -->
-<Group xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" mouseTransparent="true">
+<Group xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" mouseTransparent="true" scaleX="-1">
   <fx:define>
     <LinearGradient fx:id="shell" startX="0" startY="0" endX="0.8" endY="1">
       <stops><Stop offset="0" color="#FFFFFF"/><Stop offset="0.4" color="#F4F8FF"/><Stop offset="0.75" color="#B8C8EE"/><Stop offset="1" color="#7666E7"/></stops>
@@ -23,11 +23,14 @@
   <SVGPath content="M 30 57 Q 48 48 63 57 L 63 69 Q 58 83 48 84 Q 34 81 30 67 Z" fill="$shell" stroke="#8095D7" strokeWidth="0.6"/>
   <SVGPath content="M 33 68 Q 48 78 63 67 L 60 75 Q 48 83 36 75 Z" fill="#16233F"/>
   <SVGPath content="M 41 73 Q 48 76 55 72" fill="TRANSPARENT" stroke="#19D9FF" strokeWidth="2" strokeLineCap="ROUND"/>
-  <Ellipse centerX="30" centerY="59" radiusX="6" radiusY="8" fill="#16233F"/>
-  <SVGPath content="M 27 55 Q 16 60 19 70 L 26 76 L 31 71 Q 23 66 32 61 Z" fill="$shell" stroke="#087BFF" strokeWidth="0.7"/>
-  <SVGPath content="M 26 70 Q 31 68 35 73 Q 40 78 34 79 L 27 77 Q 23 75 26 70 Z" fill="$screen"/>
+  <Group fx:id="brazoTeclado">
+    <transforms><Rotate pivotX="30" pivotY="59"/></transforms>
+    <Ellipse centerX="30" centerY="59" radiusX="6" radiusY="8" fill="#16233F"/>
+    <SVGPath content="M 27 55 Q 16 60 19 70 L 26 76 L 31 71 Q 23 66 32 61 Z" fill="$shell" stroke="#087BFF" strokeWidth="0.7"/>
+    <SVGPath content="M 26 70 Q 31 68 35 73 Q 40 78 34 79 L 27 77 Q 23 75 26 70 Z" fill="$screen"/>
+  </Group>
   <Group fx:id="brazoSaludo">
-    <transforms><Rotate fx:id="giroSaludo" pivotX="62" pivotY="58"/></transforms>
+    <transforms><Rotate fx:id="giroSaludo" pivotX="62" pivotY="58" angle="42"/></transforms>
     <Circle centerX="63" centerY="58" radius="6" fill="#16233F"/>
     <SVGPath content="M 64 53 Q 71 56 73 60 L 83 48 L 89 52 Q 81 70 72 67 Q 65 66 61 61 Z" fill="$shell" stroke="#087BFF" strokeWidth="0.7"/>
     <SVGPath content="M 82 49 L 88 53" stroke="#19D9FF" strokeWidth="1.5"/>
@@ -36,6 +39,9 @@
   <SVGPath content="M 33 53 Q 48 49 60 54 Q 66 63 60 72 Q 49 79 35 70 Z" fill="$shell" stroke="#CCD9EF" strokeWidth="0.6"/>
   <SVGPath content="M 40 59 L 45 58 L 50 65 L 54 57 L 60 56 L 53 70 Q 52 72 49 71 Z" fill="$brand"/>
   <Ellipse centerX="47" centerY="52" radiusX="10" radiusY="3" fill="#16233F"/>
+  <!-- Cabeza articulada: inclina para responder y mirar al portátil. -->
+  <Group fx:id="cabeza">
+   <transforms><Rotate fx:id="giroCabeza" pivotX="48" pivotY="29"/></transforms>
   <!-- Modules latéraux et grande tête nacrée en trois-quarts. -->
   <Ellipse centerX="75" centerY="28" radiusX="7" radiusY="14" fill="#16233F" stroke="#087BFF" strokeWidth="1"/>
   <Ellipse centerX="77" centerY="28" radiusX="4" radiusY="12" fill="#19D9FF"/>
@@ -49,6 +55,8 @@
   <Group fx:id="ojos">
     <effect><DropShadow color="#087BFF" radius="3" spread="0.4"/></effect>
     <SVGPath content="M 32 35 Q 36 25 42 33 M 55 31 Q 59 21 65 29" fill="TRANSPARENT" stroke="#19F1FF" strokeWidth="3.2" strokeLineCap="ROUND"/>
+  </Group>
+  <Group fx:id="sonrisa">
     <SVGPath content="M 44 40 Q 50 42 55 37 Q 52 45 44 40 Z" fill="#19D9FF"/>
   </Group>
   <Group fx:id="escaneo" visible="false">
@@ -57,5 +65,17 @@
   <Group fx:id="holograma" visible="false">
     <Rectangle x="81" y="25" width="16" height="11" arcWidth="3" arcHeight="3" fill="#071326CC" stroke="#19D9FF" strokeWidth="0.6"/>
     <SVGPath content="M 84 28 L 93 28 M 84 31 L 91 31 M 84 34 L 89 34" stroke="#19D9FF" strokeWidth="0.7"/>
+  </Group>
+  </Group>
+  <!-- Computadora portátil que aparece al trabajar en una factura/proforma. -->
+  <Group fx:id="computadora" visible="false">
+    <effect><DropShadow color="#087BFF" radius="3" spread="0.15"/></effect>
+    <Rectangle x="31" y="54" width="31" height="16" arcWidth="3" arcHeight="3" fill="#16233F" stroke="#19D9FF" strokeWidth="0.9"/>
+    <Rectangle x="34" y="56.5" width="25" height="11" arcWidth="1.5" arcHeight="1.5" fill="#071326" stroke="#668BCB" strokeWidth="0.45"/>
+    <SVGPath content="M 37 59 L 52 59 M 37 61.5 L 48 61.5 M 37 64 L 54 64" stroke="#19D9FF" strokeWidth="0.7" opacity="0.9"/>
+    <Group fx:id="teclas">
+      <SVGPath content="M 28 70 L 65 70 L 71 74 Q 50 76 23 74 Z" fill="$shell" stroke="#087BFF" strokeWidth="0.7"/>
+      <SVGPath content="M 32 71.5 L 62 71.5 M 35 73 L 59 73 M 40 74 L 54 74" stroke="#16233F" strokeWidth="0.65" strokeLineCap="ROUND"/>
+    </Group>
   </Group>
 </Group>
