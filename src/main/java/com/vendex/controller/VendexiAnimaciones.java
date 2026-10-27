@@ -12,10 +12,13 @@ import java.util.function.BooleanSupplier;
 
 /** Animaciones propias de Vetxi: gestos en reposo y pose de portátil al facturar. */
 final class VendexiAnimaciones implements MascotaAnimaciones {
-    private static final double BRAZO_RELAX = 42;
+    private static final double BRAZO_RELAX = 0;
     private final Group dibujo;
     private final Node halo, cabeza, ojos, sonrisa, computadora, teclas, escaneo, holograma, brazoTeclado;
     private final Rotate brazoSaludo, giroCabeza, giroTeclado;
+    private final Rotate codoSaludo, codoTeclado, manoSaludo, manoTeclado;
+    private final Rotate balanceoSaludo = new Rotate(0, 63, 58), balanceoTeclado = new Rotate(0, 30, 59);
+    private final Timeline brazosSuaves;
     private final BooleanSupplier libre;
     private final javafx.scene.layout.Region mascota, superficie;
     private final BiConsumer<Double, Double> mover;
@@ -40,6 +43,19 @@ final class VendexiAnimaciones implements MascotaAnimaciones {
         brazoSaludo = transform("brazoSaludo");
         giroCabeza = transform("cabeza");
         giroTeclado = transform("brazoTeclado");
+        codoSaludo = transform("antebrazoSaludo"); codoTeclado = transform("antebrazoTeclado");
+        manoSaludo = transform("manoSaludo"); manoTeclado = transform("manoTeclado");
+        nodo("brazoSaludo").getTransforms().add(balanceoSaludo);
+        brazoTeclado.getTransforms().add(balanceoTeclado);
+        // Balanceo secundario independiente de los gestos de hombro: codos y manos
+        // siguen el movimiento con retraso y cada brazo tiene un ritmo distinto.
+        brazosSuaves = new Timeline(
+                poseBrazos(0, 0, 0, 0, 0, 0, 0),
+                poseBrazos(1.2, -4, -2, -7, 3, 4, -2),
+                poseBrazos(2.6, 3, 4, -2, 8, -3, 3),
+                poseBrazos(4.1, -2, -3, 5, 2, -1, -4),
+                poseBrazos(5.6, 0, 0, 0, 0, 0, 0));
+        brazosSuaves.setCycleCount(Animation.INDEFINITE);
 
         var flotar = new TranslateTransition(Duration.seconds(2.4), dibujo);
         flotar.setFromY(0); flotar.setToY(-2.5);
@@ -63,6 +79,23 @@ final class VendexiAnimaciones implements MascotaAnimaciones {
         return n;
     }
 
+    private KeyFrame poseBrazos(double segundos, double hombroA, double hombroB,
+                                double codoA, double codoB, double manoA, double manoB) {
+        return new KeyFrame(Duration.seconds(segundos),
+                new KeyValue(balanceoSaludo.angleProperty(), hombroA, Interpolator.EASE_BOTH),
+                new KeyValue(balanceoTeclado.angleProperty(), hombroB, Interpolator.EASE_BOTH),
+                new KeyValue(codoSaludo.angleProperty(), codoA, Interpolator.EASE_BOTH),
+                new KeyValue(codoTeclado.angleProperty(), codoB, Interpolator.EASE_BOTH),
+                new KeyValue(manoSaludo.angleProperty(), manoA, Interpolator.EASE_BOTH),
+                new KeyValue(manoTeclado.angleProperty(), manoB, Interpolator.EASE_BOTH));
+    }
+
+    private void detenerBrazos() {
+        brazosSuaves.stop();
+        for (Rotate articulacion : new Rotate[]{balanceoSaludo, balanceoTeclado,
+                codoSaludo, codoTeclado, manoSaludo, manoTeclado}) articulacion.setAngle(0);
+    }
+
     private Rotate transform(String id) {
         Node n = nodo(id);
         for (var transform : n.getTransforms()) if (transform instanceof Rotate r) return r;
@@ -77,7 +110,7 @@ final class VendexiAnimaciones implements MascotaAnimaciones {
             respiracion.play(); vigilancia.playFromStart();
             if (trabajando) iniciarTrabajo(); else iniciarVidaEnReposo();
         } else {
-            vigilancia.stop(); respiracion.stop(); detenerTimersVida();
+            vigilancia.stop(); respiracion.stop(); detenerTimersVida(); detenerBrazos();
             detenerPaseo(); detenerSaludo(); detenerGesto(); detenerEscritura();
             if (mostrarPortatil != null) { mostrarPortatil.stop(); mostrarPortatil = null; }
             dibujo.setTranslateY(0); halo.setOpacity(0.3); ojos.setScaleY(1); ojos.setTranslateX(0);
@@ -91,6 +124,7 @@ final class VendexiAnimaciones implements MascotaAnimaciones {
     @Override public void setTrabajando(boolean valor) {
         if (trabajando == valor) return;
         trabajando = valor;
+        detenerBrazos();
         ultimaActividad = System.nanoTime();
         detenerTimersVida(); detenerSaludo(); detenerGesto(); detenerEscritura();
         detenerPaseo();
@@ -113,6 +147,7 @@ final class VendexiAnimaciones implements MascotaAnimaciones {
 
     private void iniciarVidaEnReposo() {
         if (!activo || trabajando) return;
+        brazosSuaves.play();
         programarParpadeo(); programarGesto();
     }
 
@@ -149,7 +184,8 @@ final class VendexiAnimaciones implements MascotaAnimaciones {
 
     private void fijarPoseTrabajo() {
         computadora.setVisible(true); escaneo.setVisible(false); holograma.setVisible(false);
-        giroCabeza.setAngle(-3); brazoSaludo.setAngle(BRAZO_RELAX); giroTeclado.setAngle(-4);
+        giroCabeza.setAngle(-3); brazoSaludo.setAngle(18); giroTeclado.setAngle(-18);
+        codoSaludo.setAngle(42); codoTeclado.setAngle(-42);
         ojos.setScaleY(0.85); teclas.setTranslateY(0);
     }
 
@@ -207,7 +243,7 @@ final class VendexiAnimaciones implements MascotaAnimaciones {
         gesto = new Timeline(new KeyFrame(Duration.ZERO,
                         new KeyValue(brazoSaludo.angleProperty(), BRAZO_RELAX), new KeyValue(giroTeclado.angleProperty(), 0)),
                 new KeyFrame(Duration.millis(260),
-                        new KeyValue(brazoSaludo.angleProperty(), BRAZO_RELAX - 26, Interpolator.EASE_BOTH),
+                         new KeyValue(brazoSaludo.angleProperty(), BRAZO_RELAX - 26, Interpolator.EASE_BOTH),
                         new KeyValue(giroTeclado.angleProperty(), 11, Interpolator.EASE_BOTH)),
                 new KeyFrame(Duration.millis(560),
                         new KeyValue(brazoSaludo.angleProperty(), BRAZO_RELAX - 9, Interpolator.EASE_BOTH),
@@ -304,9 +340,10 @@ final class VendexiAnimaciones implements MascotaAnimaciones {
         if (reanudarEscritura) escritura.pause();
         double reposoBrazo = BRAZO_RELAX;
         var balanceo = new Timeline(new KeyFrame(Duration.ZERO, new KeyValue(brazoSaludo.angleProperty(), reposoBrazo)),
-                new KeyFrame(Duration.millis(230), new KeyValue(brazoSaludo.angleProperty(), reposoBrazo - 18, Interpolator.EASE_BOTH)),
-                new KeyFrame(Duration.millis(460), new KeyValue(brazoSaludo.angleProperty(), reposoBrazo, Interpolator.EASE_BOTH)));
-        balanceo.setCycleCount(3);
+                new KeyFrame(Duration.millis(480), new KeyValue(brazoSaludo.angleProperty(), -65, Interpolator.EASE_BOTH)),
+                new KeyFrame(Duration.millis(720), new KeyValue(brazoSaludo.angleProperty(), -53, Interpolator.EASE_BOTH)),
+                new KeyFrame(Duration.millis(960), new KeyValue(brazoSaludo.angleProperty(), -68, Interpolator.EASE_BOTH)),
+                new KeyFrame(Duration.millis(1500), new KeyValue(brazoSaludo.angleProperty(), reposoBrazo, Interpolator.EASE_BOTH)));
         var sonrisaGrande = new ScaleTransition(Duration.millis(230), sonrisa);
         sonrisaGrande.setFromX(1); sonrisaGrande.setToX(1.2); sonrisaGrande.setAutoReverse(true); sonrisaGrande.setCycleCount(6);
         saludo = new ParallelTransition(balanceo, sonrisaGrande);
