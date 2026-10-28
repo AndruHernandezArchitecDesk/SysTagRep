@@ -184,6 +184,7 @@ public final class ApiAuthService {
         if (p.startsWith("/api/licencias/validar")) return null; // clientes CENTRAL autenticados validan su clave
         if (p.startsWith("/api/licencias") || p.startsWith("/api/respaldos")
                 || p.startsWith("/api/usuarios")) return "USUARIO_GESTIONAR"; // también GET (lecturas sensibles)
+        if (p.equals("/api/ia/cuotas/panel") || p.equals("/api/ia/cuotas/config")) return "USUARIO_GESTIONAR";
         if ("GET".equalsIgnoreCase(method) || "HEAD".equalsIgnoreCase(method)) return null;
         if (p.startsWith("/api/facturas")) return "FACTURA_EMITIR";
         if (p.startsWith("/api/nota-venta")) return "FACTURA_EMITIR";
@@ -193,6 +194,7 @@ public final class ApiAuthService {
         if (p.startsWith("/api/retencion")) return "RETENCION_EMITIR";
         if (p.startsWith("/api/inventario") || p.startsWith("/api/transferencias")) return "INVENTARIO_AJUSTAR";
         if (p.startsWith("/api/caja")) return "CAJA_ABRIR";
+        if (p.equals("/api/ia/consumo/renovar") || p.equals("/api/ia/consumo/reciente")) return "USUARIO_GESTIONAR";
         if (p.startsWith("/api/empresa") || p.startsWith("/api/sucursales")) return "USUARIO_GESTIONAR";
         // clientes, vehículos, comprobantes, crédito, historial, logs, secuencias:
         // requieren sesión válida (permisos granulares se validan dentro del servicio)

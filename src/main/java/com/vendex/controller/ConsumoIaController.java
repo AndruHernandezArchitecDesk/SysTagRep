@@ -22,7 +22,7 @@ import java.util.List;
 
 /**
  * Panel administrativo de medición y capacidad de Vendexi AI (spec §10.1/§10.3).
- * Solo lectura de consumo + renovación de periodo (acción administrativa).
+ * Cuotas compartidas del proveedor, consumo y renovación del período de licencia.
  */
 public class ConsumoIaController {
 
@@ -39,6 +39,8 @@ public class ConsumoIaController {
     @FXML private Label lblPrecios;
     @FXML private Button btnRenovar;
     @FXML private Button btnActualizar;
+    @FXML private javafx.scene.layout.VBox panelCuotas;
+    private CuotasIaPanel cuotas;
     @FXML private TableView<VendexiConsumo> tblConsumo;
     @FXML private TableColumn<VendexiConsumo, String> colFecha;
     @FXML private TableColumn<VendexiConsumo, String> colModulo;
@@ -51,8 +53,10 @@ public class ConsumoIaController {
     private final ObservableList<VendexiConsumo> datos = FXCollections.observableArrayList();
 
     public ConsumoIaController(AppContext ctx) {
-        this.servicio = ctx.vendexiConsumoService;
+        this(ctx.vendexiConsumoService);
     }
+
+    ConsumoIaController(VendexiConsumoService servicio) { this.servicio = servicio; }
 
     @FXML
     private void initialize() {
@@ -72,12 +76,16 @@ public class ConsumoIaController {
         boolean esAdmin = com.vendex.util.SesionActual.tienePermiso("USUARIO_GESTIONAR");
         btnRenovar.setVisible(esAdmin);
         btnRenovar.setManaged(esAdmin);
+        cuotas = new CuotasIaPanel();
+        panelCuotas.getChildren().add(cuotas);
+        javafx.scene.layout.VBox.setVgrow(cuotas, javafx.scene.layout.Priority.ALWAYS);
 
         recargar();
     }
 
     @FXML
     private void onActualizar() {
+        cuotas.actualizar();
         recargar();
     }
 
@@ -88,32 +96,49 @@ public class ConsumoIaController {
             return;
         }
         Alert conf = new Alert(Alert.AlertType.CONFIRMATION,
-                "¿Renovar el periodo de capacidad de IA?\nEl contador de tokens consumidos vuelve a 0.",
+                "¿Renovar el periodo de capacidad de IA?\nEl contador de tokens consumidos vuelve a 0. No reinicia cuotas de Google.",
                 ButtonType.OK, ButtonType.CANCEL);
         conf.setHeaderText("Renovar periodo de capacidad");
         if (!ButtonType.OK.equals(conf.showAndWait().orElse(ButtonType.CANCEL))) return;
-        servicio.renovarPeriodo();
-        recargar();
+        cargarEnSegundoPlano(true);
     }
 
     private void recargar() {
-        try {
-            VendexiConsumoService.EstadoCapacidad e = servicio.estado();
-            lblCapacidad.setText(e.capacidad > 0
-                    ? fmtTokens(e.capacidad) + " tokens por periodo"
-                    : "sin límite definido (0 en licencia)");
-            lblConsumido.setText(fmtTokens(e.consumido) + " tokens"
-                    + (e.agotada() ? "  — CAPACIDAD AGOTADA" : ""));
-            lblRestante.setText(e.restante() < 0 ? "sin límite" : fmtTokens(e.restante()) + " tokens");
-            lblCosto.setText("$ " + (e.costoPeriodo != null ? e.costoPeriodo.setScale(4, java.math.RoundingMode.HALF_UP) : BigDecimal.ZERO));
-            lblInicio.setText(e.inicioPeriodo != null ? e.inicioPeriodo.format(FMT) : "—");
-            lblPrecios.setText("entrada $" + VendexiConfig.costoUsdPor1mEntrada() + " / 1M · salida $"
-                    + VendexiConfig.costoUsdPor1mSalida() + " / 1M (estimado, configurable en "
-                    + VendexiConfig.getArchivo().getAbsolutePath() + ")");
-            datos.setAll((List<VendexiConsumo>) servicio.listarReciente(LIMITE_FILA));
-        } catch (Exception ex) {
-            lblCapacidad.setText("no disponible");
-        }
+        cargarEnSegundoPlano(false);
+    }
+
+    private void cargarEnSegundoPlano(boolean renovar) {
+        if (btnActualizar.isDisabled()) return;
+        btnActualizar.setDisable(true);
+        btnRenovar.setDisable(true);
+        Thread hilo = new Thread(() -> {
+            try {
+                if (renovar) servicio.renovarPeriodo();
+                VendexiConsumoService.EstadoCapacidad e = servicio.estado();
+                List<VendexiConsumo> recientes = servicio.listarReciente(LIMITE_FILA);
+                String precios = "entrada $" + VendexiConfig.costoUsdPor1mEntrada() + " / 1M · salida $"
+                        + VendexiConfig.costoUsdPor1mSalida() + " / 1M (estimación global; no es factura del proveedor)";
+                javafx.application.Platform.runLater(() -> {
+                    lblCapacidad.setText(e.capacidad > 0
+                            ? fmtTokens(e.capacidad) + " tokens por periodo"
+                            : "sin límite definido (0 en licencia)");
+                    lblConsumido.setText(fmtTokens(e.consumido) + " tokens"
+                            + (e.agotada() ? "  — CAPACIDAD AGOTADA" : ""));
+                    lblRestante.setText(e.restante() < 0 ? "sin límite" : fmtTokens(e.restante()) + " tokens");
+                    lblCosto.setText("$ " + (e.costoPeriodo != null ? e.costoPeriodo.setScale(4, java.math.RoundingMode.HALF_UP) : BigDecimal.ZERO));
+                    lblInicio.setText(e.inicioPeriodo != null ? e.inicioPeriodo.format(FMT) : "—");
+                    lblPrecios.setText(precios);
+                    datos.setAll(recientes);
+                    btnActualizar.setDisable(false); btnRenovar.setDisable(false);
+                });
+            } catch (Exception ex) {
+                javafx.application.Platform.runLater(() -> {
+                    lblCapacidad.setText("no disponible");
+                    btnActualizar.setDisable(false); btnRenovar.setDisable(false);
+                });
+            }
+        }, "consumo-ia-panel");
+        hilo.setDaemon(true); hilo.start();
     }
 
     private static String fmtTokens(long n) {

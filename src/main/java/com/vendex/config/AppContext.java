@@ -179,7 +179,7 @@ public class AppContext {
         this.vehiculoDAO = dao(() -> new VehiculoDAOPostgres(), () -> new VehiculoDAORest(restClient));
         this.inventarioVehiculoDAO = dao(() -> new InventarioVehiculoDAOPostgres(), () -> new InventarioVehiculoDAORest(restClient));
         // Medición Vendexi (solo local por ahora; modalidad central llega con Fase 6)
-        this.vendexiConsumoDAO = new VendexiConsumoDAOPostgres();
+        this.vendexiConsumoDAO = dao(() -> new VendexiConsumoDAOPostgres(), () -> new VendexiConsumoDAORest(restClient));
         this.vetxiHistorialDAO = dao(() -> new VetxiHistorialDAOPostgres(), () -> new VetxiHistorialDAORest(restClient));
         // Fase 6b: administración central de licencias (siempre local en la instancia central)
         this.licenciaCentralDAO = new LicenciaCentralDAOPostgres();

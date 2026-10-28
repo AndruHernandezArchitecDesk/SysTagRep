@@ -750,7 +750,7 @@ public class ChatWidgetController {
         consultaEnCurso = true; actualizarControlesChat();
         badgeIA.setText("⏳ consultando...");
 
-        // Fase 4: investigación web (§8) — códigos/números de parte o petición explícita
+        // Investigación web solo por petición explícita; los códigos usan inventario local.
         if (com.vendex.service.InvestigacionWebService.esConsultaInvestigacion(texto)
                 && com.vendex.util.LicenseManager.licenciaIncluyeIA()
                 && GeminiConfig.tieneApiKey()) {
@@ -804,6 +804,7 @@ public class ChatWidgetController {
                 if (!vigente(turno)) return;
                 boolean sinIa = res.estado == com.vendex.service.InvestigacionWebService.Estado.SIN_LICENCIA
                         || res.estado == com.vendex.service.InvestigacionWebService.Estado.SIN_CAPACIDAD
+                        || res.estado == com.vendex.service.InvestigacionWebService.Estado.SIN_CUOTA
                         || res.estado == com.vendex.service.InvestigacionWebService.Estado.SIN_API_KEY
                         || res.estado == com.vendex.service.InvestigacionWebService.Estado.SIN_CONEXION
                         || res.estado == com.vendex.service.InvestigacionWebService.Estado.SIN_BUSQUEDA
@@ -869,17 +870,19 @@ public class ChatWidgetController {
     }
 
     private void abrirEnlace(String uri) {
-        try {
-            if (!enlaceWebValido(uri)) throw new IllegalArgumentException("La fuente no es un enlace web válido");
-            if (java.awt.Desktop.isDesktopSupported()) {
-                java.awt.Desktop.getDesktop().browse(java.net.URI.create(uri));
+        // Fuera del hilo JavaFX: Desktop.browse puede bloquearse y congelar el chat.
+        com.vendex.util.Navegador.abrir(uri, mensaje -> {
+            boolean fallo = mensaje != null && (mensaje.startsWith("No se pudo")
+                    || mensaje.startsWith("El enlace no es válido"));
+            if (fallo) {
+                Platform.runLater(() -> {
+                    javafx.scene.control.Alert a = new javafx.scene.control.Alert(
+                            javafx.scene.control.Alert.AlertType.WARNING,
+                            mensaje + "\n" + uri);
+                    a.showAndWait();
+                });
             }
-        } catch (Exception e) {
-            javafx.scene.control.Alert a = new javafx.scene.control.Alert(
-                    javafx.scene.control.Alert.AlertType.WARNING,
-                    "No se pudo abrir el enlace:\n" + uri);
-            a.showAndWait();
-        }
+        });
     }
 
     private boolean enlaceWebValido(String uri) {

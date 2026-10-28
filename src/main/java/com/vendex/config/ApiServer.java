@@ -151,6 +151,20 @@ public class ApiServer {
         app.post("/api/auth/logout", loginCtrl::logout);
         app.get("/api/auth/me", loginCtrl::me);
 
+        var cuotasIa = new com.vendex.dao.CuotaIADAOPostgres();
+        var consumoIa = new com.vendex.controller.api.ConsumoIaApiController(ctx.vendexiConsumoDAO);
+        app.post("/api/ia/consumo/{accion}", consumoIa::ejecutar);
+        app.post("/api/ia/cuotas/reservar", c -> c.json(cuotasIa.reservar(c.bodyAsClass(com.vendex.model.CuotaIA.Reserva.class))));
+        app.post("/api/ia/cuotas/finalizar", c -> {
+            cuotasIa.finalizar(c.bodyAsClass(com.vendex.model.CuotaIA.Fin.class));
+            c.json(java.util.Map.of("ok", true));
+        });
+        app.get("/api/ia/cuotas/panel", c -> c.json(cuotasIa.panel()));
+        app.post("/api/ia/cuotas/config", c -> {
+            cuotasIa.guardar(c.bodyAsClass(com.vendex.model.CuotaIA.Config.class));
+            c.json(java.util.Map.of("ok", true));
+        });
+
         app.get("/api/vetxi/conversaciones", vetxiHistorialCtrl::conversaciones);
         app.get("/api/vetxi/conversaciones/{id}/mensajes", vetxiHistorialCtrl::mensajes);
         app.post("/api/vetxi/mensajes", vetxiHistorialCtrl::guardar);

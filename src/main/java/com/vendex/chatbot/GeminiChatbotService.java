@@ -7,7 +7,6 @@ import com.vendex.config.GeminiConfig;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.Clock;
@@ -51,6 +50,7 @@ public class GeminiChatbotService {
     private final java.util.Map<String, Long> modelosEnPausa = new java.util.concurrent.ConcurrentHashMap<>();
     private volatile EstadoIA estado = EstadoIA.SIN_API_KEY;
     private volatile String ultimoError = "";
+    private volatile boolean modoAhorro = true;
     private volatile com.vendex.service.VendexiConsumoService consumo;
 
     public GeminiChatbotService(RepuestoDao repuestoDao) {
@@ -96,6 +96,7 @@ public class GeminiChatbotService {
     public EstadoIA getEstado() { return estado; }
     public String getUltimoError() { return ultimoError; }
     public boolean isIaDisponible() { return estado == EstadoIA.IA_ACTIVA; }
+    protected boolean modoAhorro() { return modoAhorro; }
 
     public interface RepuestoDao {
         ResultadoBusqueda buscar(String descripcion, String marca, String modelo, Integer anio);
@@ -285,6 +286,10 @@ public class GeminiChatbotService {
         if (textoUsuario == null || textoUsuario.isBlank()) {
             return new RespuestaChat("Escribe el nombre del repuesto que buscas, ej: 'tapa radiador aveo'.", estado, false);
         }
+        if (com.vendex.service.InvestigacionWebService.esCodigoRepuesto(textoUsuario)) {
+            return new RespuestaChat("Búsqueda local de inventario:\n"
+                    + preguntarSoloLocal(textoUsuario, vehMarca, vehModelo, vehAnio), estado, true);
+        }
         // Fase 1: gate de licencia — si la licencia no incluye Vendexi AI, no se llama al proveedor.
         // La búsqueda local (función ERP permitida) sigue disponible.
         if (!com.vendex.util.LicenseManager.licenciaIncluyeIA()) {
@@ -338,7 +343,7 @@ public class GeminiChatbotService {
     private String prefijoSinIA(EstadoIA e) {
         return switch (e) {
             case SIN_API_KEY -> "⚠️ sin IA — no hay API key configurada\n";
-            case SIN_IA_TOKENS -> "⚠️ sin IA — sin tokens/cuota agotada (429)\n";
+            case SIN_IA_TOKENS -> "⚠️ IA limitada — revisar cuotas y capacidad\n";
             case SIN_IA_SERVIDOR -> {
                 if (ultimoError != null && ultimoError.contains("404")) yield "⚠️ sin IA — modelo no disponible (404)\n";
                 yield "⚠️ sin IA — servidor Gemini no disponible\n";
@@ -387,6 +392,10 @@ public class GeminiChatbotService {
 
         // Paso 2: ejecutar la herramienta local correspondiente (datos reales del ERP)
         String respuestaLocal = ejecutarLocal(c, texto);
+
+        if (modoAhorro() && c.accion != Accion.GENERAL && !respuestaLocal.isBlank()) {
+            return new RespuestaChat(respuestaLocal, EstadoIA.IA_ACTIVA, false, rol, java.util.List.of());
+        }
 
         // Paso 3: redacción breve con IA (best-effort, no invalida los datos locales)
         try {
@@ -719,7 +728,7 @@ public class GeminiChatbotService {
         }
         String mensajeUsuario() {
             return switch (estado) {
-                case SIN_IA_TOKENS -> "Cuota/tokens agotados. Revisa https://aistudio.google.com";
+                case SIN_IA_TOKENS -> getMessage();
                 case SIN_IA_SERVIDOR -> "Servidor Gemini temporalmente no disponible, intenta en minutos";
                 case SIN_IA_CONEXION -> "Sin conexión a internet o timeout";
                 case SIN_IA_KEY_INVALIDA -> "API key inválida o sin permisos";
@@ -769,18 +778,15 @@ public class GeminiChatbotService {
         content.put("role", "user");
         com.fasterxml.jackson.databind.node.ArrayNode parts = content.putArray("parts");
         parts.addObject().put("text", prompt);
-        String body = MAPPER.writeValueAsString(root);
-
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .timeout(TIMEOUT)
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(body))
-                .build();
-
         HttpResponse<String> resp;
         try {
-            resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+            var resultado = new com.vendex.service.GeminiCuotas(com.vendex.service.GeminiCuotas.dao())
+                    .enviar(httpClient, URI.create(url), root, TIMEOUT, modelo,
+                            prompt.contains("\"accion\"") ? "chat.clasificacion" : "chat.redaccion");
+            resp = resultado.http();
+            modoAhorro = resultado.ahorro();
+        } catch (com.vendex.service.GeminiCuotas.Limite e) {
+            throw new GeminiException(EstadoIA.SIN_IA_TOKENS, e.getMessage());
         } catch (java.net.http.HttpTimeoutException e) {
             throw new GeminiException(EstadoIA.SIN_IA_CONEXION, "Timeout 45s: " + e.getMessage());
         } catch (java.io.IOException e) {
@@ -807,7 +813,7 @@ public class GeminiChatbotService {
             JsonNode usage = respRoot.path("usageMetadata");
             if (!usage.isMissingNode()) {
                 long tin = usage.path("promptTokenCount").asLong(0);
-                long tout = usage.path("candidatesTokenCount").asLong(0);
+                long tout = com.vendex.service.GeminiCuotas.salidaContabilizada(usage);
                 consumoService().registrarTokens("chatbot", "chat", modelo, tin, tout);
             }
         } catch (Exception ignored) {}

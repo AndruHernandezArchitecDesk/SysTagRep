@@ -87,6 +87,8 @@ class GeminiChatbotServiceHerramientasTest {
         private final ArrayDeque<String> respuestas = new ArrayDeque<>();
         private final java.util.List<String> prompts = new java.util.ArrayList<>();
         private final java.util.Set<String> rolesBloqueados = new java.util.HashSet<>();
+        private boolean ahorro;
+        @Override protected boolean modoAhorro() { return ahorro; }
 
         ConGeminiFake(HerramientasAgente herramientas) {
             super(new RepuestoDaoFalso(), herramientas);
@@ -118,6 +120,26 @@ class GeminiChatbotServiceHerramientasTest {
     }
 
     // ---------- parseo del clasificador ----------
+
+    @Test
+    void modoAhorro_entregaDatosLocalesConUnaSolaLlamada() throws Exception {
+        var fake = new ConGeminiFake(new HerramientasFalsas());
+        fake.ahorro = true;
+        fake.ofrecer("{\"accion\":\"CONSULTAR_PRODUCTO\",\"descripcion\":\"filtro aceite\"}");
+        var respuesta = fake.preguntarConGeminiRespuesta("stock filtro", "fake-key", null, null, null);
+        assertEquals(1, fake.prompts.size());
+        assertTrue(respuesta.texto.contains("FIL-01"));
+        assertEquals("INVENTARIO", respuesta.rolIA);
+    }
+
+    @Test
+    void codigoPuro_noClasificaNiRedactaConIA() {
+        var fake = new ConGeminiFake(new HerramientasFalsas());
+        var respuesta = fake.preguntarConEstado("04411-37130");
+        assertTrue(fake.prompts.isEmpty());
+        assertTrue(respuesta.esSinIA);
+        assertTrue(respuesta.texto.startsWith("Búsqueda local"));
+    }
 
     @Test
     void parsear_jsonInvalido_devuelveNull() {

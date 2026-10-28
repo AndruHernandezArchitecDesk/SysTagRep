@@ -12,7 +12,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -46,7 +45,7 @@ public class AnalisisEmpresarialService {
 
     public enum Tipo { ROTACION, AGOTAMIENTO, MARGENES, TENDENCIAS, GENERAL }
 
-    public enum Estado { OK, SIN_LICENCIA, SIN_CAPACIDAD, SIN_API_KEY, SIN_CONEXION, ERROR }
+    public enum Estado { OK, SIN_LICENCIA, SIN_CAPACIDAD, SIN_API_KEY, SIN_CUOTA, SIN_CONEXION, ERROR }
 
     public static final class Resultado {
         public final Estado estado;
@@ -220,11 +219,15 @@ public class AnalisisEmpresarialService {
         try {
             String texto = llamarGemini(prompt, apiKey, MODELO);
             return new Resultado(Estado.OK, texto, resumenCorto(datos));
+        } catch (GeminiCuotas.Limite e) {
+            return new Resultado(Estado.SIN_CUOTA, e.getMessage(), resumenCorto(datos));
         } catch (Exception e1) {
             LOGGER.log(Level.FINE, "Modelo principal falló en análisis: " + e1.getMessage());
             try {
                 String texto = llamarGemini(prompt, apiKey, MODELO_FALLBACK);
                 return new Resultado(Estado.OK, texto, resumenCorto(datos));
+            } catch (GeminiCuotas.Limite e) {
+                return new Resultado(Estado.SIN_CUOTA, e.getMessage(), resumenCorto(datos));
             } catch (Exception e2) {
                 return new Resultado(Estado.SIN_CONEXION,
                         "⚠️ El análisis con IA no está disponible (" + cortar(e2.getMessage(), 120)
@@ -258,14 +261,10 @@ public class AnalisisEmpresarialService {
         content.put("role", "user");
         content.putArray("parts").addObject().put("text", prompt);
 
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(url)).timeout(TIMEOUT)
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(MAPPER.writeValueAsString(root)))
-                .build();
         HttpResponse<String> resp;
         try {
-            resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+            resp = new GeminiCuotas(GeminiCuotas.dao()).enviar(httpClient, URI.create(url), root,
+                    TIMEOUT, modelo, "analisis." + tipoOperacion(prompt)).http();
         } catch (java.net.http.HttpTimeoutException e) {
             throw new IllegalStateException("Timeout: " + e.getMessage(), e);
         } catch (java.io.IOException e) {
@@ -283,7 +282,7 @@ public class AnalisisEmpresarialService {
             if (consumo != null) {
                 consumo.registrarTokens("analisis", tipoOperacion(prompt), modelo,
                         usage.path("promptTokenCount").asLong(0),
-                        usage.path("candidatesTokenCount").asLong(0));
+                        GeminiCuotas.salidaContabilizada(usage));
             }
         } catch (Exception ignored) {}
         StringBuilder texto = new StringBuilder();

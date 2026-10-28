@@ -63,6 +63,10 @@ public class MainApp extends Application {
         DatabaseConnection.ensureAccesoDirectoSchema();
         try { DatabaseConnection.ensureVendexiSchema(); } catch (Exception e) { System.err.println("No se pudo asegurar esquema Vendexi: " + e.getMessage()); }
         DatabaseConnection.ensureVetxiHistorialSchema();
+        if (!com.vendex.remote.ApiConfig.isModoRemoto()) {
+            try { com.vendex.dao.CuotaIADAOPostgres.prepararEsquema(); }
+            catch (Exception e) { java.util.logging.Logger.getLogger(MainApp.class.getName()).log(java.util.logging.Level.WARNING, "No se pudo preparar control central de cuotas IA", e); }
+        }
         try { DatabaseConnection.ensureLicenciasCentralSchema(); } catch (Exception e) { System.err.println("No se pudo asegurar esquema licencias centrales: " + e.getMessage()); }
         try { DatabaseConnection.ensureFase7Schema(); } catch (Exception e) { System.err.println("No se pudo asegurar esquema Fase 7: " + e.getMessage()); }
         try { DatabaseConnection.ensurePrestamoSchema(); } catch (Exception e) { System.err.println("No se pudo asegurar esquema préstamos: " + e.getMessage()); }

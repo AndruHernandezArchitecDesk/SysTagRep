@@ -8,7 +8,6 @@ import com.vendex.util.LicenseManager;
 
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -331,14 +330,8 @@ public class VendexiSugerenciaService {
         com.fasterxml.jackson.databind.node.ArrayNode parts = content.putArray("parts");
         parts.addObject().put("text", prompt);
 
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .timeout(Duration.ofSeconds(30))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(MAPPER.writeValueAsString(root)))
-                .build();
-
-        HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> resp = new GeminiCuotas(GeminiCuotas.dao()).enviar(httpClient, URI.create(url), root,
+                Duration.ofSeconds(30), MODELO, "contextual.venta_cruzada").http();
         if (resp.statusCode() != 200) {
             throw new IllegalStateException("HTTP " + resp.statusCode());
         }
@@ -347,7 +340,7 @@ public class VendexiSugerenciaService {
         try {
             JsonNode usage = respRoot.path("usageMetadata");
             long tin = usage.path("promptTokenCount").asLong(0);
-            long tout = usage.path("candidatesTokenCount").asLong(0);
+            long tout = GeminiCuotas.salidaContabilizada(usage);
             consumoService().registrarTokens("contextual", "venta_cruzada", MODELO, tin, tout);
         } catch (Exception ignored) {}
         JsonNode candidates = respRoot.path("candidates");

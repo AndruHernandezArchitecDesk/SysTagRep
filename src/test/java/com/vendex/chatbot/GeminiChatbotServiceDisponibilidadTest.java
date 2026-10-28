@@ -42,6 +42,8 @@ class GeminiChatbotServiceDisponibilidadTest {
 
     @BeforeEach
     void iniciar() throws Exception {
+        com.vendex.config.DatabaseConnection.setConnectionParams("jdbc:hsqldb:mem:cuotas_chat_" + java.util.UUID.randomUUID() + ";sql.syntax_pgs=true", "sa", "");
+        com.vendex.dao.CuotaIADAOPostgres.prepararEsquema();
         servidor = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         servidor.createContext("/models/", exchange -> {
             try (exchange) {
@@ -67,6 +69,7 @@ class GeminiChatbotServiceDisponibilidadTest {
     @AfterEach
     void cerrar() {
         if (servidor != null) servidor.stop(0);
+        com.vendex.config.DatabaseConnection.resetToDefault();
     }
 
     @Test
@@ -125,7 +128,7 @@ class GeminiChatbotServiceDisponibilidadTest {
 
     @Test
     void erroresDeCuotaKeyYPayload_noSeConfundenCon503DelTexto() {
-        for (int estado : List.of(429, 401, 403, 400)) {
+        for (int estado : List.of(401, 403, 400, 429)) {
             llamadas.clear();
             estados.put(PRINCIPAL, estado);
             Exception error = assertThrows(Exception.class, () -> servicio.llamarGemini("consulta", "clave-falsa"));

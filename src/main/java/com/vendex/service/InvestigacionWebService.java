@@ -7,7 +7,6 @@ import com.vendex.util.LicenseManager;
 
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -51,7 +50,7 @@ public class InvestigacionWebService {
         public boolean tieneUri() { return uri != null && uri.startsWith("http"); }
     }
 
-    public enum Estado { OK, SIN_LICENCIA, SIN_CAPACIDAD, SIN_API_KEY, SIN_BUSQUEDA, SIN_CONEXION, ERROR }
+    public enum Estado { OK, SIN_LICENCIA, SIN_CAPACIDAD, SIN_API_KEY, SIN_BUSQUEDA, SIN_CUOTA, SIN_CONEXION, ERROR }
 
     public static final class Resultado {
         public final Estado estado;
@@ -84,20 +83,19 @@ public class InvestigacionWebService {
     }
 
     /**
-     * true si el mensaje del usuario pide investigación web explícita o es
-     * esencialmente un código de repuesto (número de parte).
+     * La investigación web requiere una petición explícita; los códigos se buscan localmente.
      */
     public static boolean esConsultaInvestigacion(String texto) {
         if (texto == null || texto.isBlank()) return false;
         String t = texto.trim();
-        if (PATRON_INTENCION.matcher(t).matches()) return true;
-        // un "código puro" (número de parte con guion/barra y al menos un dígito) dispara investigación
-        if (t.length() >= 5 && t.length() <= 40 && !t.contains(" ")
-                && (t.contains("-") || t.contains("/"))
-                && PATRON_CODIGO.matcher(t).matches() && t.matches(".*\\d.*")) {
-            return true;
-        }
-        return false;
+        return PATRON_INTENCION.matcher(t).matches();
+    }
+
+    public static boolean esCodigoRepuesto(String texto) {
+        if (texto == null) return false;
+        String t = texto.trim();
+        return t.length() >= 5 && t.length() <= 40 && (t.contains("-") || t.contains("/"))
+                && PATRON_CODIGO.matcher(t).matches() && t.matches(".*\\d.*");
     }
 
     /**
@@ -128,10 +126,14 @@ public class InvestigacionWebService {
         String prompt = construirPrompt(consulta, resumenInventarioLocal, vehMarca, vehModelo, vehAnio);
         try {
             return llamarConBusqueda(prompt, apiKey);
+        } catch (GeminiCuotas.Limite e) {
+            return new Resultado(Estado.SIN_CUOTA, e.getMessage(), List.of(), true);
         } catch (Exception e1) {
             LOGGER.log(Level.FINE, "google_search falló (" + e1.getMessage() + "), probando modelo alternativo");
             try {
                 return llamarConBusqueda(prompt, apiKey, MODELO_FALLBACK);
+            } catch (GeminiCuotas.Limite e) {
+                return new Resultado(Estado.SIN_CUOTA, e.getMessage(), List.of(), true);
             } catch (Exception e2) {
                 LOGGER.log(Level.WARNING, "Investigación web no disponible", e2);
                 return new Resultado(Estado.SIN_CONEXION,
@@ -157,16 +159,10 @@ public class InvestigacionWebService {
         // Herramienta de búsqueda de Google (grounding) — spec §8
         root.withArray("tools").addObject().putObject("google_search");
 
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .timeout(TIMEOUT)
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(MAPPER.writeValueAsString(root)))
-                .build();
-
         HttpResponse<String> resp;
         try {
-            resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+            resp = new GeminiCuotas(GeminiCuotas.dao()).enviar(httpClient, URI.create(url), root,
+                    TIMEOUT, modelo, "web.investigacion").http();
         } catch (java.net.http.HttpTimeoutException e) {
             throw new IllegalStateException("Timeout: " + e.getMessage(), e);
         } catch (java.io.IOException e) {
@@ -185,7 +181,7 @@ public class InvestigacionWebService {
         try {
             JsonNode usage = respRoot.path("usageMetadata");
             long tin = usage.path("promptTokenCount").asLong(0);
-            long tout = usage.path("candidatesTokenCount").asLong(0);
+            long tout = GeminiCuotas.salidaContabilizada(usage);
             consumoService().registrarTokens("web", "investigacion", modelo, tin, tout);
         } catch (Exception ignored) {}
 

@@ -386,7 +386,7 @@
                         </graphic>
                         <tooltip><Tooltip text="Guardar API key de Gemini/NVIDIA (cifrada) para el asistente IA"/></tooltip>
                     </Button>
-                    <Button text="Consumo de IA" onAction="#irConsumoIa" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
+                    <Button text="Cuotas y consumo de IA" onAction="#irConsumoIa" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                         <graphic>
                             <FontIcon iconLiteral="fas-chart-line" iconSize="16"/>
                         </graphic>

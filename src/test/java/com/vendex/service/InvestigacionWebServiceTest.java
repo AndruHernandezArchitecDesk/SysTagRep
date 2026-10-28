@@ -29,10 +29,10 @@ class InvestigacionWebServiceTest {
     }
 
     @Test
-    void codigoPuro_disparaInvestigacion() {
-        assertTrue(InvestigacionWebService.esConsultaInvestigacion("0K937-30Q0A"));
-        assertTrue(InvestigacionWebService.esConsultaInvestigacion("5W-30"));
-        assertTrue(InvestigacionWebService.esConsultaInvestigacion("04411-37130"));
+    void codigoPuro_conservaBusquedaLocal() {
+        assertFalse(InvestigacionWebService.esConsultaInvestigacion("0K937-30Q0A"));
+        assertFalse(InvestigacionWebService.esConsultaInvestigacion("5W-30"));
+        assertFalse(InvestigacionWebService.esConsultaInvestigacion("04411-37130"));
         // código interno del ERP sin guion: NO debe robar la búsqueda local
         assertFalse(InvestigacionWebService.esConsultaInvestigacion("FILTRO1"));
         assertFalse(InvestigacionWebService.esConsultaInvestigacion("BANDA01"));

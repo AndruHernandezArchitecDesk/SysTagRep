@@ -5,7 +5,7 @@
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.vendex.controller.ConsumoIaController" prefHeight="600.0" prefWidth="1100.0" style="-fx-padding: 10">
   <top>
     <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 5 0 10 0">
-      <Label text="Consumo de IA" styleClass="titulo">
+      <Label text="Cuotas y consumo de IA" styleClass="titulo">
         <graphic><FontIcon iconLiteral="fas-chart-line" styleClass="titulo-icono"/></graphic>
       </Label>
       <Region HBox.hgrow="ALWAYS"/>
@@ -19,7 +19,12 @@
     </HBox>
   </top>
   <center>
+    <TabPane tabClosingPolicy="UNAVAILABLE">
+    <tabs>
+    <Tab text="Cuotas compartidas de Gemini"><content><VBox fx:id="panelCuotas"/></content></Tab>
+    <Tab text="Capacidad de licencia Vendex"><content>
     <VBox spacing="10">
+      <Label text="Renovar este período no reinicia cuotas de Google. El costo es una referencia global; no incluye cargos de búsqueda web." wrapText="true"/>
       <GridPane hgap="14" vgap="8" style="-fx-padding: 8; -fx-background-color: #f6f8fa; -fx-background-radius: 6;">
         <columnConstraints>
           <ColumnConstraints minWidth="140" prefWidth="140"/>
@@ -54,5 +59,8 @@
         </placeholder>
       </TableView>
     </VBox>
+    </content></Tab>
+    </tabs>
+    </TabPane>
   </center>
 </BorderPane>
