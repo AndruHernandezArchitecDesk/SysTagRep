@@ -140,6 +140,31 @@ class VendexiMascotaTest {
         };
     }
 
+    @Test void menuGuiaSeActivaEnFacturaYSeRetiraAlCambiarDocumento() throws Exception {
+        fx(() -> {
+            var c = cargar(sinIa());
+            var widget = (javafx.scene.layout.StackPane) campo(c, "rootStack");
+            var escena = widget.getScene();
+            escena.setRoot(new javafx.scene.layout.StackPane());
+            var formulario = new javafx.scene.layout.VBox(new javafx.scene.control.TextField());
+            escena.setRoot(new javafx.scene.layout.StackPane(formulario, widget));
+            c.setDocumentoActivo(new Documento() {
+                @Override public Parent formularioGuia() { return formulario; }
+            });
+            var boton = (Button) campo(c, "bubbleButton");
+            var opcion = boton.getContextMenu().getItems().stream().filter(i -> "Guía".equals(i.getText())).findFirst().orElseThrow();
+            opcion.fire();
+            var guia = (GuiaFormulario) campo(c, "guia");
+            try {
+                assertTrue(guia.activa());
+                assertNotNull(widget.lookup("#guiaBurbuja"));
+                c.setDocumentoActivo(null);
+                assertFalse(guia.activa());
+                assertNull(widget.lookup("#guiaLaser"));
+            } finally { c.setDocumentoActivo(null); }
+        });
+    }
+
     private Object campo(ChatWidgetController c, String nombre) throws Exception {
         var f = ChatWidgetController.class.getDeclaredField(nombre);
         f.setAccessible(true);
@@ -293,6 +318,8 @@ class VendexiMascotaTest {
                 navegar.invoke(main, "/view/FacturaView.fxml");
                 var factura = (DocumentoVendexi) campo(c, "documentoActivo");
                 assertTrue(factura instanceof FacturaController);
+                assertInstanceOf(javafx.scene.layout.BorderPane.class, factura.formularioGuia());
+                assertNotNull(factura.formularioGuia().lookup("#lblNumFactura"));
                 assertTrue(((Parent) campo(c, "capibara")).lookup("#lentes").isVisible());
                 factura.accionAgregarVendexi().accept(sugerencia(9, 5).producto);
                 assertEquals(9, factura.contextoVendexi().lineas.get(0).inventarioId);

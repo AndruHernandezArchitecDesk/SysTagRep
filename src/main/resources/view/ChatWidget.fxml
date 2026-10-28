@@ -69,7 +69,7 @@
     <StackPane fx:id="mascota" managed="false" pickOnBounds="false" prefWidth="104" prefHeight="108">
         <Button fx:id="bubbleButton" onAction="#onMascota" styleClass="capibara-boton" StackPane.alignment="TOP_CENTER"
                 accessibleText="Vetxi, asistente. Arrastra para mover; pulsa para abrir.">
-            <tooltip><Tooltip text="Soy Vetxi. Pulsa para conversar, arrastra para mover o haz clic derecho para cambiar mascota."/></tooltip>
+            <tooltip><Tooltip text="Soy Vetxi. Pulsa para conversar, arrastra para mover o haz clic derecho para activar Guía o cambiar mascota."/></tooltip>
         </Button>
         <Label text="Vetxi" styleClass="capibara-nombre" mouseTransparent="true" StackPane.alignment="BOTTOM_CENTER"/>
         <Label fx:id="contadorSugerencias" text="0" visible="false" mouseTransparent="true"

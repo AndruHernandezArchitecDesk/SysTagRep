@@ -178,6 +178,15 @@ public class FacturaController implements Initializable, DocumentoVendexi {
     }
 
     @Override
+    public javafx.scene.Parent formularioGuia() {
+        // El encabezado es hijo directo de la raíz; no depende del skin del ScrollPane.
+        for (javafx.scene.Parent p = imgLogo.getParent(); p != null; p = p.getParent()) {
+            if (p instanceof javafx.scene.layout.BorderPane) return p;
+        }
+        return null;
+    }
+
+    @Override
     public java.util.function.Consumer<Inventario> accionAgregarVendexi() {
         return this::agregarSugeridoVendexi;
     }

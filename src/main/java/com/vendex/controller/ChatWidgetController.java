@@ -97,6 +97,7 @@ public class ChatWidgetController {
     private final javafx.animation.PauseTransition esperaComplementarios = new javafx.animation.PauseTransition(Duration.millis(650));
     private final javafx.animation.PauseTransition ocultarBurbuja = new javafx.animation.PauseTransition(Duration.seconds(12));
     private MascotaAnimaciones animaciones;
+    private GuiaFormulario guia;
     private boolean arrastrando;
     private double inicioMouseX, inicioMouseY, inicioMascotaX, inicioMascotaY;
     private double posicionX, posicionY;
@@ -195,6 +196,7 @@ public class ChatWidgetController {
     private Integer filtroAnio() { return cmbAnio != null ? cmbAnio.getValue() : null; }
 
     void cambiarMascota(String tipo) {
+        terminarGuia();
         boolean robot = !"capibara".equals(tipo);
         final javafx.scene.Group dibujo;
         try {
@@ -210,7 +212,7 @@ public class ChatWidgetController {
         if (animaciones != null) animaciones.setActivo(false);
         capibara = dibujo;
         bubbleButton.setGraphic(dibujo);
-        bubbleButton.setAccessibleText("Vetxi, asistente. Arrastra para mover; pulsa para abrir. Menú contextual para cambiar mascota.");
+        bubbleButton.setAccessibleText("Vetxi, asistente. Arrastra para mover; pulsa para abrir. Clic derecho para Guía o cambiar mascota.");
         animaciones = nuevo;
         String modulo = documentoActivo == null ? "" : documentoActivo.contextoVendexi().modulo;
         animaciones.setTrabajando("factura".equals(modulo) || "proforma".equals(modulo));
@@ -224,6 +226,9 @@ public class ChatWidgetController {
         cambiarMascota(preferencias.get("mascota", "vendexi"));
         var grupo = new javafx.scene.control.ToggleGroup();
         var menu = new javafx.scene.control.ContextMenu();
+        var guiaItem = new javafx.scene.control.MenuItem("Guía");
+        guiaItem.setOnAction(e -> iniciarGuia());
+        menu.getItems().addAll(guiaItem, new javafx.scene.control.SeparatorMenuItem());
         for (String tipo : new String[]{"vendexi", "capibara"}) {
             var item = new javafx.scene.control.RadioMenuItem(tipo.equals("vendexi") ? "Vendexi (robot)" : "Vetxi (capibara)");
             item.setToggleGroup(grupo);
@@ -292,10 +297,11 @@ public class ChatWidgetController {
         boolean visible = rootStack.getScene() != null && rootStack.getScene().getWindow() != null
                 && rootStack.getScene().getWindow().isShowing() && rootStack.getScene().getWindow().isFocused()
                 && !(rootStack.getScene().getWindow() instanceof javafx.stage.Stage stage && stage.isIconified());
-        animaciones.setActivo(visible);
+        animaciones.setActivo(visible && (guia == null || !guia.activa()));
     }
 
     private void liberar() {
+        terminarGuia();
         cerrado = true;
         versionChat++;
         historialCargado = false;
@@ -356,15 +362,39 @@ public class ChatWidgetController {
 
     @FXML private void onMascota() {
         if (arrastrando) { arrastrando = false; return; }
+        terminarGuia();
         if (!pendientes.isEmpty()) mostrarSugerencias(); else onToggleChat();
     }
 
     public void setDocumentoActivo(DocumentoVendexi documento) {
+        terminarGuia();
         if (documentoActivo != null) documentoActivo.conectarVendexi(null);
         documentoActivo = documento;
         documentoModificado(documento);
         if (documento != null) documento.conectarVendexi(this);
         actualizarContexto();
+    }
+
+    void iniciarGuia() {
+        if (guia != null && guia.activa()) { terminarGuia(); return; }
+        javafx.scene.Parent formulario = documentoActivo == null ? null : documentoActivo.formularioGuia();
+        if (formulario == null || !"factura".equals(documentoActivo.contextoVendexi().modulo)) {
+            var aviso = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION,
+                    "La guía está disponible en Factura de venta. Abre ese formulario y elige Guía con clic derecho sobre Vetxi.");
+            aviso.setHeaderText("Guía de Vetxi");
+            if (rootStack.getScene() != null) aviso.initOwner(rootStack.getScene().getWindow());
+            aviso.show();
+            return;
+        }
+        chatPanel.setVisible(false); ocultarSugerencias();
+        animaciones.setActivo(false);
+        guia = new GuiaFormulario(rootStack, formulario, capibara, this::actualizarReposo);
+        guia.iniciar();
+        actualizarReposo();
+    }
+
+    private void terminarGuia() {
+        if (guia != null) { guia.cerrar(); guia = null; }
     }
 
     public void documentoModificado(DocumentoVendexi origen) {
@@ -446,6 +476,7 @@ public class ChatWidgetController {
     }
 
     @FXML void mostrarSugerencias() {
+        if (guia != null && guia.activa()) return;
         if (pendientes.isEmpty()) return;
         if (chatPanel.isVisible()) onToggleChat();
         var sugerencia = pendientes.get(indiceSugerencia);

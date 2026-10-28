@@ -71,7 +71,8 @@
   <Ellipse centerX="11" centerY="33" radiusX="4.5" radiusY="8.5" fill="$screen" stroke="#087BFF" strokeWidth="1"/>
   <Group fx:id="ojos">
     <effect><DropShadow color="#087BFF" radius="3" spread="0.4"/></effect>
-    <SVGPath content="M 32 35 Q 36 25 42 33 M 55 31 Q 59 21 65 29" fill="TRANSPARENT" stroke="#19F1FF" strokeWidth="3.2" strokeLineCap="ROUND"/>
+    <SVGPath fx:id="ojoIzquierdo" content="M 32 35 Q 36 25 42 33" fill="TRANSPARENT" stroke="#19F1FF" strokeWidth="3.2" strokeLineCap="ROUND"/>
+    <SVGPath fx:id="ojoDerecho" content="M 55 31 Q 59 21 65 29" fill="TRANSPARENT" stroke="#19F1FF" strokeWidth="3.2" strokeLineCap="ROUND"/>
   </Group>
   <Group fx:id="sonrisa">
     <SVGPath content="M 44 40 Q 50 42 55 37 Q 52 45 44 40 Z" fill="#19D9FF"/>

@@ -50,8 +50,8 @@
     <Ellipse centerX="27" centerY="41" radiusX="5" radiusY="3" fill="#D98F7F" opacity="0.55"/>
     <Ellipse centerX="73" centerY="41" radiusX="5" radiusY="3" fill="#D98F7F" opacity="0.55"/>
     <SVGPath content="M 29 27 Q 32 25 35 27 M 65 27 Q 68 25 71 27" fill="TRANSPARENT" stroke="#A2734C" strokeWidth="1.2" strokeLineCap="ROUND"/>
-    <Circle centerX="33" centerY="33" radius="3.4" fill="#352A23"/>
-    <Circle centerX="67" centerY="33" radius="3.4" fill="#352A23"/>
+    <Circle fx:id="ojoIzquierdo" centerX="33" centerY="33" radius="3.4" fill="#352A23"/>
+    <Circle fx:id="ojoDerecho" centerX="67" centerY="33" radius="3.4" fill="#352A23"/>
     <Circle centerX="32" centerY="31.8" radius="1.1" fill="#FFF9E9"/>
     <Circle centerX="66" centerY="31.8" radius="1.1" fill="#FFF9E9"/>
     <Rectangle x="29" y="36" width="42" height="22" arcWidth="20" arcHeight="18" fill="$hocicoSuave"/>
