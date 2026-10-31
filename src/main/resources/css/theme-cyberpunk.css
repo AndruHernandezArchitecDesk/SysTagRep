@@ -219,7 +219,13 @@
 /* ========== LOGIN DARK ========== */
 .login-card { -fx-background-color: -bg-card; -fx-border-color: -border; }
 .login-titulo { -fx-fill: -text-primary; }
-.login-subtitulo { -fx-fill: -text-secondary; }
+.login-subtitulo {
+    -fx-fill: -accent-primary;
+    -fx-font-family: "System";
+    -fx-font-size: 17px;
+    -fx-font-weight: bold;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.16), 4, 0, 0, 1);
+}
 .login-copy { -fx-fill: -text-secondary; }
 
 .label-dark-override { -fx-text-fill: -text-primary; }

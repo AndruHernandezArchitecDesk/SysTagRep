@@ -11,8 +11,12 @@ control a través del servidor; nunca recurren a contadores locales si éste fal
    con el rol migrador. El arranque también intenta preparar el esquema de forma
    idempotente. En instalaciones con mínimo privilegio, el administrador de BD debe
    otorgar `SELECT, INSERT, UPDATE ON ia_cuota, ia_solicitud TO app_vendex`.
-3. Entrar al panel, seleccionar cada modelo y copiar RPM, TPM y RPD desde
-   https://ai.dev/rate-limit para el proyecto de Google correspondiente.
+3. Entrar al panel y activar **Sin límites locales**, luego **Guardar modelo**,
+   o pulsar **Quitar límites locales de todos los modelos** para aplicarlo a todos
+   los equipos de la misma base/servidor. RPM, TPM y RPD quedan en cero, sin borrar
+   historial, tarifas ni pausas activas. No habilita modelos que estaban deshabilitados.
+   Si se desean límites propios, desmarcar la opción y configurar RPM, TPM y RPD.
+   La cuota oficial de Google se consulta en https://ai.dev/rate-limit.
 4. Dejar **Ahorrar redacción** activo. Configurar salida entre 256 y 8192 tokens
    (por defecto 2048, incluye el presupuesto que el modelo destine a razonamiento).
 5. Opcionalmente configurar tarifas USD por millón de tokens. Vacío significa tarifa
@@ -28,7 +32,9 @@ el panel los contabiliza por el nombre solicitado, no descubre esas equivalencia
 
 ## Comportamiento
 
-- Los límites comienzan en 0 (sin configurar); no se inventan cuotas gratuitas.
+- Los límites comienzan en 0 (**sin límite local**). La opción del panel utiliza
+  esos mismos valores; no requiere una nueva migración. Se sigue midiendo cada
+  solicitud. No modifica cuotas de Google ni capacidad de licencia.
 - RPM: ventana móvil de 60 segundos. RPD: día de `America/Los_Angeles`.
 - TPM: presupuesto local **estimado de entrada** por bytes UTF-8 del contenido enviado,
   conservador y distinto del conteo oficial. No se realiza una llamada extra a countTokens.
@@ -37,7 +43,11 @@ el panel los contabiliza por el nombre solicitado, no descubre esas equivalencia
   queda pendiente y sigue contando en su ventana: no implica tokens consumidos.
 - HTTP 429: pausa compartida por modelo, sin cambiar inmediatamente al alternativo.
   Se respeta Retry-After (segundos o fecha) y RetryInfo.retryDelay. Sin indicación,
-  se usa una pausa de 60 segundos; una cuota diaria puede seguir agotada al terminar.
+   se usa una pausa de 60 segundos; una cuota diaria puede seguir agotada al terminar.
+- Si Google indica una espera menor a 60 segundos se respeta, con precisión mínima
+  de un segundo. El mensaje muestra el modelo, los identificadores de cuota y valor
+  reportados (si existen), y la fecha UTC antes de la cual no se reintenta. Las demás
+  PCs ven esa misma pausa. No se almacena el mensaje completo del proveedor.
 - La interfaz muestra desglose de entrada, respuesta, razonamiento y total informado
   por Google. El total no se vuelve a sumar a sus componentes. Sin usageMetadata,
   se indica que no hubo medición; cero no prueba que Google no haya facturado.

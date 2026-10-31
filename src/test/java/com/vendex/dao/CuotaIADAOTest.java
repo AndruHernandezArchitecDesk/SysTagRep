@@ -51,6 +51,26 @@ class CuotaIADAOTest {
         configurar(0, 0, 1);
         assertFalse(dao.reservar(reserva(1)).permitido());
     }
+    @Test void sinLimitesLocales_sigueMidiendoYRespetaLaEsperaDeGoogle() throws Exception {
+        configurar(1, 10, 1);
+        var primera = reserva(10); assertTrue(dao.reservar(primera).permitido());
+        assertFalse(dao.reservar(reserva(100)).permitido());
+        var anterior = dao.panel().modelos().stream().filter(e -> e.config().modelo().equals(MODELO)).findFirst().orElseThrow().config();
+        dao.guardar(anterior.quitarLimitesLocales());
+        assertTrue(new CuotaIADAOPostgres().reservar(reserva(1000000)).permitido());
+        assertEquals(2, dao.panel().intentos().size(), "Sin límites también registra cada intento");
+        long antes = System.currentTimeMillis();
+        dao.finalizar(new Fin(primera.id(), 429, 1, 0, 0, 0, 0, 12000, "Cuota Google: RPM"));
+        var estado = dao.panel().modelos().stream().filter(e -> e.config().modelo().equals(MODELO)).findFirst().orElseThrow();
+        assertTrue(estado.config().sinLimitesLocales());
+        assertTrue(estado.pausaHasta() >= antes + 11000);
+        assertTrue(estado.pausaHasta() < antes + 30000, "No debe imponer 60 s si Google indicó 12 s");
+        assertEquals(anterior.maxSalida(), estado.config().maxSalida());
+        assertEquals(anterior.precioEntrada(), estado.config().precioEntrada());
+        assertFalse(new CuotaIADAOPostgres().reservar(reserva(1)).permitido());
+        dao.guardar(estado.config().quitarLimitesLocales());
+        assertFalse(dao.reservar(reserva(1)).permitido(), "Quitar límites locales no borra la pausa de Google");
+    }
     @Test void mideDesgloseYCosto_sinSumarTotalOtraVez() throws Exception {
         configurar(0, 0, 0);
         var r = reserva(500); dao.reservar(r);

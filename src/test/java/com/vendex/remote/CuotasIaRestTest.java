@@ -48,6 +48,10 @@ class CuotasIaRestTest {
         pc1.finalizar(new Fin(id, 200, 5, 100, 20, 30, 150, 0, ""));
         var panel = pc2.panel(); assertEquals(150, panel.intentos().get(0).total());
         assertEquals(4, panel.modelos().size());
+        var cfg = panel.modelos().stream().filter(e -> e.config().modelo().equals(modelo)).findFirst().orElseThrow().config();
+        pc2.guardar(cfg.quitarLimitesLocales());
+        assertTrue(pc1.reservar(new Reserva(UUID.randomUUID().toString(), modelo, "web", 100000)).permitido());
+        assertTrue(pc1.panel().modelos().stream().filter(e -> e.config().modelo().equals(modelo)).findFirst().orElseThrow().config().sinLimitesLocales());
     }
     @Test void usuarioOperativoPuedeReservar_peroNoAdministrarNiLeerPanel() throws Exception {
         RestClient.setToken("operador");

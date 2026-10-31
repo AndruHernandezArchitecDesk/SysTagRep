@@ -7,6 +7,11 @@ public final class CuotaIA {
     private CuotaIA() {}
     public record Config(String modelo, String nivel, boolean habilitado, long rpm, long tpm, long rpd,
                          int maxSalida, boolean ahorro, java.math.BigDecimal precioEntrada, java.math.BigDecimal precioSalida) {
+        /** Cero desactiva únicamente los contadores locales; no cambia las cuotas de Google. */
+        public boolean sinLimitesLocales() { return rpm == 0 && tpm == 0 && rpd == 0; }
+        public Config quitarLimitesLocales() {
+            return new Config(modelo, nivel, habilitado, 0, 0, 0, maxSalida, ahorro, precioEntrada, precioSalida);
+        }
         public void validar() {
             if (!MODELOS.contains(modelo) || !("Gratuito".equals(nivel) || "Pago".equals(nivel))
                     || rpm < 0 || tpm < 0 || rpd < 0 || maxSalida < 256 || maxSalida > 8192

@@ -177,6 +177,47 @@ class CuotasIaPanelTest {
                 "El aviso debe incluir detalle: " + lbl.getText());
     }
 
+    @Test void sinLimitesSeGuardaDesdeElPanelYAplicaATodosSinBorrarPausas() throws Exception {
+        preparar();
+        var dao = new CuotaIADAOPostgres();
+        for (String modelo : com.vendex.model.CuotaIA.MODELOS) {
+            dao.guardar(new com.vendex.model.CuotaIA.Config(modelo, "Gratuito", !modelo.equals("gemini-3.1-flash-lite"),
+                    1, 100, 2, 1024, true, java.math.BigDecimal.ONE, java.math.BigDecimal.TEN));
+        }
+        String id = UUID.randomUUID().toString();
+        dao.reservar(new com.vendex.model.CuotaIA.Reserva(id, "gemini-2.5-flash", "web", 10));
+        dao.finalizar(new com.vendex.model.CuotaIA.Fin(id, 429, 1, 0, 0, 0, 0, 120000, "Cuota Google: prueba"));
+        long pausa = dao.panel().modelos().get(1).pausaHasta();
+        Parent root = cargar(1400, 900);
+        assertTrue(esperar(root, () -> tablaModelos(root) != null && !((Button) root.lookup("#quitarLimitesLocalesTodos")).isDisabled()));
+        try {
+            fx(() -> {
+                var usuario = new com.vendex.model.Usuario(); usuario.setId(1);
+                com.vendex.util.SesionActual.setUsuarioForTest(usuario);
+                com.vendex.util.SesionActual.setPermisosForTest(java.util.Set.of("USUARIO_GESTIONAR"));
+                tablaModelos(root).getSelectionModel().select(1);
+                var check = (CheckBox) root.lookup("#sinLimitesLocales");
+                assertFalse(check.isSelected()); check.setSelected(true);
+                ((Button) root.lookup("#guardarCuotasModelo")).fire();
+                return null;
+            });
+            assertTrue(esperar(root, () -> tablaModelos(root).getItems().get(1).config().sinLimitesLocales()
+                    && !((Button) root.lookup("#guardarCuotasModelo")).isDisabled()));
+            assertEquals(pausa, dao.panel().modelos().get(1).pausaHasta());
+            fx(() -> { ((Button) root.lookup("#quitarLimitesLocalesTodos")).fire(); return null; });
+            assertTrue(esperar(root, () -> tablaModelos(root).getItems().stream().allMatch(e -> e.config().sinLimitesLocales())
+                    && !((Button) root.lookup("#quitarLimitesLocalesTodos")).isDisabled()));
+            var panel = dao.panel();
+            assertEquals(1, panel.intentos().size());
+            assertEquals(pausa, panel.modelos().get(1).pausaHasta());
+            assertFalse(panel.modelos().get(0).config().habilitado());
+            for (var e : panel.modelos()) {
+                assertEquals(1024, e.config().maxSalida()); assertTrue(e.config().ahorro());
+                assertEquals(0, java.math.BigDecimal.ONE.compareTo(e.config().precioEntrada()));
+            }
+        } finally { fx(() -> { com.vendex.util.SesionActual.cerrar(); return null; }); }
+    }
+
     private static Label etiquetaEstado(Parent root) {
         return (Label) root.lookupAll(".label").stream()
                 .filter(n -> n instanceof Label l && l.getText() != null

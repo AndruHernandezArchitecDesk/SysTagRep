@@ -68,7 +68,7 @@ public class CuotaIADAOPostgres implements CuotaIADAO {
                     try (var r = s.executeQuery()) { if (r.next()) return new Permiso(false, "Reserva ya utilizada", cfg.maxSalida(), cfg.ahorro()); }
                 }
                 String motivo = !cfg.habilitado() ? "Modelo deshabilitado por el administrador"
-                        : e.pausaHasta() > ahora(c) ? "Modelo en pausa compartida por cuota de Google; intenta más tarde"
+                        : e.pausaHasta() > ahora(c) ? mensajePausa(c, e)
                         : cfg.rpm() > 0 && e.minuto() >= cfg.rpm() ? "Límite local RPM alcanzado"
                         : cfg.rpd() > 0 && e.dia() >= cfg.rpd() ? "Límite local RPD alcanzado (día de Los Ángeles)"
                         : cfg.tpm() > 0 && req.estimados() > cfg.tpm() - e.tokensMinuto() ? "Límite local TPM estimado alcanzado" : "";
@@ -107,7 +107,7 @@ public class CuotaIADAOPostgres implements CuotaIADAO {
                     s.setBigDecimal(8, costo); s.setString(9, f.id()); cambios = s.executeUpdate();
                 }
                 if (cambios > 0 && f.http() == 429) {
-                    long hasta = ahora(c) + Math.max(60000, Math.min(f.pausaMs(), 7 * 86400000L));
+                    long hasta = ahora(c) + (f.pausaMs() == 0 ? 60000 : Math.max(1000, Math.min(f.pausaMs(), 7 * 86400000L)));
                     try (var s = c.prepareStatement("UPDATE ia_cuota SET pausa_hasta=CASE WHEN pausa_hasta>? THEN pausa_hasta ELSE ? END WHERE modelo=?")) {
                         s.setLong(1, hasta); s.setLong(2, hasta); s.setString(3, modelo); s.executeUpdate();
                     }
@@ -116,6 +116,18 @@ public class CuotaIADAOPostgres implements CuotaIADAO {
             } catch (Exception ex) { c.rollback(); throw ex; }
             finally { c.setAutoCommit(true); }
         }
+    }
+    private String mensajePausa(Connection c, Estado e) throws SQLException {
+        String detalle = "Cuota Google no especificada";
+        try (var s = c.prepareStatement("SELECT detalle FROM ia_solicitud WHERE modelo=? AND http=429 ORDER BY fecha DESC LIMIT 1")) {
+            s.setString(1, e.config().modelo());
+            try (var r = s.executeQuery()) {
+                if (r.next() && r.getString(1) != null && !r.getString(1).isBlank()) detalle = r.getString(1);
+            }
+        }
+        return "Modelo " + e.config().modelo() + " en pausa compartida por respuesta 429 de Google. " + detalle
+                + ". Reintento no antes de " + Instant.ofEpochMilli(e.pausaHasta())
+                + " (UTC). No es un límite local de Vendex; la cuota de Google puede seguir agotada al terminar la espera.";
     }
     @Override public Panel panel() throws Exception {
         try (var c = DatabaseConnection.getConnection()) {

@@ -268,7 +268,13 @@
 }
 
 .login-titulo { -fx-fill: -text-primary; -fx-font-size: 18px; -fx-font-weight: bold; -fx-font-family: "Monospaced"; }
-.login-subtitulo { -fx-fill: -text-secondary; -fx-font-size: 12px; }
+.login-subtitulo {
+    -fx-fill: -accent-primary;
+    -fx-font-family: "System";
+    -fx-font-size: 17px;
+    -fx-font-weight: bold;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.16), 4, 0, 0, 1);
+}
 .login-copy { -fx-fill: -text-secondary; -fx-font-size: 10px; }
 
 /* Global Text para pantallas con <Text> en dark */

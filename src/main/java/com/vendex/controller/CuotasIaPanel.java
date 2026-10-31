@@ -21,8 +21,10 @@ public class CuotasIaPanel extends VBox {
     private final TextField rpm = new TextField(), tpm = new TextField(), rpd = new TextField(), salida = new TextField();
     private final TextField precioEntrada = new TextField(), precioSalida = new TextField();
     private final CheckBox habilitado = new CheckBox("Habilitado"), ahorro = new CheckBox("Ahorrar redacción");
+    private final CheckBox sinLimites = new CheckBox("Sin límites locales");
     private final Label estado = new Label();
     private final Button guardar = new Button("Guardar modelo"), actualizar = new Button("Actualizar cuotas");
+    private final Button quitarTodos = new Button("Quitar límites locales de todos los modelos");
     private final ComboBox<String> filtroModelo = new ComboBox<>();
     private final CheckBox soloErrores = new CheckBox("Solo fallos");
     private final DatePicker desde = new DatePicker(), hasta = new DatePicker();
@@ -32,7 +34,8 @@ public class CuotasIaPanel extends VBox {
     public CuotasIaPanel() {
         setSpacing(8);
         Label nota = new Label("Control compartido entre equipos de la misma base/servidor (un proyecto Gemini). "
-                + "Uso observado por Vendex, no saldo oficial de Google. 0 = límite sin configurar. "
+                + "Uso observado por Vendex, no saldo oficial de Google. 0 = sin límite local. "
+                + "Sin límites locales conserva la medición y respeta las pausas de Google (429). "
                 + "TPM usa una estimación conservadora de entrada por bytes UTF-8. RPD reinicia a medianoche de Los Ángeles.");
         nota.setWrapText(true);
         Hyperlink google = new Hyperlink("Ver cuotas oficiales: " + URL_CUOTAS);
@@ -47,6 +50,7 @@ public class CuotasIaPanel extends VBox {
         });
         columna(modelos, "Modelo", e -> e.config().modelo(), 195);
         columna(modelos, "Nivel", e -> e.config().nivel(), 75);
+        columna(modelos, "Control local", e -> e.config().sinLimitesLocales() ? "Sin límites locales" : "Límites configurados", 155);
         columna(modelos, "RPM uso / límite", e -> e.minuto() + " / " + limite(e.config().rpm()), 115);
         columna(modelos, "RPD uso / límite", e -> e.dia() + " / " + limite(e.config().rpd()), 115);
         columna(modelos, "TPM estim. / límite", e -> e.tokensMinuto() + " / " + limite(e.config().tpm()), 140);
@@ -60,10 +64,16 @@ public class CuotasIaPanel extends VBox {
         nivel.getItems().setAll("Gratuito", "Pago");
         for (TextField campo : List.of(rpm, tpm, rpd, salida, precioEntrada, precioSalida)) campo.setPrefColumnCount(6);
         precioEntrada.setPromptText("Sin tarifa"); precioSalida.setPromptText("Sin tarifa");
-        FlowPane editor = new FlowPane(8, 6, new Label("Modelo seleccionado:"), nivel, habilitado, ahorro,
+        sinLimites.setId("sinLimitesLocales"); quitarTodos.setId("quitarLimitesLocalesTodos"); guardar.setId("guardarCuotasModelo");
+        rpm.disableProperty().bind(sinLimites.selectedProperty());
+        tpm.disableProperty().bind(sinLimites.selectedProperty());
+        rpd.disableProperty().bind(sinLimites.selectedProperty());
+        sinLimites.setTooltip(new Tooltip("Al guardar, RPM, TPM y RPD quedan en cero. No modifica los límites de Google ni las pausas activas."));
+        FlowPane editor = new FlowPane(8, 6, new Label("Modelo seleccionado:"), nivel, habilitado, ahorro, sinLimites,
                 new Label("RPM"), rpm, new Label("TPM"), tpm, new Label("RPD"), rpd, new Label("Máx. salida"), salida,
                 new Label("USD/1M entrada"), precioEntrada, new Label("USD/1M salida + razonamiento"), precioSalida, guardar);
         guardar.setOnAction(e -> guardar()); actualizar.setOnAction(e -> actualizar());
+        quitarTodos.setOnAction(e -> quitarLimitesDeTodos());
         filtroModelo.getItems().add("Todos los modelos"); filtroModelo.getItems().addAll(com.vendex.model.CuotaIA.MODELOS);
         filtroModelo.getSelectionModel().selectFirst();
         filtroModelo.setOnAction(e -> filtrar()); soloErrores.setOnAction(e -> filtrar());
@@ -82,7 +92,7 @@ public class CuotasIaPanel extends VBox {
         columna(intentos, "Detalle", Intento::detalle, 300);
         intentos.setPlaceholder(new Label("Sin solicitudes con estos filtros."));
         intentos.setMinHeight(140);
-        VBox contenido = new VBox(8, nota, new HBox(8, actualizar, google, copiar), estado,
+        VBox contenido = new VBox(8, nota, new FlowPane(8, 6, actualizar, google, copiar, quitarTodos), estado,
                 modelos, editor,
                 new Label("Últimas 200 solicitudes compartidas. *Costo por modelo: excluye búsqueda web y descuentos de caché; tarifas manuales."),
                 new FlowPane(8, 6, filtroModelo, soloErrores, desde, hasta), intentos);
@@ -118,7 +128,7 @@ public class CuotasIaPanel extends VBox {
         return s.length() <= n ? s : s.substring(0, n) + "…";
     }
 
-    private static String limite(long n) { return n == 0 ? "—" : Long.toString(n); }
+    private static String limite(long n) { return n == 0 ? "Sin límite local" : Long.toString(n); }
     private static String fecha(long ms) {
         return Instant.ofEpochMilli(ms).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
     }
@@ -131,6 +141,7 @@ public class CuotasIaPanel extends VBox {
         if (e == null) return;
         Config c = e.config(); nivel.setValue(c.nivel()); habilitado.setSelected(c.habilitado()); ahorro.setSelected(c.ahorro());
         rpm.setText("" + c.rpm()); tpm.setText("" + c.tpm()); rpd.setText("" + c.rpd()); salida.setText("" + c.maxSalida());
+        sinLimites.setSelected(c.sinLimitesLocales());
         precioEntrada.setText(c.precioEntrada() == null ? "" : c.precioEntrada().toPlainString());
         precioSalida.setText(c.precioSalida() == null ? "" : c.precioSalida().toPlainString());
     }
@@ -146,10 +157,20 @@ public class CuotasIaPanel extends VBox {
         Estado elegido = modelos.getSelectionModel().getSelectedItem(); if (elegido == null || ocupado) return;
         try {
             Config cfg = new Config(elegido.config().modelo(), nivel.getValue(), habilitado.isSelected(),
-                    Long.parseLong(rpm.getText().trim()), Long.parseLong(tpm.getText().trim()), Long.parseLong(rpd.getText().trim()),
+                    sinLimites.isSelected() ? 0 : Long.parseLong(rpm.getText().trim()),
+                    sinLimites.isSelected() ? 0 : Long.parseLong(tpm.getText().trim()),
+                    sinLimites.isSelected() ? 0 : Long.parseLong(rpd.getText().trim()),
                     Integer.parseInt(salida.getText().trim()), ahorro.isSelected(), precio(precioEntrada), precio(precioSalida));
             cfg.validar(); ejecutar(() -> { dao.guardar(cfg); return dao.panel(); }, "Configuración guardada para todos los equipos.");
         } catch (IllegalArgumentException ex) { estado.setText("Revisa los límites (enteros >= 0) y salida (256–8192)."); }
+    }
+    private void quitarLimitesDeTodos() {
+        if (!com.vendex.util.SesionActual.tienePermiso("USUARIO_GESTIONAR")) { estado.setText("Se requiere permiso de administrador."); return; }
+        if (ocupado) return;
+        ejecutar(() -> {
+            for (Estado e : dao.panel().modelos()) dao.guardar(e.config().quitarLimitesLocales());
+            return dao.panel();
+        }, "Sin límites locales en todos los modelos y equipos. Se conservan la medición, el estado habilitado y las pausas de Google.");
     }
     public void actualizar() { if (!ocupado) ejecutar(dao::panel, "Actualizado. Las pausas no se eliminan al guardar ni al renovar la licencia."); }
     private static java.math.BigDecimal precio(TextField campo) {
@@ -157,7 +178,7 @@ public class CuotasIaPanel extends VBox {
     }
     private interface Carga { Panel cargar() throws Exception; }
     private void ejecutar(Carga carga, String mensaje) {
-        ocupado = true; guardar.setDisable(true); actualizar.setDisable(true); estado.setText("Consultando servidor…");
+        ocupado = true; guardar.setDisable(true); actualizar.setDisable(true); quitarTodos.setDisable(true); estado.setText("Consultando servidor…");
         String seleccionado = modelos.getSelectionModel().getSelectedItem() == null ? "" : modelos.getSelectionModel().getSelectedItem().config().modelo();
         Thread hilo = new Thread(() -> {
             try {
@@ -189,5 +210,5 @@ public class CuotasIaPanel extends VBox {
             }
         }, "cuotas-ia-panel"); hilo.setDaemon(true); hilo.start();
     }
-    private void terminar() { ocupado = false; guardar.setDisable(false); actualizar.setDisable(false); }
+    private void terminar() { ocupado = false; guardar.setDisable(false); actualizar.setDisable(false); quitarTodos.setDisable(false); }
 }
