@@ -16,7 +16,7 @@ import java.nio.file.StandardCopyOption;
  */
 public final class EmpresaLogo {
 
-    public static final String LOGO_RECURSO = "/img/logoTAG.png";
+    public static final String LOGO_RECURSO = "/img/LogoVendex.png";
     private static final String NOMBRE_BASE = "logo-empresa";
 
     private EmpresaLogo() {}

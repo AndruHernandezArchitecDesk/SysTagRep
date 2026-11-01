@@ -170,6 +170,7 @@ public class MainApp extends Application {
                     UpperCaseTextFormatter.apply(tf);
                 }
             }
+            com.vendex.util.DatabaseInputLimits.apply(parent);
         }
     }
 

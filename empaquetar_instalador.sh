@@ -8,7 +8,7 @@ cd "$(dirname "$0")"
 VERSION="2.0.0"
 JAR="Vendex-2.0-SNAPSHOT.jar"
 NOMBRE="Vendex"
-ICON_PNG="src/main/resources/img/logoVendex.png"
+ICON_PNG="src/main/resources/img/LogoVendex.png"
 
 echo "============================================"
 echo " Vendex - Instalador PRODUCCION Ubuntu (sin base de datos)"

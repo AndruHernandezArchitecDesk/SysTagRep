@@ -101,7 +101,7 @@ Verificado: **no hay** `.p12`, claves `AIza`/`nvapi-`/`sk-`, ni properties track
 1. **Desalineación prod ↔ dev:** `scripts/faltantes_dbTag_prd.sql` (2.738 líneas) nivela `dbTag` (producción) contra el esquema Flyway de desarrollo. Producción está desfasada; conviene un plan de convergencia antes de añadir tablas de licencias.
 2. **Scripts SQL sueltos** en `src/main/resources/sql/` (~24) duplican funcionalidad de `db/migration/` — riesgo de divergencia.
 3. **`docs/TESTING.md` desactualizado:** declara 50 tests; hoy hay ~190 anotaciones `@Test` en 46 clases.
-4. **Logo ausente:** `empaquetar_instalador.sh:11` referencia `src/main/resources/img/logoVendex.png`, que no existe (sí `logoTAG.png`).
+4. **Logo del instalador:** `empaquetar_instalador.sh:11` utiliza `src/main/resources/img/LogoVendex.png` (la ruta distingue mayúsculas y minúsculas en Linux).
 5. **Error runtime conocido:** logs en `vendex-errors/error-20261012-*.txt` — `javafx.fxml.LoadException` al cargar `FacturaView.fxml` vía accesos directos (`MainController.cargarVista`).
 6. **Pruebas parciales sin infraestructura:** Testcontainers requieren Docker; `SRIRealIntegracionTest` requiere `.p12` real. Sin Docker solo corren unitarios + HSQLDB.
 7. **Licencia solo en host local:** `MainApp` no exige licencia cuando la BD es remota — relevante para el diseño de Fase 1 (modalidad central).

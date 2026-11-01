@@ -479,7 +479,7 @@ public class MainController implements Initializable {
         boolean dark = ThemeManager.esDarkMode();
         if (iconToggleTemaLateral != null) iconToggleTemaLateral.setIconLiteral(dark ? "fas-sun" : "fas-moon");
         if (imgLogoHeader != null) {
-            String recurso = "/img/logoTAG.png";
+            String recurso = "/img/LogoVendex.png";
             try (java.io.InputStream is = getClass().getResourceAsStream(recurso)) {
                 if (is != null) imgLogoHeader.setImage(new javafx.scene.image.Image(is));
             } catch (Exception ignore) {}
@@ -1053,14 +1053,15 @@ public class MainController implements Initializable {
          return java.nio.file.Paths.get(base);
      }
 
-       private void aplicarMayusculas(Node nodo) {
-          if (nodo instanceof Parent parent) {
-              for (Node n : parent.lookupAll(".text-field")) {
+        private void aplicarMayusculas(Node nodo) {
+           if (nodo instanceof Parent parent) {
+               for (Node n : parent.lookupAll(".text-field")) {
                   if (n instanceof TextField tf) {
                       if (tf.getStyleClass().contains("no-uppercase")) continue;
                       UpperCaseTextFormatter.apply(tf);
-                  }
-              }
-          }
+                   }
+               }
+               com.vendex.util.DatabaseInputLimits.apply(parent);
+           }
       }
 }

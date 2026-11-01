@@ -27,7 +27,7 @@
 
                 <ImageView fx:id="imgLogoHeader" fitWidth="28" fitHeight="28" preserveRatio="true" smooth="true">
                     <image>
-                        <Image url="@/img/logoTAG.png"/>
+                        <Image url="@/img/LogoVendex.png"/>
                     </image>
                 </ImageView>
                 <Label text="Vendex 2.0" styleClass="screen-title" style="-fx-font-size: 17px;"/>

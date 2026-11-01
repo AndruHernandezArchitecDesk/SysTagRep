@@ -80,7 +80,7 @@ public class ThemeManager {
     }
 
     public static String getLogoPath() {
-        return "/img/logoTAG.png";
+        return "/img/LogoVendex.png";
     }
 
     private static String cargarTema() {
