@@ -107,6 +107,10 @@ public class InventarioController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        if (lblFiltroVeh != null) {
+            if (!lblFiltroVeh.getStyleClass().contains("text-success")) lblFiltroVeh.getStyleClass().add("text-success");
+            lblFiltroVeh.setStyle("-fx-font-weight: bold;");
+        }
         iniciarTablaContenido();
         cargarAcciones();
         iniciarPageSize();
@@ -326,7 +330,9 @@ public class InventarioController implements Initializable {
             Stage modal = new Stage();
             modal.initModality(Modality.APPLICATION_MODAL);
             modal.setTitle("Ingreso por Producto");
-            modal.setScene(new Scene(vista, 560, 420));
+            Scene scene = new Scene(vista, 560, 420);
+            com.vendex.util.ThemeManager.aplicarTemaGuardado(scene);
+            modal.setScene(scene);
             modal.showAndWait();
             cargarDatos();
         } catch (Exception e) {
@@ -348,7 +354,9 @@ public class InventarioController implements Initializable {
             Stage modal = new Stage();
             modal.initModality(Modality.APPLICATION_MODAL);
             modal.setTitle(i != null ? "Editar Producto" : "Ingreso de Factura");
-            modal.setScene(new Scene(vista, 820, 720));
+            Scene scene = new Scene(vista, 820, 720);
+            com.vendex.util.ThemeManager.aplicarTemaGuardado(scene);
+            modal.setScene(scene);
             modal.showAndWait();
             cargarDatos();
         } catch (Exception e) {

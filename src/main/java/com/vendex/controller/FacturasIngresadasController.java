@@ -292,7 +292,9 @@ public class FacturasIngresadasController implements Initializable {
             Stage modal = new Stage();
             modal.initModality(Modality.APPLICATION_MODAL);
             modal.setTitle("Editar Factura Ingresada");
-            modal.setScene(new Scene(vista, 820, 720));
+            Scene scene = new Scene(vista, 820, 720);
+            com.vendex.util.ThemeManager.aplicarTemaGuardado(scene);
+            modal.setScene(scene);
             modal.showAndWait();
             cargar();
         } catch (Exception e) {

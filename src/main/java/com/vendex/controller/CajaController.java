@@ -371,7 +371,9 @@ public class CajaController implements Initializable {
             pie.setAlignment(Pos.CENTER_RIGHT);
             contenido.getChildren().add(pie);
 
-            modal.setScene(new javafx.scene.Scene(contenido));
+            javafx.scene.Scene scene = new javafx.scene.Scene(contenido);
+            com.vendex.util.ThemeManager.aplicarTemaGuardado(scene);
+            modal.setScene(scene);
             modal.showAndWait();
         } catch (Exception e) {
             logDAO.guardar("CajaController", "mostrarDetalleSesion", e.getMessage(), e);
@@ -713,7 +715,9 @@ public class CajaController implements Initializable {
                     new Label("Hay cuotas de préstamos pendientes. Puede abonar con el efectivo disponible antes de cerrar:"),
                     lblDisp, tbl, lblTotal, botones);
             contenido.setPadding(new Insets(15));
-            modal.setScene(new javafx.scene.Scene(contenido, 700, 420));
+            javafx.scene.Scene scene = new javafx.scene.Scene(contenido, 700, 420);
+            com.vendex.util.ThemeManager.aplicarTemaGuardado(scene);
+            modal.setScene(scene);
             modal.showAndWait();
             return resultado[0];
         } catch (Exception ex) {

@@ -95,7 +95,9 @@ public class FirmaController implements Initializable {
             Stage modal = new Stage();
             modal.initModality(Modality.APPLICATION_MODAL);
             modal.setTitle("Términos y Condiciones");
-            modal.setScene(new Scene(vista, 560, 480));
+            Scene scene = new Scene(vista, 560, 480);
+            com.vendex.util.ThemeManager.aplicarTemaGuardado(scene);
+            modal.setScene(scene);
             modal.showAndWait();
         } catch (Exception e) {
             logDAO.guardar("FirmaController", "abrirTerminos", e.getMessage(), e);

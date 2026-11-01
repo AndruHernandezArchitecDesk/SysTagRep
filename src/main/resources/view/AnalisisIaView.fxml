@@ -22,7 +22,7 @@
         <Label text="Periodo (días):"/>
         <ComboBox fx:id="cmbDias" prefWidth="90"/>
         <Region HBox.hgrow="ALWAYS"/>
-        <Label fx:id="lblEstado" text="" style="-fx-text-fill: gray;"/>
+        <Label fx:id="lblEstado" text="" styleClass="text-secondary"/>
       </HBox>
       <Label text="Resultado (IA)" style="-fx-font-weight: bold"/>
       <TextArea fx:id="txtResultado" editable="false" wrapText="true" promptText="Selecciona el tipo de análisis y pulsa Analizar." VBox.vgrow="ALWAYS"/>

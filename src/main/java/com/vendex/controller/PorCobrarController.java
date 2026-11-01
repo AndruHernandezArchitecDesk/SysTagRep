@@ -432,6 +432,7 @@ public class PorCobrarController implements Initializable {
         contenido.getChildren().addAll(lblTitulo, new Separator(), info, new Separator(), tblDetalles, totales, btnCerrar);
 
         Scene escena = new Scene(contenido, 750, 550);
+        com.vendex.util.ThemeManager.aplicarTemaGuardado(escena);
         modal.setScene(escena);
         modal.showAndWait();
     }

@@ -249,13 +249,7 @@ public class SeguimientoSriController implements Initializable {
         if (grupoTipos == null) return;
         for (Toggle t : grupoTipos.getToggles()) {
             if (!(t instanceof ToggleButton b)) continue;
-            boolean esSel = t == grupoTipos.getSelectedToggle();
-            b.setStyle(esSel
-                    ? "-fx-min-height: 36; -fx-min-width: 130; -fx-font-size: 14px; -fx-font-weight: bold;"
-                      + "-fx-text-fill: white; -fx-background-color: #0d6efd; -fx-background-radius: 8;"
-                    : "-fx-min-height: 36; -fx-min-width: 130; -fx-font-size: 14px; -fx-font-weight: bold;"
-                      + "-fx-text-fill: black; -fx-background-color: #e9ecef; -fx-background-radius: 8;"
-                      + "-fx-border-color: #adb5bd; -fx-border-radius: 8;");
+            b.setStyle("-fx-min-height: 36; -fx-min-width: 130; -fx-font-size: 14px; -fx-font-weight: bold;");
         }
     }
 
@@ -285,10 +279,6 @@ public class SeguimientoSriController implements Initializable {
             private final Button btnAnular = new Button("Anular local");
             private final HBox box = new HBox(6, btnImprimir, btnCorreo, btnAnular);
             {
-                // Texto negro sobre fondo gris: legible en modo claro y oscuro
-                // (el CSS global hereda texto claro en dark y no se leia).
-                btnImprimir.setStyle("-fx-text-fill: black;");
-                btnCorreo.setStyle("-fx-text-fill: black;");
                 btnImprimir.setOnAction(e -> {
                     SeguimientoSriItem it = getTableRow() == null ? null : getTableRow().getItem();
                     if (it != null) imprimirAutorizada(it);
@@ -297,7 +287,6 @@ public class SeguimientoSriController implements Initializable {
                     SeguimientoSriItem it = getTableRow() == null ? null : getTableRow().getItem();
                     if (it != null) enviarCorreoAutorizado(it);
                 });
-                btnAnular.setStyle("-fx-text-fill: black;");
                 btnAnular.setOnAction(e -> {
                     SeguimientoSriItem it = getTableRow() == null ? null : getTableRow().getItem();
                     if (it != null) anularLocal(it);

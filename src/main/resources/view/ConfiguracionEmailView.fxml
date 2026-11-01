@@ -13,7 +13,7 @@
     <center>
         <ScrollPane fitToWidth="true" style="-fx-background-color: transparent">
             <VBox spacing="12" style="-fx-padding: 10">
-                <Label fx:id="lblEstado" text="Cargando..." style="-fx-font-size: 12px; -fx-text-fill: #6c757d;" wrapText="true"/>
+                <Label fx:id="lblEstado" text="Cargando..." styleClass="text-secondary" style="-fx-font-size: 12px;" wrapText="true"/>
 
                 <TitledPane text="Servidor SMTP" collapsible="false" styleClass="section-card" style="-fx-font-weight: bold; -fx-padding: 8">
                     <content>
@@ -28,9 +28,9 @@
                                 <Label text="Puerto" prefWidth="130"/>
                                 <TextField fx:id="txtPuerto" promptText="587" prefWidth="120" prefHeight="36"/>
                                 <CheckBox fx:id="chkTls" text="Usar TLS / STARTTLS" style="-fx-font-weight: normal"/>
-                                <Label text="(587 TLS, 465 SSL, 25 sin cifrar)" style="-fx-font-size: 11px; -fx-text-fill: #6c757d;"/>
+                                <Label text="(587 TLS, 465 SSL, 25 sin cifrar)" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
                             </HBox>
-                            <Label text="Tip: Gmail usa smtp.gmail.com:587 TLS. Office365 usa smtp.office365.com:587 TLS. Puerto 465 es SSL directo." style="-fx-font-size: 11px; -fx-text-fill: #6c757d;" wrapText="true"/>
+                            <Label text="Tip: Gmail usa smtp.gmail.com:587 TLS. Office365 usa smtp.office365.com:587 TLS. Puerto 465 es SSL directo." styleClass="text-secondary" style="-fx-font-size: 11px;" wrapText="true"/>
                         </VBox>
                     </content>
                 </TitledPane>
@@ -48,7 +48,7 @@
                                 <Label text="Contraseña" prefWidth="130"/>
                                 <PasswordField fx:id="txtPassword" styleClass="no-uppercase" promptText="Contraseña / App password" HBox.hgrow="ALWAYS" prefHeight="36"/>
                             </HBox>
-                            <Label text="La contraseña se guarda cifrada (AES/GCM). Al editar, dejar vacío conserva la anterior." style="-fx-font-size: 11px; -fx-text-fill: #6c757d;" wrapText="true"/>
+                            <Label text="La contraseña se guarda cifrada (AES/GCM). Al editar, dejar vacío conserva la anterior." styleClass="text-secondary" style="-fx-font-size: 11px;" wrapText="true"/>
                         </VBox>
                     </content>
                 </TitledPane>
@@ -80,7 +80,7 @@
                         <VBox spacing="8" style="-fx-padding: 8">
                             <HBox spacing="8" alignment="CENTER_LEFT">
                                 <Button fx:id="btnProbarConexion" text="Probar conexión" onAction="#probarConexion" styleClass="btn-orden" prefHeight="36"/>
-                                <Label text="Verifica host/puerto y credenciales sin enviar correo." style="-fx-font-size: 11px; -fx-text-fill: #6c757d;"/>
+                                <Label text="Verifica host/puerto y credenciales sin enviar correo." styleClass="text-secondary" style="-fx-font-size: 11px;"/>
                             </HBox>
                             <HBox spacing="6" alignment="CENTER_LEFT">
                                 <StackPane prefWidth="20"><FontIcon iconLiteral="fas-paper-plane" iconSize="14"/></StackPane>

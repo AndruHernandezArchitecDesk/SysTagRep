@@ -405,6 +405,8 @@
 .text-danger { -fx-text-fill: -accent-danger; -fx-font-weight: bold; }
 .text-warning { -fx-text-fill: -accent-warning; -fx-font-weight: bold; }
 .text-info { -fx-text-fill: -accent-info; }
+.consumo-resumen { -fx-background-color: -bg-card-alt; -fx-background-radius: 6; }
+.campo-calculado { -fx-background-color: -bg-card-alt; }
 
 /* ========== CHAT WIDGET (overrides claros) ========== */
 .chat-bubble {

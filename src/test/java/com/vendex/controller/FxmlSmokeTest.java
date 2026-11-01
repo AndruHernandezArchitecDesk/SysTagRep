@@ -10,6 +10,10 @@ import org.junit.jupiter.api.TestMethodOrder;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -162,6 +166,48 @@ class FxmlSmokeTest {
             java.lang.reflect.Field f = controller.getClass().getDeclaredField(campo);
             f.setAccessible(true);
             assertNotNull(f.get(controller), campo + " cableado desde FXML");
+        }
+    }
+
+    @Test
+    @Order(20)
+    void temaOscuroNoTieneErroresDeSintaxisCss() throws Exception {
+        Logger logger = Logger.getLogger("javafx.css.CssParser");
+        java.util.List<String> erroresCss = new java.util.concurrent.CopyOnWriteArrayList<>();
+        Handler handler = new Handler() {
+            @Override public void publish(LogRecord record) {
+                if (record.getLevel().intValue() >= Level.WARNING.intValue()
+                        && record.getMessage() != null
+                        && record.getMessage().contains("CSS Error parsing")) {
+                    erroresCss.add(record.getMessage());
+                }
+            }
+            @Override public void flush() { }
+            @Override public void close() { }
+        };
+        logger.addHandler(handler);
+        try {
+            AtomicReference<Throwable> err = new AtomicReference<>();
+            CountDownLatch latch = new CountDownLatch(1);
+            Platform.runLater(() -> {
+                try {
+                    javafx.scene.layout.VBox root = new javafx.scene.layout.VBox(new javafx.scene.control.Label("CSS"));
+                    root.getStyleClass().add("dark-mode");
+                    javafx.scene.Scene scene = new javafx.scene.Scene(root);
+                    scene.getStylesheets().add(getClass().getResource("/css/base.css").toExternalForm());
+                    scene.getStylesheets().add(getClass().getResource("/css/theme-cyberpunk.css").toExternalForm());
+                    root.applyCss();
+                } catch (Throwable t) {
+                    err.set(t);
+                } finally {
+                    latch.countDown();
+                }
+            });
+            if (!latch.await(30, TimeUnit.SECONDS)) throw new IllegalStateException("Timeout parseando el tema oscuro");
+            if (err.get() != null) throw new AssertionError("No se pudo aplicar el CSS oscuro", err.get());
+            org.junit.jupiter.api.Assertions.assertTrue(erroresCss.isEmpty(), String.join("\n", erroresCss));
+        } finally {
+            logger.removeHandler(handler);
         }
     }
 

@@ -8,7 +8,7 @@
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.vendex.controller.RetencionController" prefHeight="850" prefWidth="1150" style="-fx-padding: 10;">
     <top>
         <HBox spacing="10" alignment="CENTER_LEFT">
-            <Label text="Comprobante de Retención (SRI 07 v2.0.0)" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #600060;"/>
+            <Label text="Comprobante de Retención (SRI 07 v2.0.0)" styleClass="screen-title" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
             <Region HBox.hgrow="ALWAYS"/>
             <Label text="Secuencial:" style="-fx-font-weight: bold;"/>
             <Label fx:id="lblSecuencial" text="001-001-000000001" style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
@@ -77,7 +77,7 @@
                             <ComboBox fx:id="cmbCodigoRetencion" prefWidth="140" promptText="Cod Ret."/>
                             <TextField fx:id="txtBase" promptText="Base imponible" prefWidth="130"/>
                             <TextField fx:id="txtPorcentaje" promptText="Porc." prefWidth="80"/>
-                            <TextField fx:id="txtValor" promptText="Valor retenido" prefWidth="120" editable="false" style="-fx-background-color: #e9ecef;"/>
+                            <TextField fx:id="txtValor" promptText="Valor retenido" prefWidth="120" editable="false" styleClass="campo-calculado"/>
                             <Button text="Agregar Retención" onAction="#agregarRetencion" styleClass="btn-guardar"/>
                             <Button text="Quitar" onAction="#quitarRetencion" styleClass="btn-eliminar"/>
                         </HBox>
@@ -94,7 +94,7 @@
                 </TitledPane>
 
                 <HBox alignment="CENTER">
-                    <Button text="Emitir Comprobante de Retención" onAction="#emitirRetencion" style="-fx-background-color: #600060; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px; -fx-padding: 10 20;">
+                    <Button text="Emitir Comprobante de Retención" onAction="#emitirRetencion" styleClass="btn-guardar" style="-fx-font-size: 14px; -fx-padding: 10 20;">
                         <graphic><FontIcon iconLiteral="fas-paper-plane" iconSize="14" iconColor="white"/></graphic>
                     </Button>
                 </HBox>

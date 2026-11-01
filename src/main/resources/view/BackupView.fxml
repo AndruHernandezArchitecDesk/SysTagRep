@@ -13,7 +13,7 @@
                     <graphic><FontIcon iconLiteral="fas-database" styleClass="titulo-icono"/></graphic>
                 </Label>
                 <Region HBox.hgrow="ALWAYS"/>
-                <Label text="Estrategia backup PostgreSQL — cierre de caja + manual. RPO 24h." style="-fx-font-size: 11px; -fx-text-fill: #666;"/>
+                <Label text="Estrategia backup PostgreSQL — cierre de caja + manual. RPO 24h." styleClass="text-secondary" style="-fx-font-size: 11px;"/>
             </HBox>
             <Separator/>
         </VBox>
@@ -67,7 +67,7 @@
                         </Button>
                         <Label fx:id="lblPassphraseEstado" text="..." HBox.hgrow="ALWAYS"/>
                     </HBox>
-                    <Label text="Offsite: compartir C:\VendexBackups en otra PC → \\OTRA-PC\VendexBackups. Notificación falla → andresrockfull@gmail.com. Backup automático al cierre de caja." wrapText="true" style="-fx-font-size: 11px; -fx-text-fill: #555;"/>
+                    <Label text="Offsite: compartir C:\VendexBackups en otra PC → \\OTRA-PC\VendexBackups. Notificación falla → andresrockfull@gmail.com. Backup automático al cierre de caja." wrapText="true" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
                 </VBox>
             </TitledPane>
 

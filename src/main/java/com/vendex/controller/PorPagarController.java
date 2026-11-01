@@ -339,6 +339,7 @@ public class PorPagarController implements Initializable {
         contenido.getChildren().addAll(lblTitulo, new Separator(), info, new Separator(), tblDetalles, totales, btnCerrar);
 
         Scene escena = new Scene(contenido, 700, 450);
+        com.vendex.util.ThemeManager.aplicarTemaGuardado(escena);
         modal.setScene(escena);
         modal.showAndWait();
     }

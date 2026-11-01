@@ -153,7 +153,9 @@ public class IngresoProductoController implements Initializable {
             Stage modal = new Stage();
             modal.initModality(Modality.APPLICATION_MODAL);
             modal.setTitle(titulo);
-            modal.setScene(new Scene(vista, w, h));
+            Scene scene = new Scene(vista, w, h);
+            com.vendex.util.ThemeManager.aplicarTemaGuardado(scene);
+            modal.setScene(scene);
             modal.showAndWait();
             listaGrupos.setAll(grupoDAO.listar());
             listaMarcas.setAll(marcaDAO.listar());

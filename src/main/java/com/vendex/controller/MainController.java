@@ -353,7 +353,9 @@ public class MainController implements Initializable {
             Stage modal = new Stage();
             modal.initModality(javafx.stage.Modality.APPLICATION_MODAL);
             modal.setTitle("Cola Offline");
-            modal.setScene(new Scene(root, 720, 420));
+            Scene scene = new Scene(root, 720, 420);
+            ThemeManager.aplicarTemaGuardado(scene);
+            modal.setScene(scene);
             modal.showAndWait();
             actualizarBannerOffline();
         } catch (Exception e) {

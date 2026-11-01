@@ -8,6 +8,7 @@
     -bg-card-alt:    #181A26;
     -text-primary:   #C9CDD6;
     -text-secondary: #6B7280;
+    -placeholder:    #7C8494;
     -accent-cyan:    #0F766E;
     -accent-magenta: #FF3EA5;
     -accent-yellow:  #F5D742;
@@ -40,9 +41,12 @@
 }
 .sidebar-footer-section { -fx-border-color: #333A49 transparent transparent transparent; -fx-border-width: 1 0 0 0; }
 
-/* Botones planos estilo Modena (fondo gris): texto negro para contraste en dark.
- * Va antes de .btn-guardar/.btn-orden para que esas clases sigan ganando. */
-.button { -fx-text-fill: #000000; }
+/* Botones base oscuros; las clases de acción conservan su color semántico. */
+.button {
+    -fx-background-color: -bg-card-alt;
+    -fx-border-color: -border;
+    -fx-text-fill: -text-primary;
+}
 
 /* ========== TÍTULOS ========== */
 .titulo { -fx-text-fill: -text-primary; }
@@ -504,4 +508,142 @@
     -fx-border-radius: 8;
     -fx-padding: 8 12;
     -fx-font-size: 13px;
+}
+
+/* ========== COMPONENTES SIN FONDO CLARO PREDETERMINADO ========== */
+.dark-mode .chart,
+.dark-mode .chart-content,
+.dark-mode .chart-plot-background,
+.dark-mode .chart-legend,
+.dark-mode .chart-legend-item,
+.dark-mode .chart-legend-item-symbol,
+.dark-mode .chart-vertical-zero-line,
+.dark-mode .chart-horizontal-zero-line {
+    -fx-background-color: -bg-card !important;
+}
+
+.dark-mode .chart-title,
+.dark-mode .chart-legend-item .label,
+.dark-mode .chart-pie-label,
+.dark-mode .axis-label,
+.dark-mode .axis-tick-label {
+    -fx-text-fill: -text-primary !important;
+    -fx-fill: -text-primary !important;
+}
+
+.dark-mode .chart-vertical-grid-lines,
+.dark-mode .chart-horizontal-grid-lines,
+.dark-mode .axis-tick-mark,
+.dark-mode .axis-minor-tick-mark {
+    -fx-stroke: -border !important;
+}
+
+.dark-mode .chart-alternative-row-fill {
+    -fx-fill: -bg-card-alt !important;
+}
+
+.dark-mode .chart-legend {
+    -fx-background-color: -bg-card !important;
+    -fx-border-color: -border;
+}
+
+.dark-mode .button:disabled,
+.dark-mode .text-field:disabled,
+.dark-mode .text-area:disabled,
+.dark-mode .combo-box:disabled,
+.dark-mode .date-picker:disabled {
+    -fx-opacity: 0.72;
+}
+
+.dark-mode .toggle-button {
+    -fx-background-color: -bg-card-alt;
+    -fx-border-color: -border;
+    -fx-text-fill: -text-primary;
+}
+
+.dark-mode .toggle-button:selected {
+    -fx-background-color: -accent-primary;
+    -fx-border-color: -accent-primary;
+    -fx-text-fill: #F4F8FF;
+}
+
+.dark-mode .table-view .button {
+    -fx-text-fill: -text-primary;
+}
+
+.dark-mode .text-field:disabled,
+.dark-mode .text-area:disabled {
+    -fx-background-color: -bg-card-alt !important;
+    -fx-text-fill: -text-secondary !important;
+}
+
+.dark-mode .combo-box-popup .list-view,
+.dark-mode .combo-box-popup .list-cell,
+.dark-mode .date-picker-popup > .month-year-pane,
+.dark-mode .date-picker-popup > .calendar-grid {
+    -fx-background-color: -bg-card !important;
+    -fx-text-fill: -text-primary !important;
+}
+
+.dark-mode .date-picker-popup .day-cell,
+.dark-mode .date-picker-popup .label {
+    -fx-text-fill: -text-primary !important;
+}
+
+.dark-mode .consumo-resumen {
+    -fx-background-color: -bg-card-alt !important;
+    -fx-border-color: -border;
+}
+
+.dark-mode .campo-calculado {
+    -fx-background-color: -bg-card-alt !important;
+    -fx-border-color: -border !important;
+    -fx-text-fill: -text-primary !important;
+}
+
+.dark-mode .text-secondary {
+    -fx-text-fill: -text-secondary !important;
+}
+
+.dark-mode .text-info {
+    -fx-text-fill: #8AB4F8 !important;
+}
+
+.dark-mode .text-success {
+    -fx-text-fill: #4ADE80 !important;
+}
+
+.dark-mode .screen-title { -fx-text-fill: -text-primary; }
+.dark-mode .text-danger { -fx-text-fill: #FF6B81; }
+
+/* Resplandor de marca para que el logo destaque sobre superficies oscuras. */
+.dark-mode #imgLogo,
+.dark-mode #imgLogoHeader {
+    -fx-effect: dropshadow(gaussian, rgba(20, 184, 166, 0.92), 18, 0.48, 0, 0);
+}
+
+.dark-mode .table-view .placeholder .label {
+    -fx-text-fill: -text-secondary;
+}
+
+.dark-mode .table-view .virtual-flow .corner {
+    -fx-background-color: -bg-card;
+}
+
+.dark-mode .banner-warning {
+    -fx-background-color: #3A2A1A !important;
+    -fx-border-color: #D97706 !important;
+}
+
+.dark-mode .banner-warning .label {
+    -fx-text-fill: #FFD580 !important;
+}
+
+.dark-mode .banner-danger {
+    -fx-background-color: #3B1D28 !important;
+    -fx-border-color: #FF6B81 !important;
+}
+
+.dark-mode .banner-danger .label {
+    -fx-text-fill: #FF9AA9 !important;
 }

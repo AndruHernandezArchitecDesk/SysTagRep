@@ -7,7 +7,7 @@
 
 <VBox spacing="10" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.vendex.controller.NotaDebitoController">
     <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
-    <Label text="NOTA DE DÉBITO ELECTRÓNICA SRI TIPO 05" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #006400;"/>
+    <Label text="NOTA DE DÉBITO ELECTRÓNICA SRI TIPO 05" styleClass="screen-title" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
     <HBox spacing="10">
         <VBox spacing="5" prefWidth="400">
             <Label text="Factura base:" style="-fx-font-weight: bold;"/>
@@ -51,6 +51,6 @@
         <Label fx:id="lblSecuencial"/>
     </HBox>
     <HBox spacing="10">
-        <Button text="Emitir Nota de Débito" onAction="#emitirNotaDebito" style="-fx-background-color: #006400; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20;"/>
+        <Button text="Emitir Nota de Débito" onAction="#emitirNotaDebito" styleClass="button-primary" style="-fx-font-weight: bold; -fx-padding: 10 20;"/>
     </HBox>
 </VBox>

@@ -1239,7 +1239,9 @@ public class IngresoMercaderiaController implements Initializable {
             Stage modal = new Stage();
             modal.initModality(Modality.APPLICATION_MODAL);
             modal.setTitle(titulo);
-            modal.setScene(new Scene(vista, ancho, alto));
+            Scene scene = new Scene(vista, ancho, alto);
+            com.vendex.util.ThemeManager.aplicarTemaGuardado(scene);
+            modal.setScene(scene);
             modal.showAndWait();
             recargarCatalogos();
         } catch (Exception e) {

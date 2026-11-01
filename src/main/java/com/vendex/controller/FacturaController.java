@@ -346,7 +346,9 @@ public class FacturaController implements Initializable, DocumentoVendexi {
             Parent vista = loader.load();
             Stage stage = new Stage();
             stage.setTitle("Administración de Clientes");
-            stage.setScene(new Scene(vista, 900, 600));
+            Scene scene = new Scene(vista, 900, 600);
+            com.vendex.util.ThemeManager.aplicarTemaGuardado(scene);
+            stage.setScene(scene);
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.showAndWait();
             cargarListaClientes();

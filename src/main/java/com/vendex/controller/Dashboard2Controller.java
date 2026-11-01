@@ -211,10 +211,19 @@ public class Dashboard2Controller implements Initializable {
         }
     }
 
-    private final String[] COLORES_PIE = {
+    private static final String[] COLORES_PIE_CLARO = {
         "#3498db", "#e74c3c", "#2ecc71", "#f39c12", "#9b59b6",
         "#1abc9c", "#e67e22", "#34495e", "#16a085", "#c0392b"
     };
+
+    private static final String[] COLORES_PIE_OSCURO = {
+        "#8be9fd", "#ff79c6", "#50fa7b", "#ffb86c", "#bd93f9",
+        "#40e0d0", "#f1fa8c", "#a4bdfc", "#ff6e6e", "#d7aefb"
+    };
+
+    private String[] coloresPie() {
+        return ThemeManager.esDarkMode() ? COLORES_PIE_OSCURO : COLORES_PIE_CLARO;
+    }
 
     private void cargarGraficoMarcas() {
         try {
@@ -231,7 +240,8 @@ public class Dashboard2Controller implements Initializable {
                 int i = 0;
                 for (PieChart.Data d : chartMarcas.getData()) {
                     if (d.getNode() != null) {
-                        d.getNode().setStyle("-fx-pie-color: " + COLORES_PIE[i % COLORES_PIE.length] + ";");
+                        String[] colores = coloresPie();
+                        d.getNode().setStyle("-fx-pie-color: " + colores[i % colores.length] + ";");
                     }
                     i++;
                 }
@@ -257,7 +267,8 @@ public class Dashboard2Controller implements Initializable {
                 int i = 0;
                 for (PieChart.Data d : chartGrupos.getData()) {
                     if (d.getNode() != null) {
-                        d.getNode().setStyle("-fx-pie-color: " + COLORES_PIE[i % COLORES_PIE.length] + ";");
+                        String[] colores = coloresPie();
+                        d.getNode().setStyle("-fx-pie-color: " + colores[i % colores.length] + ";");
                     }
                     i++;
                 }
@@ -328,7 +339,8 @@ public class Dashboard2Controller implements Initializable {
             for (Node item : legendItems) {
                 for (Node child : ((javafx.scene.Parent) item).getChildrenUnmodifiable()) {
                     if (child.getStyleClass().contains("chart-legend-item-color")) {
-                        String color = COLORES_PIE[idx % COLORES_PIE.length];
+                        String[] colores = coloresPie();
+                        String color = colores[idx % colores.length];
                         child.setStyle("-fx-background-color: " + color + ";");
                     }
                 }

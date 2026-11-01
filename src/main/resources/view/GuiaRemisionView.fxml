@@ -8,7 +8,7 @@
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.vendex.controller.GuiaRemisionController" prefHeight="800" prefWidth="1100" style="-fx-padding: 10;">
     <top>
         <HBox spacing="10" alignment="CENTER_LEFT">
-            <Label text="Guía de Remisión Electrónica (SRI 06)" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #004080;"/>
+            <Label text="Guía de Remisión Electrónica (SRI 06)" styleClass="screen-title" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
             <Region HBox.hgrow="ALWAYS"/>
             <Label text="Secuencial:" style="-fx-font-weight: bold;"/>
             <Label fx:id="lblSecuencial" text="001-001-000000001" style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
@@ -96,7 +96,7 @@
                 </TitledPane>
 
                 <HBox alignment="CENTER">
-                    <Button text="Emitir Guía de Remisión" onAction="#emitirGuiaRemision" style="-fx-background-color: #004080; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px; -fx-padding: 10 20;" >
+                    <Button text="Emitir Guía de Remisión" onAction="#emitirGuiaRemision" styleClass="btn-guardar" style="-fx-font-size: 14px; -fx-padding: 10 20;" >
                         <graphic><FontIcon iconLiteral="fas-paper-plane" iconSize="14" iconColor="white"/></graphic>
                     </Button>
                 </HBox>
