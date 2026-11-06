@@ -4,6 +4,7 @@ import com.vendex.dao.DashboardDAO;
 import com.vendex.dao.InventarioDAO;
 import com.vendex.dao.LogDAO;
 import com.vendex.model.Inventario;
+import com.vendex.util.LogoManager;
 import com.vendex.util.ScrambleText;
 import com.vendex.util.ThemeManager;
 import javafx.application.Platform;
@@ -15,7 +16,6 @@ import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Label;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -86,7 +86,7 @@ public class DashboardController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         if (imgLogo != null) {
-            try { imgLogo.setImage(new Image(getClass().getResourceAsStream(ThemeManager.getLogoPath()))); } catch (Exception ignored) {}
+            imgLogo.imageProperty().bind(LogoManager.logoProperty());
         }
         new ScrambleText(lblTitulo, nombreEmpresa()).repeat(true).play();
         cargarKpis();
@@ -166,15 +166,21 @@ public class DashboardController implements Initializable {
     }
 
     private String[] coloresNV() {
-        return ThemeManager.esDarkMode()
-                ? new String[]{"#8be9fd", "#74d4f7", "#5cbde0", "#42a5c9", "#298fb2"}
-                : new String[]{"#3498db", "#2980b9", "#1f6dad", "#174f83", "#0f3859"};
+        return switch (ThemeManager.getCurrentTheme()) {
+            case CYBERPUNK -> new String[]{"#8be9fd", "#74d4f7", "#5cbde0", "#42a5c9", "#298fb2"};
+            case PINK_BLOSSOM -> new String[]{"#EC4899", "#DB2777", "#BE185D", "#9D174D", "#831843"};
+            case NATURE_BREEZE -> new String[]{"#43A047", "#388E3C", "#2E7D32", "#1B5E20", "#33691E"};
+            default -> new String[]{"#3498db", "#2980b9", "#1f6dad", "#174f83", "#0f3859"};
+        };
     }
 
     private String[] coloresFact() {
-        return ThemeManager.esDarkMode()
-                ? new String[]{"#ffb86c", "#f0a050", "#e08840", "#d07030", "#b85820"}
-                : new String[]{"#e67e22", "#d35400", "#ba4a00", "#a04000", "#873600"};
+        return switch (ThemeManager.getCurrentTheme()) {
+            case CYBERPUNK -> new String[]{"#ffb86c", "#f0a050", "#e08840", "#d07030", "#b85820"};
+            case PINK_BLOSSOM -> new String[]{"#F472B6", "#EC4899", "#DB2777", "#BE185D", "#9D174D"};
+            case NATURE_BREEZE -> new String[]{"#81C784", "#66BB6A", "#4CAF50", "#43A047", "#2E7D32"};
+            default -> new String[]{"#e67e22", "#d35400", "#ba4a00", "#a04000", "#873600"};
+        };
     }
 
     private void cargarStockBajo() {

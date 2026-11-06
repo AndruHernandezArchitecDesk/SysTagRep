@@ -171,32 +171,51 @@ class FxmlSmokeTest {
 
     @Test
     @Order(20)
-    void temaOscuroNoTieneErroresDeSintaxisCss() throws Exception {
-        Logger logger = Logger.getLogger("javafx.css.CssParser");
+    void temasNoTienenErroresCssNiLookupsDeColorSinTipo() throws Exception {
+        java.util.List<Logger> loggers = java.util.List.of(
+                Logger.getLogger("javafx.css.CssParser"),
+                Logger.getLogger("javafx.scene.CssStyleHelper"));
         java.util.List<String> erroresCss = new java.util.concurrent.CopyOnWriteArrayList<>();
         Handler handler = new Handler() {
             @Override public void publish(LogRecord record) {
                 if (record.getLevel().intValue() >= Level.WARNING.intValue()
                         && record.getMessage() != null
-                        && record.getMessage().contains("CSS Error parsing")) {
+                        && (record.getMessage().contains("CSS Error parsing")
+                        || record.getMessage().contains("Could not resolve '-fx-")
+                        || record.getMessage().contains("Caught 'java.lang.ClassCastException"))) {
                     erroresCss.add(record.getMessage());
                 }
             }
             @Override public void flush() { }
             @Override public void close() { }
         };
-        logger.addHandler(handler);
+        loggers.forEach(logger -> logger.addHandler(handler));
         try {
             AtomicReference<Throwable> err = new AtomicReference<>();
             CountDownLatch latch = new CountDownLatch(1);
             Platform.runLater(() -> {
                 try {
-                    javafx.scene.layout.VBox root = new javafx.scene.layout.VBox(new javafx.scene.control.Label("CSS"));
-                    root.getStyleClass().add("dark-mode");
-                    javafx.scene.Scene scene = new javafx.scene.Scene(root);
-                    scene.getStylesheets().add(getClass().getResource("/css/base.css").toExternalForm());
-                    scene.getStylesheets().add(getClass().getResource("/css/theme-cyberpunk.css").toExternalForm());
-                    root.applyCss();
+                    for (String theme : new String[]{"theme-organic.css", "theme-cyberpunk.css",
+                            "theme-pink-blossom.css", "theme-nature-breeze.css"}) {
+                        javafx.scene.control.ComboBox<String> combo = new javafx.scene.control.ComboBox<>();
+                        combo.getItems().add("tema");
+                        javafx.scene.control.TableView<String> table = new javafx.scene.control.TableView<>();
+                        javafx.scene.control.TitledPane section = new javafx.scene.control.TitledPane("Sección", table);
+                        javafx.scene.control.ScrollPane scroll = new javafx.scene.control.ScrollPane(section);
+                        javafx.scene.layout.HBox header = new javafx.scene.layout.HBox(new javafx.scene.control.Label("Header"));
+                        header.getStyleClass().add("header");
+                        javafx.scene.layout.VBox root = new javafx.scene.layout.VBox(header,
+                                new javafx.scene.control.TextField(), combo, scroll,
+                                new javafx.scene.control.Button("Acción"));
+                        if ("theme-cyberpunk.css".equals(theme)) root.getStyleClass().add("dark-mode");
+                        javafx.scene.Scene scene = new javafx.scene.Scene(root);
+                        scene.getStylesheets().add(getClass().getResource("/css/base.css").toExternalForm());
+                        if ("theme-pink-blossom.css".equals(theme) || "theme-nature-breeze.css".equals(theme))
+                            scene.getStylesheets().add(getClass().getResource("/css/theme-organic.css").toExternalForm());
+                        scene.getStylesheets().add(getClass().getResource("/css/" + theme).toExternalForm());
+                        root.applyCss();
+                        root.layout();
+                    }
                 } catch (Throwable t) {
                     err.set(t);
                 } finally {
@@ -207,8 +226,60 @@ class FxmlSmokeTest {
             if (err.get() != null) throw new AssertionError("No se pudo aplicar el CSS oscuro", err.get());
             org.junit.jupiter.api.Assertions.assertTrue(erroresCss.isEmpty(), String.join("\n", erroresCss));
         } finally {
-            logger.removeHandler(handler);
+            loggers.forEach(logger -> logger.removeHandler(handler));
         }
+    }
+
+    @Test
+    @Order(21)
+    void cargaAparienciaView() throws Exception {
+        assertNotNull(cargar("/view/AparienciaView.fxml"), "controller AparienciaController");
+    }
+
+    @Test
+    @Order(22)
+    void vistaPreviaAmbientalReutilizaYEliminaUnaSolaCapa() throws Exception {
+        AtomicReference<Throwable> err = new AtomicReference<>();
+        CountDownLatch latch = new CountDownLatch(1);
+        Platform.runLater(() -> {
+            try {
+                javafx.scene.layout.StackPane root = new javafx.scene.layout.StackPane(new javafx.scene.control.Label("Contenido"));
+                javafx.scene.Scene scene = new javafx.scene.Scene(root);
+                com.vendex.util.ThemeManager.Theme previous = com.vendex.util.ThemeManager.getCurrentTheme();
+                com.vendex.util.ThemeManager.preview(scene, com.vendex.util.ThemeManager.Theme.PINK_BLOSSOM);
+                com.vendex.util.AmbientEffectManager.preview(scene,
+                        com.vendex.util.ThemeManager.Theme.PINK_BLOSSOM, true,
+                        com.vendex.util.ThemeManager.AmbientIntensity.LOW,
+                        com.vendex.util.ThemeManager.AmbientSpeed.SLOW);
+                com.vendex.util.AmbientEffectManager.attach(scene);
+                org.junit.jupiter.api.Assertions.assertEquals(2, root.getChildren().size(),
+                        "una única capa ambiental además del contenido");
+                com.vendex.util.AmbientEffectManager.detach(scene);
+                org.junit.jupiter.api.Assertions.assertEquals(1, root.getChildren().size(),
+                        "la capa ambiental se elimina al liberar la escena");
+                org.junit.jupiter.api.Assertions.assertEquals(previous, com.vendex.util.ThemeManager.getCurrentTheme(),
+                        "la vista previa no persiste el tema");
+            } catch (Throwable t) {
+                err.set(t);
+            } finally {
+                latch.countDown();
+            }
+        });
+        if (!latch.await(30, TimeUnit.SECONDS)) throw new IllegalStateException("Timeout comprobando capa ambiental");
+        if (err.get() != null) throw new AssertionError("Falló la vista previa ambiental", err.get());
+    }
+
+    @Test
+    @Order(23)
+    void ingresoFacturaEncuentraSuBorderPaneDentroDeLaVentanaPrincipal() throws Exception {
+        javafx.scene.layout.BorderPane rootFormulario = new javafx.scene.layout.BorderPane();
+        javafx.scene.control.Button guardar = new javafx.scene.control.Button("Guardar");
+        rootFormulario.setCenter(guardar);
+        javafx.scene.layout.StackPane contenido = new javafx.scene.layout.StackPane(rootFormulario);
+        javafx.scene.layout.BorderPane shell = new javafx.scene.layout.BorderPane();
+        shell.setCenter(contenido);
+        org.junit.jupiter.api.Assertions.assertSame(rootFormulario,
+                IngresoMercaderiaController.encontrarRaizIngreso(guardar));
     }
 
     @Test
@@ -250,6 +321,9 @@ class FxmlSmokeTest {
         java.lang.reflect.Field f = controller.getClass().getDeclaredField("tblPrestamos");
         f.setAccessible(true);
         assertNotNull(f.get(controller), "tblPrestamos cableada desde FXML");
+        java.lang.reflect.Field acciones = controller.getClass().getDeclaredField("colAcciones");
+        acciones.setAccessible(true);
+        assertNotNull(acciones.get(controller), "colAcciones de eliminar cableada desde FXML");
         java.lang.reflect.Field f2 = controller.getClass().getDeclaredField("lblResumen");
         f2.setAccessible(true);
         assertNotNull(f2.get(controller), "lblResumen cableada desde FXML");

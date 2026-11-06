@@ -3,6 +3,7 @@ package com.vendex.controller;
 import com.vendex.dao.EmpresaDAO;
 import com.vendex.model.Empresa;
 import com.vendex.util.EmpresaLogo;
+import com.vendex.util.LogoManager;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -161,6 +162,7 @@ public class EmpresaController implements Initializable {
             if (ok) {
                 new Alert(Alert.AlertType.INFORMATION, "Empresa guardada correctamente.").showAndWait();
                 cargarDatosEmpresa();
+                LogoManager.recargar();
             } else {
                 estado("Error al guardar la empresa.", true);
             }

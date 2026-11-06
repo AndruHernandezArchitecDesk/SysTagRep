@@ -54,5 +54,5 @@
         <Button fx:id="btnGuardar" text="Probar y Guardar" disable="true" style="-fx-font-weight: bold; -fx-background-color: #4caf50; -fx-text-fill: white;"/>
     </HBox>
 
-    <Label text="Sin BD incluida: el instalador no instala PostgreSQL ni crea tablas. Si la prueba falla, verifica IP/puerto, firewall TCP 5432 y pg_hba del servidor. Licencia: solo el servidor (localhost) la pide; los clientes remotos entran directo." wrapText="true" style="-fx-text-fill: #888888; -fx-font-size: 10px;"/>
+    <Label text="Sin BD incluida: el instalador no instala PostgreSQL ni crea tablas. Si la prueba falla, verifica IP/puerto, firewall TCP 5432 y pg_hba del servidor. Licencia: el host local usa licencia local; cada cliente remoto requiere una licencia CENTRAL registrada en el servidor." wrapText="true" style="-fx-text-fill: #888888; -fx-font-size: 10px;"/>
 </VBox>

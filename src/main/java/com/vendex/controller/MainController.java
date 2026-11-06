@@ -14,6 +14,7 @@ import com.vendex.offline.SyncService;
 import com.vendex.offline.LocalOperationQueue;
 import com.vendex.util.AboutDialog;
 import com.vendex.util.CatalogoVistas;
+import com.vendex.util.LogoManager;
 import com.vendex.util.SesionActual;
 import com.vendex.util.ThemeManager;
 import com.vendex.util.UpperCaseTextFormatter;
@@ -79,9 +80,6 @@ public class MainController implements Initializable {
     private Label lblUsuarioSesion;
 
     @FXML
-    private FontIcon iconToggleTemaLateral;
-
-    @FXML
     private HBox bannerCertificado;
 
     @FXML
@@ -122,7 +120,7 @@ public class MainController implements Initializable {
     private final LogDAO logDAO;
     private final AlertaService alertaService;
 
-    private boolean mostrandoDashboard2 = false;
+    private Object controladorVistaActual;
     private boolean sidebarExpandido = true;
     private static final String KEY_SIDEBAR = "sidebar.collapsed";
     private static final double SIDEBAR_ANCHO_ABIERTO = 220;
@@ -131,7 +129,7 @@ public class MainController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         mostrarUsuarioSesion();
-        actualizarTextoModoTema();
+        actualizarLogoEncabezado();
         abrirDashboard1();
         if (contenedor.getScene() != null) {
             ThemeManager.aplicarTemaGuardado(contenedor.getScene());
@@ -151,12 +149,10 @@ public class MainController implements Initializable {
 
     public void abrirDashboard1() {
         cargarVista("/view/DashboardView.fxml");
-        mostrandoDashboard2 = false;
     }
 
     public void abrirDashboard2() {
         cargarVista("/view/Dashboard2View.fxml");
-        mostrandoDashboard2 = true;
     }
 
     public void abrirAlertas() {
@@ -343,6 +339,11 @@ public class MainController implements Initializable {
     }
 
     @FXML
+    private void irApariencia() {
+        cargarVista("/view/AparienciaView.fxml");
+    }
+
+    @FXML
     private void irColaOffline() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/ColaOfflineView.fxml"));
@@ -440,11 +441,14 @@ public class MainController implements Initializable {
             VendexControllerFactory.aplicar(loginLoader);
             Parent login = loginLoader.load();
             Stage stage = (Stage) contenedor.getScene().getWindow();
+            com.vendex.util.AmbientEffectManager.detach(stage.getScene());
             stage.setTitle("Vendex - Inicio de Sesión");
             stage.getIcons().add(new Image(getClass().getResourceAsStream("/img/inventario.png")));
             Scene scene = new Scene(login);
             ThemeManager.aplicarTemaGuardado(scene);
             stage.setScene(scene);
+            com.vendex.util.AmbientEffectManager.attach(scene);
+            controladorVistaActual = null;
             stage.setMaximized(false);
             stage.centerOnScreen();
         } catch (IOException e) {
@@ -453,38 +457,29 @@ public class MainController implements Initializable {
     }
 
     @FXML
-    private void cambiarTema() {
-        ThemeManager.alternarTema(contenedor.getScene());
-        actualizarTextoModoTema();
-        if (mostrandoDashboard2) {
-            abrirDashboard2();
-        } else {
-            abrirDashboard1();
-        }
-    }
-
-    @FXML
     private void irHome() {
         try {
+            if (controladorVistaActual instanceof AparienciaController apariencia)
+                apariencia.descartarVistaPrevia();
             FXMLLoader homeLoader = new FXMLLoader(getClass().getResource("/view/MainView.fxml"));
             VendexControllerFactory.aplicar(homeLoader);
             Parent home = homeLoader.load();
             Stage stage = (Stage) contenedor.getScene().getWindow();
-            stage.setScene(new Scene(home));
-            ThemeManager.aplicarTemaGuardado(stage.getScene());
+            com.vendex.util.AmbientEffectManager.detach(stage.getScene());
+            Scene scene = new Scene(home);
+            ThemeManager.aplicarTemaGuardado(scene);
+            stage.setScene(scene);
+            com.vendex.util.AmbientEffectManager.attach(scene);
+            controladorVistaActual = null;
         } catch (IOException e) {
             logDAO.guardar("MainController", "irHome", e.getMessage(), e);
         }
     }
 
-    private void actualizarTextoModoTema() {
-        boolean dark = ThemeManager.esDarkMode();
-        if (iconToggleTemaLateral != null) iconToggleTemaLateral.setIconLiteral(dark ? "fas-sun" : "fas-moon");
+    private void actualizarLogoEncabezado() {
         if (imgLogoHeader != null) {
-            String recurso = "/img/LogoVendex.png";
-            try (java.io.InputStream is = getClass().getResourceAsStream(recurso)) {
-                if (is != null) imgLogoHeader.setImage(new javafx.scene.image.Image(is));
-            } catch (Exception ignore) {}
+            LogoManager.recargar();
+            imgLogoHeader.imageProperty().bind(LogoManager.logoProperty());
         }
     }
 
@@ -773,10 +768,10 @@ public class MainController implements Initializable {
 
     private ContextMenu crearFlyoutGrupo(String... items) {
         ContextMenu menu = new ContextMenu();
-        menu.setStyle("-fx-background-color: -bg-card; -fx-border-color: -border; -fx-border-width: 1; -fx-background-radius: 6; -fx-border-radius: 6;");
+        menu.setStyle("-fx-background-color: -fx-bg-card; -fx-border-color: -fx-border; -fx-border-width: 1; -fx-background-radius: 6; -fx-border-radius: 6;");
         for (String item : items) {
             MenuItem mi = new MenuItem(item);
-            mi.setStyle("-fx-text-fill: -text-primary; -fx-padding: 6 12 6 12; -fx-font-size: 12px;");
+            mi.setStyle("-fx-text-fill: -fx-text-primary; -fx-padding: 6 12 6 12; -fx-font-size: 12px;");
             menu.getItems().add(mi);
         }
         return menu;
@@ -989,6 +984,8 @@ public class MainController implements Initializable {
             return;
         }
         try {
+            if (controladorVistaActual instanceof AparienciaController apariencia)
+                apariencia.descartarVistaPrevia();
             FXMLLoader loader = new FXMLLoader(getClass().getResource(ruta));
             VendexControllerFactory.aplicar(loader);
             Parent vista = loader.load();
@@ -999,6 +996,7 @@ public class MainController implements Initializable {
             }
             aplicarMayusculas(vista);
             contenedor.getChildren().setAll(vista);
+            controladorVistaActual = loader.getController();
             if (asistenteController != null) {
                 asistenteController.setDocumentoActivo(loader.getController() instanceof DocumentoVendexi documento ? documento : null);
             }

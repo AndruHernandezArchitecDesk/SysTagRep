@@ -35,12 +35,14 @@ public class VendexiSugerenciaService {
     private static final int MAX_SUGERENCIAS = 3;
     private static final int MAX_CANDIDATOS = 40;
     private static final String MODELO = "gemini-3.1-flash-lite";
+    private static final long PAUSA_HTTP_5XX_MS = 60_000;
 
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(15))
             .build();
 
     private final VendexiConsumoService consumo;
+    private volatile long geminiNoDisponibleHasta;
 
     public VendexiSugerenciaService() {
         this(null);
@@ -219,10 +221,11 @@ public class VendexiSugerenciaService {
                                                        Set<Integer> idsEnDocumento, String contextoVehiculo) {
         if (Thread.currentThread().isInterrupted()) return List.of();
         if (agregado == null || !esIaDisponible()) return List.of();
-        // Fase 3: gate de capacidad asignada — sin capacidad, no se llama al proveedor.
-        if (!consumoService().hayCapacidadDisponible()) return List.of();
         List<Inventario> candidatos = seleccionarCandidatos(agregado, inventario, idsEnDocumento, MAX_CANDIDATOS);
         if (candidatos.isEmpty()) return List.of();
+        if (System.currentTimeMillis() < geminiNoDisponibleHasta) return sugerenciasLocales(candidatos);
+        // Fase 3: gate de capacidad asignada — sin capacidad, no se llama al proveedor.
+        if (!consumoService().hayCapacidadDisponible()) return List.of();
         String apiKey = obtenerApiKey();
         if (apiKey == null || apiKey.isBlank()) return List.of();
         try {
@@ -240,11 +243,43 @@ public class VendexiSugerenciaService {
             LOGGER.log(Level.FINE, "Vetxi: consulta de complementos cancelada");
             return List.of();
         } catch (Exception e) {
+            int status = httpStatus(e);
+            if (status >= 500 && status <= 599) {
+                geminiNoDisponibleHasta = System.currentTimeMillis() + PAUSA_HTTP_5XX_MS;
+                LOGGER.log(Level.INFO, "Vetxi: Gemini respondió HTTP {0}; se usarán coincidencias locales durante {1} s.",
+                        new Object[]{status, PAUSA_HTTP_5XX_MS / 1000});
+                return sugerenciasLocales(candidatos);
+            }
             String detalle = e.getMessage();
             LOGGER.log(Level.WARNING, "Vetxi: venta cruzada IA no disponible (" + e.getClass().getSimpleName() + ")"
                     + (detalle == null || detalle.isBlank() ? "" : ": " + detalle), e);
             return List.of();
         }
+    }
+
+    private List<Sugerencia> sugerenciasLocales(List<Inventario> candidatos) {
+        List<Sugerencia> locales = new ArrayList<>();
+        for (Inventario candidato : candidatos) {
+            if (locales.size() >= MAX_SUGERENCIAS) break;
+            String descripcion = candidato.getDescripcion() == null ? candidato.getCodigo() : candidato.getDescripcion();
+            String motivo = "Coincidencia local por marca, grupo o descripción. Es una asociación, no confirma compatibilidad técnica; verifica antes de vender.";
+            locales.add(new Sugerencia(Tipo.COMPLEMENTARIO, descripcion, motivo,
+                    EVIDENCIA_ASOCIACION, candidato));
+        }
+        return locales;
+    }
+
+    private static int httpStatus(Throwable error) {
+        for (Throwable actual = error; actual != null; actual = actual.getCause()) {
+            String mensaje = actual.getMessage();
+            if (mensaje == null) continue;
+            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\\bHTTP\\s+(\\d{3})\\b").matcher(mensaje);
+            if (matcher.find()) {
+                try { return Integer.parseInt(matcher.group(1)); }
+                catch (NumberFormatException ignored) { return 0; }
+            }
+        }
+        return 0;
     }
 
     public String construirPrompt(Inventario base, List<Inventario> candidatos, String contextoVehiculo) {

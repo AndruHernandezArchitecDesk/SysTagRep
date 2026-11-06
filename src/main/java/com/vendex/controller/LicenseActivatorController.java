@@ -1,5 +1,8 @@
 package com.vendex.controller;
 
+import com.vendex.config.DbConfig;
+import com.vendex.dao.LicenciaCentralDAOPostgres;
+import com.vendex.service.LicenciaCentralService;
 import com.vendex.util.LicenseManager;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -68,9 +71,9 @@ public class LicenseActivatorController {
 
     private void activate() {
         String code = LicenseManager.getMachineCode();
-        String key = txtLicenseKey.getText().trim();
+        String key = LicenseManager.normalizeLicenseKey(txtLicenseKey.getText().trim());
 
-        if (key.isEmpty()) {
+        if (key == null || key.isEmpty()) {
             lblStatus.setText("Ingrese el código de licencia.");
             lblStatus.setStyle("");
             return;
@@ -85,6 +88,7 @@ public class LicenseActivatorController {
         }
 
         if (LicenseManager.validateLicenseKey(code, key)) {
+            if (DbConfig.esRemota() && !validarCentral(code, key)) return;
             LicenseManager.saveActivation(code, key);
             activated = true;
             LicenseManager.LicenseInfo info = LicenseManager.getInfoDeClave(code, key);
@@ -100,6 +104,27 @@ public class LicenseActivatorController {
             lblStatus.setText("Código de licencia inválido.");
             lblStatus.setStyle("");
         }
+    }
+
+    private boolean validarCentral(String code, String key) {
+        java.util.Map<String, Object> r = new LicenciaCentralService(new LicenciaCentralDAOPostgres())
+                .validarInstalacion(code, key, true);
+        if (Boolean.TRUE.equals(r.get("valida"))) return true;
+        String motivo = String.valueOf(r.getOrDefault("motivo", ""));
+        String mensaje = switch (motivo) {
+            case "NO_REGISTRADA" -> "La licencia no está registrada en el servidor central. "
+                    + "Solicita al administrador una licencia CENTRAL para este código de máquina.";
+            case "REVOCADA" -> "La licencia fue revocada en el servidor central.";
+            case "MODALIDAD_INCORRECTA" -> "Esta licencia no es de modalidad CENTRAL. "
+                    + "Solicita una licencia emitida para cliente remoto.";
+            case "VENCIDA" -> "La licencia está vencida.";
+            case "ERROR_CENTRAL" -> "No se pudo consultar el servidor de licencias. "
+                    + "Verifica la conexión a la base de datos central.";
+            default -> "Código de licencia inválido para esta máquina.";
+        };
+        lblStatus.setText(mensaje);
+        lblStatus.setStyle("");
+        return false;
     }
 
     public boolean isActivated() {

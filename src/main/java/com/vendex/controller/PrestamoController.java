@@ -24,6 +24,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -71,7 +73,7 @@ public class PrestamoController implements Initializable {
     @FXML private TableColumn<Object[], String> colEntidad, colTasa, colCuotas, colEstado;
     @FXML private TableColumn<Object[], BigDecimal> colPrincipal, colCuota, colSaldo;
     @FXML private TableColumn<Object[], String> colProxVenc, colMeta;
-    @FXML private TableColumn<Object[], Void> colProgreso;
+    @FXML private TableColumn<Object[], Void> colProgreso, colAcciones;
 
     @FXML private Label lblResumen;
     @FXML private TableView<PrestamoCuota> tblCuotas;
@@ -150,7 +152,7 @@ public class PrestamoController implements Initializable {
         colTasa.setCellValueFactory(d -> {
             BigDecimal tasa = (BigDecimal) d.getValue()[4];
             String per = (String) d.getValue()[5];
-            return new ReadOnlyObjectWrapper<>(tasa != null ? tasa.setScale(2, RoundingMode.HALF_UP) + "% / " + ("S".equals(per) ? "sem" : "mes") : "");
+            return new ReadOnlyObjectWrapper<>(tasa != null ? tasa.setScale(2, RoundingMode.HALF_UP) + "% total" : "");
         });
         colCuota.setCellValueFactory(d -> new ReadOnlyObjectWrapper<>((BigDecimal) d.getValue()[7]));
         colCuotas.setCellValueFactory(d -> {
@@ -193,7 +195,59 @@ public class PrestamoController implements Initializable {
             }
         });
         colProgreso.setCellValueFactory(d -> new ReadOnlyObjectWrapper<>(null));
+        colAcciones.setCellValueFactory(d -> new ReadOnlyObjectWrapper<>(null));
+        colAcciones.setCellFactory(col -> new TableCell<>() {
+            private final Button borrar = new Button("Eliminar");
+            {
+                borrar.setStyle("-fx-font-size: 11px; -fx-padding: 4 8;");
+                boolean permitido = com.vendex.util.SesionActual.tienePermiso("PRESTAMO_GESTIONAR");
+                boolean remoto = com.vendex.remote.ApiConfig.isModoRemoto();
+                borrar.setTooltip(new Tooltip(remoto
+                        ? "La eliminación de préstamos no está disponible en modo remoto"
+                        : "Eliminar de la lista este préstamo cancelado o sin pagos"));
+                borrar.setDisable(!permitido || remoto);
+                borrar.setOnAction(event -> {
+                    Object[] fila = getTableRow() == null ? null : getTableRow().getItem();
+                    if (fila != null) eliminarPrestamo(fila);
+                    event.consume();
+                });
+            }
+
+            @Override protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                setGraphic(empty ? null : borrar);
+            }
+        });
         tblPrestamos.setItems(listaPrestamos);
+    }
+
+    private void eliminarPrestamo(Object[] fila) {
+        int id = ((Number) fila[0]).intValue();
+        String entidad = fila[2] == null ? "la entidad seleccionada" : String.valueOf(fila[2]);
+        Alert confirmacion = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmacion.setTitle("Eliminar préstamo");
+        confirmacion.setHeaderText("¿Borrar el préstamo de " + entidad + "?");
+        confirmacion.setContentText("El préstamo dejará de aparecer en la lista. Sus cuotas y pagos se conservarán en el historial. Si tiene pagos, primero debe estar cancelado.");
+        Window propietario = ventanaActiva();
+        if (propietario != null) confirmacion.initOwner(propietario);
+        ThemeManager.aplicarTemaGuardado(confirmacion.getDialogPane().getScene());
+        if (confirmacion.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) return;
+
+        try {
+            prestamoService.eliminarPrestamo(id);
+            if (prestamoSeleccionado != null && prestamoSeleccionado.getId() == id) {
+                prestamoSeleccionado = null;
+                tblPrestamos.getSelectionModel().clearSelection();
+                tblCuotas.getItems().clear();
+                tblPagos.getItems().clear();
+                lblResumen.setText("Seleccione un préstamo para ver el detalle");
+            }
+            refrescar();
+        } catch (IllegalStateException ex) {
+            mostrarAlerta(Alert.AlertType.WARNING, ex.getMessage());
+        } catch (Exception ex) {
+            mostrarError("No se pudo eliminar el préstamo", ex);
+        }
     }
 
     // ==================== Tabla de cuotas ====================
@@ -377,6 +431,13 @@ public class PrestamoController implements Initializable {
             form.setHgap(12);
             form.setVgap(10);
             form.setPadding(new Insets(5));
+            ColumnConstraints etiquetaPrincipal = new ColumnConstraints(150, 180, 195);
+            ColumnConstraints campoPrincipal = new ColumnConstraints(210, 245, Double.MAX_VALUE);
+            campoPrincipal.setHgrow(Priority.ALWAYS);
+            ColumnConstraints etiquetaMeta = new ColumnConstraints(135, 160, 175);
+            ColumnConstraints campoMeta = new ColumnConstraints(220, 260, Double.MAX_VALUE);
+            campoMeta.setHgrow(Priority.ALWAYS);
+            form.getColumnConstraints().setAll(etiquetaPrincipal, campoPrincipal, etiquetaMeta, campoMeta);
 
             ComboBox<EntidadFinanciera> cmbEntidad = new ComboBox<>(FXCollections.observableArrayList(entidades));
             cmbEntidad.setPrefWidth(220);
@@ -384,7 +445,7 @@ public class PrestamoController implements Initializable {
             TextField txtMonto = new TextField();
             txtMonto.setPromptText("0.00");
             TextField txtTasa = new TextField();
-            txtTasa.setPromptText("5.00 (% por período)");
+            txtTasa.setPromptText("16.50 (% total del préstamo)");
             ComboBox<String> cmbPeriodicidad = new ComboBox<>(FXCollections.observableArrayList(PERIODICIDADES));
             cmbPeriodicidad.setValue("MENSUAL");
             TextField txtCuotas = new TextField();
@@ -419,24 +480,24 @@ public class PrestamoController implements Initializable {
                 }
             });
 
-            form.add(crearLabel("Entidad financiera:"), 0, 0);
+            form.add(crearEtiquetaPrestamo("Entidad financiera:"), 0, 0);
             form.add(cmbEntidad, 1, 0);
-            form.add(crearLabel("Monto principal ($):"), 0, 1);
+            form.add(crearEtiquetaPrestamo("Monto principal ($):"), 0, 1);
             form.add(txtMonto, 1, 1);
-            form.add(crearLabel("Tasa del período (%):"), 0, 2);
+            form.add(crearEtiquetaPrestamo("Interés total del préstamo (%):"), 0, 2);
             form.add(txtTasa, 1, 2);
-            form.add(crearLabel("Periodicidad:"), 0, 3);
+            form.add(crearEtiquetaPrestamo("Periodicidad:"), 0, 3);
             form.add(cmbPeriodicidad, 1, 3);
-            form.add(crearLabel("Número de cuotas:"), 0, 4);
+            form.add(crearEtiquetaPrestamo("Número de cuotas:"), 0, 4);
             form.add(txtCuotas, 1, 4);
-            form.add(crearLabel("Fecha de inicio:"), 0, 5);
+            form.add(crearEtiquetaPrestamo("Fecha de inicio:"), 0, 5);
             form.add(dpInicio, 1, 5);
-            form.add(crearLabel("Meta de ventas:"), 2, 0);
+            form.add(crearEtiquetaPrestamo("Meta de ventas:"), 2, 0);
             form.add(cmbMetaPer, 3, 0);
-            form.add(crearLabel("Monto meta ($):"), 2, 1);
+            form.add(crearEtiquetaPrestamo("Monto meta ($):"), 2, 1);
             HBox boxMeta = new HBox(5, txtMetaMonto, btnSugerirMeta);
             form.add(boxMeta, 3, 1);
-            form.add(crearLabel("Notas:"), 2, 2);
+            form.add(crearEtiquetaPrestamo("Notas:"), 2, 2);
             form.add(txtNotas, 3, 2);
 
             Label lblCuota = crearLabelBold("Cuota fija: $—");
@@ -475,8 +536,8 @@ public class PrestamoController implements Initializable {
                         return;
                     }
                     String per = "SEMANAL".equals(cmbPeriodicidad.getValue()) ? "S" : "M";
-                    BigDecimal cuota = PrestamoService.calcularCuotaFrancesa(monto, tasa, n);
-                    List<PrestamoCuota> tabla = PrestamoService.generarTablaCuotas(0, monto, tasa, n, per,
+                    BigDecimal cuota = PrestamoService.calcularCuotaInteresTotal(monto, tasa, n);
+                    List<PrestamoCuota> tabla = PrestamoService.generarCuotasInteresTotal(0, monto, tasa, n, per,
                             dpInicio.getValue() != null ? dpInicio.getValue() : LocalDate.now());
                     BigDecimal total = BigDecimal.ZERO;
                     BigDecimal interesTotal = BigDecimal.ZERO;
@@ -544,7 +605,9 @@ public class PrestamoController implements Initializable {
             VBox contenido = new VBox(12, form, resumen,
                     crearLabel("Vista previa de la tabla de amortización:"), tblPreview, botones);
             contenido.setPadding(new Insets(15));
-            modal.setScene(new Scene(contenido, 920, 580));
+            modal.setMinWidth(940);
+            modal.setMinHeight(600);
+            modal.setScene(new Scene(contenido, 1080, 700));
             ThemeManager.aplicarTemaGuardado(modal.getScene());
             modalAbierto = modal;
             try {
@@ -932,7 +995,7 @@ public class PrestamoController implements Initializable {
             BigDecimal t = parse(tasa.getText());
             int n = (int) parse(cuotas.getText()).doubleValue();
             if (m == null || t == null || n <= 0) return null;
-            return PrestamoService.calcularCuotaFrancesa(m, t, n);
+            return PrestamoService.calcularCuotaInteresTotal(m, t, n);
         } catch (Exception e) {
             return null;
         }
@@ -947,6 +1010,13 @@ public class PrestamoController implements Initializable {
         Label lbl = new Label(texto);
         lbl.setStyle("-fx-font-size: 13px");
         return lbl;
+    }
+
+    private Label crearEtiquetaPrestamo(String texto) {
+        Label label = crearLabel(texto);
+        label.setWrapText(true);
+        label.setMaxWidth(Double.MAX_VALUE);
+        return label;
     }
 
     private Label crearLabelBold(String texto) {

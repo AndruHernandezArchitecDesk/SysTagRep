@@ -92,4 +92,9 @@ public class PrestamoDAORest extends RestDao<Prestamo> implements PrestamoDAO {
     public void actualizarEstado(int prestamoId, String estado) {
         throw new UnsupportedOperationException("Prestamo.actualizarEstado rest");
     }
+
+    @Override
+    public boolean eliminarSiNoTienePagos(int prestamoId) {
+        throw new UnsupportedOperationException("La eliminación de préstamos no está disponible en modo remoto");
+    }
 }

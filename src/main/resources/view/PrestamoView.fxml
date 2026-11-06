@@ -62,7 +62,7 @@
                             <columns>
                                 <TableColumn fx:id="colEntidad" text="Entidad" minWidth="150"/>
                                 <TableColumn fx:id="colPrincipal" text="Principal" minWidth="100"/>
-                                <TableColumn fx:id="colTasa" text="Tasa/Per." minWidth="100"/>
+                                <TableColumn fx:id="colTasa" text="Interés total" minWidth="110"/>
                                 <TableColumn fx:id="colCuota" text="Cuota" minWidth="100"/>
                                 <TableColumn fx:id="colCuotas" text="Cuotas" minWidth="90"/>
                                 <TableColumn fx:id="colSaldo" text="Saldo" minWidth="100"/>
@@ -70,6 +70,7 @@
                                 <TableColumn fx:id="colMeta" text="Meta" minWidth="140"/>
                                 <TableColumn fx:id="colEstado" text="Estado" minWidth="90"/>
                                 <TableColumn fx:id="colProgreso" text="Progreso" minWidth="160"/>
+                                <TableColumn fx:id="colAcciones" text="Acciones" minWidth="105" prefWidth="110" maxWidth="125"/>
                             </columns>
                         </TableView>
                     </VBox>

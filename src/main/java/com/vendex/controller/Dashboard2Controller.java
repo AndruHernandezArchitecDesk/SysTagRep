@@ -4,6 +4,7 @@ import com.vendex.dao.DashboardDAO;
 import com.vendex.dao.LogDAO;
 import com.vendex.model.Alerta;
 import com.vendex.service.AlertaService;
+import com.vendex.util.LogoManager;
 import com.vendex.util.ScrambleText;
 import com.vendex.util.ThemeManager;
 import javafx.application.Platform;
@@ -19,7 +20,6 @@ import javafx.scene.chart.PieChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableView;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
@@ -83,7 +83,7 @@ public class Dashboard2Controller implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         if (imgLogo != null) {
-            try { imgLogo.setImage(new Image(getClass().getResourceAsStream(com.vendex.util.ThemeManager.getLogoPath()))); } catch (Exception ignored) {}
+            imgLogo.imageProperty().bind(LogoManager.logoProperty());
         }
         new ScrambleText(lblTitulo, nombreEmpresa()).repeat(true).play();
         cargarGraficos();
@@ -119,22 +119,31 @@ public class Dashboard2Controller implements Initializable {
     }
 
     private String[] coloresVentasNV() {
-        return ThemeManager.esDarkMode()
-                ? new String[]{"#8be9fd", "#74d4f7", "#5cbde0", "#42a5c9", "#298fb2"}
-                : new String[]{"#3498db", "#2980b9", "#1f6dad", "#174f83", "#0f3859"};
+        return switch (ThemeManager.getCurrentTheme()) {
+            case CYBERPUNK -> new String[]{"#8be9fd", "#74d4f7", "#5cbde0", "#42a5c9", "#298fb2"};
+            case PINK_BLOSSOM -> new String[]{"#EC4899", "#DB2777", "#BE185D", "#9D174D", "#831843"};
+            case NATURE_BREEZE -> new String[]{"#43A047", "#388E3C", "#2E7D32", "#1B5E20", "#33691E"};
+            default -> new String[]{"#3498db", "#2980b9", "#1f6dad", "#174f83", "#0f3859"};
+        };
     }
 
     private String[] coloresVentasFact() {
-        return ThemeManager.esDarkMode()
-                ? new String[]{"#ffb86c", "#f0a050", "#e08840", "#d07030", "#b85820"}
-                : new String[]{"#e67e22", "#d35400", "#ba4a00", "#a04000", "#873600"};
+        return switch (ThemeManager.getCurrentTheme()) {
+            case CYBERPUNK -> new String[]{"#ffb86c", "#f0a050", "#e08840", "#d07030", "#b85820"};
+            case PINK_BLOSSOM -> new String[]{"#F472B6", "#EC4899", "#DB2777", "#BE185D", "#9D174D"};
+            case NATURE_BREEZE -> new String[]{"#81C784", "#66BB6A", "#4CAF50", "#43A047", "#2E7D32"};
+            default -> new String[]{"#e67e22", "#d35400", "#ba4a00", "#a04000", "#873600"};
+        };
     }
 
     private String[] coloresCompras() {
-        return ThemeManager.esDarkMode()
-                ? new String[]{"#50fa7b", "#40d86b", "#30b65b", "#20944b", "#10703b", "#40e0c0", "#30c8b0", "#20b0a0", "#109890", "#008080"}
-                : new String[]{"#2ecc71", "#27ae60", "#1e8449", "#145a32", "#0b3d1f",
-                "#1abc9c", "#16a085", "#0e6655", "#084a38", "#053122"};
+        return switch (ThemeManager.getCurrentTheme()) {
+            case CYBERPUNK -> new String[]{"#50fa7b", "#40d86b", "#30b65b", "#20944b", "#10703b", "#40e0c0", "#30c8b0", "#20b0a0", "#109890", "#008080"};
+            case PINK_BLOSSOM -> new String[]{"#F9A8D4", "#F472B6", "#EC4899", "#DB2777", "#BE185D", "#FBCFE8", "#F9A8D4", "#F472B6", "#EC4899", "#BE185D"};
+            case NATURE_BREEZE -> new String[]{"#A5D6A7", "#81C784", "#66BB6A", "#4CAF50", "#43A047", "#388E3C", "#2E7D32", "#1B5E20", "#558B2F", "#33691E"};
+            default -> new String[]{"#2ecc71", "#27ae60", "#1e8449", "#145a32", "#0b3d1f",
+                    "#1abc9c", "#16a085", "#0e6655", "#084a38", "#053122"};
+        };
     }
 
     private void cargarGraficoVentas() {
@@ -221,8 +230,23 @@ public class Dashboard2Controller implements Initializable {
         "#40e0d0", "#f1fa8c", "#a4bdfc", "#ff6e6e", "#d7aefb"
     };
 
+    private static final String[] COLORES_PIE_PINK = {
+        "#EC4899", "#BE185D", "#F472B6", "#9D174D", "#DB2777",
+        "#F9A8D4", "#C02675", "#831843", "#E879A8", "#A21CAF"
+    };
+
+    private static final String[] COLORES_PIE_NATURE = {
+        "#43A047", "#2E7D32", "#66BB6A", "#1B5E20", "#81C784",
+        "#558B2F", "#A5D6A7", "#33691E", "#689F38", "#388E3C"
+    };
+
     private String[] coloresPie() {
-        return ThemeManager.esDarkMode() ? COLORES_PIE_OSCURO : COLORES_PIE_CLARO;
+        return switch (ThemeManager.getCurrentTheme()) {
+            case CYBERPUNK -> COLORES_PIE_OSCURO;
+            case PINK_BLOSSOM -> COLORES_PIE_PINK;
+            case NATURE_BREEZE -> COLORES_PIE_NATURE;
+            default -> COLORES_PIE_CLARO;
+        };
     }
 
     private void cargarGraficoMarcas() {
@@ -296,11 +320,20 @@ public class Dashboard2Controller implements Initializable {
                     if (labelText.equals(labelEsperado)) {
                         double valNV = datosNV.getOrDefault(dia, 0.0);
                         double valFact = datosFact.getOrDefault(dia, 0.0);
-                        if (ThemeManager.esDarkMode()) {
-                            txt.setFill(valFact >= valNV ? Color.web("#ffb86c") : Color.web("#8be9fd"));
-                        } else {
-                            txt.setFill(valFact >= valNV ? Color.web("#d35400") : Color.web("#2980b9"));
-                        }
+                        ThemeManager.Theme tema = ThemeManager.getCurrentTheme();
+                        String colorFactura = switch (tema) {
+                            case CYBERPUNK -> "#ffb86c";
+                            case PINK_BLOSSOM -> "#BE185D";
+                            case NATURE_BREEZE -> "#2E7D32";
+                            default -> "#d35400";
+                        };
+                        String colorProforma = switch (tema) {
+                            case CYBERPUNK -> "#8be9fd";
+                            case PINK_BLOSSOM -> "#9D174D";
+                            case NATURE_BREEZE -> "#1B5E20";
+                            default -> "#2980b9";
+                        };
+                        txt.setFill(valFact >= valNV ? Color.web(colorFactura) : Color.web(colorProforma));
                         break;
                     }
                 }
@@ -315,7 +348,13 @@ public class Dashboard2Controller implements Initializable {
             buscarTextNodes(xAxis, textNodes);
             for (Text txt : textNodes) {
                 if (txt.getText() != null && !txt.getText().isEmpty()) {
-                    txt.setFill(ThemeManager.esDarkMode() ? Color.web("#50fa7b") : Color.web("#27ae60"));
+                    String color = switch (ThemeManager.getCurrentTheme()) {
+                        case CYBERPUNK -> "#50fa7b";
+                        case PINK_BLOSSOM -> "#BE185D";
+                        case NATURE_BREEZE -> "#2E7D32";
+                        default -> "#27ae60";
+                    };
+                    txt.setFill(Color.web(color));
                 }
             }
         } catch (Exception ignored) {}

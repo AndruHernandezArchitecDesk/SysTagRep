@@ -5,6 +5,8 @@ import com.vendex.config.DatabaseConnection;
 import com.vendex.config.DbConfig;
 import com.vendex.config.VendexControllerFactory;
 import com.vendex.controller.LicenseActivatorController;
+import com.vendex.dao.LicenciaCentralDAOPostgres;
+import com.vendex.service.LicenciaCentralService;
 import com.vendex.offline.OfflineModeManager;
 import com.vendex.offline.SyncService;
 import com.vendex.util.LicenseManager;
@@ -72,7 +74,7 @@ public class MainApp extends Application {
         try { DatabaseConnection.ensurePrestamoSchema(); } catch (Exception e) { System.err.println("No se pudo asegurar esquema préstamos: " + e.getMessage()); }
         // SRI contingencia: cola persistente todo a cola (desacople mostrador)
         try { com.vendex.service.ServicioReintentoSri.getInstance().start(); } catch (Exception e) { System.err.println("No se pudo iniciar SRI reintento: " + e.getMessage()); }
-        // Activacion solo en host (localhost). PC cliente con db.url remota (vendex-db) no requiere licencia local.
+        // Host local: licencia local. PC cliente con db.url remota: licencia CENTRAL registrada en dbTag.
         boolean esRemota = DbConfig.esRemota();
         AppContext appContext = AppContext.getInstance();
         // API REST multi-sucursal (opcional, -Dapi.enabled=true -Dapi.port=7070)
@@ -83,7 +85,7 @@ public class MainApp extends Application {
             SyncService.INSTANCE.iniciar();
         }
         VendexControllerFactory controllerFactory = new VendexControllerFactory(appContext);
-        if (!esRemota && !LicenseManager.isActivated()) {
+        if (!licenciaValida(esRemota)) {
             FXMLLoader loader = new FXMLLoader(
                     getClass().getResource("/view/LicenseActivatorView.fxml"));
             loader.setControllerFactory(controllerFactory);
@@ -99,7 +101,7 @@ public class MainApp extends Application {
             licenseStage.setOnCloseRequest(e -> System.exit(0));
             licenseStage.showAndWait();
 
-            if (!ctrl.isActivated()) {
+            if (!ctrl.isActivated() || !licenciaValida(esRemota)) {
                 Platform.exit();
                 return;
             }
@@ -114,7 +116,26 @@ public class MainApp extends Application {
         Scene scene = new Scene(root);
         ThemeManager.aplicarTemaGuardado(scene);
         stage.setScene(scene);
+        com.vendex.util.AmbientEffectManager.attach(scene);
         stage.show();
+    }
+
+    private boolean licenciaValida(boolean esRemota) {
+        if (!esRemota) return LicenseManager.isActivated();
+
+        LicenseManager.StoredLicense stored = LicenseManager.getStoredLicense();
+        if (stored == null || !stored.machineCode.equals(LicenseManager.getMachineCode())) {
+            return false;
+        }
+        LicenciaCentralService servicio = new LicenciaCentralService(new LicenciaCentralDAOPostgres());
+        java.util.Map<String, Object> resultado = servicio.validarInstalacion(
+                stored.machineCode, stored.licenseKey, true);
+        boolean valida = Boolean.TRUE.equals(resultado.get("valida"));
+        if (!valida) {
+            System.err.println("Licencia remota no válida: " + resultado.get("motivo")
+                    + (resultado.get("error") != null ? " - " + resultado.get("error") : ""));
+        }
+        return valida;
     }
 
     private void cargarFuentes() {

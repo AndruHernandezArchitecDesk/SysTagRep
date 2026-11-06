@@ -249,6 +249,7 @@ public class SeguimientoSriController implements Initializable {
         if (grupoTipos == null) return;
         for (Toggle t : grupoTipos.getToggles()) {
             if (!(t instanceof ToggleButton b)) continue;
+            if (!b.getStyleClass().contains("sri-type-filter")) b.getStyleClass().add("sri-type-filter");
             b.setStyle("-fx-min-height: 36; -fx-min-width: 130; -fx-font-size: 14px; -fx-font-weight: bold;");
         }
     }

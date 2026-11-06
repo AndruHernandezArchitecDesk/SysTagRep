@@ -1,0 +1,109 @@
+/* Nature Breeze: paleta verde natural que reutiliza el set de componentes claros. */
+.root {
+    -fx-bg-page: #F1F8E9;
+    -fx-bg-card: #FFFFFF;
+    -fx-bg-card-alt: #E8F5E9;
+    -fx-text-primary: #263D2A;
+    -fx-text-secondary: #526B55;
+    -fx-accent-primary: #43A047;
+    -fx-accent-hover: #388E3C;
+    -fx-accent-pressed: #2E7D32;
+    -fx-accent-success: #2E7D32;
+    -fx-accent-warning: #A16207;
+    -fx-accent-danger: #B91C1C;
+    -fx-accent-info: #1565C0;
+    -fx-accent-green: #2E7D32;
+    -fx-border: #A5D6A7;
+    -fx-selection-bg: #C8E6C9;
+    -fx-selection-text: #1B5E20;
+    -fx-placeholder: #718A74;
+    -fx-gemini-blue: #4285F4;
+    -fx-sidebar-bg: #2E7D32;
+    -fx-sidebar-text: #FFFFFF;
+    -fx-focus: #1B5E20;
+    -fx-action-secondary: #607D8B;
+    -fx-action-cancel: #78909C;
+    -fx-action-danger: #B91C1C;
+    -fx-action-warning: #A16207;
+    -fx-background-color: -fx-bg-page;
+    -fx-text-fill: -fx-text-primary;
+    -fx-accent: -fx-focus;
+}
+
+.button { -fx-text-fill: -fx-text-primary; }
+.button-primary, .btn-guardar { -fx-background-color: -fx-accent-primary; -fx-text-fill: #FFFFFF; }
+.button-primary:hover, .btn-guardar:hover { -fx-background-color: -fx-accent-hover; }
+.button-primary:pressed, .btn-guardar:pressed { -fx-background-color: -fx-accent-pressed; }
+.button-danger { -fx-background-color: -fx-accent-danger; }
+.button-warning { -fx-background-color: -fx-accent-warning; }
+.button-secondary { -fx-background-color: -fx-action-secondary; }
+.button-cancel { -fx-background-color: -fx-action-cancel; }
+
+.sidebar { -fx-background-color: -fx-sidebar-bg; }
+.sidebar-user-section, .sidebar-footer-section { -fx-background-color: #27692B; }
+.sidebar-footer-section { -fx-border-color: #66BB6A transparent transparent transparent; }
+.sidebar .label, .nav-group, .nav-item { -fx-text-fill: -fx-sidebar-text; }
+.nav-item .font-icon, .nav-group .font-icon { -fx-icon-color: #E8F5E9; }
+.nav-item:hover, .nav-group:hover { -fx-background-color: #388E3C; }
+.nav-item:pressed, .nav-item:selected { -fx-background-color: #81C784; -fx-text-fill: #1B5E20; }
+.sidebar-item-active { -fx-background-color: #C8E6C9; -fx-text-fill: #1B5E20; }
+.sidebar-item-active .font-icon, .quick-access-btn .font-icon { -fx-icon-color: -fx-accent-primary; }
+.quick-access-btn { -fx-background-color: -fx-bg-card; -fx-text-fill: -fx-text-primary; -fx-border-color: -fx-border; }
+.quick-access-btn:hover { -fx-background-color: -fx-bg-card-alt; -fx-border-color: -fx-accent-primary; }
+.quick-access-btn:pressed { -fx-background-color: -fx-accent-primary; -fx-text-fill: #FFFFFF; }
+
+.text-field, .combo-box, .spinner, .date-picker, .text-area {
+    -fx-background-color: -fx-bg-card;
+    -fx-border-color: -fx-border;
+    -fx-text-fill: -fx-text-primary;
+}
+.text-field:focused, .combo-box:focused, .spinner:focused, .date-picker:focused, .text-area:focused {
+    -fx-border-color: -fx-focus;
+}
+.label { -fx-text-fill: -fx-text-primary; }
+.label-title, .text-secondary, .empresa-info, .login-copy { -fx-text-fill: -fx-text-secondary; }
+.titulo, .screen-title { -fx-text-fill: -fx-text-primary; -fx-border-color: transparent transparent transparent -fx-accent-primary; }
+.titulo-icono { -fx-icon-color: -fx-accent-primary; }
+
+.card, .stat-card, .panel-claro, .panel-inventario, .section-card,
+.alert-box, .login-card, .about-log-block, .chat-panel, .perchero-seccion {
+    -fx-background-color: -fx-bg-card;
+    -fx-border-color: -fx-border;
+}
+.section-card > .title, .titled-pane > .title { -fx-background-color: -fx-bg-card-alt; }
+.section-card > .content, .titled-pane > .content { -fx-background-color: -fx-bg-card; }
+.header, .nota-header, .factura-header, .footer-bar { -fx-background-color: -fx-bg-card-alt; -fx-border-color: -fx-border; }
+
+.table-view { -fx-background-color: -fx-bg-card; -fx-border-color: -fx-border; }
+.table-view .column-header-background, .table-view .column-header { -fx-background-color: -fx-bg-card-alt; }
+.table-view .column-header .label, .table-view .table-cell { -fx-text-fill: -fx-text-primary; }
+.table-view .table-row-cell { -fx-background-color: -fx-bg-card; }
+.table-view .table-row-cell:odd { -fx-background-color: -fx-bg-card-alt; }
+.table-view:focused .table-row-cell:filled:selected, .list-view:focused .list-cell:filled:selected {
+    -fx-background-color: -fx-selection-bg;
+    -fx-text-fill: -fx-selection-text;
+}
+
+.tab-pane, .tab-pane .tab-content-area { -fx-background-color: -fx-bg-page; }
+.tab-pane .tab-header-area, .tab-pane .tab { -fx-background-color: -fx-bg-card-alt; }
+.tab-pane .tab:selected { -fx-background-color: -fx-accent-primary; }
+.tab-pane .tab:selected .tab-label { -fx-text-fill: #FFFFFF; }
+.scroll-pane, .scroll-pane .viewport { -fx-background-color: -fx-bg-page; }
+.separator .line { -fx-border-color: -fx-border; }
+.tooltip, .context-menu { -fx-background-color: -fx-bg-card; -fx-text-fill: -fx-text-primary; -fx-border-color: -fx-border; }
+.banner-warning { -fx-background-color: #FEF3C7; -fx-border-color: -fx-accent-warning; }
+.banner-warning .label { -fx-text-fill: #78350F; }
+.banner-danger { -fx-background-color: #FEE2E2; -fx-border-color: -fx-accent-danger; }
+.banner-danger .label { -fx-text-fill: #7F1D1D; }
+.text-success { -fx-text-fill: -fx-accent-success; }
+.text-danger { -fx-text-fill: -fx-accent-danger; }
+.text-warning { -fx-text-fill: -fx-accent-warning; }
+.text-info { -fx-text-fill: -fx-accent-info; }
+.chat-bubble, .chat-bubble-assistant { -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, -fx-accent-primary, -fx-gemini-blue); }
+.mensaje-usuario, .btn-enviar { -fx-background-color: -fx-accent-primary; -fx-text-fill: #FFFFFF; }
+.mensaje-bot { -fx-background-color: -fx-bg-card-alt; -fx-text-fill: -fx-text-primary; }
+.perchero-seccion-titulo { -fx-text-fill: -fx-text-primary; }
+.perchero-bloque-libre { -fx-background-color: -fx-bg-card-alt; -fx-border-color: -fx-accent-success; }
+.perchero-bloque-ocupado { -fx-background-color: -fx-bg-card; -fx-border-color: -fx-accent-danger; }
+.estado-disponible { -fx-text-fill: -fx-accent-success; }
+.estado-ocupado { -fx-text-fill: -fx-accent-danger; }

@@ -8,6 +8,10 @@ import java.util.prefs.Preferences;
 public class ThemeManager {
 
     private static final String KEY_THEME = "app.theme";
+    private static final String KEY_THEME_ID = "ui.theme";
+    private static final String KEY_AMBIENT_ENABLED = "ui.ambient.enabled";
+    private static final String KEY_AMBIENT_INTENSITY = "ui.ambient.intensity";
+    private static final String KEY_AMBIENT_SPEED = "ui.ambient.speed";
     private static final String THEME_LIGHT = "light";
     private static final String THEME_DARK = "dark";
 
@@ -16,79 +20,157 @@ public class ThemeManager {
     private static final String ORGANIC = "/css/theme-organic.css";
     private static final String CYBERPUNK = "/css/theme-cyberpunk.css";
 
-    // Legacy para compatibilidad (se mantienen pero no se usan como primarios)
-    private static final String CSS_LIGHT = "/css/app.css";
-    private static final String CSS_DARK = "/css/app-dark.css";
+    private static final String PINK_BLOSSOM = "/css/theme-pink-blossom.css";
+    private static final String NATURE_BREEZE = "/css/theme-nature-breeze.css";
 
     private static final String CLASS_DARK = "dark-mode";
 
     private static final Preferences PREFS = Preferences.userRoot().node("/com/tag/vendex");
 
-    public enum Theme { ORGANIC, CYBERPUNK }
+    public enum Theme {
+        ORGANIC("organic", "Organic", ThemeManager.ORGANIC, false),
+        CYBERPUNK("cyberpunk", "Cyberpunk", ThemeManager.CYBERPUNK, true),
+        PINK_BLOSSOM("pink-blossom", "Pink Blossom", ThemeManager.PINK_BLOSSOM, false),
+        NATURE_BREEZE("nature-breeze", "Nature Breeze", ThemeManager.NATURE_BREEZE, false);
+
+        private final String id;
+        private final String label;
+        private final String stylesheet;
+        private final boolean dark;
+
+        Theme(String id, String label, String stylesheet, boolean dark) {
+            this.id = id;
+            this.label = label;
+            this.stylesheet = stylesheet;
+            this.dark = dark;
+        }
+
+        public String id() { return id; }
+        public String label() { return label; }
+        public boolean isDark() { return dark; }
+        private String stylesheet() { return stylesheet; }
+
+        public static Theme fromId(String id) {
+            if (id != null) for (Theme theme : values())
+                if (theme.id.equalsIgnoreCase(id.trim())) return theme;
+            return null;
+        }
+    }
+
+    public enum AmbientIntensity { LOW, MEDIUM, HIGH }
+    public enum AmbientSpeed { SLOW, NORMAL }
 
     // === Nueva API guia ===
 
     public static void apply(Scene scene, Theme theme) {
+        apply(scene, theme, true);
+    }
+
+    /** Applies a temporary preview without persisting it. */
+    public static void preview(Scene scene, Theme theme) {
+        apply(scene, theme, false);
+    }
+
+    private static void apply(Scene scene, Theme requested, boolean persist) {
         if (scene == null) return;
+        Theme theme = requested == null ? Theme.ORGANIC : requested;
+        String themeFile = theme.stylesheet();
+        if (ThemeManager.class.getResource(themeFile) == null) {
+            theme = Theme.ORGANIC;
+            themeFile = ORGANIC;
+        }
         scene.getStylesheets().clear();
-        scene.getStylesheets().add(ThemeManager.class.getResource(BASE).toExternalForm());
-        String themeFile = (theme == Theme.CYBERPUNK) ? CYBERPUNK : ORGANIC;
-        scene.getStylesheets().add(ThemeManager.class.getResource(themeFile).toExternalForm());
+        addStylesheet(scene, BASE);
+        // The organic sheet supplies the shared light-control rules for the two new
+        // pastel palettes; each still has exactly one final palette override sheet.
+        if (theme == Theme.PINK_BLOSSOM || theme == Theme.NATURE_BREEZE) addStylesheet(scene, ORGANIC);
+        addStylesheet(scene, themeFile);
         Node root = scene.getRoot();
         if (root != null) {
-            if (theme == Theme.CYBERPUNK) {
+            root.getStyleClass().removeAll("theme-organic", "theme-cyberpunk", "theme-pink-blossom", "theme-nature-breeze");
+            root.getStyleClass().add("theme-" + theme.id());
+            if (theme.isDark()) {
                 if (!root.getStyleClass().contains(CLASS_DARK)) root.getStyleClass().add(CLASS_DARK);
             } else {
                 root.getStyleClass().remove(CLASS_DARK);
             }
         }
-        guardarTema(theme == Theme.CYBERPUNK ? THEME_DARK : THEME_LIGHT);
+        if (persist) guardarTema(theme);
     }
 
     public static Theme getCurrentTheme() {
-        return THEME_DARK.equalsIgnoreCase(cargarTema()) ? Theme.CYBERPUNK : Theme.ORGANIC;
+        return cargarTema();
     }
 
     // === API legacy compat (delegan a nueva) ===
 
     public static void aplicarTemaGuardado(Scene scene) {
-        String tema = cargarTema();
-        if (THEME_DARK.equalsIgnoreCase(tema)) {
-            apply(scene, Theme.CYBERPUNK);
-        } else {
-            apply(scene, Theme.ORGANIC);
-        }
+        apply(scene, cargarTema(), false);
     }
 
     public static void aplicarTema(Scene scene, String tema) {
         if (scene == null) return;
-        if (THEME_DARK.equalsIgnoreCase(tema)) {
-            apply(scene, Theme.CYBERPUNK);
-        } else {
-            apply(scene, Theme.ORGANIC);
-        }
+        Theme resolved = Theme.fromId(tema);
+        if (resolved == null) resolved = THEME_DARK.equalsIgnoreCase(tema) ? Theme.CYBERPUNK : Theme.ORGANIC;
+        apply(scene, resolved);
     }
 
     public static void alternarTema(Scene scene) {
-        Theme actual = getCurrentTheme();
-        Theme nuevo = (actual == Theme.CYBERPUNK) ? Theme.ORGANIC : Theme.CYBERPUNK;
+        Theme nuevo = getCurrentTheme().isDark() ? Theme.ORGANIC : Theme.CYBERPUNK;
         apply(scene, nuevo);
     }
 
     public static boolean esDarkMode() {
-        return THEME_DARK.equalsIgnoreCase(cargarTema());
+        return getCurrentTheme().isDark();
+    }
+
+    public static boolean animacionesAmbientalesActivas() {
+        String value = PREFS.get(KEY_AMBIENT_ENABLED, null);
+        return value == null ? getCurrentTheme() == Theme.PINK_BLOSSOM || getCurrentTheme() == Theme.NATURE_BREEZE
+                : Boolean.parseBoolean(value);
+    }
+
+    public static boolean tienePreferenciaAmbiental() {
+        return PREFS.get(KEY_AMBIENT_ENABLED, null) != null;
+    }
+
+    public static AmbientIntensity getAmbientIntensity() {
+        try { return AmbientIntensity.valueOf(PREFS.get(KEY_AMBIENT_INTENSITY, "LOW")); }
+        catch (IllegalArgumentException ex) { return AmbientIntensity.LOW; }
+    }
+
+    public static AmbientSpeed getAmbientSpeed() {
+        try { return AmbientSpeed.valueOf(PREFS.get(KEY_AMBIENT_SPEED, "SLOW")); }
+        catch (IllegalArgumentException ex) { return AmbientSpeed.SLOW; }
+    }
+
+    public static void guardarApariencia(Theme theme, boolean animaciones,
+                                         AmbientIntensity intensidad, AmbientSpeed velocidad) {
+        Theme selected = theme == null ? Theme.ORGANIC : theme;
+        guardarTema(selected);
+        PREFS.putBoolean(KEY_AMBIENT_ENABLED, animaciones);
+        PREFS.put(KEY_AMBIENT_INTENSITY, (intensidad == null ? AmbientIntensity.LOW : intensidad).name());
+        PREFS.put(KEY_AMBIENT_SPEED, (velocidad == null ? AmbientSpeed.SLOW : velocidad).name());
     }
 
     public static String getLogoPath() {
         return "/img/LogoVendex.png";
     }
 
-    private static String cargarTema() {
-        String tema = PREFS.get(KEY_THEME, THEME_LIGHT);
-        return (tema == null || tema.trim().isEmpty()) ? THEME_LIGHT : tema;
+    private static Theme cargarTema() {
+        String themeId = PREFS.get(KEY_THEME_ID, null);
+        Theme theme = Theme.fromId(themeId);
+        if (theme != null) return theme;
+        return THEME_DARK.equalsIgnoreCase(PREFS.get(KEY_THEME, THEME_LIGHT)) ? Theme.CYBERPUNK : Theme.ORGANIC;
     }
 
-    private static void guardarTema(String tema) {
-        PREFS.put(KEY_THEME, tema);
+    private static void guardarTema(Theme theme) {
+        PREFS.put(KEY_THEME_ID, theme.id());
+        PREFS.put(KEY_THEME, theme.isDark() ? THEME_DARK : THEME_LIGHT);
+    }
+
+    private static void addStylesheet(Scene scene, String path) {
+        java.net.URL resource = ThemeManager.class.getResource(path);
+        if (resource != null) scene.getStylesheets().add(resource.toExternalForm());
     }
 }

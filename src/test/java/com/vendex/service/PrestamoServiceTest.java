@@ -210,6 +210,33 @@ class PrestamoServiceTest {
         assertEquals(0, aplicado.compareTo(new BigDecimal("100.00")));
     }
 
+    @Test
+    void eliminarPrestamo_sinPagos_delegaEnDao() {
+        when(prestamoDAO.obtenerPorId(42)).thenReturn(new Prestamo());
+        when(prestamoDAO.eliminarSiNoTienePagos(42)).thenReturn(true);
+
+        assertDoesNotThrow(() -> service.eliminarPrestamo(42));
+        Mockito.verify(prestamoDAO).eliminarSiNoTienePagos(42);
+    }
+
+    @Test
+    void eliminarPrestamo_conPagos_noBorraYExplicaCancelar() {
+        when(prestamoDAO.obtenerPorId(42)).thenReturn(new Prestamo());
+        when(prestamoDAO.eliminarSiNoTienePagos(42)).thenReturn(false);
+
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> service.eliminarPrestamo(42));
+        assertTrue(error.getMessage().contains("Cancelar préstamo"));
+    }
+
+    @Test
+    void eliminarPrestamo_inexistente_noLlamaAlDelete() {
+        when(prestamoDAO.obtenerPorId(404)).thenReturn(null);
+
+        assertThrows(IllegalArgumentException.class, () -> service.eliminarPrestamo(404));
+        Mockito.verify(prestamoDAO, Mockito.never()).eliminarSiNoTienePagos(anyInt());
+    }
+
     // ---------- creación ----------
 
     @Test
@@ -243,4 +270,15 @@ class PrestamoServiceTest {
     }
 
     private static BigDecimal TASA_5() { return new BigDecimal("5"); }
+
+    @Test
+    void interesTotal7000A72Cuotas_cierraCapitalEInteresExactos() {
+        var cuotas = PrestamoService.generarCuotasInteresTotal(1, new BigDecimal("7000"),
+                new BigDecimal("16.5"), 72, "M", LocalDate.of(2026, 1, 1));
+        assertEquals(new BigDecimal("113.26"), cuotas.get(0).getMonto());
+        assertEquals(new BigDecimal("8155.00"), cuotas.stream().map(PrestamoCuota::getMonto).reduce(BigDecimal.ZERO, BigDecimal::add));
+        assertEquals(new BigDecimal("1155.00"), cuotas.stream().map(PrestamoCuota::getInteres).reduce(BigDecimal.ZERO, BigDecimal::add));
+        assertEquals(new BigDecimal("7000.00"), cuotas.stream().map(PrestamoCuota::getCapital).reduce(BigDecimal.ZERO, BigDecimal::add));
+        assertEquals(0, cuotas.get(71).getSaldoRestante().signum());
+    }
 }

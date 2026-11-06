@@ -45,7 +45,7 @@ Pulsa **Probar conexión**, espera el ✓ verde y luego **Guardar**. La config q
 
 ## 5. Licencia y chatbot IA
 
-* **Licencia:** solo la pide el **servidor** (`localhost`). Clientes remotos entran directo. Pantalla Activación → pegar clave con guiones (`XXXXX-XXXXX-XXXXX-XXXXX-YYYYMMDD`, vence en la fecha final).
+* **Licencia:** el **servidor** (`localhost`) usa licencia local. Cada **cliente remoto** requiere una licencia v2 **CENTRAL** registrada en `licencia_emitida` y no revocada; si no puede consultar la BD central, el arranque se bloquea. Pantalla Activación → pegar clave con guiones (`XXXXX-XXXXX-XXXXX-XXXXX-YYYYMMDD`, vence en la fecha final). Para emitir y registrar: `java -cp Vendex-2.0-SNAPSHOT.jar com.vendex.util.LicenseGenerator <machine-code> vitalicia --central --ia --registrar-central`. Si el host no apunta a la BD central (p. ej. desarrollo con `dbVendex`), agrega `--db-url=jdbc:postgresql://192.168.1.4:5432/dbTag --db-user=postgres` y define `DB_PASSWORD` con la clave de esa BD.
 * **IA:** menú lateral → **Configurar IA** → Gemini → pegar key → Guardar. Repetir **en cada PC** (la key es local por máquina); el badge pasa a `● IA Gemini`. Sin key, el chatbot sigue buscando en modo local.
 
 ## 6. Fabricar los artefactos (máquina de desarrollo)

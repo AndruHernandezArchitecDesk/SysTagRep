@@ -161,6 +161,7 @@ public class IngresoMercaderiaController implements Initializable {
     private final ObservableList<String> listaDescripciones = FXCollections.observableArrayList();
     private final ObservableList<FilaProducto> listaProductos = FXCollections.observableArrayList();
     private Timeline debounceDescripciones;
+    private boolean actualizandoFiltroDescripcion;
     private StockNegativoPane stockNegativo;
     private SplitPane divisorioStock;
     private javafx.scene.layout.BorderPane raizPanelStock;
@@ -194,9 +195,9 @@ public class IngresoMercaderiaController implements Initializable {
 
     private void configurarStockNegativo() {
         if (stockNegativo != null || preparandoPanelStock || btnGuardar.getScene() == null) return;
-        javafx.scene.layout.BorderPane raiz = encontrarRaizIngreso(btnGuardar.getScene().getRoot(), btnGuardar);
-        if (raiz == null) { LOG.warning("No se encontró la raíz BorderPane de Ingreso de Facturas; escena="
-                + btnGuardar.getScene().getRoot().getClass().getName()); return; }
+        javafx.scene.layout.BorderPane raiz = encontrarRaizIngreso(btnGuardar);
+        if (raiz == null) { LOG.warning("No se encontró un BorderPane ancestro para el formulario de Ingreso de Facturas; nodo="
+                + btnGuardar.getClass().getName()); return; }
         raizPanelStock = raiz;
         centroOriginalStock = raiz.getCenter();
         preparandoPanelStock = true;
@@ -222,28 +223,13 @@ public class IngresoMercaderiaController implements Initializable {
         javafx.application.Platform.runLater(() -> preparandoPanelStock = false);
     }
 
-    private static javafx.scene.layout.BorderPane encontrarRaizIngreso(javafx.scene.Node nodo, javafx.scene.Node objetivo) {
-        if (nodo instanceof javafx.scene.layout.BorderPane border && contieneNodo(border.getCenter(), objetivo)) return border;
-        if (nodo instanceof javafx.scene.control.TitledPane titled && encontrarRaizIngreso(titled.getContent(), objetivo) != null)
-            return encontrarRaizIngreso(titled.getContent(), objetivo);
-        if (nodo instanceof javafx.scene.control.ScrollPane scroll && encontrarRaizIngreso(scroll.getContent(), objetivo) != null)
-            return encontrarRaizIngreso(scroll.getContent(), objetivo);
-        if (nodo instanceof javafx.scene.Parent parent) {
-            for (javafx.scene.Node hijo : parent.getChildrenUnmodifiable()) {
-                var raiz = encontrarRaizIngreso(hijo, objetivo);
-                if (raiz != null) return raiz;
-            }
+    static javafx.scene.layout.BorderPane encontrarRaizIngreso(javafx.scene.Node objetivo) {
+        // Subir desde el control elige el BorderPane del formulario, no el BorderPane
+        // general de MainView que también lo contiene dentro del StackPane central.
+        for (javafx.scene.Node actual = objetivo; actual != null; actual = actual.getParent()) {
+            if (actual instanceof javafx.scene.layout.BorderPane border) return border;
         }
         return null;
-    }
-
-    private static boolean contieneNodo(javafx.scene.Node raiz, javafx.scene.Node objetivo) {
-        if (raiz == objetivo) return true;
-        if (raiz instanceof javafx.scene.control.TitledPane titled) return contieneNodo(titled.getContent(), objetivo);
-        if (raiz instanceof javafx.scene.control.ScrollPane scroll) return contieneNodo(scroll.getContent(), objetivo);
-        if (raiz instanceof javafx.scene.Parent parent)
-            for (javafx.scene.Node hijo : parent.getChildrenUnmodifiable()) if (contieneNodo(hijo, objetivo)) return true;
-        return false;
     }
 
     private void desmontarPanelStock() {
@@ -304,19 +290,32 @@ public class IngresoMercaderiaController implements Initializable {
         });
         // Mantener uppercase como txtDescripcion original
         cmbDescripcion.getEditor().textProperty().addListener((obs, oldText, newText) -> {
+            if (actualizandoFiltroDescripcion) return;
             if (newText != null && !newText.equals(newText.toUpperCase())) {
-                String caret = newText;
                 int pos = cmbDescripcion.getEditor().getCaretPosition();
-                cmbDescripcion.getEditor().setText(newText.toUpperCase());
-                cmbDescripcion.getEditor().positionCaret(pos);
+                actualizandoFiltroDescripcion = true;
+                try {
+                    cmbDescripcion.getEditor().setText(newText.toUpperCase());
+                    cmbDescripcion.getEditor().positionCaret(Math.min(pos, newText.length()));
+                } finally {
+                    actualizandoFiltroDescripcion = false;
+                }
             }
         });
         // ILIKE dinámico: MIN 2 chars, LIMIT 50, debounce 300ms, '%texto%'
         cmbDescripcion.getEditor().textProperty().addListener((obs, oldVal, newVal) -> {
+            if (actualizandoFiltroDescripcion) return;
             if (debounceDescripciones != null) debounceDescripciones.stop();
             String filtro = newVal == null ? "" : newVal.trim();
             if (filtro.length() < 2) {
-                listaDescripciones.clear();
+                actualizandoFiltroDescripcion = true;
+                try {
+                    listaDescripciones.clear();
+                    cmbDescripcion.getSelectionModel().clearSelection();
+                    cmbDescripcion.setValue(null);
+                } finally {
+                    actualizandoFiltroDescripcion = false;
+                }
                 Platform.runLater(() -> cmbDescripcion.hide());
                 return;
             }
@@ -327,10 +326,19 @@ public class IngresoMercaderiaController implements Initializable {
                     if (editorTxt == null) editorTxt = "";
                     // Evitar loop si el usuario cambió texto mientras se consultaba
                     if (!editorTxt.trim().equalsIgnoreCase(filtro.trim())) return;
-                    listaDescripciones.setAll(res);
-                    // Restaurar texto y caret que se pierde al setAll
-                    cmbDescripcion.getEditor().setText(editorTxt);
-                    cmbDescripcion.getEditor().positionCaret(editorTxt.length());
+                    int caret = cmbDescripcion.getEditor().getCaretPosition();
+                    actualizandoFiltroDescripcion = true;
+                    try {
+                        listaDescripciones.setAll(res);
+                        cmbDescripcion.getSelectionModel().clearSelection();
+                        cmbDescripcion.setValue(null);
+                        if (!editorTxt.equals(cmbDescripcion.getEditor().getText())) {
+                            cmbDescripcion.getEditor().setText(editorTxt);
+                        }
+                        cmbDescripcion.getEditor().positionCaret(Math.min(Math.max(caret, 0), editorTxt.length()));
+                    } finally {
+                        actualizandoFiltroDescripcion = false;
+                    }
                     if (!res.isEmpty() && cmbDescripcion.getEditor().isFocused()) {
                         cmbDescripcion.show();
                     } else {

@@ -171,6 +171,14 @@ class LicenseManagerTest {
     }
 
     @Test
+    void normalizarClave_reagrupaGuiones() {
+        String key = LicenseManager.generateLicenseKeyV2(MACHINE, null,
+                LicenseManager.MODALIDAD_LOCAL, true, List.of(), 0);
+        assertEquals(key, LicenseManager.normalizeLicenseKey(key.replace("-", "")));
+        assertEquals(key, LicenseManager.normalizeLicenseKey("  " + key + "  "));
+    }
+
+    @Test
     void clavesInvalidas_devuelvenInfoNoValida() {
         assertFalse(LicenseManager.getInfoDeClave(MACHINE, "abc").valida);
         assertFalse(LicenseManager.getInfoDeClave(null, "abc").valida);

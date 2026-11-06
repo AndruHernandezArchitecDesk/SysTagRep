@@ -56,6 +56,7 @@ public final class CatalogoVistas {
         m.put("Respaldos", "/view/BackupView.fxml");
         m.put("Consumo de IA", "/view/ConsumoIaView.fxml");
         m.put("Análisis IA", "/view/AnalisisIaView.fxml");
+        m.put("Apariencia", "/view/AparienciaView.fxml");
         RUTA_POR_TITULO = Collections.unmodifiableMap(m);
     }
 

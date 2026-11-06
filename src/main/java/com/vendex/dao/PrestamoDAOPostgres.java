@@ -99,6 +99,7 @@ public class PrestamoDAOPostgres implements PrestamoDAO {
             "(SELECT MIN(c.fecha_vencimiento) FROM prestamo_cuota c WHERE c.prestamo_id = p.id AND c.estado <> 'PAGADA') AS proximo_vencimiento " +
             "FROM prestamo p " +
             "INNER JOIN entidad_financiera ef ON ef.id = p.entidad_id " +
+            "WHERE p.estado IS DISTINCT FROM 'ELIMINADO' " +
             "ORDER BY p.estado = 'ACTIVO' DESC, p.fecha_registro DESC";
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql);
@@ -345,6 +346,21 @@ public class PrestamoDAOPostgres implements PrestamoDAO {
             ps.executeUpdate();
         } catch (SQLException ex) {
             LOGGER.log(Level.SEVERE, "actualizarEstado Prestamo", ex);
+        }
+    }
+
+    @Override
+    public boolean eliminarSiNoTienePagos(int prestamoId) {
+        String sql = "UPDATE prestamo p SET estado = 'ELIMINADO' WHERE p.id = ? " +
+                "AND (p.estado = 'CANCELADO' OR NOT EXISTS " +
+                "(SELECT 1 FROM prestamo_pago pp WHERE pp.prestamo_id = p.id))";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, prestamoId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException ex) {
+            LOGGER.log(Level.SEVERE, "eliminarSiNoTienePagos Prestamo id=" + prestamoId, ex);
+            throw new RuntimeException("No se pudo eliminar el préstamo", ex);
         }
     }
 

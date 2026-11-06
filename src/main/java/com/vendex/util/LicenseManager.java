@@ -90,6 +90,17 @@ public class LicenseManager {
         }
     }
 
+    /** Licencia tal como está almacenada en esta máquina, sin validarla contra la central. */
+    public static final class StoredLicense {
+        public final String machineCode;
+        public final String licenseKey;
+
+        StoredLicense(String machineCode, String licenseKey) {
+            this.machineCode = machineCode;
+            this.licenseKey = licenseKey;
+        }
+    }
+
     public static String getMachineCode() {
         if (cachedMachineCode != null) return cachedMachineCode;
 
@@ -299,6 +310,13 @@ public class LicenseManager {
         return out;
     }
 
+    /** Formato canónico de una clave: sin guiones/espacios y agrupada cada 5 caracteres. */
+    public static String normalizeLicenseKey(String licenseKey) {
+        if (licenseKey == null) return null;
+        String clean = licenseKey.replace("-", "").replace(" ", "").trim();
+        return formatKey(clean);
+    }
+
     private static String formatKey(String key) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < key.length(); i++) {
@@ -362,6 +380,22 @@ public class LicenseManager {
             return true;
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    /** Contenido del archivo de activación local, o null si no existe o está incompleto. */
+    public static StoredLicense getStoredLicense() {
+        try {
+            Path path = getLicensePath();
+            if (!Files.exists(path)) return null;
+            List<String> lines = Files.readAllLines(path);
+            if (lines.size() < 2) return null;
+            String machineCode = lines.get(0).trim();
+            String licenseKey = lines.get(1).trim();
+            if (machineCode.isEmpty() || licenseKey.isEmpty()) return null;
+            return new StoredLicense(machineCode, licenseKey);
+        } catch (Exception e) {
+            return null;
         }
     }
 

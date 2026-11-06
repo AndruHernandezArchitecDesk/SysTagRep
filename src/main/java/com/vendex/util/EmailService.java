@@ -54,9 +54,12 @@ public class EmailService {
     private String desencriptarPassword(ConfiguracionEmail cfg) {
         if (cfg == null || cfg.getPasswordCifrado() == null) return "";
         try {
-            return Cifrado.desencriptar(cfg.getPasswordCifrado());
+            // La contraseña SMTP se cifra con la clave maestra compartida de instalación (Tier 2).
+            // Cifrado.desencriptar usa la clave local de máquina (Tier 1) y produce AEADBadTag.
+            return new ConfiguracionEmailDAOPostgres().obtenerPasswordPlano(cfg);
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "No se pudo desencriptar password SMTP", e);
+            LOGGER.log(Level.WARNING, "No se pudo desencriptar password SMTP con la clave maestra de instalación: "
+                    + (e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage()));
             return "";
         }
     }
@@ -100,8 +103,13 @@ public class EmailService {
                 return false;
             }
             if (passwordPlano == null || passwordPlano.isEmpty()) {
-                ultimoError = "Configuración de correo sin contraseña. Configure la contraseña SMTP.";
-                LOGGER.warning("Configuracion email sin password descifrable");
+                boolean hayCifradoGuardado = cfg.getPasswordCifrado() != null && !cfg.getPasswordCifrado().isBlank();
+                ultimoError = hayCifradoGuardado
+                        ? "No se pudo descifrar la contraseña SMTP. Importe la clave maestra de instalación correcta o vuelva a guardar la contraseña en Administración → Correo Electrónico."
+                        : "Configuración de correo sin contraseña. Configure la contraseña SMTP.";
+                LOGGER.warning(hayCifradoGuardado
+                        ? "La contraseña SMTP guardada no se puede descifrar con las claves maestras disponibles"
+                        : "Configuracion email sin password guardada");
                 return false;
             }
         } else {

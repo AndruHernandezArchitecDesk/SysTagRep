@@ -87,25 +87,68 @@ public class LicenciaCentralService {
         return out;
     }
 
-    /** Valida una clave contra la instancia central: firma + vigencia + revocación. */
+    /** Valida una clave contra la instancia central: firma + vigencia + emisión + revocación. */
     public Map<String, Object> validarCentral(String machineCode, String clave) {
+        return validarCentralInterno(machineCode, clave, false);
+    }
+
+    /**
+     * Validación completa para el arranque de una instalación.
+     * No lanza excepciones por fallos de BD: devuelve valida=false con un motivo claro.
+     */
+    public Map<String, Object> validarInstalacion(String machineCode, String clave, boolean exigirCentral) {
+        try {
+            return validarCentralInterno(machineCode, clave, exigirCentral);
+        } catch (IllegalArgumentException e) {
+            Map<String, Object> out = new LinkedHashMap<>();
+            out.put("valida", false);
+            out.put("motivo", "ENTRADA_INVALIDA");
+            out.put("error", e.getMessage());
+            return out;
+        } catch (RuntimeException e) {
+            Map<String, Object> out = new LinkedHashMap<>();
+            out.put("valida", false);
+            out.put("motivo", "ERROR_CENTRAL");
+            out.put("error", e.getMessage());
+            return out;
+        }
+    }
+
+    private Map<String, Object> validarCentralInterno(String machineCode, String clave, boolean exigirCentral) {
         if (machineCode == null || machineCode.isBlank() || clave == null || clave.isBlank())
             throw new IllegalArgumentException("machineCode y clave requeridos");
-        LicenseManager.LicenseInfo info = LicenseManager.getInfoDeClave(machineCode.trim(), clave.trim());
-        boolean revocada = dao.estaRevocada(machineCode.trim());
+        String mc = machineCode.trim();
+        String key = LicenseManager.normalizeLicenseKey(clave);
+        LicenseManager.LicenseInfo info = LicenseManager.getInfoDeClave(mc, key);
+        java.util.Optional<LicenciaEmitida> emitida = dao.buscarPorClaveHash(sha256Hex(key));
+        boolean registrada = emitida.isPresent() && mc.equals(emitida.get().getMachineCode());
+        boolean revocada = dao.estaRevocada(mc);
+        boolean modalidadOk = !exigirCentral || MODALIDAD_CENTRAL.equals(info.modalidad);
+        boolean vencida = info.vencimiento != null && info.vencimiento.isBefore(LocalDate.now());
+
+        String motivo;
+        if (vencida) motivo = "VENCIDA";
+        else if (!info.valida) motivo = "CLAVE_INVALIDA";
+        else if (!registrada) motivo = "NO_REGISTRADA";
+        else if (revocada) motivo = "REVOCADA";
+        else if (!modalidadOk) motivo = "MODALIDAD_INCORRECTA";
+        else motivo = "OK";
+
+        boolean valida = info.valida && registrada && !revocada && modalidadOk;
         Map<String, Object> out = new LinkedHashMap<>();
-        out.put("valida", info != null && info.valida && !revocada);
+        out.put("valida", valida);
+        out.put("motivo", motivo);
         out.put("revocada", revocada);
-        if (info != null) {
-            out.put("firmaValida", info.valida);
-            out.put("version2", info.version2);
-            out.put("perpetua", info.perpetua);
-            out.put("vencimiento", info.vencimiento != null ? info.vencimiento.toString() : null);
-            out.put("modalidad", info.modalidad);
-            out.put("incluyeIA", info.incluyeIA);
-            out.put("roles", info.rolesIA != null ? String.join(",", info.rolesIA) : "-");
-            out.put("capacidadIA", info.capacidadIA);
-        }
+        out.put("registrada", registrada);
+        out.put("firmaValida", info.valida);
+        out.put("version2", info.version2);
+        out.put("perpetua", info.perpetua);
+        out.put("vencimiento", info.vencimiento != null ? info.vencimiento.toString() : null);
+        out.put("modalidad", info.modalidad);
+        out.put("modalidadOk", modalidadOk);
+        out.put("incluyeIA", info.incluyeIA);
+        out.put("roles", info.rolesIA != null ? String.join(",", info.rolesIA) : "-");
+        out.put("capacidadIA", info.capacidadIA);
         return out;
     }
 

@@ -43,9 +43,9 @@
                     </graphic>
                     <tooltip><Tooltip text="Alertas"/></tooltip>
                 </Button>
-                <Button onAction="#cambiarTema" styleClass="btn-orden" prefHeight="28" prefWidth="42">
+                <Button onAction="#irApariencia" styleClass="btn-orden" prefHeight="28" prefWidth="42">
                     <graphic>
-                        <FontIcon fx:id="iconToggleTemaLateral" iconLiteral="fas-moon" iconSize="16"/>
+                        <FontIcon iconLiteral="fas-palette" iconSize="16"/>
                     </graphic>
                 </Button>
                 <Button onAction="#irHome" styleClass="btn-orden" prefHeight="28" prefWidth="42">
@@ -81,19 +81,9 @@
     <!-- MENÚ LATERAL IZQUIERDO -->
     <left>
         <VBox fx:id="sidebarRoot" spacing="0" styleClass="sidebar" style="-fx-min-width: 220; -fx-max-width: 220;">
-            <!-- Usuario y tema -->
+            <!-- Usuario -->
             <VBox spacing="6" styleClass="sidebar-user-section" style="-fx-padding: 16 12 12 12;">
                 <Label fx:id="lblUsuarioSesion" text="Bienvenido" style="-fx-font-weight: bold; -fx-font-size: 13px;"/>
-                <Button text="Inicio" onAction="#irHome" styleClass="btn-orden" style="-fx-font-size: 11px; -fx-alignment: CENTER_LEFT; -fx-padding: 6 8 6 8;">
-                    <graphic>
-                        <FontIcon iconLiteral="fas-home" iconSize="14"/>
-                    </graphic>
-                </Button>
-                <Button text="Tema" onAction="#cambiarTema" styleClass="btn-orden" style="-fx-font-size: 11px; -fx-alignment: CENTER_LEFT; -fx-padding: 6 8 6 8;">
-                    <graphic>
-                        <FontIcon iconLiteral="fas-moon" iconSize="14"/>
-                    </graphic>
-                </Button>
                 <Separator style="-fx-padding: 4 0 0 0;"/>
             </VBox>
 
@@ -370,6 +360,16 @@
                                 <FontIcon iconLiteral="fas-download" iconSize="14"/>
                             </graphic>
                             <tooltip><Tooltip text="Ejecución y control de migraciones Flyway de base de datos"/></tooltip>
+                        </Button>
+                    </VBox>
+
+                    <VBox spacing="0" styleClass="nav-group-vbox">
+                        <Button text="Configuración" onAction="#irApariencia" styleClass="nav-group" style="-fx-alignment: CENTER_LEFT; -fx-padding: 10 12 4 12; -fx-font-weight: bold;">
+                            <graphic><FontIcon iconLiteral="fas-sliders-h" iconSize="16"/></graphic>
+                        </Button>
+                        <Button text="Apariencia" onAction="#irApariencia" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 10 24;">
+                            <graphic><FontIcon iconLiteral="fas-palette" iconSize="14"/></graphic>
+                            <tooltip><Tooltip text="Elegir tema y animaciones ambientales para este equipo"/></tooltip>
                         </Button>
                     </VBox>
 

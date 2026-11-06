@@ -210,7 +210,7 @@ public class CajaController implements Initializable {
                 if (empty || item == null) { setText(null); setStyle(""); }
                 else {
                     setText(item);
-                    setStyle("ABIERTA".equals(item) ? "-fx-text-fill: -accent-green; -fx-font-weight: bold;" : "-fx-text-fill: -accent-danger; -fx-font-weight: bold;");
+                    setStyle("ABIERTA".equals(item) ? "-fx-text-fill: -fx-accent-green; -fx-font-weight: bold;" : "-fx-text-fill: -fx-accent-danger; -fx-font-weight: bold;");
                 }
             }
         });

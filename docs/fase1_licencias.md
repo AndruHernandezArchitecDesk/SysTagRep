@@ -58,7 +58,32 @@ Flags: `--local` (default) | `--central` · `--ia` | `--no-ia` · `--roles=A,B` 
 | `controller/MainController.irConfigurarIA` | Diálogo informativo; no permite configurar API key |
 | `controller/LicenseActivatorController` | Al previsualizar/activar muestra modalidad, IA, roles y capacidad (v2) |
 
-`MainApp` no cambia: la exigencia de activación sigue siendo solo en host local (decisión registrada en Fase 0; la modalidad CENTRAL se valida con el backend en Fase 6).
+`MainApp` distingue dos casos: el host local conserva la validación local; una PC con `db.url` remota debe tener una licencia v2 **CENTRAL** registrada en `licencia_emitida` y no revocada. Si no puede consultar la BD central, el arranque se bloquea.
+
+## Validación de clientes remotos
+
+1. El instalador/cliente arranca con `DbConfig.esRemota() == true`.
+2. Se lee `~/.vendex_license` (o `%APPDATA%\.vendex_license`) y se valida firma, vigencia y modalidad CENTRAL.
+3. Se calcula el SHA-256 de la clave y se busca en `licencia_emitida`; debe coincidir el `machine_code`.
+4. Se consulta `licencia_revocada`; si la máquina está revocada, no arranca.
+5. Cualquier fallo de conexión o de consulta se trata como licencia no válida.
+
+La emisión se hace desde el host con el CLI:
+
+```bash
+java -cp Vendex.jar com.vendex.util.LicenseGenerator <machine-code> \
+  vitalicia --central --ia --registrar-central
+```
+
+Si el host no apunta a la BD central (por ejemplo, desarrollo local con `dbVendex`), indica la BD donde validan los clientes:
+
+```bash
+DB_PASSWORD=<clave-postgres> java -cp Vendex.jar com.vendex.util.LicenseGenerator \
+  <machine-code> vitalicia --central --ia --registrar-central \
+  --db-url=jdbc:postgresql://192.168.1.4:5432/dbTag --db-user=postgres
+```
+
+El comando genera la clave v2, registra el hash en `licencia_emitida` y muestra la clave para introducirla en la pantalla de activación del cliente.
 
 ## Archivos tocados
 
@@ -73,7 +98,7 @@ Flags: `--local` (default) | `--central` · `--ia` | `--no-ia` · `--roles=A,B` 
 ## Criterios de aceptación (spec §17 items aplicables)
 
 2. La licencia determina las capacidades autorizadas ✅ (modalidad, IA, roles, capacidad en v2)
-3. Modalidades local/central, con/sin IA diferenciadas ✅ (campos; validación central = Fase 6)
+3. Modalidades local/central, con/sin IA diferenciadas ✅ (validación central de clientes remotos contra `licencia_emitida`/`licencia_revocada`)
 9. Los cambios de licencia quedan registrados — parcial: `saveActivation` sobrescribe el archivo; el **auditoría/panel** (quién/cuándo) es Fase 3. El cliente local no tiene panel del propietario de Vendex.
 
 ## Pendientes (Fase 3+)
@@ -81,4 +106,4 @@ Flags: `--local` (default) | `--central` · `--ia` | `--no-ia` · `--roles=A,B` 
 - Medición de tokens/costos y aplicación real de `capacidadIA` (hoy el campo existe pero no se consume).
 - Panel de administración de licencias del propietario de Vendex (spec §11) y registro de cambios.
 - Rotación deliberada del HMAC legacy (rompe licencias v1 — requiere reemisión).
-- Validación de licencia contra backend en modalidad CENTRAL (Fase 6).
+- Endurecer permisos de cliente2: dejar `app_vendex` con solo `SELECT` sobre las tablas de licencias cuando la emisión se haga exclusivamente desde el host.

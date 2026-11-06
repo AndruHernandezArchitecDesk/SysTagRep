@@ -162,4 +162,20 @@ class VendexiSugerenciaCancelacionTest {
         assertTrue(advertencias().get(0).getMessage().contains("Sin conexión de prueba"));
         assertSame(fallo, advertencias().get(0).getThrown());
     }
+
+    @Test void http503_usaCoincidenciasLocales_yPausaNuevasLlamadasSinWarning() {
+        var svc = servicio(() -> { throw new IllegalStateException("HTTP 503"); });
+
+        var primera = consultar(svc);
+        assertEquals(1, primera.size());
+        assertEquals("COMP-2", primera.get(0).producto.getCodigo());
+        assertEquals(VendexiSugerenciaService.EVIDENCIA_ASOCIACION, primera.get(0).evidencia);
+        assertTrue(primera.get(0).motivo.contains("no confirma compatibilidad técnica"));
+        assertEquals(1, llamadas.get());
+
+        var durantePausa = consultar(svc);
+        assertEquals(1, durantePausa.size());
+        assertEquals(1, llamadas.get(), "durante el backoff no vuelve a consultar Gemini");
+        assertTrue(advertencias().isEmpty(), "un 503 temporal no debe imprimir stacktrace WARNING");
+    }
 }

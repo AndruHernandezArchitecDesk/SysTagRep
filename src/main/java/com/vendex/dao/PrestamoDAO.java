@@ -38,4 +38,7 @@ public interface PrestamoDAO {
 
     void actualizarEstado(int prestamoId, String estado);
 
+    /** Retira de la lista un préstamo cancelado o sin pagos, conservando su historial. */
+    boolean eliminarSiNoTienePagos(int prestamoId);
+
 }

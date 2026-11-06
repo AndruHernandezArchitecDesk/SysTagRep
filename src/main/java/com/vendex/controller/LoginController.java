@@ -4,6 +4,7 @@ import com.vendex.dao.LoginIntentoLogDAO;
 import com.vendex.dao.UsuarioDAO;
 import com.vendex.model.Usuario;
 import com.vendex.model.PuntoEmision;
+import com.vendex.util.LogoManager;
 import com.vendex.util.PoliticaBloqueo;
 import com.vendex.util.ThemeManager;
 import javafx.application.Platform;
@@ -52,7 +53,7 @@ public class LoginController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         if (imgLogo != null) {
-            try { imgLogo.setImage(new Image(getClass().getResourceAsStream(ThemeManager.getLogoPath()))); } catch (Exception ignored) {}
+            imgLogo.imageProperty().bind(LogoManager.logoProperty());
         }
         txtPassword.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.ENTER) ingresar();
@@ -269,7 +270,10 @@ public class LoginController implements Initializable {
             stage.getIcons().add(new Image(getClass().getResourceAsStream("/img/inventario.png")));
             Scene scene = new Scene(root);
             ThemeManager.aplicarTemaGuardado(scene);
+            Scene loginScene = stage.getScene();
+            com.vendex.util.AmbientEffectManager.detach(loginScene);
             stage.setScene(scene);
+            com.vendex.util.AmbientEffectManager.attach(scene);
             stage.setMaximized(true);
         } catch (Exception e) {
             e.printStackTrace();

@@ -36,6 +36,7 @@ public class LicenciaCentralDAOPostgres implements LicenciaCentralDAO {
             ps.executeUpdate();
         } catch (SQLException ex) {
             LOGGER.log(Level.WARNING, "No se pudo registrar licencia emitida", ex);
+            throw new IllegalStateException("No se pudo registrar la licencia en la instancia central", ex);
         }
     }
 
@@ -66,7 +67,7 @@ public class LicenciaCentralDAOPostgres implements LicenciaCentralDAO {
             }
         } catch (SQLException e) {
             LOGGER.log(Level.WARNING, "No se pudo buscar licencia por hash", e);
-            return Optional.empty();
+            throw new IllegalStateException("No se pudo consultar la licencia en la instancia central", e);
         }
     }
 
@@ -82,6 +83,7 @@ public class LicenciaCentralDAOPostgres implements LicenciaCentralDAO {
             ps.executeUpdate();
         } catch (SQLException e) {
             LOGGER.log(Level.WARNING, "No se pudo revocar licencia de " + machineCode, e);
+            throw new IllegalStateException("No se pudo registrar la revocación en la instancia central", e);
         }
     }
 
@@ -96,7 +98,7 @@ public class LicenciaCentralDAOPostgres implements LicenciaCentralDAO {
             }
         } catch (SQLException e) {
             LOGGER.log(Level.WARNING, "No se pudo consultar revocación de " + machineCode, e);
-            return false;
+            throw new IllegalStateException("No se pudo consultar la revocación en la instancia central", e);
         }
     }
 

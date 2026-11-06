@@ -155,6 +155,51 @@ class LicenciaCentralServiceTest {
     }
 
     @Test
+    void validarCentral_rechazaClaveNoEmitida() {
+        String clave = LicenseManager.generateLicenseKeyV2("MC-NO-EMITIDA", null,
+                LicenseManager.MODALIDAD_CENTRAL, true, List.of(), 0);
+        Map<String, Object> v = svc.validarCentral("MC-NO-EMITIDA", clave);
+        assertEquals(Boolean.FALSE, v.get("valida"));
+        assertEquals(Boolean.FALSE, v.get("registrada"));
+        assertEquals("NO_REGISTRADA", v.get("motivo"));
+    }
+
+    @Test
+    void validarInstalacion_aceptaCentralEmitidaSinGuiones() {
+        String clave = (String) svc.emitir("MC-CENTRAL", "CENTRAL", true, null, 0, null, null).get("clave");
+        Map<String, Object> v = svc.validarInstalacion("MC-CENTRAL", clave.replace("-", ""), true);
+        assertEquals(Boolean.TRUE, v.get("valida"));
+        assertEquals("OK", v.get("motivo"));
+        assertEquals(Boolean.TRUE, v.get("registrada"));
+        assertEquals(Boolean.TRUE, v.get("modalidadOk"));
+    }
+
+    @Test
+    void validarInstalacion_exigeModalidadCentralParaClienteRemoto() {
+        String clave = (String) svc.emitir("MC-LOCAL", "LOCAL", true, null, 0, null, null).get("clave");
+        Map<String, Object> v = svc.validarInstalacion("MC-LOCAL", clave, true);
+        assertEquals(Boolean.FALSE, v.get("valida"));
+        assertEquals("MODALIDAD_INCORRECTA", v.get("motivo"));
+        assertEquals(Boolean.TRUE, v.get("registrada"));
+        assertEquals(Boolean.FALSE, v.get("modalidadOk"));
+    }
+
+    @Test
+    void validarInstalacion_bloqueaSiFallaLaCentral() {
+        FakeDao fail = new FakeDao() {
+            @Override public Optional<LicenciaEmitida> buscarPorClaveHash(String claveHash) {
+                throw new IllegalStateException("BD no disponible");
+            }
+        };
+        LicenciaCentralService conFallo = new LicenciaCentralService(fail);
+        String clave = LicenseManager.generateLicenseKeyV2("MC-ERROR", null,
+                LicenseManager.MODALIDAD_CENTRAL, true, List.of(), 0);
+        Map<String, Object> v = conFallo.validarInstalacion("MC-ERROR", clave, true);
+        assertEquals(Boolean.FALSE, v.get("valida"));
+        assertEquals("ERROR_CENTRAL", v.get("motivo"));
+    }
+
+    @Test
     void validarCentral_rechazaEntradasVacias() {
         assertThrows(IllegalArgumentException.class, () -> svc.validarCentral(null, null));
         assertThrows(IllegalArgumentException.class, () -> svc.validarCentral("MC", " "));

@@ -23,6 +23,7 @@ import com.vendex.util.NotaVentaPDF;
 import com.vendex.util.PrecioCeldaConverter;
 import com.vendex.util.SortTable;
 import com.vendex.util.ComboFilter;
+import com.vendex.util.LogoManager;
 import com.vendex.util.ThemeManager;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.application.Platform;
@@ -38,7 +39,6 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -696,7 +696,9 @@ public class NotaVentaController implements Initializable, DocumentoVendexi {
     }
 
     private void cargarLogo() {
-        try { imgLogo.setImage(new Image(getClass().getResourceAsStream(ThemeManager.getLogoPath()))); } catch (Exception ignored) {}
+        if (imgLogo != null) {
+            imgLogo.imageProperty().bind(LogoManager.logoProperty());
+        }
     }
 
     private void obtenerDatosEmpresa() {

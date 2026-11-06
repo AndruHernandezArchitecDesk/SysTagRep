@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<ScrollPane fitToWidth="true" pannable="true" hbarPolicy="NEVER"
+            xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.vendex.controller.AparienciaController">
+  <content>
+    <VBox fx:id="vistaRoot" spacing="16">
+    <padding><Insets top="18" right="20" bottom="18" left="20"/></padding>
+    <HBox alignment="CENTER_LEFT" spacing="10" styleClass="header">
+        <Label text="Apariencia" styleClass="titulo">
+            <graphic><FontIcon iconLiteral="fas-palette" styleClass="titulo-icono"/></graphic>
+        </Label>
+    </HBox>
+    <Label text="Personaliza los colores y el movimiento ambiental de Vendex en este equipo."
+           styleClass="text-secondary" wrapText="true"/>
+
+    <TitledPane text="Temas" collapsible="false" styleClass="section-card">
+        <content>
+            <VBox spacing="14">
+                <padding><Insets top="14" right="16" bottom="16" left="16"/></padding>
+                <HBox alignment="CENTER_LEFT" spacing="12">
+                    <Label text="Tema" prefWidth="150"/>
+                    <ComboBox fx:id="cmbTema" prefWidth="260" promptText="Seleccionar tema"/>
+                </HBox>
+                <VBox spacing="5" styleClass="appearance-preview">
+                    <Label text="Vista previa" styleClass="appearance-preview-title"/>
+                    <Label text="Vendex · Inventario y facturación" styleClass="appearance-preview-copy" wrapText="true"/>
+                    <HBox spacing="8">
+                        <Button text="Acción principal" styleClass="button-primary"/>
+                        <Button text="Acción secundaria" styleClass="button-secondary"/>
+                    </HBox>
+                </VBox>
+            </VBox>
+        </content>
+    </TitledPane>
+
+    <TitledPane text="Animaciones ambientales" collapsible="false" styleClass="section-card">
+        <content>
+            <VBox spacing="12">
+                <padding><Insets top="14" right="16" bottom="16" left="16"/></padding>
+                <CheckBox fx:id="chkAnimaciones" text="Activar pétalos u hojas en los bordes de la ventana"/>
+                <HBox alignment="CENTER_LEFT" spacing="12">
+                    <Label text="Intensidad" prefWidth="150"/>
+                    <ComboBox fx:id="cmbIntensidad" prefWidth="180"/>
+                </HBox>
+                <HBox alignment="CENTER_LEFT" spacing="12">
+                    <Label text="Velocidad" prefWidth="150"/>
+                    <ComboBox fx:id="cmbVelocidad" prefWidth="180"/>
+                </HBox>
+                <Label text="Las animaciones solo se usan con Pink Blossom y Nature Breeze. Puedes desactivarlas cuando quieras."
+                       styleClass="text-secondary" wrapText="true"/>
+            </VBox>
+        </content>
+    </TitledPane>
+
+    <HBox alignment="CENTER_LEFT" spacing="10">
+        <Button fx:id="btnAplicar" text="Aplicar" onAction="#aplicar" styleClass="btn-guardar">
+            <graphic><FontIcon iconLiteral="fas-check"/></graphic>
+        </Button>
+        <Button fx:id="btnRestablecer" text="Restablecer" onAction="#restablecer" styleClass="btn-orden">
+            <graphic><FontIcon iconLiteral="fas-undo"/></graphic>
+        </Button>
+        <Label fx:id="lblEstado" styleClass="text-secondary" wrapText="true" HBox.hgrow="ALWAYS"/>
+    </HBox>
+    </VBox>
+  </content>
+</ScrollPane>

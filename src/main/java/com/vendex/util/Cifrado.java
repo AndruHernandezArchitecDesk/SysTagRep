@@ -20,8 +20,9 @@ import java.util.Base64;
  * descifrar archivos legacy y para backup cifrado (decisión 4). Formato almacenado sin cambio:
  * base64(sal):base64(iv):base64(cifrado) — no portable entre máquinas con keyring activo.
  *
- * <p>configuracion_email queda fuera de keyring (decisión 1) y sigue usando legacy si se desea,
- * pero este Cifrado ya migra todo lo por-PC (db.password, firma, gemini, nvidia).</p>
+ * <p>La contraseña SMTP compartida usa la clave maestra de instalación (Tier 2) desde
+ * {@code ConfiguracionEmailDAOPostgres}; este servicio se reserva para secretos locales
+ * por máquina como db.password, firma y claves de IA.</p>
  */
 public class Cifrado {
 

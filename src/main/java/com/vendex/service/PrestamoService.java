@@ -71,6 +71,34 @@ public class PrestamoService {
 
     // ==================== Creación de préstamo ====================
 
+    public static BigDecimal calcularCuotaInteresTotal(BigDecimal monto, BigDecimal interesPct, int numeroCuotas) {
+        if (monto == null || monto.signum() <= 0) throw new IllegalArgumentException("El monto debe ser mayor a cero");
+        if (interesPct == null || interesPct.signum() < 0) throw new IllegalArgumentException("El interés total no puede ser negativo");
+        if (numeroCuotas <= 0) throw new IllegalArgumentException("El número de cuotas debe ser mayor a cero");
+        BigDecimal interes = monto.multiply(interesPct).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        return monto.add(interes).divide(BigDecimal.valueOf(numeroCuotas), 2, RoundingMode.HALF_UP);
+    }
+
+    public static List<PrestamoCuota> generarCuotasInteresTotal(int prestamoId, BigDecimal monto,
+            BigDecimal interesPct, int numeroCuotas, String periodicidad, LocalDate fechaInicio) {
+        BigDecimal cuota = calcularCuotaInteresTotal(monto, interesPct, numeroCuotas);
+        BigDecimal capitalPendiente = monto.setScale(2, RoundingMode.HALF_UP);
+        BigDecimal interesPendiente = monto.multiply(interesPct).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        List<PrestamoCuota> cuotas = new ArrayList<>();
+        for (int n = 1; n <= numeroCuotas; n++) {
+            int restantes = numeroCuotas - n + 1;
+            BigDecimal interes = interesPendiente.divide(BigDecimal.valueOf(restantes), 2, RoundingMode.HALF_UP);
+            BigDecimal capital = n == numeroCuotas ? capitalPendiente : cuota.subtract(interes).min(capitalPendiente);
+            BigDecimal anterior = capitalPendiente;
+            capitalPendiente = capitalPendiente.subtract(capital);
+            interesPendiente = interesPendiente.subtract(interes);
+            LocalDate vence = "S".equalsIgnoreCase(periodicidad) ? fechaInicio.plusWeeks(n) : fechaInicio.plusMonths(n);
+            cuotas.add(new PrestamoCuota(prestamoId, n, vence, capital.add(interes), capital, interes,
+                    anterior, capitalPendiente));
+        }
+        return cuotas;
+    }
+
     /**
      * Cuota fija francesa: cuota = monto × i / (1 − (1+i)^−n). Si i=0 → monto/n.
      */
@@ -133,16 +161,16 @@ public class PrestamoService {
         SesionActual.exigirPermiso("PRESTAMO_GESTIONAR");
         if (entidadId <= 0) throw new IllegalArgumentException("Seleccione una entidad financiera");
         if (monto == null || monto.compareTo(BigDecimal.ZERO) <= 0) throw new IllegalArgumentException("El monto debe ser mayor a cero");
-        if (tasaPeriodoPct == null || tasaPeriodoPct.compareTo(BigDecimal.ZERO) < 0) throw new IllegalArgumentException("La tasa del período no puede ser negativa");
+        if (tasaPeriodoPct == null || tasaPeriodoPct.compareTo(BigDecimal.ZERO) < 0) throw new IllegalArgumentException("El interés total no puede ser negativo");
         if (periodicidad == null || (!"S".equalsIgnoreCase(periodicidad) && !"M".equalsIgnoreCase(periodicidad))) {
             throw new IllegalArgumentException("La periodicidad debe ser SEMANAL o MENSUAL");
         }
         if (numeroCuotas <= 0) throw new IllegalArgumentException("El número de cuotas debe ser mayor a cero");
         if (fechaInicio == null) fechaInicio = LocalDate.now();
 
-        BigDecimal cuota = calcularCuotaFrancesa(monto, tasaPeriodoPct, numeroCuotas);
+        BigDecimal cuota = calcularCuotaInteresTotal(monto, tasaPeriodoPct, numeroCuotas);
         // totalAPagar exacto = suma de la tabla (la última cuota absorbe redondeos)
-        List<PrestamoCuota> tablaTmp = generarTablaCuotas(0, monto, tasaPeriodoPct, numeroCuotas, periodicidad, fechaInicio);
+        List<PrestamoCuota> tablaTmp = generarCuotasInteresTotal(0, monto, tasaPeriodoPct, numeroCuotas, periodicidad, fechaInicio);
         BigDecimal sumaTabla = BigDecimal.ZERO;
         for (PrestamoCuota c : tablaTmp) sumaTabla = sumaTabla.add(c.getMonto());
         BigDecimal totalAPagar = sumaTabla.setScale(ESCALA, RoundingMode.HALF_UP);
@@ -161,7 +189,7 @@ public class PrestamoService {
         int id = prestamoDAO.insertar(p);
         if (id <= 0) throw new IllegalStateException("No se pudo registrar el préstamo");
         p.setId(id);
-        List<PrestamoCuota> cuotas = generarTablaCuotas(id, monto, tasaPeriodoPct, numeroCuotas, periodicidad, fechaInicio);
+        List<PrestamoCuota> cuotas = generarCuotasInteresTotal(id, monto, tasaPeriodoPct, numeroCuotas, periodicidad, fechaInicio);
         prestamoDAO.insertarCuotas(cuotas);
         return p;
     }
@@ -235,6 +263,15 @@ public class PrestamoService {
     public void cancelarPrestamo(int prestamoId, String motivo) {
         SesionActual.exigirPermiso("PRESTAMO_GESTIONAR");
         prestamoDAO.actualizarEstado(prestamoId, "CANCELADO");
+    }
+
+    /** Retira el préstamo de la lista conservando el historial financiero. */
+    public void eliminarPrestamo(int prestamoId) {
+        SesionActual.exigirPermiso("PRESTAMO_GESTIONAR");
+        if (prestamoDAO.obtenerPorId(prestamoId) == null)
+            throw new IllegalArgumentException("El préstamo ya no existe.");
+        if (!prestamoDAO.eliminarSiNoTienePagos(prestamoId))
+            throw new IllegalStateException("El préstamo tiene pagos registrados. Primero use «Cancelar préstamo» y después vuelva a pulsar Eliminar.");
     }
 
     // ==================== Abonos ====================

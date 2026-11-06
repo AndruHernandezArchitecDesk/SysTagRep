@@ -55,8 +55,13 @@ respaldos quedan en 6b).
 - `LicenciaCentralService`:
   - `emitir(machineCode, LOCAL|CENTRAL, incluyeIA, roles[], capacidad, expiracion|null)`
     → genera clave v2 con el HMAC de la instancia central y registra la emisión.
-  - `validarCentral(machineCode, clave)` → firma (LicenseManager) **y** revocación;
-    `valida=false` si la firma es válida pero el machineCode está revocado.
+  - `validarCentral(machineCode, clave)` → firma (LicenseManager), vigencia,
+    existencia del hash en `licencia_emitida` y revocación; `valida=false` si la
+    clave es auténtica pero no fue emitida, o si el machineCode está revocado.
+  - `validarInstalacion(machineCode, clave, exigirCentral)` → variante para el
+    arranque: no lanza excepciones por fallos de BD y devuelve `motivo`
+    (`OK`, `NO_REGISTRADA`, `REVOCADA`, `MODALIDAD_INCORRECTA`, `VENCIDA`,
+    `ERROR_CENTRAL`, etc.).
   - `revocar(machineCode, motivo, usuarioId)` idempotente.
 - Endpoints (admin = `USUARIO_GESTIONAR`, también en GET de listados):
   - `POST /api/licencias/emitir` → 201 `{clave, machineCode, modalidad, ...}`
@@ -66,6 +71,13 @@ respaldos quedan en 6b).
   - `GET /api/licencias/emitidas`, `GET /api/licencias/revocadas`
 - `LicenciaEmitida` (model) + `LicenciaCentralDAO`/`LicenciaCentralDAOPostgres`
   (registro en `AppContext.licenciaCentralDAO`).
+- **Cliente remoto:** `MainApp` valida la licencia almacenada contra `dbTag`
+  directamente al arrancar (modalidad CENTRAL obligatoria). El host local sigue
+  usando su licencia local. Si cliente2 no puede consultar la central, no arranca.
+- **Emisión:** `LicenseGenerator --registrar-central` genera la clave v2 CENTRAL
+  y registra su hash en `licencia_emitida`. Si la BD central no es la configurada
+  en el host, se indica con `--db-url` y `--db-user`; la clave se toma de
+  `DB_PASSWORD` o `-Ddb.password`.
 
 ### Respaldos vía API
 - `BackupApiController`: `POST /api/respaldos` (ejecuta el `BackupService` existente:
@@ -88,4 +100,7 @@ respaldos quedan en 6b).
 ## Pendiente futuro (fuera de 6a/6b)
 - TLS/terminación HTTPS (hoy: red de confianza/localhost; el bind por defecto es local).
 - Rate limiting / bloqueo por IP en login.
-- Consumo del endpoint `validar` desde el cliente (modalidad CENTRAL en runtime).
+- El cliente remoto consume la validación directa contra `dbTag`; el endpoint
+  `GET|POST /api/licencias/validar` queda disponible para futuros clientes API.
+- Restringir `app_vendex` a `SELECT` sobre licencias cuando la emisión se haga
+  exclusivamente desde el host.
