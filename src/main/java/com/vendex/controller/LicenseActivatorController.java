@@ -20,6 +20,8 @@ public class LicenseActivatorController {
 
     @FXML
     public void initialize() {
+        // El payload Base64 de las licencias v2 distingue mayúsculas de minúsculas.
+        txtLicenseKey.getStyleClass().add("no-uppercase");
         lblMachineCode.setText(LicenseManager.getMachineCode());
         btnActivate.setOnAction(e -> activate());
         btnExit.setOnAction(e -> {
