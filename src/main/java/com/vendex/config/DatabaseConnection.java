@@ -856,6 +856,29 @@ public class DatabaseConnection {
         }
     }
 
+    /** Compatibilidad de clientes directos con BD existente sin Flyway local. */
+    public static void ensureIngresoStockSchema() {
+        String[] columnas = {"inventario_id INTEGER", "sucursal_id INTEGER", "cuenta_por_pagar_id INTEGER",
+                "precio_venta DECIMAL(12,2)", "forma_pago VARCHAR(50)", "meses_plazo INTEGER", "interes DECIMAL(12,2)"};
+        try (Connection con = getConnection(); java.sql.Statement st = con.createStatement()) {
+            for (String columna : columnas) {
+                st.execute("ALTER TABLE factura_proveedor ADD COLUMN IF NOT EXISTS " + columna);
+            }
+            st.execute("CREATE TABLE IF NOT EXISTS ingreso_stock_movimiento ("
+                    + "factura_proveedor_id INTEGER NOT NULL REFERENCES factura_proveedor(id) ON DELETE CASCADE, "
+                    + "inventario_id INTEGER NOT NULL REFERENCES inventario(id), "
+                    + "cantidad INTEGER NOT NULL CHECK (cantidad>0), PRIMARY KEY(factura_proveedor_id,inventario_id))");
+            st.execute("CREATE INDEX IF NOT EXISTS idx_factura_proveedor_inventario ON factura_proveedor(inventario_id)");
+            st.execute("CREATE INDEX IF NOT EXISTS idx_factura_proveedor_sucursal ON factura_proveedor(sucursal_id, numero_factura, proveedor_id)");
+            if (con.getMetaData().getDatabaseProductName().toLowerCase(java.util.Locale.ROOT).contains("postgres")) {
+                st.execute("CREATE INDEX IF NOT EXISTS idx_inventario_codigo_sucursal_normalizado "
+                        + "ON inventario(sucursal_id, UPPER(TRIM(codigo))) WHERE estado=true");
+            }
+        } catch (SQLException e) {
+            logIfPermissionDenied(e, "ensureIngresoStockSchema");
+        }
+    }
+
     public static void setConnectionParams(String url, String user, String password) {
         aplicarParams(url, user, password);
         configLoaded = true;

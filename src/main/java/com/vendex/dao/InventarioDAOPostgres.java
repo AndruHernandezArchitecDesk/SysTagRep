@@ -157,10 +157,19 @@ public class InventarioDAOPostgres implements InventarioDAO {
     }
 
     public int guardar(Inventario inv) {
+        try (Connection con = DatabaseConnection.getConnection()) {
+            return guardar(con, inv);
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Error en operacion de InventarioDAO", e);
+            return 0;
+        }
+    }
+
+    /** Inserta usando la transacción de ingreso del llamador. */
+    public int guardar(Connection con, Inventario inv) throws SQLException {
         String sql = "INSERT INTO inventario(descripcion, grupo_id, marca_id, costo_sin_iva, cantidad, ubicacion_percha_id, precio_venta, fecha_ingreso, estado, tag_codigo, codigo, proveedor_id, forma_pago, meses_plazo, interes, numero_factura, sucursal_id) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql, java.sql.Statement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement ps = con.prepareStatement(sql, java.sql.Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, inv.getDescripcion());
             if (inv.getGrupoId() > 0) ps.setInt(2, inv.getGrupoId()); else ps.setNull(2, java.sql.Types.INTEGER);
             if (inv.getMarcaId() > 0) ps.setInt(3, inv.getMarcaId()); else ps.setNull(3, java.sql.Types.INTEGER);
@@ -183,10 +192,8 @@ public class InventarioDAOPostgres implements InventarioDAO {
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 if (keys.next()) return keys.getInt(1);
             }
-        } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Error en operacion de InventarioDAO", e);
         }
-        return 0;
+        throw new SQLException("No se obtuvo el identificador del producto ingresado");
     }
 
     @Override
@@ -314,59 +321,60 @@ public class InventarioDAOPostgres implements InventarioDAO {
     }
 
     /**
-     * Elimina de forma atómica una factura y sus dependencias en este orden:
-     * 1) libera las ubicaciones del perchero que apuntan a los productos de la factura,
-     * 2) borra las cuentas por pagar asociadas,
-     * 3) borra los productos del inventario por N° de factura (único),
-     * 4) borra las líneas de la factura.
-     * Si algo falla, se hace rollback y no queda estado a medias.
+     * Revierte atómicamente el aporte de una compra enlazada sin borrar el producto.
+     * Para facturas históricas conserva la eliminación de lotes y dependencias,
+     * siempre que no tengan ventas ni ingresos posteriores asociados.
      */
     public void eliminarFacturaConDependencias(String numeroFactura, int proveedorId) {
         Connection con = null;
         try {
             con = DatabaseConnection.getConnection();
             con.setAutoCommit(false);
-
-            String sqlUbicacion = "UPDATE ubicacion SET estado='DISPONIBLE', id_producto=NULL, cantidad=NULL "
-                    + "WHERE id_producto IN (SELECT id FROM inventario WHERE numero_factura = ? AND proveedor_id = ?)";
-            try (PreparedStatement ps = con.prepareStatement(sqlUbicacion)) {
-                ps.setString(1, numeroFactura);
-                ps.setInt(2, proveedorId);
-                ps.executeUpdate();
-            }
-
-            String sqlCuentas = "DELETE FROM cuentas_por_pagar "
-                    + "WHERE inventario_id IN (SELECT id FROM inventario WHERE numero_factura = ? AND proveedor_id = ?)";
-            try (PreparedStatement ps = con.prepareStatement(sqlCuentas)) {
-                ps.setString(1, numeroFactura);
-                ps.setInt(2, proveedorId);
-                ps.executeUpdate();
-            }
-
-            String sqlInventario = "DELETE FROM inventario WHERE numero_factura = ? AND proveedor_id = ?";
-            try (PreparedStatement ps = con.prepareStatement(sqlInventario)) {
-                ps.setString(1, numeroFactura);
-                ps.setInt(2, proveedorId);
-                ps.executeUpdate();
-            }
-
-            String sqlFactura = "DELETE FROM factura_proveedor WHERE numero_factura = ? AND proveedor_id = ?";
-            try (PreparedStatement ps = con.prepareStatement(sqlFactura)) {
-                ps.setString(1, numeroFactura);
-                ps.setInt(2, proveedorId);
-                ps.executeUpdate();
-            }
-
+            eliminarFacturaConDependencias(con, numeroFactura, proveedorId, com.vendex.util.SucursalActual.getId());
             con.commit();
-        } catch (SQLException e) {
+            com.vendex.util.InventarioEventos.notificar();
+        } catch (Exception e) {
             if (con != null) {
                 try { con.rollback(); } catch (SQLException ex) { LOGGER.log(Level.SEVERE, "Error en rollback", ex); }
             }
-            LOGGER.log(Level.SEVERE, "Error al eliminar factura con dependencias", e);
             throw new RuntimeException("Error al eliminar la factura: " + e.getMessage(), e);
         } finally {
             if (con != null) {
-                try { con.setAutoCommit(true); con.close(); } catch (SQLException e) { /* ignora */ }
+                try { con.close(); } catch (SQLException ignored) { }
+            }
+        }
+    }
+
+    public void eliminarFacturaConDependencias(Connection con, String numeroFactura, int proveedorId, int sucursalId) throws SQLException {
+        com.vendex.service.IngresoStockService.bloquear(con);
+        if (new com.vendex.service.IngresoStockService().revertirRegistrada(con, numeroFactura, proveedorId, sucursalId)) return;
+        String lotes = "SELECT id FROM inventario WHERE numero_factura=? AND COALESCE(proveedor_id,0)=? AND sucursal_id=?";
+        try (PreparedStatement ps = con.prepareStatement(lotes)) {
+            ps.setString(1, numeroFactura); ps.setInt(2, proveedorId); ps.setInt(3, sucursalId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) throw new IllegalStateException("No se encontraron productos de esa factura histórica en esta sucursal.");
+            }
+        }
+        for (String sql : new String[]{
+                "SELECT COUNT(*) FROM factura_detalle WHERE inventario_id IN (" + lotes + ")",
+                "SELECT COUNT(*) FROM historial_producto WHERE producto_id IN (" + lotes + ")",
+                "SELECT COUNT(*) FROM ingreso_stock_movimiento WHERE inventario_id IN (" + lotes + ")",
+                "SELECT COUNT(*) FROM factura_proveedor WHERE inventario_id IN (" + lotes + ")"}) {
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
+                ps.setString(1, numeroFactura); ps.setInt(2, proveedorId); ps.setInt(3, sucursalId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next() && rs.getInt(1) > 0) throw new IllegalStateException("No se puede modificar la factura histórica: sus productos tienen ventas o ingresos posteriores.");
+                }
+            }
+        }
+        for (String sql : new String[]{
+                "UPDATE ubicacion SET estado='DISPONIBLE', id_producto=NULL, cantidad=NULL WHERE id_producto IN (" + lotes + ")",
+                "DELETE FROM cuentas_por_pagar WHERE inventario_id IN (" + lotes + ")",
+                "DELETE FROM inventario WHERE numero_factura=? AND COALESCE(proveedor_id,0)=? AND sucursal_id=?",
+                "DELETE FROM factura_proveedor WHERE numero_factura=? AND COALESCE(proveedor_id,0)=? AND (sucursal_id=? OR sucursal_id IS NULL)"}) {
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
+                ps.setString(1, numeroFactura); ps.setInt(2, proveedorId); ps.setInt(3, sucursalId);
+                ps.executeUpdate();
             }
         }
     }

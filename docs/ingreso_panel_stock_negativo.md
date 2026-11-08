@@ -17,6 +17,8 @@ positivos ni productos de otras sucursales.
   y REST.
 - Después de guardar un ingreso se vuelve a cargar, de modo que un producto repuesto
   deja de aparecer cuando su stock ya no es negativo.
+- El saldo real se confirma **solo al Guardar**. Agregar, quitar o cancelar líneas
+  del formulario no cambia existencias.
 - Al ocultar o cerrar la ventana se cancela el trabajo y se retiran las filas para
   no conservar vistas de sucursal/usuario anterior.
 - En edición de un producto o una factura de proveedor, y en modales que cierran al
@@ -78,8 +80,62 @@ la misma consulta con `WHERE estado=true AND cantidad<0 AND sucursal_id=?` y
 ./mvnw -Dtest=StockNegativoPaneTest,FxmlSmokeTest,InventarioStockNegativoTest,InventarioStockNegativoApiTest test
 ```
 
-**24 tests, 0 fallos, 0 errores, 0 omitidos.** Cubren orden/filtrado SQL, fechas
+Estas pruebas cubren orden/filtrado SQL, fechas
 nulas, sucursal, autorización REST, actualización manual, errores de carga,
 cambio de sucursal, inserción a la derecha y cierre.
 
-El portable no se actualizó por instrucción del usuario.
+## Reposición por código y sucursal
+
+El guardado utiliza `IngresoStockService`: busca el **código del producto**
+(`inventario.codigo`, que el formulario llama código manual), normalizando espacios
+externos y mayúsculas. No compara descripción, proveedor ni el TAG generado para
+la etiqueta. La sucursal corresponde a la sesión; nunca compensa otra sucursal.
+Los guiones y demás caracteres internos siguen siendo parte del código.
+
+| Stock antes | Compra | Stock confirmado | Panel negativo |
+|---:|---:|---:|---|
+| −5 | 3 | −2 | Sigue visible con −2 |
+| −5 | 5 | 0 | Desaparece |
+| −5 | 8 | 3 | Desaparece |
+
+Se mantiene el ID y el TAG del producto existente, incluyendo temporales vendidos
+antes de recibir la mercadería. Los ingresos posteriores del mismo código suman
+sobre ese producto. Un código nuevo crea un producto en la sucursal correcta.
+Los servicios logísticos no se mezclan con existencias de productos.
+
+Si hay varios lotes antiguos negativos del mismo código, se compensan primero todos
+ellos y solo después se deja excedente positivo. Los movimientos se enlazan a esos
+lotes en `ingreso_stock_movimiento`, conservando cada línea original de la factura
+con su cantidad e importe, sin diferencias por redondeo al repartir existencias.
+
+La factura, el incremento y los créditos al proveedor se confirman en una sola
+transacción. Si una línea falla, todo se revierte. La edición de ingresos enlazados
+resta el aporte anterior y aplica el nuevo: conserva ventas posteriores y evita
+sumar dos veces. Las facturas históricas sin enlace mantienen las restricciones
+de edición si sus productos ya tienen ventas o ingresos posteriores.
+
+`factura_proveedor` conserva la cantidad **comprada**, aunque el inventario aún sea
+negativo. La migración **V42** agrega el enlace al producto, la sucursal, el crédito
+y los datos de compra para edición. `ensureIngresoStockSchema` incorpora el mismo
+esquema al arrancar un cliente directo con permisos de DDL; con un usuario limitado,
+el administrador debe aplicar V42 en el servidor. Las etiquetas usan la cantidad
+comprada, no el saldo resultante.
+
+`InventarioEventos` notifica después del commit al panel y a las vistas de inventario
+abiertas en el mismo proceso. La sincronización offline emite el aviso solo cuando
+el servidor confirma el ingreso. El endpoint `/api/ingreso-mercaderia` comparte
+el mismo servicio y usa la sucursal autenticada, no una sucursal enviada en el JSON.
+En modo API hay que actualizar también el backend antes de usar este flujo.
+
+### Verificación adicional
+
+```bash
+xvfb-run -a ./mvnw -q -Dnet.bytebuddy.experimental=true \
+  -Dtest=IngresoStockServiceTest,StockNegativoPaneTest,InventarioStockNegativoTest,InventarioStockNegativoApiTest,FacturaTemporalTransaccionTest,FacturaTemporalApiTest test
+```
+
+`IngresoStockServiceTest` también admite PostgreSQL aislado mediante
+`-Dingreso.test.pg.url=jdbc:postgresql://127.0.0.1:PUERTO/postgres`, con usuario
+`vendex_test`. Crea y elimina un esquema único por prueba; incluye concurrencia de
+dos ingresos y rollback de la edición. Esa prueba concurrente solo se ejecuta con
+PostgreSQL; los demás escenarios también corren en HSQLDB.

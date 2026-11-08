@@ -1,17 +1,13 @@
 package com.vendex.controller;
 
-import com.vendex.dao.CuentaPorPagarDAO;
 import com.vendex.dao.CodigoDAO;
-import com.vendex.dao.FacturaDetalleDAO;
 import com.vendex.dao.FacturaProveedorDAO;
 import com.vendex.dao.GrupoDAO;
-import com.vendex.dao.HistorialProductoDAO;
 import com.vendex.dao.InventarioDAO;
 import com.vendex.dao.MarcaDAO;
 import com.vendex.dao.ProveedorDAO;
 import com.vendex.dao.UbicacionDetalleDAO;
 import com.vendex.model.Codigo;
-import com.vendex.model.CuentaPorPagar;
 import com.vendex.model.FacturaProveedor;
 import com.vendex.model.Grupo;
 import com.vendex.model.Inventario;
@@ -60,11 +56,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
-import com.vendex.dao.FacturaDetalleDAOPostgres;
 import com.vendex.dao.InventarioDAOPostgres;
-import com.vendex.dao.HistorialProductoDAOPostgres;
 import com.vendex.dao.ProveedorDAOPostgres;
-import com.vendex.dao.CuentaPorPagarDAOPostgres;
 import com.vendex.dao.FacturaProveedorDAOPostgres;
 import com.vendex.dao.MarcaDAOPostgres;
 import com.vendex.dao.UbicacionDetalleDAOPostgres;
@@ -92,11 +85,8 @@ public class IngresoMercaderiaController implements Initializable {
         this.proveedorDAO = ctx.proveedorDAO;
         this.grupoDAO = ctx.grupoDAO;
         this.marcaDAO = ctx.marcaDAO;
-        this.cuentaPorPagarDAO = ctx.cuentaPorPagarDAO;
         this.facturaProveedorDAO = ctx.facturaProveedorDAO;
         this.codigoDAO = ctx.codigoDAO;
-        this.facturaDetalleDAO = ctx.facturaDetalleDAO;
-        this.historialProductoDAO = ctx.historialProductoDAO;
         this.ubicacionDAO = ctx.ubicacionDetalleDAO;
         this.logDAO = ctx.logDAO;
     }
@@ -146,11 +136,8 @@ public class IngresoMercaderiaController implements Initializable {
     private final ProveedorDAO proveedorDAO;
     private final GrupoDAO grupoDAO;
     private final MarcaDAO marcaDAO;
-    private final CuentaPorPagarDAO cuentaPorPagarDAO;
     private final FacturaProveedorDAO facturaProveedorDAO;
     private final CodigoDAO codigoDAO;
-    private final FacturaDetalleDAO facturaDetalleDAO;
-    private final HistorialProductoDAO historialProductoDAO;
     private final UbicacionDetalleDAO ubicacionDAO;
     private final LogDAO logDAO;
 
@@ -276,10 +263,6 @@ public class IngresoMercaderiaController implements Initializable {
         else btnTogglePanelStock.getTooltip().setText(texto);
     }
 
-    private void refrescarStockNegativo() {
-        if (stockNegativo != null && divisorioStock != null && divisorioStock.getItems().contains(stockNegativo))
-            stockNegativo.actualizar();
-    }
 
     private void iniciarCbDescripciones() {
         cmbDescripcion.setEditable(true);
@@ -694,12 +677,6 @@ public class IngresoMercaderiaController implements Initializable {
             Proveedor p = proveedorSeleccionado();
             String numFactura = txtNumeroFactura.getText() != null ? txtNumeroFactura.getText().trim() : "";
 
-            if (!modoEdicionFactura && facturaProveedorDAO.existeNumeroFactura(numFactura, p != null ? p.getId() : 0)) {
-                new Alert(Alert.AlertType.WARNING, "Ya existe una factura registrada con el N° " + numFactura
-                        + (p != null ? " del proveedor " + p.getNombre() : "") + ".").showAndWait();
-                return;
-            }
-
             LocalDateTime fecha = dpFechaIngreso.getValue() != null
                     ? dpFechaIngreso.getValue().atStartOfDay() : LocalDateTime.now();
             String formaPago = cmbFormaPago.getValue();
@@ -710,36 +687,15 @@ public class IngresoMercaderiaController implements Initializable {
                 interes = cmbInteres.getValue() != null ? new BigDecimal(cmbInteres.getValue()) : BigDecimal.ZERO;
             }
 
-            if (modoEdicionFactura) {
-                reemplazarFactura(facturaEditadaNumero, facturaEditadaProveedorId);
-            }
-
-            List<FacturaProveedor> lineasFactura = new ArrayList<>();
+            List<Inventario> productosIngresados = new ArrayList<>();
             for (FilaProducto fp : listaProductos) {
                 Inventario i = construirInventario(fp, p, numFactura, fecha, formaPago, meses, interes);
-                int id = dao.guardar(i);
-                if ("TAG Crédito".equals(formaPago) && p != null && id > 0) {
-                    BigDecimal total = i.getCostoSinIVA().multiply(BigDecimal.valueOf(i.getCantidad()));
-                    crearCreditoProveedor(id, p.getId(), total, meses, interes);
-                }
-
-                FacturaProveedor linea = new FacturaProveedor();
-                linea.setNumeroFactura(numFactura);
-                linea.setProveedorId(p != null ? p.getId() : 0);
-                linea.setCodigo(fp.getCodigo());
-                linea.setCodigoManual(fp.getCodigoManual());
-                linea.setDescripcion(fp.getDescripcion());
-                linea.setGrupoId(fp.getGrupoId());
-                linea.setMarcaId(fp.getMarcaId());
-                linea.setCostoSinIVA(BigDecimal.valueOf(fp.getCostoSinIVA()));
-                linea.setIva(BigDecimal.valueOf(fp.getIva()));
-                linea.setCantidad(fp.getCantidad());
-                linea.setTotalLinea(BigDecimal.valueOf(fp.getTotalLinea()));
-                linea.setFecha(fecha);
-                lineasFactura.add(linea);
+                productosIngresados.add(i);
             }
-            facturaProveedorDAO.insertar(lineasFactura);
-            refrescarStockNegativo();
+            if (ApiConfig.isModoRemoto()) guardarIngresoRemoto(productosIngresados);
+            else new com.vendex.service.IngresoStockService().guardar(productosIngresados,
+                    modoEdicionFactura ? facturaEditadaNumero : null, facturaEditadaProveedorId);
+            com.vendex.util.InventarioEventos.notificar();
 
             // Generar hoja A4 en background para no colgar la UI (como InventarioController)
             final String facturaNumFinal = numFactura;
@@ -750,7 +706,9 @@ public class IngresoMercaderiaController implements Initializable {
                     long t0 = System.currentTimeMillis();
                     LOG.fine(() -> "generarHoja INICIO factura=" + facturaNumFinal + " prov=" + (provFinal != null ? provFinal.getId() : 0));
                     try {
-                        List<Inventario> recien = dao.listarPorNumeroFactura(facturaNumFinal, provFinal != null ? provFinal.getId() : 0);
+                        // Las etiquetas usan la cantidad comprada, no el saldo que queda
+                        // después de compensar ventas anteriores del mismo código.
+                        List<Inventario> recien = productosIngresados;
                         LOG.fine(() -> "generarHoja listarPorNumeroFactura OK size=" + recien.size() + " en " + (System.currentTimeMillis()-t0) + "ms");
                         if (recien.isEmpty()) {
                             javafx.application.Platform.runLater(() -> new Alert(Alert.AlertType.WARNING, "No se encontraron productos para hoja A4 (factura " + facturaNumFinal + ")").showAndWait());
@@ -824,23 +782,32 @@ public class IngresoMercaderiaController implements Initializable {
         }
     }
 
-    /**
-     * Reemplaza una factura de proveedor existente por la versión editada:
-     * borra cuentas por pagar, inventario y líneas de factura asociadas, para que
-     * el flujo de guardado posterior las vuelva a crear con los datos nuevos.
-     */
-    private void reemplazarFactura(String numeroFactura, int proveedorId) throws Exception {
-        if (numeroFactura == null || numeroFactura.isEmpty()) return;
-        List<Inventario> inventarios = dao.listarPorNumeroFactura(numeroFactura, proveedorId);
-        List<Integer> ids = new ArrayList<>();
-        for (Inventario inv : inventarios) ids.add(inv.getId());
-
-        if (!ids.isEmpty() && (facturaDetalleDAO.existeVentaPorInventarioIds(ids)
-                || historialProductoDAO.existeVentaPorInventarioIds(ids))) {
-            throw new IllegalStateException("No se puede modificar la factura: uno de sus productos ya fue vendido.");
+    private void guardarIngresoRemoto(List<Inventario> productos) throws Exception {
+        Inventario primero = productos.get(0);
+        java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+        body.put("proveedorId", primero.getProveedorId()); body.put("numeroFactura", primero.getNumeroFactura());
+        body.put("fecha", primero.getFecha_ingreso().toString()); body.put("formaPago", primero.getFormaPago());
+        body.put("mesesPlazo", primero.getMesesPlazo()); body.put("interes", primero.getInteres());
+        if (modoEdicionFactura) {
+            body.put("facturaAnterior", facturaEditadaNumero); body.put("proveedorAnterior", facturaEditadaProveedorId);
         }
-
-        dao.eliminarFacturaConDependencias(numeroFactura, proveedorId);
+        List<java.util.Map<String, Object>> lineas = new ArrayList<>();
+        for (Inventario i : productos) {
+            java.util.Map<String, Object> linea = new java.util.LinkedHashMap<>();
+            linea.put("codigo", i.getTagCodigo()); linea.put("codigoManual", i.getCodigo());
+            linea.put("descripcion", i.getDescripcion()); linea.put("grupoId", i.getGrupoId()); linea.put("marcaId", i.getMarcaId());
+            linea.put("costoSinIVA", i.getCostoSinIVA()); linea.put("cantidad", i.getCantidad()); linea.put("precioVenta", i.getPrecioVenta());
+            lineas.add(linea);
+        }
+        body.put("productos", lineas);
+        var resp = new com.vendex.remote.RestClient(ApiConfig.host()).post("/api/ingreso-mercaderia", body, java.util.Map.class);
+        if (!(resp.get("productos") instanceof List<?> guardados) || guardados.size() != productos.size())
+            throw new IllegalStateException("El servidor debe actualizarse para confirmar ingresos por código.");
+        for (int n = 0; n < guardados.size(); n++) {
+            var guardado = (java.util.Map<?, ?>) guardados.get(n);
+            productos.get(n).setId(((Number) guardado.get("inventarioId")).intValue());
+            productos.get(n).setTagCodigo((String) guardado.get("tagCodigo"));
+        }
     }
 
     private void guardarUnico() {
@@ -857,6 +824,7 @@ public class IngresoMercaderiaController implements Initializable {
                 formaPago, meses, interes);
         i.setId(Integer.parseInt(txtId.getText()));
         dao.actualizar(i);
+        com.vendex.util.InventarioEventos.notificar();
         new Alert(Alert.AlertType.INFORMATION, "Guardado correctamente.").showAndWait();
         if (cerrarAlGuardar) cerrarVentana();
     }
@@ -870,6 +838,7 @@ public class IngresoMercaderiaController implements Initializable {
     private Inventario construirInventario(FilaProducto fp, Proveedor p, String numFactura,
                                            LocalDateTime fecha, String formaPago, int meses, BigDecimal interes) {
         Inventario i = new Inventario();
+        i.setSucursalId(com.vendex.util.SucursalActual.getId());
         if (fp != null) {
             i.setDescripcion(fp.getDescripcion());
             i.setGrupoId(fp.getGrupoId());
@@ -906,15 +875,6 @@ public class IngresoMercaderiaController implements Initializable {
         return i;
     }
 
-    private void crearCreditoProveedor(int inventarioId, int proveedorId, BigDecimal total, int mesesPlazo, BigDecimal interesPct) {
-        if (mesesPlazo <= 0) mesesPlazo = 1;
-        BigDecimal tasa = interesPct.divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
-        BigDecimal totalConInteres = total.multiply(BigDecimal.ONE.add(tasa));
-        BigDecimal cuotaMensual = totalConInteres.divide(BigDecimal.valueOf(mesesPlazo), 2, RoundingMode.HALF_UP);
-
-        CuentaPorPagar cpp = new CuentaPorPagar(inventarioId, proveedorId, totalConInteres, mesesPlazo, interesPct, cuotaMensual);
-        cuentaPorPagarDAO.insertar(cpp);
-    }
 
     /**
      * Precarga el formulario con una factura de proveedor completa (modo edición de
@@ -927,13 +887,30 @@ public class IngresoMercaderiaController implements Initializable {
         facturaEditadaNumero = numeroFactura;
         facturaEditadaProveedorId = proveedorId;
 
-        List<FacturaProveedor> lineas = facturaProveedorDAO.listarPorFactura(numeroFactura);
+        List<FacturaProveedor> lineas = facturaProveedorDAO.listarPorFactura(numeroFactura).stream()
+                .filter(l -> l.getProveedorId() == proveedorId && (l.getSucursalId() == 0
+                        || l.getSucursalId() == com.vendex.util.SucursalActual.getId())).toList();
         if (lineas.isEmpty()) {
             new Alert(Alert.AlertType.WARNING, "No se encontraron líneas para la factura seleccionada.").showAndWait();
             return;
         }
 
-        List<Inventario> inventarios = dao.listarPorNumeroFactura(numeroFactura, proveedorId);
+        List<Inventario> inventarios = new ArrayList<>();
+        List<Inventario> legados = lineas.stream().anyMatch(l -> l.getInventarioId() == 0)
+                ? dao.listarPorNumeroFactura(numeroFactura, proveedorId) : List.of();
+        for (FacturaProveedor linea : lineas) {
+            Inventario producto = linea.getInventarioId() > 0 ? dao.obtenerPorId(linea.getInventarioId())
+                    : legados.stream().filter(i -> java.util.Objects.equals(i.getTagCodigo(), linea.getCodigo())
+                            && com.vendex.service.IngresoStockService.codigo(i.getCodigo())
+                            .equals(com.vendex.service.IngresoStockService.codigo(linea.getCodigoManual())))
+                    .findFirst().orElse(null);
+            if (producto == null || producto.getSucursalId() != com.vendex.util.SucursalActual.getId()) {
+                new Alert(Alert.AlertType.ERROR, "No se encontró el producto de código " + linea.getCodigoManual()
+                        + " en esta sucursal. No se puede editar la factura.").showAndWait();
+                return;
+            }
+            inventarios.add(producto);
+        }
 
         txtNumeroFactura.setText(numeroFactura);
         if (lineas.get(0).getFecha() != null) {
@@ -951,6 +928,11 @@ public class IngresoMercaderiaController implements Initializable {
             formaPago = inventarios.get(0).getFormaPago();
             meses = inventarios.get(0).getMesesPlazo();
             interes = inventarios.get(0).getInteres() != null ? inventarios.get(0).getInteres() : BigDecimal.ZERO;
+        }
+        if (lineas.get(0).getInventarioId() > 0) {
+            formaPago = lineas.get(0).getFormaPago();
+            meses = lineas.get(0).getMesesPlazo();
+            interes = lineas.get(0).getInteres() == null ? BigDecimal.ZERO : lineas.get(0).getInteres();
         }
         cmbFormaPago.setValue(formaPago);
         if ("TAG Crédito".equals(formaPago)) {
@@ -970,7 +952,8 @@ public class IngresoMercaderiaController implements Initializable {
             Inventario inv = inventarios.get(i);
             BigDecimal costo = l.getCostoSinIVA() != null ? l.getCostoSinIVA() : BigDecimal.ZERO;
             BigDecimal iva = l.getIva() != null ? l.getIva() : BigDecimal.ZERO;
-            BigDecimal precioVenta = inv.getPrecioVenta() != null ? inv.getPrecioVenta() : costo.add(iva);
+            BigDecimal precioVenta = l.getPrecioVenta() != null ? l.getPrecioVenta()
+                    : inv.getPrecioVenta() != null ? inv.getPrecioVenta() : costo.add(iva);
             FilaProducto fp = new FilaProducto(
                     l.getCodigo() != null ? l.getCodigo() : "",
                     l.getCodigoManual() != null ? l.getCodigoManual() : "",
@@ -1294,6 +1277,10 @@ public class IngresoMercaderiaController implements Initializable {
             body.put("formaPago", formaPago);
             body.put("mesesPlazo", meses);
             body.put("interes", interes.toString());
+            if (modoEdicionFactura) {
+                body.put("facturaAnterior", facturaEditadaNumero);
+                body.put("proveedorAnterior", facturaEditadaProveedorId);
+            }
             java.util.List<java.util.Map<String, Object>> productos = new java.util.ArrayList<>();
             for (FilaProducto fp : listaProductos) {
                 java.util.Map<String, Object> prod = new java.util.LinkedHashMap<>();

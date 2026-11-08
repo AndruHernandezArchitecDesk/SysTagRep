@@ -61,6 +61,7 @@ public class MainApp extends Application {
         DatabaseConnection.ensurePermisosGranularesSchema();
         DatabaseConnection.ensureComprobantePendienteSriSchema();
         DatabaseConnection.ensureSucursalSchema();
+        DatabaseConnection.ensureIngresoStockSchema();
         DatabaseConnection.ensureVehiculoSchema();
         DatabaseConnection.ensureAccesoDirectoSchema();
         try { DatabaseConnection.ensureVendexiSchema(); } catch (Exception e) { System.err.println("No se pudo asegurar esquema Vendexi: " + e.getMessage()); }

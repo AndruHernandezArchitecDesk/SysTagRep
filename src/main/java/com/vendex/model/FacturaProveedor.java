@@ -18,6 +18,12 @@ public class FacturaProveedor {
     private int cantidad;
     private BigDecimal totalLinea;
     private LocalDateTime fecha;
+    private int inventarioId;
+    private int sucursalId;
+    private BigDecimal precioVenta;
+    private String formaPago;
+    private int mesesPlazo;
+    private BigDecimal interes;
 
     public FacturaProveedor() {}
 
@@ -62,4 +68,17 @@ public class FacturaProveedor {
 
     public LocalDateTime getFecha() { return fecha; }
     public void setFecha(LocalDateTime fecha) { this.fecha = fecha; }
+
+    public int getInventarioId() { return inventarioId; }
+    public void setInventarioId(int valor) { inventarioId = valor; }
+    public int getSucursalId() { return sucursalId; }
+    public void setSucursalId(int valor) { sucursalId = valor; }
+    public BigDecimal getPrecioVenta() { return precioVenta; }
+    public void setPrecioVenta(BigDecimal valor) { precioVenta = valor; }
+    public String getFormaPago() { return formaPago; }
+    public void setFormaPago(String valor) { formaPago = valor; }
+    public int getMesesPlazo() { return mesesPlazo; }
+    public void setMesesPlazo(int valor) { mesesPlazo = valor; }
+    public BigDecimal getInteres() { return interes; }
+    public void setInteres(BigDecimal valor) { interes = valor; }
 }

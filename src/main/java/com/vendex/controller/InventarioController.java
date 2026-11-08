@@ -104,9 +104,14 @@ public class InventarioController implements Initializable {
     private static final String TODAS = "Todas";
     private static final String TODOS = "Todos";
     private boolean filtrosVehCargados = false;
+    private final Runnable stockConfirmado = () -> {
+        if (tblInventario != null && tblInventario.getScene() != null && tblInventario.getScene().getWindow() != null
+                && tblInventario.getScene().getWindow().isShowing()) cargarDatos();
+    };
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        com.vendex.util.InventarioEventos.escuchar(stockConfirmado);
         if (lblFiltroVeh != null) {
             if (!lblFiltroVeh.getStyleClass().contains("text-success")) lblFiltroVeh.getStyleClass().add("text-success");
             lblFiltroVeh.setStyle("-fx-font-weight: bold;");

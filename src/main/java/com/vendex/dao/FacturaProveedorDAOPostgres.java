@@ -144,6 +144,7 @@ public class FacturaProveedorDAOPostgres implements FacturaProveedorDAO {
                 while (rs.next()) {
                     FacturaProveedor l = new FacturaProveedor();
                     l.setId(rs.getInt("id"));
+                    leerIngreso(rs, l);
                     l.setNumeroFactura(rs.getString("numero_factura"));
                     l.setProveedorId(rs.getInt("proveedor_id"));
                     l.setProveedor(rs.getString("proveedor"));
@@ -178,6 +179,7 @@ public class FacturaProveedorDAOPostgres implements FacturaProveedorDAO {
                 while (rs.next()) {
                     FacturaProveedor l = new FacturaProveedor();
                     l.setId(rs.getInt("id"));
+                    leerIngreso(rs, l);
                     l.setNumeroFactura(rs.getString("numero_factura"));
                     l.setProveedorId(rs.getInt("proveedor_id"));
                     l.setProveedor(rs.getString("proveedor"));
@@ -198,5 +200,14 @@ public class FacturaProveedorDAOPostgres implements FacturaProveedorDAO {
             e.printStackTrace();
         }
         return lista;
+    }
+
+    private static void leerIngreso(ResultSet rs, FacturaProveedor linea) throws SQLException {
+        linea.setInventarioId(rs.getInt("inventario_id"));
+        linea.setSucursalId(rs.getInt("sucursal_id"));
+        linea.setPrecioVenta(rs.getBigDecimal("precio_venta"));
+        linea.setFormaPago(rs.getString("forma_pago"));
+        linea.setMesesPlazo(rs.getInt("meses_plazo"));
+        linea.setInteres(rs.getBigDecimal("interes"));
     }
 }

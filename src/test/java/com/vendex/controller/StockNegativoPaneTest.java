@@ -74,4 +74,28 @@ class StockNegativoPaneTest {
         fxRun(()->{assertEquals("SUC-3",paneRef.get().tabla().getItems().get(0).codigo());paneRef.get().cancelar();
             assertTrue(paneRef.get().tabla().getItems().isEmpty());stageRef.get().close();});
     }
+
+    @Test void ingresoConfirmadoRefrescaSaldoYRetiraProductoCuandoLlegaACero() throws Exception {
+        var saldo = new AtomicInteger(-5);
+        var panel = new AtomicReference<StockNegativoPane>();
+        var ventana = new AtomicReference<Stage>();
+        fxRun(() -> {
+            var pane = new StockNegativoPane(s -> saldo.get() < 0
+                    ? List.of(new StockNegativoItem(1, "ABC", "Repuesto", saldo.get(), null)) : List.of(), () -> 7, () -> 3);
+            panel.set(pane);
+            Stage stage = new Stage(); stage.setScene(new Scene(pane, 500, 400)); ventana.set(stage); stage.show();
+        });
+        try {
+            esperar(() -> panel.get().tabla().getItems().size() == 1);
+            fxRun(() -> assertEquals(-5, panel.get().tabla().getItems().get(0).cantidad()));
+            saldo.set(-2);
+            com.vendex.util.InventarioEventos.notificar();
+            esperar(() -> panel.get().tabla().getItems().size() == 1
+                    && panel.get().tabla().getItems().get(0).cantidad() == -2);
+            saldo.set(0);
+            com.vendex.util.InventarioEventos.notificar();
+            esperar(() -> panel.get().estado().startsWith("0 producto"));
+            fxRun(() -> assertTrue(panel.get().tabla().getItems().isEmpty()));
+        } finally { fxRun(() -> ventana.get().close()); }
+    }
 }

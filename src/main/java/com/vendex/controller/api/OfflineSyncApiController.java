@@ -1,8 +1,6 @@
 package com.vendex.controller.api;
 
 import com.vendex.config.AppContext;
-import com.vendex.model.CuentaPorPagar;
-import com.vendex.model.FacturaProveedor;
 import com.vendex.model.Inventario;
 import com.vendex.service.NotaDebitoService;
 import com.vendex.util.AppConstants;
@@ -13,7 +11,6 @@ import io.javalin.http.Context;
 
 import java.io.File;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -162,12 +159,7 @@ public class OfflineSyncApiController {
                 http.status(400).json(Map.of("error", "Debe agregar al menos un producto"));
                 return;
             }
-            if (ctx.facturaProveedorDAO.existeNumeroFactura(numFactura, proveedorId != null ? proveedorId : 0)) {
-                http.status(409).json(Map.of("error", "Ya existe una factura registrada con el N° " + numFactura));
-                return;
-            }
-
-            List<FacturaProveedor> lineasFactura = new ArrayList<>();
+            List<Inventario> productosIngresados = new ArrayList<>();
             for (Object o : productos) {
                 Map<?, ?> p = (Map<?, ?>) o;
                 BigDecimal costo = new BigDecimal(String.valueOf(p.get("costoSinIVA")));
@@ -176,6 +168,7 @@ public class OfflineSyncApiController {
                         ? new BigDecimal(String.valueOf(p.get("precioVenta"))) : costo;
 
                 Inventario i = new Inventario();
+                i.setSucursalId(SesionActual.getSucursalId());
                 i.setDescripcion(str(p.get("descripcion")));
                 i.setGrupoId(p.get("grupoId") != null ? ((Number) p.get("grupoId")).intValue() : 0);
                 i.setMarcaId(p.get("marcaId") != null ? ((Number) p.get("marcaId")).intValue() : 0);
@@ -195,43 +188,25 @@ public class OfflineSyncApiController {
                 i.setMesesPlazo("TAG Crédito".equals(formaPago) ? meses : 0);
                 i.setInteres("TAG Crédito".equals(formaPago) ? interes : BigDecimal.ZERO);
 
-                int id = ctx.inventarioDAO.guardar(i);
-                if ("TAG Crédito".equals(formaPago) && proveedorId != null && id > 0) {
-                    BigDecimal total = costo.multiply(BigDecimal.valueOf(cant));
-                    crearCreditoProveedor(id, proveedorId, total, meses, interes);
-                }
-
-                BigDecimal iva = costo.multiply(new BigDecimal("0.15")).setScale(3, RoundingMode.HALF_UP);
-                BigDecimal totalLinea = costo.add(iva).multiply(BigDecimal.valueOf(cant)).setScale(3, RoundingMode.HALF_UP);
-                FacturaProveedor linea = new FacturaProveedor();
-                linea.setNumeroFactura(numFactura);
-                linea.setProveedorId(proveedorId != null ? proveedorId : 0);
-                linea.setCodigo(str(p.get("codigo")));
-                linea.setCodigoManual(codManual);
-                linea.setDescripcion(desc);
-                linea.setGrupoId(i.getGrupoId());
-                linea.setMarcaId(i.getMarcaId());
-                linea.setCostoSinIVA(costo);
-                linea.setIva(iva);
-                linea.setCantidad(cant);
-                linea.setTotalLinea(totalLinea);
-                linea.setFecha(fecha);
-                lineasFactura.add(linea);
+                productosIngresados.add(i);
             }
-            ctx.facturaProveedorDAO.insertar(lineasFactura);
-            http.json(Map.of("guardado", true, "numeroFactura", numFactura, "lineas", lineasFactura.size()));
+            String anterior = b.get("facturaAnterior") == null ? null : str(b.get("facturaAnterior"));
+            int proveedorAnterior = b.get("proveedorAnterior") instanceof Number n ? n.intValue() : 0;
+            new com.vendex.service.IngresoStockService().guardar(productosIngresados, anterior, proveedorAnterior);
+            List<Map<String, Object>> resultado = new ArrayList<>();
+            for (Inventario i : productosIngresados) {
+                Map<String, Object> item = new LinkedHashMap<>();
+                item.put("inventarioId", i.getId()); item.put("tagCodigo", i.getTagCodigo());
+                resultado.add(item);
+            }
+            http.json(Map.of("guardado", true, "numeroFactura", numFactura, "lineas", productosIngresados.size(), "productos", resultado));
+        } catch (IllegalArgumentException e) {
+            http.status(400).json(Map.of("error", msg(e)));
         } catch (Exception e) {
             http.status(500).json(Map.of("error", msg(e)));
         }
     }
 
-    private void crearCreditoProveedor(int inventarioId, int proveedorId, BigDecimal total, int mesesPlazo, BigDecimal interesPct) {
-        if (mesesPlazo <= 0) mesesPlazo = 1;
-        BigDecimal tasa = interesPct.divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
-        BigDecimal totalConInteres = total.multiply(BigDecimal.ONE.add(tasa));
-        BigDecimal cuotaMensual = totalConInteres.divide(BigDecimal.valueOf(mesesPlazo), 2, RoundingMode.HALF_UP);
-        ctx.cuentaPorPagarDAO.insertar(new CuentaPorPagar(inventarioId, proveedorId, totalConInteres, mesesPlazo, interesPct, cuotaMensual));
-    }
 
     private static String str(Object o) { return o != null ? String.valueOf(o) : null; }
 

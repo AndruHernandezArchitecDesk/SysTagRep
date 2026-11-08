@@ -85,6 +85,7 @@ public class SyncService {
                 boolean exito = enviarOperacion(op);
                 if (exito) {
                     cola.marcarEnviada(op.getId());
+                    if ("INGRESO_MERCADERIA".equals(op.getTipo())) com.vendex.util.InventarioEventos.notificar();
                     enviadas++;
                 } else {
                     // 4xx: error de negocio — estado terminal CONFLICTO, resuelto desde la cola

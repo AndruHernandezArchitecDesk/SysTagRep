@@ -34,6 +34,7 @@ final class StockNegativoPane extends VBox {
     private final Button actualizar = new Button("Actualizar");
     private Task<List<StockNegativoItem>> carga;
     private long version;
+    private final Runnable stockConfirmado = this::actualizar;
     private final javafx.beans.value.ChangeListener<Boolean> mostrando = (o, antes, visible) -> {
         if (visible) actualizar(); else cancelar();
     };
@@ -42,6 +43,7 @@ final class StockNegativoPane extends VBox {
     StockNegativoPane(Consulta consulta, IntSupplier sucursal, Supplier<Integer> usuario) {
         super(10);
         this.consulta = consulta; this.sucursal = sucursal; this.usuario = usuario;
+        com.vendex.util.InventarioEventos.escuchar(stockConfirmado);
         setId("panelStockNegativo"); getStyleClass().add("card");
         setMinWidth(280); setPrefWidth(400); setMaxWidth(600); setMinHeight(180);
         Label titulo = new Label("Stock negativo"); titulo.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;");
