@@ -83,24 +83,29 @@ public class ConfiguracionEmailDAOPostgres implements ConfiguracionEmailDAO {
 
     public String obtenerPasswordPlano(ConfiguracionEmail cfg) {
         if (cfg == null || cfg.getPasswordCifrado() == null || cfg.getPasswordCifrado().isEmpty()) return "";
+        if (!cfg.getPasswordCifrado().contains(":")) return cfg.getPasswordCifrado();
         // Tier 2 por instalación (compartido): probar master key, fallback Tier1/legacy para compat
         try {
-            return com.vendex.util.SecureConfigStore.descifrarConMasterKey(cfg.getPasswordCifrado());
-        } catch (com.vendex.exception.SecretoNoEncontradoException se) {
-            // sin master key en esta PC → explicar claro
-            throw new RuntimeException("Clave maestra de instalación no importada en esta PC. Importa la vendex-master-key desde la primera PC (wizard BD).", se);
+            return Cifrado.desencriptarConInstallMaster(cfg.getPasswordCifrado());
         } catch (Exception e) {
-            try { return Cifrado.desencriptar(cfg.getPasswordCifrado()); } catch (Exception e2) { return ""; }
+            // También probar secretos locales/legacy cuando falta la clave Tier 2:
+            // las versiones anteriores podían guardar SMTP con ese formato.
+            try { return Cifrado.desencriptar(cfg.getPasswordCifrado()); }
+            catch (Exception legacy) {
+                throw new IllegalStateException("No se pudo descifrar la contraseña SMTP. "
+                        + "En Administración → Correo Electrónico, importa la clave de instalación "
+                        + "de la PC donde se configuró el correo.", e);
+            }
         }
     }
 
-    /** Cifra para guardar en BD con Tier2 (install master). Fallback Tier1 si master no existe (compat). */
+    /** La contraseña compartida nunca debe cifrarse con la clave exclusiva de una PC. */
     public static String cifrarParaGuardar(String plano) {
         if (plano == null || plano.isEmpty()) return "";
         try {
             return com.vendex.util.SecureConfigStore.cifrarConMasterKey(plano);
         } catch (Exception e) {
-            try { return Cifrado.encriptar(plano); } catch (Exception e2) { throw new RuntimeException(e2); }
+            throw new IllegalStateException("Importa la clave de instalación antes de guardar la contraseña SMTP compartida.", e);
         }
     }
 

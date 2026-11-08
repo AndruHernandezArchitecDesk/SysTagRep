@@ -49,6 +49,8 @@
                                 <PasswordField fx:id="txtPassword" styleClass="no-uppercase" promptText="Contraseña / App password" HBox.hgrow="ALWAYS" prefHeight="36"/>
                             </HBox>
                             <Label text="La contraseña se guarda cifrada (AES/GCM). Al editar, dejar vacío conserva la anterior." styleClass="text-secondary" style="-fx-font-size: 11px;" wrapText="true"/>
+                            <Button text="Importar clave de instalación" onAction="#importarClaveInstalacion" styleClass="btn-orden"/>
+                            <Label text="Si el correo se configuró en otra PC, importa su vendex-master-key existente para poder descifrar la contraseña compartida." styleClass="text-secondary" style="-fx-font-size: 11px;" wrapText="true"/>
                         </VBox>
                     </content>
                 </TitledPane>

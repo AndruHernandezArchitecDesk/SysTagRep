@@ -53,15 +53,7 @@ public class EmailService {
 
     private String desencriptarPassword(ConfiguracionEmail cfg) {
         if (cfg == null || cfg.getPasswordCifrado() == null) return "";
-        try {
-            // La contraseña SMTP se cifra con la clave maestra compartida de instalación (Tier 2).
-            // Cifrado.desencriptar usa la clave local de máquina (Tier 1) y produce AEADBadTag.
-            return new ConfiguracionEmailDAOPostgres().obtenerPasswordPlano(cfg);
-        } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "No se pudo desencriptar password SMTP con la clave maestra de instalación: "
-                    + (e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage()));
-            return "";
-        }
+        return new ConfiguracionEmailDAOPostgres().obtenerPasswordPlano(cfg);
     }
 
     public boolean enviarCorreoConPDF(String destinatario, String nombreCliente,
@@ -95,7 +87,13 @@ public class EmailService {
             remitente = cfg.getEmailRemitente();
             nombreRemitente = cfg.getNombreRemitente();
             usuario = cfg.getUsuarioSmtp();
-            passwordPlano = desencriptarPassword(cfg);
+            try {
+                passwordPlano = desencriptarPassword(cfg);
+            } catch (RuntimeException e) {
+                ultimoError = e.getMessage();
+                LOGGER.warning(ultimoError);
+                return false;
+            }
             replyTo = cfg.getReplyTo();
             if (host == null || host.trim().isEmpty() || remitente == null || remitente.trim().isEmpty()) {
                 ultimoError = "Configuración de correo incompleta. Vaya a Administración → Correo Electrónico y complete los datos.";

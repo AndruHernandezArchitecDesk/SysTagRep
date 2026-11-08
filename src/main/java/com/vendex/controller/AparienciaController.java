@@ -38,9 +38,13 @@ public class AparienciaController implements Initializable {
         cargarAparienciaGuardada();
         vistaRoot.sceneProperty().addListener((obs, oldScene, newScene) -> {
             if (newScene != null) {
-                escena = newScene;
-                vistaRoot.applyCss();
-                previsualizar();
+                // sceneProperty se notifica mientras JavaFX aún está enlazando
+                // el árbol. Resolver CSS aquí puede perder los lookups de .root.
+                javafx.application.Platform.runLater(() -> {
+                    if (vistaRoot.getScene() != newScene) return;
+                    escena = newScene;
+                    previsualizar();
+                });
             }
         });
         cmbTema.valueProperty().addListener((obs, oldValue, newValue) -> {

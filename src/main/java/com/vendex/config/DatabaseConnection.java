@@ -819,6 +819,10 @@ public class DatabaseConnection {
      * Si no hay password (clientes), no hace nada y deja ensure* fallback.
      */
     public static void migrateWithFlywayIfAvailable() {
+        if (DbConfig.esRemota()) {
+            LOG.info("Flyway omitido: cliente conectado a BD remota; las migraciones se ejecutan en el host central.");
+            return;
+        }
         String pgPass = com.vendex.config.PostgresConfig.getPassword();
         if (pgPass == null || pgPass.isBlank()) {
             LOG.info("Flyway omitido: sin postgres.password (solo host central migra). Usando ensure* fallback.");

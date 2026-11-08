@@ -79,22 +79,36 @@ public class ThemeManager {
             theme = Theme.ORGANIC;
             themeFile = ORGANIC;
         }
-        scene.getStylesheets().clear();
-        addStylesheet(scene, BASE);
+        java.util.List<String> stylesheets = new java.util.ArrayList<>();
+        addStylesheet(stylesheets, BASE);
         // The organic sheet supplies the shared light-control rules for the two new
         // pastel palettes; each still has exactly one final palette override sheet.
-        if (theme == Theme.PINK_BLOSSOM || theme == Theme.NATURE_BREEZE) addStylesheet(scene, ORGANIC);
-        addStylesheet(scene, themeFile);
+        if (theme == Theme.PINK_BLOSSOM || theme == Theme.NATURE_BREEZE) addStylesheet(stylesheets, ORGANIC);
+        addStylesheet(stylesheets, themeFile);
         Node root = scene.getRoot();
         if (root != null) {
-            root.getStyleClass().removeAll("theme-organic", "theme-cyberpunk", "theme-pink-blossom", "theme-nature-breeze");
-            root.getStyleClass().add("theme-" + theme.id());
+            // La selección del ComboBox notifica antes de cerrar su popup. No
+            // cambiar su CSS mientras JavaFX está resolviendo la paleta anterior.
+            if (!scene.getStylesheets().equals(stylesheets)) {
+                for (Node node : root.lookupAll(".combo-box-base")) {
+                    if (node instanceof javafx.scene.control.ComboBoxBase<?> combo) combo.hide();
+                }
+            }
+            String themeClass = "theme-" + theme.id();
+            if (!root.getStyleClass().contains(themeClass)) {
+                root.getStyleClass().removeAll("theme-organic", "theme-cyberpunk", "theme-pink-blossom", "theme-nature-breeze");
+                root.getStyleClass().add(themeClass);
+            }
             if (theme.isDark()) {
                 if (!root.getStyleClass().contains(CLASS_DARK)) root.getStyleClass().add(CLASS_DARK);
             } else {
                 root.getStyleClass().remove(CLASS_DARK);
             }
         }
+        // Reemplazo atómico: los controles/popup no deben resolver colores entre
+        // clear() y add(), cuando la paleta todavía no existe en la escena.
+        if (!scene.getStylesheets().equals(stylesheets)) scene.getStylesheets().setAll(stylesheets);
+        if (root != null && scene.getWindow() != null && scene.getWindow().isShowing()) root.applyCss();
         if (persist) guardarTema(theme);
     }
 
@@ -169,8 +183,8 @@ public class ThemeManager {
         PREFS.put(KEY_THEME, theme.isDark() ? THEME_DARK : THEME_LIGHT);
     }
 
-    private static void addStylesheet(Scene scene, String path) {
+    private static void addStylesheet(java.util.List<String> stylesheets, String path) {
         java.net.URL resource = ThemeManager.class.getResource(path);
-        if (resource != null) scene.getStylesheets().add(resource.toExternalForm());
+        if (resource != null) stylesheets.add(resource.toExternalForm());
     }
 }

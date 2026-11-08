@@ -145,12 +145,20 @@ public class Cifrado {
 
     public static String desencriptarConInstallMaster(String textoCifrado) throws Exception {
         if (textoCifrado == null || !textoCifrado.contains(":")) return "";
+        return desencriptarConInstallMaster(textoCifrado,
+                com.vendex.security.InstallMasterKeyManager.obtenerMasterKeyBytes());
+    }
+
+    /** Permite comprobar una clave importada antes de reemplazar la clave local. */
+    public static String desencriptarConInstallMaster(String textoCifrado, byte[] master) throws Exception {
+        if (textoCifrado == null || !textoCifrado.contains(":")) return "";
+        if (master == null || master.length != 32) throw new IllegalArgumentException("La clave de instalación debe tener 32 bytes");
         String[] partes = textoCifrado.split(":", 3);
         if (partes.length != 3) throw new IllegalArgumentException("formato invalido");
         byte[] sal = Base64.getDecoder().decode(partes[0]);
         byte[] iv = Base64.getDecoder().decode(partes[1]);
         byte[] cifrado = Base64.getDecoder().decode(partes[2]);
-        byte[] clave = derivarClaveConInstallMaster(sal);
+        byte[] clave = derivarClaveConInstallMaster(sal, master);
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
         cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(clave, "AES"), new GCMParameterSpec(128, iv));
         return new String(cipher.doFinal(cifrado), StandardCharsets.UTF_8);
@@ -158,6 +166,10 @@ public class Cifrado {
 
     private static byte[] derivarClaveConInstallMaster(byte[] sal) throws Exception {
         byte[] master = com.vendex.security.InstallMasterKeyManager.obtenerMasterKeyBytes();
+        return derivarClaveConInstallMaster(sal, master);
+    }
+
+    private static byte[] derivarClaveConInstallMaster(byte[] sal, byte[] master) throws Exception {
         Mac mac = Mac.getInstance("HmacSHA256");
         mac.init(new SecretKeySpec(master, "HmacSHA256"));
         byte[] out = mac.doFinal(sal);

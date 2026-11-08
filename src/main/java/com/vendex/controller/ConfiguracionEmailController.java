@@ -160,9 +160,8 @@ public class ConfiguracionEmailController implements Initializable {
         ConfiguracionEmail cfg = construirDesdeFormulario();
         if (cfg == null) return;
         String passPlano = txtPassword.getText() == null ? "" : txtPassword.getText();
-        if (passPlano.isEmpty() && configuracionActual != null) {
-            passPlano = dao.obtenerPasswordPlano(configuracionActual);
-        }
+        if (passPlano.isEmpty() && configuracionActual != null) passPlano = recuperarPasswordGuardado();
+        if (passPlano == null) return;
         if (passPlano.isEmpty()) {
             new Alert(Alert.AlertType.WARNING, "Ingrese la contraseña para probar la conexión.").showAndWait();
             return;
@@ -205,7 +204,8 @@ public class ConfiguracionEmailController implements Initializable {
         ConfiguracionEmail cfg = construirDesdeFormulario();
         if (cfg == null) return;
         String passPlano = txtPassword.getText() == null ? "" : txtPassword.getText();
-        if (passPlano.isEmpty() && configuracionActual != null) passPlano = dao.obtenerPasswordPlano(configuracionActual);
+        if (passPlano.isEmpty() && configuracionActual != null) passPlano = recuperarPasswordGuardado();
+        if (passPlano == null) return;
         if (passPlano.isEmpty()) {
             new Alert(Alert.AlertType.WARNING, "Ingrese la contraseña para enviar la prueba.").showAndWait();
             return;
@@ -235,6 +235,50 @@ public class ConfiguracionEmailController implements Initializable {
             lblEstado.setText("Error: " + task.getException().getMessage());
         });
         new Thread(task, "Test-SMTP-Envio").start();
+    }
+
+    private String recuperarPasswordGuardado() {
+        try {
+            return dao.obtenerPasswordPlano(configuracionActual);
+        } catch (RuntimeException e) {
+            lblEstado.setText(e.getMessage());
+            lblEstado.setStyle("-fx-text-fill: #dc3545;");
+            new Alert(Alert.AlertType.WARNING, e.getMessage()).showAndWait();
+            return null;
+        }
+    }
+
+    @FXML
+    private void importarClaveInstalacion() {
+        TextInputDialog dialogo = new TextInputDialog();
+        dialogo.setTitle("Clave de instalación para correo");
+        dialogo.setHeaderText("Importar la clave existente de la PC donde se configuró el correo");
+        dialogo.setContentText("vendex-master-key (Base64):");
+        dialogo.getEditor().getStyleClass().add("no-uppercase");
+        dialogo.showAndWait().filter(valor -> !valor.isBlank()).ifPresent(valor -> {
+            try {
+                byte[] clave = java.util.Base64.getDecoder().decode(valor.trim());
+                if (clave.length != 32) throw new IllegalArgumentException("La clave de instalación debe tener 32 bytes.");
+                if (configuracionActual != null && configuracionActual.getPasswordCifrado() != null
+                        && configuracionActual.getPasswordCifrado().contains(":")) {
+                    try {
+                        Cifrado.desencriptarConInstallMaster(configuracionActual.getPasswordCifrado(), clave);
+                    } catch (Exception e) {
+                        throw new IllegalArgumentException("Esa clave no descifra la contraseña SMTP guardada. "
+                                + "No se cambió la clave de este equipo. Usa la clave de la PC donde se configuró el correo.", e);
+                    }
+                }
+                com.vendex.util.SecureConfigStore.importarMasterKey(valor);
+                EmailService.invalidarCache();
+                if (configuracionActual != null) dao.obtenerPasswordPlano(configuracionActual);
+                lblEstado.setText("Clave importada. Puedes probar la conexión SMTP.");
+                lblEstado.setStyle("-fx-text-fill: #198754;");
+            } catch (RuntimeException e) {
+                lblEstado.setText(e.getMessage());
+                lblEstado.setStyle("-fx-text-fill: #dc3545;");
+                new Alert(Alert.AlertType.ERROR, e.getMessage()).showAndWait();
+            }
+        });
     }
 
     private ConfiguracionEmail construirDesdeFormulario() {
