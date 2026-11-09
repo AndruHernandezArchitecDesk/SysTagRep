@@ -5,6 +5,7 @@ import com.vendex.dao.ProveedorDAO;
 import com.vendex.model.Proveedor;
 import com.vendex.util.SortTable;
 import com.vendex.util.ComboFilter;
+import com.vendex.util.DatabaseInputLimits;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -74,54 +75,18 @@ public class ProveedorController implements Initializable {
     }
 
     private void aplicarLimitadores() {
-        // Nombre: max 30
-        txtNombre.textProperty().addListener((obs, old, newValue) -> {
-            if (newValue != null && newValue.length() > 30) txtNombre.setText(old);
-        });
+        DatabaseInputLimits.limit(txtNombre, 100);
+        DatabaseInputLimits.limit(txtCorreo, 60);
+        DatabaseInputLimits.limit(txtDireccion, 100);
+        limitarDigitos(txtIdentificacion, 13);
+        limitarDigitos(txtTelefono, 10);
+        limitarDigitos(txtCelular, 10);
+    }
 
-        // Correo: max 60
-        txtCorreo.textProperty().addListener((obs, old, newValue) -> {
-            if (newValue != null && newValue.length() > 60) txtCorreo.setText(old);
-        });
-
-        // Identificación: solo números y max 13
-        txtIdentificacion.textProperty().addListener((obs, old, newValue) -> {
-            if (newValue != null) {
-                if (!newValue.matches("\\d*")) {
-                    txtIdentificacion.setText(old);
-                } else if (newValue.length() > 13) {
-                    txtIdentificacion.setText(old);
-                }
-            }
-        });
-
-        // Dirección: max 70 + mayúsculas (compuesto, respeta no-uppercase global)
-        txtDireccion.setTextFormatter(new TextFormatter<>(change -> {
-            if (change.getText() != null) change.setText(change.getText().toUpperCase());
-            return change.getControlNewText().length() <= 70 ? change : null;
-        }));
-
-        // Teléfono: solo números y max 10
-        txtTelefono.textProperty().addListener((obs, old, newValue) -> {
-            if (newValue != null) {
-                if (!newValue.matches("\\d*")) {
-                    txtTelefono.setText(old);
-                } else if (newValue.length() > 10) {
-                    txtTelefono.setText(old);
-                }
-            }
-        });
-
-        // Celular: solo números y max 10
-        txtCelular.textProperty().addListener((obs, old, newValue) -> {
-            if (newValue != null) {
-                if (!newValue.matches("\\d*")) {
-                    txtCelular.setText(old);
-                } else if (newValue.length() > 10) {
-                    txtCelular.setText(old);
-                }
-            }
-        });
+    private void limitarDigitos(TextField field, int maximum) {
+        field.setTextFormatter(new TextFormatter<>(change ->
+                change.getControlNewText().matches("\\d*") ? change : null));
+        DatabaseInputLimits.limit(field, maximum);
     }
 
     private void iniciarTablaContenido(){

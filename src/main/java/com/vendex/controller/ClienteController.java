@@ -5,6 +5,7 @@ import com.vendex.dao.LogDAO;
 import com.vendex.model.Cliente;
 import com.vendex.util.SortTable;
 import com.vendex.util.ComboFilter;
+import com.vendex.util.DatabaseInputLimits;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -76,48 +77,18 @@ public class ClienteController implements Initializable {
     }
 
     private void aplicarLimitadores() {
-        txtNombre.textProperty().addListener((obs, old, newValue) -> {
-            if (newValue != null && newValue.length() > 30) txtNombre.setText(old);
-        });
+        DatabaseInputLimits.limit(txtNombre, 100);
+        DatabaseInputLimits.limit(txtCorreo, 60);
+        DatabaseInputLimits.limit(txtDireccion, 100);
+        limitarDigitos(txtIdentificacion, 13);
+        limitarDigitos(txtTelefono, 10);
+        limitarDigitos(txtCelular, 10);
+    }
 
-        txtCorreo.textProperty().addListener((obs, old, newValue) -> {
-            if (newValue != null && newValue.length() > 60) txtCorreo.setText(old);
-        });
-
-        txtIdentificacion.textProperty().addListener((obs, old, newValue) -> {
-            if (newValue != null) {
-                if (!newValue.matches("\\d*")) {
-                    txtIdentificacion.setText(old);
-                } else if (newValue.length() > 13) {
-                    txtIdentificacion.setText(old);
-                }
-            }
-        });
-
-        txtDireccion.setTextFormatter(new TextFormatter<>(change -> {
-            if (change.getText() != null) change.setText(change.getText().toUpperCase());
-            return change.getControlNewText().length() <= 70 ? change : null;
-        }));
-
-        txtTelefono.textProperty().addListener((obs, old, newValue) -> {
-            if (newValue != null) {
-                if (!newValue.matches("\\d*")) {
-                    txtTelefono.setText(old);
-                } else if (newValue.length() > 10) {
-                    txtTelefono.setText(old);
-                }
-            }
-        });
-
-        txtCelular.textProperty().addListener((obs, old, newValue) -> {
-            if (newValue != null) {
-                if (!newValue.matches("\\d*")) {
-                    txtCelular.setText(old);
-                } else if (newValue.length() > 10) {
-                    txtCelular.setText(old);
-                }
-            }
-        });
+    private void limitarDigitos(TextField field, int maximum) {
+        field.setTextFormatter(new TextFormatter<>(change ->
+                change.getControlNewText().matches("\\d*") ? change : null));
+        DatabaseInputLimits.limit(field, maximum);
     }
 
     private void configurarBusqueda() {

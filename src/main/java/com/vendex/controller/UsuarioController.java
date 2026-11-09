@@ -6,6 +6,7 @@ import com.vendex.dao.UsuarioDAO;
 import com.vendex.model.Usuario;
 import com.vendex.util.SortTable;
 import com.vendex.util.ComboFilter;
+import com.vendex.util.DatabaseInputLimits;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -123,15 +124,9 @@ public class UsuarioController implements Initializable {
     }
 
     private void aplicarLimitadores() {
-        txtNombre.textProperty().addListener((obs, old, newValue) -> {
-            if (newValue != null && newValue.length() > 30) txtNombre.setText(old);
-        });
-        txtApellido.textProperty().addListener((obs, old, newValue) -> {
-            if (newValue != null && newValue.length() > 30) txtApellido.setText(old);
-        });
-        txtCorreo.textProperty().addListener((obs, old, newValue) -> {
-            if (newValue != null && newValue.length() > 50) txtCorreo.setText(old);
-        });
+        DatabaseInputLimits.limit(txtNombre, 100);
+        DatabaseInputLimits.limit(txtApellido, 100);
+        DatabaseInputLimits.limit(txtCorreo, 120);
     }
 
     private void iniciarTablaContenido(){

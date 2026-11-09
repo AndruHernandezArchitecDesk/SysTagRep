@@ -440,6 +440,7 @@ public class MainController implements Initializable {
             FXMLLoader loginLoader = new FXMLLoader(getClass().getResource("/view/LoginView.fxml"));
             VendexControllerFactory.aplicar(loginLoader);
             Parent login = loginLoader.load();
+            com.vendex.util.DatabaseInputLimits.apply(login);
             Stage stage = (Stage) contenedor.getScene().getWindow();
             com.vendex.util.AmbientEffectManager.detach(stage.getScene());
             stage.setTitle("Vendex - Inicio de Sesión");

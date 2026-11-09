@@ -4,6 +4,7 @@ import com.vendex.dao.VendedorDAO;
 import com.vendex.model.Vendedor;
 import com.vendex.util.SortTable;
 import com.vendex.util.ComboFilter;
+import com.vendex.util.DatabaseInputLimits;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -74,6 +75,10 @@ public class VendedorController implements Initializable{
         cargarDatos();
         cargarAcciones();
         iniciarCmbEstado();
+        DatabaseInputLimits.limit(txtNombre, 150);
+        txtIdentificacion.setTextFormatter(new TextFormatter<>(change ->
+                change.getControlNewText().matches("\\d*") ? change : null));
+        DatabaseInputLimits.limit(txtIdentificacion, 13);
     }
 
     @FXML

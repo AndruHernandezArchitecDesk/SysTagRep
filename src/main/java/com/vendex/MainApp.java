@@ -156,6 +156,7 @@ public class MainApp extends Application {
         Parent root;
         try {
             root = loader.load();
+            com.vendex.util.DatabaseInputLimits.apply(root);
         } catch (Exception e) {
             javafx.scene.control.Alert a = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
             a.setTitle("Vendex - Configuración de Base de Datos");

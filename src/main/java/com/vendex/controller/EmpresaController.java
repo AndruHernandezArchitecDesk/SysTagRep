@@ -2,6 +2,7 @@ package com.vendex.controller;
 
 import com.vendex.dao.EmpresaDAO;
 import com.vendex.model.Empresa;
+import com.vendex.util.DatabaseInputLimits;
 import com.vendex.util.EmpresaLogo;
 import com.vendex.util.LogoManager;
 import javafx.collections.FXCollections;
@@ -51,6 +52,15 @@ public class EmpresaController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+        DatabaseInputLimits.limit(txtRuc, 13);
+        DatabaseInputLimits.limit(txtRazonSocial, 300);
+        DatabaseInputLimits.limit(txtTitulo, 300);
+        DatabaseInputLimits.limit(txtTelefono, 20);
+        DatabaseInputLimits.limit(txtCorreo, 100);
+        DatabaseInputLimits.limit(txtDireccion, 200);
+        DatabaseInputLimits.limit(txtSucursal, 10);
+        DatabaseInputLimits.limit(txtAgenteRetencion, 10);
+        DatabaseInputLimits.limit(txtResolucion, 20);
         cmbObligado.setItems(FXCollections.observableArrayList("SI", "NO"));
         cargarDatosEmpresa();
         btnGuardar.setOnAction(event -> guardar());

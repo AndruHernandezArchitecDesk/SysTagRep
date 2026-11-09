@@ -83,9 +83,8 @@ public class IngresoProductoController implements Initializable {
         iniciarCbMarcas();
         iniciarCbCodigos();
         validarSoloNumeros();
-        txtDescripcion.textProperty().addListener((obs, old, val) -> {
-            if (val != null && !val.equals(val.toUpperCase())) txtDescripcion.setText(val.toUpperCase());
-        });
+        com.vendex.util.UpperCaseTextFormatter.apply(txtDescripcion);
+        com.vendex.util.DatabaseInputLimits.limit(txtDescripcion, 300);
     }
 
     private void iniciarSpCantidad() {
@@ -150,6 +149,7 @@ public class IngresoProductoController implements Initializable {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxml));
             com.vendex.config.VendexControllerFactory.aplicar(loader);
             Parent vista = loader.load();
+            com.vendex.util.DatabaseInputLimits.apply(vista);
             Stage modal = new Stage();
             modal.initModality(Modality.APPLICATION_MODAL);
             modal.setTitle(titulo);

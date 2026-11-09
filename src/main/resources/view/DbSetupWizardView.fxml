@@ -16,13 +16,13 @@
     <GridPane hgap="10" vgap="10">
         <columnConstraints><ColumnConstraints hgrow="NEVER" minWidth="130"/><ColumnConstraints hgrow="ALWAYS"/></columnConstraints>
         <Label text="Servidor (IP o nombre):" GridPane.rowIndex="0" GridPane.columnIndex="0" style="-fx-text-fill: white;"/>
-        <TextField fx:id="txtHost" promptText="192.168.1.7  o  vendex-db  o  localhost" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+        <TextField fx:id="txtHost" styleClass="no-uppercase" promptText="192.168.1.7  o  vendex-db  o  localhost" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
         <Label text="Puerto:" GridPane.rowIndex="1" GridPane.columnIndex="0" style="-fx-text-fill: white;"/>
         <TextField fx:id="txtPuerto" promptText="5432" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
         <Label text="Base de datos:" GridPane.rowIndex="2" GridPane.columnIndex="0" style="-fx-text-fill: white;"/>
-        <TextField fx:id="txtBase" promptText="dbTag" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+        <TextField fx:id="txtBase" styleClass="no-uppercase" promptText="dbTag" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
         <Label text="Usuario BD:" GridPane.rowIndex="3" GridPane.columnIndex="0" style="-fx-text-fill: white;"/>
-        <TextField fx:id="txtUser" promptText="app_vendex" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+        <TextField fx:id="txtUser" styleClass="no-uppercase" promptText="app_vendex" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
         <Label text="Contraseña BD:" GridPane.rowIndex="4" GridPane.columnIndex="0" style="-fx-text-fill: white;"/>
         <HBox spacing="8" GridPane.rowIndex="4" GridPane.columnIndex="1" alignment="CENTER_LEFT">
             <PasswordField fx:id="txtPasswordExistente" promptText="Contraseña actual de la BD en producción" HBox.hgrow="ALWAYS"/>

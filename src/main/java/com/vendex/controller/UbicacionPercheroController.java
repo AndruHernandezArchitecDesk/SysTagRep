@@ -502,9 +502,11 @@ public class UbicacionPercheroController implements Initializable {
 
         TextField txtNombre = new TextField();
         UpperCaseTextFormatter.apply(txtNombre);
+        com.vendex.util.DatabaseInputLimits.limit(txtNombre, 10);
         txtNombre.setPromptText("Ej: A, B, C, ...");
         TextField txtSeccion = new TextField();
         UpperCaseTextFormatter.apply(txtSeccion);
+        com.vendex.util.DatabaseInputLimits.limit(txtSeccion, 10);
         txtSeccion.setPromptText("Ej: A, B, 1, 2, ...");
         Spinner<Integer> spnLugares = new Spinner<>(1, 100, 15);
 
@@ -572,6 +574,7 @@ public class UbicacionPercheroController implements Initializable {
         lblNombre.setFont(Font.font("Arial", FontWeight.BOLD, 14));
         TextField txtSeccion = new TextField();
         UpperCaseTextFormatter.apply(txtSeccion);
+        com.vendex.util.DatabaseInputLimits.limit(txtSeccion, 10);
         txtSeccion.setPromptText("Ej: B, C, 2, 3, ...");
         Spinner<Integer> spnLugares = new Spinner<>(1, 100, 15);
 

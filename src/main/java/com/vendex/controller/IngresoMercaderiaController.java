@@ -1227,6 +1227,7 @@ public class IngresoMercaderiaController implements Initializable {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxml));
             com.vendex.config.VendexControllerFactory.aplicar(loader);
             Parent vista = loader.load();
+            com.vendex.util.DatabaseInputLimits.apply(vista);
             Stage modal = new Stage();
             modal.initModality(Modality.APPLICATION_MODAL);
             modal.setTitle(titulo);

@@ -332,6 +332,7 @@ public class InventarioController implements Initializable {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/IngresoProductoView.fxml"));
             com.vendex.config.VendexControllerFactory.aplicar(loader);
             Parent vista = loader.load();
+            com.vendex.util.DatabaseInputLimits.apply(vista);
             Stage modal = new Stage();
             modal.initModality(Modality.APPLICATION_MODAL);
             modal.setTitle("Ingreso por Producto");
@@ -351,6 +352,7 @@ public class InventarioController implements Initializable {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/IngresoMercaderiaView.fxml"));
             com.vendex.config.VendexControllerFactory.aplicar(loader);
             Parent vista = loader.load();
+            com.vendex.util.DatabaseInputLimits.apply(vista);
             IngresoMercaderiaController controller = loader.getController();
             controller.setCerrarAlGuardar(true);
             if (i != null) {

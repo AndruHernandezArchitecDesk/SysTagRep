@@ -462,6 +462,7 @@ public class PrestamoController implements Initializable {
             TextArea txtNotas = new TextArea();
             txtNotas.setPrefRowCount(2);
             txtNotas.setPromptText("Observaciones (opcional)");
+            com.vendex.util.DatabaseInputLimits.limit(txtNotas, 2000);
 
             cmbMetaPer.valueProperty().addListener((o, a, b) -> {
                 boolean conMeta = b != null && !"NINGUNA".equals(b);
@@ -668,6 +669,7 @@ public class PrestamoController implements Initializable {
         TextArea txtNotas = new TextArea();
         txtNotas.setPrefRowCount(2);
         txtNotas.setPromptText("Notas / referencia (opcional)");
+        com.vendex.util.DatabaseInputLimits.limit(txtNotas, 2000);
 
         GridPane form = new GridPane();
         form.setHgap(10);
@@ -862,14 +864,18 @@ public class PrestamoController implements Initializable {
 
         TextField txtNombre = new TextField();
         txtNombre.setPromptText("Nombre del banco o entidad");
+        com.vendex.util.DatabaseInputLimits.limit(txtNombre, 120);
         ComboBox<String> cmbTipo = new ComboBox<>(FXCollections.observableArrayList("BANCO", "PRIVADO", "OTRO"));
         cmbTipo.setValue("BANCO");
         TextField txtIdent = new TextField();
         txtIdent.setPromptText("RUC o C.I.");
+        com.vendex.util.DatabaseInputLimits.limit(txtIdent, 20);
         TextField txtTel = new TextField();
         txtTel.setPromptText("Teléfono");
+        com.vendex.util.DatabaseInputLimits.limit(txtTel, 30);
         TextField txtContacto = new TextField();
         txtContacto.setPromptText("Persona de contacto");
+        com.vendex.util.DatabaseInputLimits.limit(txtContacto, 80);
 
         GridPane form = new GridPane();
         form.setHgap(8);

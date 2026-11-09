@@ -169,6 +169,7 @@ public class NotaVentaController implements Initializable, DocumentoVendexi {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        com.vendex.util.DatabaseInputLimits.limit(txtTelefono, 25);
         dpFechaNotaVenta.setValue(LocalDate.now());
         cargarLogo();
         obtenerDatosEmpresa();
@@ -317,6 +318,7 @@ public class NotaVentaController implements Initializable, DocumentoVendexi {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/ClienteView.fxml"));
             com.vendex.config.VendexControllerFactory.aplicar(loader);
             Parent vista = loader.load();
+            com.vendex.util.DatabaseInputLimits.apply(vista);
             Stage stage = new Stage();
             stage.setTitle("Administración de Clientes");
             Scene scene = new Scene(vista, 900, 600);
@@ -600,10 +602,12 @@ public class NotaVentaController implements Initializable, DocumentoVendexi {
 
         TextField txtCodigo = new TextField();
         txtCodigo.setPromptText("Ej: TMP-001");
-        txtCodigo.textProperty().addListener((obs, old, val) -> { if (val != null && !val.equals(val.toUpperCase())) { txtCodigo.setText(val.toUpperCase()); }});
+        com.vendex.util.UpperCaseTextFormatter.apply(txtCodigo);
+        com.vendex.util.DatabaseInputLimits.limit(txtCodigo, 50);
         TextField txtDesc = new TextField();
         txtDesc.setPromptText("Descripción");
-        txtDesc.textProperty().addListener((obs, old, val) -> { if (val != null && !val.equals(val.toUpperCase())) { txtDesc.setText(val.toUpperCase()); }});
+        com.vendex.util.UpperCaseTextFormatter.apply(txtDesc);
+        com.vendex.util.DatabaseInputLimits.limit(txtDesc, 500);
         TextField txtCant = new TextField("1");
         txtCant.setPromptText("1");
         TextField txtPrecio = new TextField();

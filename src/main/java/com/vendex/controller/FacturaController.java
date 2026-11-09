@@ -143,6 +143,7 @@ public class FacturaController implements Initializable, DocumentoVendexi {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        com.vendex.util.DatabaseInputLimits.limit(txtTelefono, 25);
         dpFechaFactura.setValue(LocalDate.now());
         cargarLogo();
         obtenerDatosEmpresa();
@@ -344,6 +345,7 @@ public class FacturaController implements Initializable, DocumentoVendexi {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/ClienteView.fxml"));
             com.vendex.config.VendexControllerFactory.aplicar(loader);
             Parent vista = loader.load();
+            com.vendex.util.DatabaseInputLimits.apply(vista);
             Stage stage = new Stage();
             stage.setTitle("Administración de Clientes");
             Scene scene = new Scene(vista, 900, 600);
@@ -535,6 +537,10 @@ public class FacturaController implements Initializable, DocumentoVendexi {
         var grid = new javafx.scene.layout.GridPane(); grid.setHgap(12); grid.setVgap(10);
         var codigo = new TextField(); codigo.setPromptText("Ej: TMP-001");
         var descripcion = new TextField(); descripcion.setPromptText("Descripción del repuesto");
+        com.vendex.util.UpperCaseTextFormatter.apply(codigo);
+        com.vendex.util.UpperCaseTextFormatter.apply(descripcion);
+        com.vendex.util.DatabaseInputLimits.limit(codigo, 50);
+        com.vendex.util.DatabaseInputLimits.limit(descripcion, 500);
         var cantidad = new TextField("1"); var precio = new TextField(); precio.setPromptText("0.00");
         grid.addRow(0, new Label("Código:"), codigo);
         grid.addRow(1, new Label("Descripción:"), descripcion);

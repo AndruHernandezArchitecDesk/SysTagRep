@@ -286,6 +286,7 @@ public class FacturasIngresadasController implements Initializable {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/IngresoMercaderiaView.fxml"));
             com.vendex.config.VendexControllerFactory.aplicar(loader);
             Parent vista = loader.load();
+            com.vendex.util.DatabaseInputLimits.apply(vista);
             IngresoMercaderiaController controller = loader.getController();
             controller.setCerrarAlGuardar(true);
             controller.cargarFacturaParaEdicion(sel.getNumeroFactura(), sel.getProveedorId());
