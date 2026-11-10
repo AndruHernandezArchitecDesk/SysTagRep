@@ -1,6 +1,8 @@
 package com.vendex.service;
 
 import com.vendex.config.GeminiConfig;
+import com.vendex.config.OpenAIConfig;
+import com.vendex.config.VetxiProviderConfig;
 import com.vendex.dao.DashboardDAO;
 import com.vendex.dao.HistorialProductoDAO;
 import com.vendex.dao.InventarioDAO;
@@ -209,13 +211,30 @@ public class AnalisisEmpresarialService {
         if (consumo != null && !consumo.hayCapacidadDisponible()) {
             return new Resultado(Estado.SIN_CAPACIDAD, VendexiConsumoService.mensajeCapacidadAgotada(), "");
         }
-        String apiKey = GeminiConfig.obtenerApiKey();
+        boolean openAI = VetxiProviderConfig.getProvider() == VetxiProviderConfig.Provider.OPENAI;
+        String apiKey = openAI ? OpenAIConfig.obtenerApiKey() : GeminiConfig.obtenerApiKey();
         if (apiKey == null || apiKey.isBlank()) {
             return new Resultado(Estado.SIN_API_KEY,
-                    "Sin API key: configura Gemini en *Configurar IA* para análisis con IA.", "");
+                    "Sin API key: configura " + VetxiProviderConfig.nombreProveedor()
+                            + " en *Configurar IA* para análisis con IA.", "");
         }
         String datos = construirDatosAutorizados(tipo, d);
         String prompt = construirPrompt(tipo, d, datos);
+        if (openAI) {
+            try {
+                String texto = new OpenAIService().completar(prompt, "analisis." + tipo.name().toLowerCase(), apiKey);
+                return new Resultado(Estado.OK, texto, resumenCorto(datos));
+            } catch (Exception e) {
+                String mensaje = e.getMessage() == null ? "" : e.getMessage();
+                Estado estado = mensaje.contains("HTTP 429") ? Estado.SIN_CUOTA
+                        : mensaje.contains("HTTP 401") || mensaje.contains("HTTP 403") ? Estado.SIN_API_KEY
+                        : Estado.SIN_CONEXION;
+                return new Resultado(estado,
+                        "⚠️ El análisis con OpenAI no está disponible (" + cortar(mensaje, 120)
+                                + "). Datos disponibles:\n\n" + resumenCorto(datos),
+                        resumenCorto(datos));
+            }
+        }
         try {
             String texto = llamarGemini(prompt, apiKey, MODELO);
             return new Resultado(Estado.OK, texto, resumenCorto(datos));

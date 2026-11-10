@@ -69,7 +69,7 @@ public class AnalisisIaController {
                     case SIN_CAPACIDAD -> "⚠️ Capacidad de IA agotada.";
                     case SIN_CUOTA -> "⚠️ IA limitada por el control de cuotas. Revisa el panel administrativo.";
                     case SIN_LICENCIA -> "⚠️ La licencia no incluye Vetxi AI.";
-                    case SIN_API_KEY -> "⚠️ Sin API key de Gemini.";
+                    case SIN_API_KEY -> "⚠️ Sin API key del proveedor Vetxi seleccionado.";
                     default -> "⚠️ " + res.texto;
                 });
                 btnAnalizar.setDisable(false);

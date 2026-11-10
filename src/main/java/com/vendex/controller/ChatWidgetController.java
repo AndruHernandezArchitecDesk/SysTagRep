@@ -1,7 +1,7 @@
 package com.vendex.controller;
 
 import com.vendex.chatbot.GeminiChatbotService;
-import com.vendex.config.GeminiConfig;
+import com.vendex.config.VetxiProviderConfig;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -784,7 +784,7 @@ public class ChatWidgetController {
         // Investigación web solo por petición explícita; los códigos usan inventario local.
         if (com.vendex.service.InvestigacionWebService.esConsultaInvestigacion(texto)
                 && com.vendex.util.LicenseManager.licenciaIncluyeIA()
-                && GeminiConfig.tieneApiKey()) {
+                && VetxiProviderConfig.tieneApiKey()) {
             investigarEnWeb(texto, vehMarca, vehModelo, vehAnio, turno);
             return;
         }
@@ -937,7 +937,7 @@ public class ChatWidgetController {
         }
         GeminiChatbotService.EstadoIA e = chatbotService.getEstado();
         // Si no hay archivo ni env, mostrar Local
-        boolean tieneKey = GeminiConfig.tieneApiKey();
+        boolean tieneKey = VetxiProviderConfig.tieneApiKey();
         if (!tieneKey) {
             badgeIA.setText("○ Local");
             badgeIA.getStyleClass().setAll("badge-local");
@@ -946,7 +946,7 @@ public class ChatWidgetController {
         }
         switch (e) {
             case IA_ACTIVA -> {
-                badgeIA.setText("● IA Gemini");
+                badgeIA.setText("● IA " + VetxiProviderConfig.nombreProveedor());
                 badgeIA.getStyleClass().setAll("badge-ia");
                 badgeIA.setTooltip(new javafx.scene.control.Tooltip("IA activa"));
             }

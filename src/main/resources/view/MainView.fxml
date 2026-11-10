@@ -384,7 +384,7 @@
                         <graphic>
                             <FontIcon iconLiteral="fas-key" iconSize="16"/>
                         </graphic>
-                        <tooltip><Tooltip text="Guardar API key de Gemini/NVIDIA (cifrada) para el asistente IA"/></tooltip>
+                        <tooltip><Tooltip text="Configurar Gemini u OpenAI para Vetxi, o NVIDIA para generación de código"/></tooltip>
                     </Button>
                     <Button text="Cuotas y consumo de IA" onAction="#irConsumoIa" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                         <graphic>

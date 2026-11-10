@@ -18,10 +18,15 @@ public final class VendexiConfig {
     private static final File ARCHIVO = new File(DIR, "vendexi.properties");
     private static final String PROP_ENTRADA = "costo.usd.por.1m.tokens.entrada";
     private static final String PROP_SALIDA = "costo.usd.por.1m.tokens.salida";
+    private static final String PROP_OPENAI_ENTRADA = "openai.costo.usd.por.1m.tokens.entrada";
+    private static final String PROP_OPENAI_SALIDA = "openai.costo.usd.por.1m.tokens.salida";
 
     // Estimación inicial (revisable): flash-lite-like
     private static final BigDecimal DEF_ENTRADA = new BigDecimal("0.075");
     private static final BigDecimal DEF_SALIDA = new BigDecimal("0.30");
+    // Referencias para gpt-6-luna; editables en ~/.vendex/vendexi.properties.
+    private static final BigDecimal DEF_OPENAI_ENTRADA = new BigDecimal("0.10");
+    private static final BigDecimal DEF_OPENAI_SALIDA = new BigDecimal("0.50");
 
     private VendexiConfig() {}
 
@@ -37,13 +42,32 @@ public final class VendexiConfig {
 
     /** Costo estimado en USD para unos tokens dados. */
     public static BigDecimal estimarCosto(long tokensEntrada, long tokensSalida) {
-        BigDecimal in = costoUsdPor1mEntrada();
-        BigDecimal out = costoUsdPor1mSalida();
+        return estimarCosto(null, tokensEntrada, tokensSalida);
+    }
+
+    /** Estima usando tarifa de referencia según proveedor/modelo. */
+    public static BigDecimal estimarCosto(String modelo, long tokensEntrada, long tokensSalida) {
+        boolean openai = modelo != null && modelo.toLowerCase(java.util.Locale.ROOT).startsWith("gpt-");
+        BigDecimal in = openai ? leer(PROP_OPENAI_ENTRADA, DEF_OPENAI_ENTRADA) : costoUsdPor1mEntrada();
+        BigDecimal out = openai ? leer(PROP_OPENAI_SALIDA, DEF_OPENAI_SALIDA) : costoUsdPor1mSalida();
         BigDecimal cIn = in.multiply(BigDecimal.valueOf(tokensEntrada))
                 .divide(new BigDecimal("1000000"), 6, java.math.RoundingMode.HALF_UP);
         BigDecimal cOut = out.multiply(BigDecimal.valueOf(tokensSalida))
                 .divide(new BigDecimal("1000000"), 6, java.math.RoundingMode.HALF_UP);
         return cIn.add(cOut).setScale(6, java.math.RoundingMode.HALF_UP);
+    }
+
+    /** Guarda tarifas OpenAI (USD por millón de tokens) sin cambiar las de Gemini. */
+    public static synchronized void guardarTarifasOpenAI(BigDecimal entradaUsdPor1m, BigDecimal salidaUsdPor1m) {
+        try {
+            if (!DIR.exists() && !DIR.mkdirs()) return;
+            Properties p = cargar();
+            p.setProperty(PROP_OPENAI_ENTRADA, entradaUsdPor1m.toPlainString());
+            p.setProperty(PROP_OPENAI_SALIDA, salidaUsdPor1m.toPlainString());
+            try (FileOutputStream fos = new FileOutputStream(ARCHIVO)) {
+                p.store(fos, "Vendexi AI - tarifas de referencia OpenAI USD por 1M tokens");
+            }
+        } catch (IOException ignored) { }
     }
 
     private static BigDecimal leer(String prop, BigDecimal def) {

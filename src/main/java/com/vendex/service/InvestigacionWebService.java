@@ -3,6 +3,8 @@ package com.vendex.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vendex.config.GeminiConfig;
+import com.vendex.config.OpenAIConfig;
+import com.vendex.config.VetxiProviderConfig;
 import com.vendex.util.LicenseManager;
 
 import java.net.URI;
@@ -118,12 +120,35 @@ public class InvestigacionWebService {
             return new Resultado(Estado.SIN_CAPACIDAD,
                     VendexiConsumoService.mensajeCapacidadAgotada(), List.of(), true);
         }
-        String apiKey = GeminiConfig.obtenerApiKey();
+        boolean openAI = VetxiProviderConfig.getProvider() == VetxiProviderConfig.Provider.OPENAI;
+        String apiKey = openAI ? OpenAIConfig.obtenerApiKey() : GeminiConfig.obtenerApiKey();
         if (apiKey == null || apiKey.isBlank()) {
             return new Resultado(Estado.SIN_API_KEY,
-                    "Sin API key: la investigación web requiere configurar Gemini en *Configurar IA*.", List.of(), true);
+                    "Sin API key: la investigación web requiere configurar "
+                            + VetxiProviderConfig.nombreProveedor() + " en *Configurar IA*.", List.of(), true);
         }
         String prompt = construirPrompt(consulta, resumenInventarioLocal, vehMarca, vehModelo, vehAnio);
+        if (openAI) {
+            try {
+                OpenAIService.Respuesta respuesta = new OpenAIService().investigarWeb(prompt, apiKey);
+                String texto = respuesta.texto();
+                boolean sinEvidencia = texto.toLowerCase(Locale.ROOT).contains("no encontr")
+                        || texto.toLowerCase(Locale.ROOT).contains("sin evidencia")
+                        || respuesta.fuentes().isEmpty() && texto.toLowerCase(Locale.ROOT).contains("evidencia");
+                List<Fuente> fuentes = respuesta.fuentes().stream()
+                        .map(f -> new Fuente(f.titulo(), f.uri())).toList();
+                return new Resultado(Estado.OK, texto, fuentes, sinEvidencia);
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, "Investigación web OpenAI no disponible", e);
+                String mensaje = e.getMessage() == null ? "" : e.getMessage();
+                Estado estado = mensaje.contains("HTTP 429") ? Estado.SIN_CUOTA
+                        : mensaje.contains("HTTP 401") || mensaje.contains("HTTP 403") ? Estado.SIN_API_KEY
+                        : Estado.SIN_CONEXION;
+                return new Resultado(estado,
+                        "⚠️ La investigación web de OpenAI no está disponible (" + cortar(mensaje, 120)
+                                + "). Intenta de nuevo o usa la búsqueda local de inventario.", List.of(), true);
+            }
+        }
         try {
             return llamarConBusqueda(prompt, apiKey);
         } catch (GeminiCuotas.Limite e) {

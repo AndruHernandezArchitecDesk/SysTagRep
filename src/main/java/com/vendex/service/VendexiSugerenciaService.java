@@ -3,6 +3,8 @@ package com.vendex.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vendex.config.GeminiConfig;
+import com.vendex.config.OpenAIConfig;
+import com.vendex.config.VetxiProviderConfig;
 import com.vendex.model.Inventario;
 import com.vendex.util.LicenseManager;
 
@@ -131,7 +133,7 @@ public class VendexiSugerenciaService {
     }
 
     public boolean esIaDisponible() {
-        return LicenseManager.licenciaIncluyeIA() && GeminiConfig.tieneApiKey();
+        return LicenseManager.licenciaIncluyeIA() && VetxiProviderConfig.tieneApiKey();
     }
 
     // ===== Verificaciones locales (siempre disponibles, sin IA) =====
@@ -352,10 +354,13 @@ public class VendexiSugerenciaService {
     }
 
     /** Permite probar el proveedor sin leer ni modificar la clave real de la instalación. */
-    protected String obtenerApiKey() { return GeminiConfig.obtenerApiKey(); }
+    protected String obtenerApiKey() { return VetxiProviderConfig.obtenerApiKey(); }
 
     /** Protected para probar cancelaciones y fallos del proveedor sin red. */
     protected String llamarGemini(String prompt, String apiKey) throws Exception {
+        if (VetxiProviderConfig.getProvider() == VetxiProviderConfig.Provider.OPENAI) {
+            return new OpenAIService().completarJson(prompt, "contextual.venta_cruzada", apiKey);
+        }
         String url = "https://generativelanguage.googleapis.com/v1beta/models/" + MODELO
                 + ":generateContent?key=" + apiKey;
         com.fasterxml.jackson.databind.node.ObjectNode root = MAPPER.createObjectNode();

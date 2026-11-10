@@ -379,18 +379,24 @@ public class MainController implements Initializable {
                     ButtonType.OK).showAndWait();
             return;
         }
-        javafx.scene.control.ChoiceDialog<String> tipoDlg = new javafx.scene.control.ChoiceDialog<>("Gemini", "Gemini", "NVIDIA");
+        String[] proveedores = {"Gemini (Vetxi)", "OpenAI / ChatGPT (Vetxi)", "NVIDIA (generación de código)"};
+        String proveedorActual = com.vendex.config.VetxiProviderConfig.getProvider()
+                == com.vendex.config.VetxiProviderConfig.Provider.OPENAI ? proveedores[1] : proveedores[0];
+        javafx.scene.control.ChoiceDialog<String> tipoDlg = new javafx.scene.control.ChoiceDialog<>(proveedorActual, proveedores);
         tipoDlg.setTitle("Configurar IA");
-        tipoDlg.setHeaderText("Seleccione proveedor");
-        tipoDlg.setContentText("Proveedor:");
+        tipoDlg.setHeaderText("Configurar un proveedor de IA");
+        tipoDlg.setContentText("Gemini y OpenAI se usan en Vetxi. NVIDIA se reserva para generación de código.");
         var tipoRes = tipoDlg.showAndWait();
         if (tipoRes.isEmpty()) return;
-        boolean esNvidia = "NVIDIA".equals(tipoRes.get());
-        String keyActual = esNvidia ? com.vendex.config.NvidiaConfig.obtenerApiKey() : GeminiConfig.obtenerApiKey();
+        boolean esNvidia = tipoRes.get().startsWith("NVIDIA");
+        boolean esOpenAI = tipoRes.get().startsWith("OpenAI");
+        String keyActual = esNvidia ? com.vendex.config.NvidiaConfig.obtenerApiKey()
+                : esOpenAI ? com.vendex.config.OpenAIConfig.obtenerApiKey() : GeminiConfig.obtenerApiKey();
         javafx.scene.control.TextInputDialog dlg = new javafx.scene.control.TextInputDialog(keyActual != null ? keyActual : "");
         dlg.setTitle("Configurar IA - " + tipoRes.get());
         dlg.setHeaderText(tipoRes.get() + " API Key");
-        dlg.setContentText("API Key" + (esNvidia ? " (https://build.nvidia.com):" : " (https://aistudio.google.com/apikey):"));
+        dlg.setContentText("API Key" + (esNvidia ? " (https://build.nvidia.com):"
+                : esOpenAI ? " (https://platform.openai.com/api-keys):" : " (https://aistudio.google.com/apikey):"));
         var result = dlg.showAndWait();
         if (result.isPresent()) {
             String key = result.get().trim();
@@ -402,13 +408,23 @@ public class MainController implements Initializable {
                     com.vendex.config.NvidiaConfig.guardarApiKey(key);
                     new Alert(Alert.AlertType.INFORMATION, "NVIDIA API key guardada cifrada en ~/.vendex/nvidia.properties", ButtonType.OK).showAndWait();
                 }
+            } else if (esOpenAI) {
+                if (key.isEmpty()) {
+                    com.vendex.config.OpenAIConfig.borrarApiKey();
+                    new Alert(Alert.AlertType.INFORMATION, "API key de OpenAI eliminada.", ButtonType.OK).showAndWait();
+                } else {
+                    com.vendex.config.OpenAIConfig.guardarApiKey(key);
+                    com.vendex.config.VetxiProviderConfig.setProvider(com.vendex.config.VetxiProviderConfig.Provider.OPENAI);
+                    new Alert(Alert.AlertType.INFORMATION, "API key de OpenAI guardada cifrada en ~/.vendex/openai.properties.\nOpenAI/ChatGPT quedó seleccionado para las funciones de Vetxi.", ButtonType.OK).showAndWait();
+                }
             } else {
                 if (key.isEmpty()) {
                     GeminiConfig.borrarApiKey();
-                    new Alert(Alert.AlertType.INFORMATION, "API key eliminada. El chat usará modo local sin IA.", ButtonType.OK).showAndWait();
+                    new Alert(Alert.AlertType.INFORMATION, "API key de Gemini eliminada.", ButtonType.OK).showAndWait();
                 } else {
                     GeminiConfig.guardarApiKey(key);
-                    new Alert(Alert.AlertType.INFORMATION, "API key guardada cifrada en ~/.vendex/gemini.properties\nBadge mostrará ● IA Gemini", ButtonType.OK).showAndWait();
+                    com.vendex.config.VetxiProviderConfig.setProvider(com.vendex.config.VetxiProviderConfig.Provider.GEMINI);
+                    new Alert(Alert.AlertType.INFORMATION, "API key guardada cifrada en ~/.vendex/gemini.properties.\nVetxi usará Gemini.", ButtonType.OK).showAndWait();
                 }
             }
         }

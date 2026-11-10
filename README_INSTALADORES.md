@@ -10,7 +10,8 @@ Chuleta rápida: de dónde descargar cada instalador y cómo usar `run.bat`, con
 | JRE 17+ (PCs **clientes**, solo para correr el portable) | https://adoptium.net/temurin/releases/?version=17 (variante JRE) | Marcar Add to PATH. Verificar: `java -version` |
 | WiX Toolset **3.11.2** (`wix311.exe`, el que exige `jpackage` del JDK 17) | https://github.com/wixtoolset/wix3/releases | En wixtoolset.org ya solo ofrecen v4+ (no sirve). Agregar a PATH, reabrir `cmd` |
 | PostgreSQL 16+ Windows (solo máquina **servidor**) | https://www.postgresql.org/download/windows/ | Solo donde vive `dbTag` |
-| Gemini API key (chatbot IA) | https://aistudio.google.com/apikey | Gratis, una por instalación (se pega por PC) |
+| API key de Gemini (Vetxi) | https://aistudio.google.com/apikey | Opción de proveedor para Vetxi |
+| API key de OpenAI (ChatGPT/Vetxi) | https://platform.openai.com/api-keys | Requiere acceso y facturación de API de OpenAI |
 
 > `.deb` es solo Ubuntu: **no abre en Windows**. Para Windows usa el ZIP portable o el `.msi`.
 
@@ -46,7 +47,7 @@ Pulsa **Probar conexión**, espera el ✓ verde y luego **Guardar**. La config q
 ## 5. Licencia y chatbot IA
 
 * **Licencia:** el **servidor** (`localhost`) usa licencia local. Cada **cliente remoto** requiere una licencia v2 **CENTRAL** registrada en `licencia_emitida` y no revocada; si no puede consultar la BD central, el arranque se bloquea. Pantalla Activación → pegar clave con guiones (`XXXXX-XXXXX-XXXXX-XXXXX-YYYYMMDD`, vence en la fecha final). Para emitir y registrar: `java -cp Vendex-2.0-SNAPSHOT.jar com.vendex.util.LicenseGenerator <machine-code> vitalicia --central --ia --registrar-central`. Si el host no apunta a la BD central (p. ej. desarrollo con `dbVendex`), agrega `--db-url=jdbc:postgresql://192.168.1.4:5432/dbTag --db-user=postgres` y define `DB_PASSWORD` con la clave de esa BD.
-* **IA:** menú lateral → **Configurar IA** → Gemini → pegar key → Guardar. Repetir **en cada PC** (la key es local por máquina); el badge pasa a `● IA Gemini`. Sin key, el chatbot sigue buscando en modo local.
+* **IA/Vetxi:** menú lateral → **Configurar IA** → elige Gemini o OpenAI/ChatGPT, pega la API key y guarda. La key queda cifrada en el perfil local; guardar una key de proveedor lo selecciona para Vetxi. NVIDIA se mantiene como proveedor independiente de generación de código. Sin key válida, Vetxi conserva la búsqueda local de inventario.
 
 ## 6. Fabricar los artefactos (máquina de desarrollo)
 

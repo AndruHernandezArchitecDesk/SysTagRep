@@ -105,7 +105,7 @@
 | Nombre actual | Ruta (FXML / acción) | Funcionalidad | Nombre propuesto |
 |---|---|---|---|
 | Ayuda > Asistente de Repuestos | Chat / `#irAsistenteRepuestos` | Chatbot/Asistente IA para consulta de repuestos. | Asistente IA |
-| Ayuda > Configurar IA (Gemini) | — / `#irConfigurarIA` | Configuración del modelo y API de inteligencia artificial. | Configurar IA |
+| Ayuda > Configurar IA (Gemini/OpenAI) | — / `#irConfigurarIA` | Configura Gemini u OpenAI para Vetxi; NVIDIA queda para generación de código. | Configurar IA |
 | Ayuda > Acerca de | — / `#acercaDe` | Información de la aplicación, versión y créditos. | Acerca de |
 
 ### Cuenta

@@ -33,9 +33,10 @@ public class CuotasIaPanel extends VBox {
 
     public CuotasIaPanel() {
         setSpacing(8);
-        Label nota = new Label("Control compartido entre equipos de la misma base/servidor (un proyecto Gemini). "
+        Label nota = new Label("Control local de cuotas de Google Gemini, compartido entre equipos de la misma base/servidor. "
                 + "Uso observado por Vendex, no saldo oficial de Google. 0 = sin límite local. "
                 + "Sin límites locales conserva la medición y respeta las pausas de Google (429). "
+                + "OpenAI usa la capacidad y medición Vendex, pero no aparece en estas cuotas por modelo. "
                 + "TPM usa una estimación conservadora de entrada por bytes UTF-8. RPD reinicia a medianoche de Los Ángeles.");
         nota.setWrapText(true);
         Hyperlink google = new Hyperlink("Ver cuotas oficiales: " + URL_CUOTAS);

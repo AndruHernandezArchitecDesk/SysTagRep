@@ -123,7 +123,7 @@ public class VendexiConsumoService {
             c.setModelo(modelo);
             c.setTokensEntrada(Math.max(0, tokensEntrada));
             c.setTokensSalida(Math.max(0, tokensSalida));
-            c.setCostoEstimado(VendexiConfig.estimarCosto(c.getTokensEntrada(), c.getTokensSalida()));
+            c.setCostoEstimado(VendexiConfig.estimarCosto(modelo, c.getTokensEntrada(), c.getTokensSalida()));
             dao.insertar(c);
         } catch (Exception e) {
             LOGGER.log(Level.FINE, "No se pudo registrar consumo (best-effort)", e);

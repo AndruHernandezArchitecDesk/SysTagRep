@@ -3,6 +3,8 @@ package com.vendex.chatbot;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vendex.config.GeminiConfig;
+import com.vendex.config.OpenAIConfig;
+import com.vendex.config.VetxiProviderConfig;
 
 import java.math.BigDecimal;
 import java.net.URI;
@@ -14,8 +16,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Chatbot con sugerencia IA.
- * - Si hay GEMINI_API_KEY (env var o ~/.vendex/gemini.properties), usa Gemini para:
+ * Chatbot de Vetxi con proveedor seleccionable (Gemini u OpenAI).
+ * - Usa el proveedor activo para:
  *   1) extraer + sugerir repuesto (síntomas -> "pastilla freno" para "ruido al frenar")
  *   2) buscar ese término en inventario.descripcion (ILIKE)
  *   3) redactar respuesta amable sin inventar stock
@@ -89,7 +91,7 @@ public class GeminiChatbotService {
     }
 
     private void actualizarEstadoInicial() {
-        String k = GeminiConfig.obtenerApiKey();
+        String k = VetxiProviderConfig.obtenerApiKey();
         estado = (k == null || k.isBlank()) ? EstadoIA.SIN_API_KEY : EstadoIA.IA_ACTIVA;
     }
 
@@ -306,12 +308,31 @@ public class GeminiChatbotService {
                    com.vendex.service.VendexiConsumoService.mensajeCapacidadAgotada() + "\n\n" +
                    "Búsqueda local en inventario:\n" + preguntarSoloLocal(textoUsuario, vehMarca, vehModelo, vehAnio), estado, true);
         }
-        String apiKey = GeminiConfig.obtenerApiKey();
-        boolean tieneGemini = apiKey != null && !apiKey.isBlank();
-        if (!tieneGemini) {
+        VetxiProviderConfig.Provider proveedor = VetxiProviderConfig.getProvider();
+        String apiKey = proveedor == VetxiProviderConfig.Provider.OPENAI
+                ? OpenAIConfig.obtenerApiKey() : GeminiConfig.obtenerApiKey();
+        if (apiKey == null || apiKey.isBlank()) {
             estado = EstadoIA.SIN_API_KEY;
-            ultimoError = "Sin API key: configura en Ayuda > Configurar IA o env GEMINI_API_KEY";
+            ultimoError = "Sin API key de " + VetxiProviderConfig.nombreProveedor()
+                    + ": configura el proveedor desde Ayuda > Configurar IA";
             return new RespuestaChat(prefijoSinIA(EstadoIA.SIN_API_KEY) + preguntarSoloLocal(textoUsuario, vehMarca, vehModelo, vehAnio), estado, true);
+        }
+        if (proveedor == VetxiProviderConfig.Provider.OPENAI) {
+            try {
+                com.vendex.service.OpenAIService openAI = new com.vendex.service.OpenAIService();
+                RespuestaChat r = procesarConModelo(textoUsuario, vehMarca, vehModelo, vehAnio,
+                        prompt -> prompt.contains("\"accion\"")
+                                ? openAI.completarJson(prompt, "chat.clasificacion", apiKey)
+                                : openAI.completar(prompt, "chat.redaccion", apiKey));
+                estado = EstadoIA.IA_ACTIVA;
+                ultimoError = "";
+                return r;
+            } catch (Exception e) {
+                estado = estadoErrorProveedor(e);
+                ultimoError = e.getMessage();
+                LOGGER.log(Level.WARNING, "OpenAI falló (" + estado + "): " + e.getMessage());
+                return new RespuestaChat(prefijoSinIA(estado) + preguntarSoloLocal(textoUsuario, vehMarca, vehModelo, vehAnio), estado, true);
+            }
         }
         try {
             RespuestaChat r = preguntarConGeminiRespuesta(textoUsuario, apiKey, vehMarca, vehModelo, vehAnio);
@@ -344,12 +365,9 @@ public class GeminiChatbotService {
         return switch (e) {
             case SIN_API_KEY -> "⚠️ sin IA — no hay API key configurada\n";
             case SIN_IA_TOKENS -> "⚠️ IA limitada — revisar cuotas y capacidad\n";
-            case SIN_IA_SERVIDOR -> {
-                if (ultimoError != null && ultimoError.contains("404")) yield "⚠️ sin IA — modelo no disponible (404)\n";
-                yield "⚠️ sin IA — servidor Gemini no disponible\n";
-            }
+            case SIN_IA_SERVIDOR -> "⚠️ sin IA — servidor " + VetxiProviderConfig.nombreProveedor() + " no disponible\n";
             case SIN_IA_CONEXION -> "⚠️ sin IA — sin conexión/timeout\n";
-            case SIN_IA_KEY_INVALIDA -> "⚠️ sin IA — API key inválida (403)\n";
+            case SIN_IA_KEY_INVALIDA -> "⚠️ sin IA — API key de " + VetxiProviderConfig.nombreProveedor() + " inválida\n";
             default -> "⚠️ sin IA\n";
         };
     }
@@ -367,8 +385,17 @@ public class GeminiChatbotService {
     }
 
     RespuestaChat preguntarConGeminiRespuesta(String texto, String apiKey, String vehMarca, String vehModelo, Integer vehAnio) throws Exception {
+        return procesarConModelo(texto, vehMarca, vehModelo, vehAnio,
+                prompt -> llamarGemini(prompt, apiKey));
+    }
+
+    @FunctionalInterface
+    private interface Completador { String completar(String prompt) throws Exception; }
+
+    private RespuestaChat procesarConModelo(String texto, String vehMarca, String vehModelo, Integer vehAnio,
+                                           Completador completador) throws Exception {
         // Paso 1: clasificar la intención + extraer parámetros (un solo JSON)
-        String json = llamarGemini(promptClasificacion(texto), apiKey);
+        String json = completador.completar(promptClasificacion(texto));
 
         Clasificacion c = parsearClasificacion(json);
         if (c == null) {
@@ -400,14 +427,12 @@ public class GeminiChatbotService {
         // Paso 3: redacción breve con IA (best-effort, no invalida los datos locales)
         try {
             String promptRespuesta = promptRedaccion(c, texto, respuestaLocal, rol);
-            String redaccion = llamarGemini(promptRespuesta, apiKey);
+            String redaccion = completador.completar(promptRespuesta);
             if (redaccion != null && !redaccion.isBlank() && redaccion.length() < 700) {
                 return new RespuestaChat(redaccion.trim(), EstadoIA.IA_ACTIVA, false, rol, java.util.List.of());
             }
-        } catch (GeminiException ge) {
-            LOGGER.log(Level.FINE, "Redacción Gemini falló (se usa respuesta local): " + ge.getMessage());
         } catch (Exception e) {
-            LOGGER.log(Level.FINE, "Fallo redacción Gemini", e);
+            LOGGER.log(Level.FINE, "Fallo redacción IA (se usa respuesta local)", e);
         }
         if (respuestaLocal.isBlank()) {
             // GENERAL sin redacción posible: ofrecer las capacidades reales del agente
@@ -415,6 +440,14 @@ public class GeminiChatbotService {
                    "saldos por cobrar y rentabilidad. Escribe tu consulta.", EstadoIA.IA_ACTIVA, false);
         }
         return new RespuestaChat(respuestaLocal, EstadoIA.IA_ACTIVA, false, rol, java.util.List.of());
+    }
+
+    private static EstadoIA estadoErrorProveedor(Exception error) {
+        String mensaje = error == null || error.getMessage() == null ? "" : error.getMessage();
+        if (mensaje.contains("HTTP 429")) return EstadoIA.SIN_IA_TOKENS;
+        if (mensaje.contains("HTTP 401") || mensaje.contains("HTTP 403")) return EstadoIA.SIN_IA_KEY_INVALIDA;
+        if (mensaje.matches("(?s).*HTTP 5\\d\\d.*")) return EstadoIA.SIN_IA_SERVIDOR;
+        return EstadoIA.SIN_IA_CONEXION;
     }
 
     private String promptClasificacion(String texto) {
