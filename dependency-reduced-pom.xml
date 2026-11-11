@@ -33,6 +33,9 @@
               <transformers>
                 <transformer>
                   <mainClass>com.vendex.Launcher</mainClass>
+                  <manifestEntries>
+                    <Multi-Release>true</Multi-Release>
+                  </manifestEntries>
                 </transformer>
                 <transformer />
               </transformers>
@@ -41,7 +44,7 @@
                   <artifact>*:*</artifact>
                   <excludes>
                     <exclude>module-info.class</exclude>
-                    <exclude>META-INF/versions/**</exclude>
+                    <exclude>META-INF/versions/**/module-info.class</exclude>
                     <exclude>META-INF/*.SF</exclude>
                     <exclude>META-INF/*.DSA</exclude>
                     <exclude>META-INF/*.RSA</exclude>

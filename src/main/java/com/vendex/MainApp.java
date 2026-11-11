@@ -25,6 +25,12 @@ import javafx.stage.Stage;
 public class MainApp extends Application {
     @Override
     public void start(Stage stage) throws Exception {
+        System.out.println();
+        System.out.println("========================================");
+        System.out.println("CODIGO DE MAQUINA PARA COPIAR:");
+        System.out.println(LicenseManager.getMachineCode());
+        System.out.println("========================================");
+        System.out.flush();
         cargarFuentes();
         // Instalador producción SIN BD: el MSI no crea PostgreSQL. El wizard solo conecta
         // a la BD existente (Host/IP + puerto + BD + usuario + clave) con prueba obligatoria.
