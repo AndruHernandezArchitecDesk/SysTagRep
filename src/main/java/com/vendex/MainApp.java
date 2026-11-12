@@ -114,6 +114,8 @@ public class MainApp extends Application {
             }
         }
 
+        avisarLicenciaPorVencer(stage);
+
         FXMLLoader loginLoader = new FXMLLoader(getClass().getResource("/view/LoginView.fxml"));
         loginLoader.setControllerFactory(controllerFactory);
         Parent root = loginLoader.load();
@@ -125,6 +127,21 @@ public class MainApp extends Application {
         stage.setScene(scene);
         com.vendex.util.AmbientEffectManager.attach(scene);
         stage.show();
+    }
+
+    private void avisarLicenciaPorVencer(Stage owner) {
+        LicenseManager.LicenseInfo licencia = LicenseManager.getLicenseInfo();
+        java.util.OptionalLong dias = com.vendex.util.LicenseExpiryAlert.diasRestantes(
+                licencia, java.time.LocalDate.now());
+        if (dias.isEmpty()) return;
+
+        javafx.scene.control.Alert alerta = new javafx.scene.control.Alert(
+                javafx.scene.control.Alert.AlertType.WARNING);
+        alerta.initOwner(owner);
+        alerta.setTitle("Licencia próxima a vencer");
+        alerta.setHeaderText(dias.getAsLong() == 0 ? "La licencia vence hoy" : "Renueva la licencia de Vendex");
+        alerta.setContentText(com.vendex.util.LicenseExpiryAlert.mensaje(licencia, dias.getAsLong()));
+        alerta.showAndWait();
     }
 
     private boolean licenciaValida(boolean esRemota) {

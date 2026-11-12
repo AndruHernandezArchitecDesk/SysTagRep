@@ -701,6 +701,9 @@ public class NotaVentaController implements Initializable, DocumentoVendexi {
 
     private void cargarLogo() {
         if (imgLogo != null) {
+            // Mi Empresa puede haberse guardado desde la última vez que se abrió esta vista.
+            // Volver a consultar la configuración evita mostrar el logo anterior en la proforma.
+            LogoManager.recargar();
             imgLogo.imageProperty().bind(LogoManager.logoProperty());
         }
     }

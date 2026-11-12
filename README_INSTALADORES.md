@@ -47,6 +47,7 @@ Pulsa **Probar conexión**, espera el ✓ verde y luego **Guardar**. La config q
 ## 5. Licencia y chatbot IA
 
 * **Licencia:** el **servidor** (`localhost`) usa licencia local. Cada **cliente remoto** requiere una licencia v2 **CENTRAL** registrada en `licencia_emitida` y no revocada; si no puede consultar la BD central, el arranque se bloquea. Pantalla Activación → pegar clave con guiones (`XXXXX-XXXXX-XXXXX-XXXXX-YYYYMMDD`, vence en la fecha final). Para emitir y registrar: `java -cp Vendex-2.0-SNAPSHOT.jar com.vendex.util.LicenseGenerator <machine-code> vitalicia --central --ia --registrar-central`. Si el host no apunta a la BD central (p. ej. desarrollo con `dbVendex`), agrega `--db-url=jdbc:postgresql://192.168.1.4:5432/dbTag --db-user=postgres` y define `DB_PASSWORD` con la clave de esa BD.
+* **Aviso de vencimiento:** al arrancar, una licencia válida con vencimiento dentro de los próximos 10 días muestra una alerta; las licencias vitalicias no generan aviso.
 * **IA/Vetxi:** menú lateral → **Configurar IA** → elige Gemini o OpenAI/ChatGPT, pega la API key y guarda. La key queda cifrada en el perfil local; guardar una key de proveedor lo selecciona para Vetxi. NVIDIA se mantiene como proveedor independiente de generación de código. Sin key válida, Vetxi conserva la búsqueda local de inventario.
 
 ## 6. Fabricar los artefactos (máquina de desarrollo)
