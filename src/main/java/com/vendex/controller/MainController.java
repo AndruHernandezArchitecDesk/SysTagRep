@@ -259,6 +259,11 @@ public class MainController implements Initializable {
     }
 
     @FXML
+    private void irMarcaAgua() {
+        cargarVista("/view/MarcaAguaView.fxml");
+    }
+
+    @FXML
     private void irCodigos() {
         cargarVista("/view/CodigoView.fxml");
     }
@@ -984,7 +989,7 @@ public class MainController implements Initializable {
             case "/view/RetencionView.fxml" -> "RETENCION_EMITIR";
             case "/view/CajaView.fxml" -> "CAJA_ABRIR";
             case "/view/InventarioView.fxml", "/view/GestionStockView.fxml", "/view/UbicacionPercheroView.fxml" -> "INVENTARIO_AJUSTAR";
-            case "/view/UsuariosView.fxml", "/view/GestionRolesView.fxml" -> "USUARIO_GESTIONAR";
+            case "/view/UsuariosView.fxml", "/view/GestionRolesView.fxml", "/view/MarcaAguaView.fxml" -> "USUARIO_GESTIONAR";
             case "/view/ConfiguracionEmailView.fxml", "/view/FirmaView.fxml", "/view/NumeracionView.fxml", "/view/BackupView.fxml" -> "CONFIGURACION_EMAIL_EDITAR";
             case "/view/ConsumoIaView.fxml" -> "USUARIO_GESTIONAR";
             case "/view/AnalisisIaView.fxml" -> "REPORTE_VER";

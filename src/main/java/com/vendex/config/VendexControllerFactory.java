@@ -55,6 +55,7 @@ public class VendexControllerFactory implements Callback<Class<?>, Object> {
             if (type == LoginController.class) return new LoginController(ctx);
             if (type == MainController.class) return new MainController(ctx);
             if (type == MarcaController.class) return new MarcaController(ctx);
+            if (type == MarcaAguaController.class) return new MarcaAguaController(ctx);
             if (type == NotaCreditoController.class) return new NotaCreditoController(ctx);
             if (type == NotaDebitoController.class) return new NotaDebitoController(ctx);
             if (type == NotaVentaController.class) return new NotaVentaController(ctx);

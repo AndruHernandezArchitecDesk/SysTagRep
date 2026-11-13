@@ -277,6 +277,10 @@
                             </graphic>
                             <tooltip><Tooltip text="Datos de la empresa, RUC, obligado a llevar contabilidad, agente de retención y logo"/></tooltip>
                         </Button>
+                        <Button text="Marca de agua PDF" onAction="#irMarcaAgua" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
+                            <graphic><FontIcon iconLiteral="fas-stamp" iconSize="14"/></graphic>
+                            <tooltip><Tooltip text="Activa y configura el logo como marca de agua en facturas y proformas PDF"/></tooltip>
+                        </Button>
                         <Button text="Clientes" onAction="#irClientes" styleClass="nav-item" style="-fx-alignment: CENTER_LEFT; -fx-padding: 6 12 6 24;">
                             <graphic>
                                 <FontIcon iconLiteral="fas-user-friends" iconSize="14"/>

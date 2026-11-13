@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.vendex.controller.MarcaAguaController"
+            prefWidth="900" prefHeight="650" style="-fx-padding: 16;">
+    <top>
+        <VBox spacing="8">
+            <Label text="Marca de agua para PDF" styleClass="titulo">
+                <graphic><FontIcon iconLiteral="fas-stamp" styleClass="titulo-icono"/></graphic>
+            </Label>
+            <Label text="Configuración compartida: se aplicará en todos los equipos conectados a esta base de datos."
+                   styleClass="text-secondary" wrapText="true"/>
+        </VBox>
+    </top>
+    <center>
+        <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;">
+            <content>
+                <VBox spacing="16" style="-fx-padding: 12 2 12 2;">
+                    <TitledPane text="Dónde aplicar" collapsible="false" styleClass="section-card">
+                        <content>
+                            <VBox spacing="8" style="-fx-padding: 12;">
+                                <CheckBox fx:id="chkFactura" text="Facturas de venta (PDF/RIDE)"/>
+                                <CheckBox fx:id="chkProforma" text="Proformas (PDF)"/>
+                            </VBox>
+                        </content>
+                    </TitledPane>
+                    <TitledPane text="Diseño" collapsible="false" styleClass="section-card">
+                        <content>
+                            <GridPane hgap="12" vgap="12" style="-fx-padding: 12;">
+                                <Label text="Distribución:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                                <ComboBox fx:id="cmbDistribucion" maxWidth="Infinity"
+                                          GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                                <Label text="Opacidad:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                                <HBox spacing="10" alignment="CENTER_LEFT" GridPane.rowIndex="1" GridPane.columnIndex="1">
+                                    <Slider fx:id="sldOpacidad" min="0.05" max="0.40" value="0.12"
+                                            showTickMarks="true" showTickLabels="true" majorTickUnit="0.10"
+                                            blockIncrement="0.01" HBox.hgrow="ALWAYS"/>
+                                    <Label fx:id="lblOpacidad" minWidth="45"/>
+                                </HBox>
+                                <Label text="La opacidad baja mantiene legibles los datos del comprobante."
+                                       styleClass="text-secondary" wrapText="true"
+                                       GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+                            </GridPane>
+                        </content>
+                    </TitledPane>
+                    <TitledPane text="Logo compartido" collapsible="false" styleClass="section-card">
+                        <content>
+                            <HBox spacing="18" alignment="CENTER_LEFT" style="-fx-padding: 12;">
+                                <ImageView fx:id="imgLogo" fitWidth="220" fitHeight="120" preserveRatio="true" smooth="true"/>
+                                <VBox spacing="10" HBox.hgrow="ALWAYS">
+                                    <Label fx:id="lblLogoEstado" wrapText="true"/>
+                                    <Button fx:id="btnActualizarLogo" text="Actualizar desde Mi Empresa"
+                                            onAction="#seleccionarLogoEmpresa" styleClass="btn-orden"/>
+                                    <Label text="El logo se guarda en la base compartida junto a esta configuración."
+                                           styleClass="text-secondary" wrapText="true"/>
+                                </VBox>
+                            </HBox>
+                        </content>
+                    </TitledPane>
+                    <TitledPane text="Vista previa" collapsible="false" styleClass="section-card">
+                        <content>
+                            <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 12;">
+                                <Label text="Documento:"/>
+                                <ComboBox fx:id="cmbVistaPrevia" prefWidth="190"/>
+                                <Button fx:id="btnVistaPrevia" text="Generar vista previa PDF"
+                                        styleClass="btn-orden"/>
+                            </HBox>
+                        </content>
+                    </TitledPane>
+                    <Label fx:id="lblEstado" wrapText="true"/>
+                </VBox>
+            </content>
+        </ScrollPane>
+    </center>
+    <bottom>
+        <HBox alignment="CENTER_RIGHT" spacing="10" style="-fx-padding: 12 0 0 0;">
+            <Button fx:id="btnGuardar" text="GUARDAR CONFIGURACIÓN" styleClass="btn-guardar">
+                <graphic><FontIcon iconLiteral="fas-save" iconSize="15"/></graphic>
+            </Button>
+        </HBox>
+    </bottom>
+</BorderPane>

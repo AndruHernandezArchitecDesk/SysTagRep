@@ -237,6 +237,32 @@ class FxmlSmokeTest {
     }
 
     @Test
+    @Order(25)
+    void cargaConfiguracionMarcaAguaCompartida() throws Exception {
+        Object controller = cargar("/view/MarcaAguaView.fxml");
+        assertNotNull(controller, "controller MarcaAguaController");
+        for (String field : new String[]{"chkFactura", "chkProforma", "cmbDistribucion", "sldOpacidad",
+                "imgLogo", "btnActualizarLogo", "btnVistaPrevia", "btnGuardar"}) {
+            java.lang.reflect.Field f = controller.getClass().getDeclaredField(field);
+            f.setAccessible(true);
+            assertNotNull(f.get(controller), field + " cableado desde FXML");
+        }
+    }
+
+    @Test
+    @Order(24)
+    void cargaMarcaAguaViewConOpcionesCompartidas() throws Exception {
+        Object controller = cargar("/view/MarcaAguaView.fxml");
+        assertNotNull(controller, "controller MarcaAguaController");
+        for (String campo : new String[]{"chkFactura", "chkProforma", "cmbDistribucion",
+                "sldOpacidad", "imgLogo", "btnActualizarLogo", "btnVistaPrevia", "btnGuardar"}) {
+            java.lang.reflect.Field f = controller.getClass().getDeclaredField(campo);
+            f.setAccessible(true);
+            assertNotNull(f.get(controller), campo + " cableado desde FXML");
+        }
+    }
+
+    @Test
     @Order(22)
     void vistaPreviaAmbientalReutilizaYEliminaUnaSolaCapa() throws Exception {
         AtomicReference<Throwable> err = new AtomicReference<>();

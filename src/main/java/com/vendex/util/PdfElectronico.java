@@ -59,7 +59,8 @@ public class PdfElectronico {
 
         try {
             Document doc = new Document(PageSize.A4, 24, 24, 24, 24);
-            PdfWriter.getInstance(doc, new FileOutputStream(rutaPdf));
+            PdfWriter writer = PdfWriter.getInstance(doc, new FileOutputStream(rutaPdf));
+            MarcaAguaPDF.configurar(writer, MarcaAguaPDF.TipoDocumento.FACTURA);
             doc.open();
 
             // === ENCABEZADO: 2 COLUMNAS ===

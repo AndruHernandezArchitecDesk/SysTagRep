@@ -46,7 +46,8 @@ public class NotaVentaPDF {
         Document doc = new Document(new Rectangle(PageSize.A4.getWidth(), PageSize.A4.getHeight() / 2), 15, 15, 10, 10);
 
         try {
-            PdfWriter.getInstance(doc, new FileOutputStream(rutaArchivo));
+            PdfWriter writer = PdfWriter.getInstance(doc, new FileOutputStream(rutaArchivo));
+            MarcaAguaPDF.configurar(writer, MarcaAguaPDF.TipoDocumento.PROFORMA);
             doc.open();
 
             Font fontTitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 13);

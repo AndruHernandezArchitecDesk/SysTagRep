@@ -395,6 +395,36 @@ public class DatabaseConnection {
         } catch (SQLException e) { logIfPermissionDenied(e, "ensureConfiguracionEmailSchema seed conexión"); }
     }
 
+    /** Configuración única y compartida de marca de agua para facturas y proformas. */
+    public static void ensureMarcaAguaPDFSchema() {
+        try (Connection con = getConnection(); java.sql.Statement st = con.createStatement()) {
+            boolean hsql = con.getMetaData().getDatabaseProductName().toLowerCase(java.util.Locale.ROOT).contains("hsql");
+            String blobType = hsql ? "VARBINARY(5242880)" : "BYTEA";
+            String idCheck = hsql ? "" : " CHECK (id=1)";
+            String opacityCheck = hsql ? "" : " CHECK (opacidad >= 0.05 AND opacidad <= 0.40)";
+            st.execute("CREATE TABLE IF NOT EXISTS configuracion_marca_agua ("
+                    + "id SMALLINT PRIMARY KEY" + idCheck + ", "
+                    + "factura_activa BOOLEAN NOT NULL DEFAULT FALSE, "
+                    + "proforma_activa BOOLEAN NOT NULL DEFAULT FALSE, "
+                    + "distribucion VARCHAR(16) NOT NULL DEFAULT 'CENTRO', "
+                    + "opacidad DECIMAL(4,3) NOT NULL DEFAULT 0.12" + opacityCheck + ", "
+                    + "logo_bytes " + blobType + ", actualizado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)");
+            try (java.sql.ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM configuracion_marca_agua WHERE id=1")) {
+                if (rs.next() && rs.getInt(1) == 0) {
+                    st.execute("INSERT INTO configuracion_marca_agua "
+                            + "(id,factura_activa,proforma_activa,distribucion,opacidad,logo_bytes) "
+                            + "VALUES (1,FALSE,FALSE,'CENTRO',0.12,NULL)");
+                }
+            }
+            if (!hsql) {
+                try { st.execute("GRANT SELECT, INSERT, UPDATE ON TABLE configuracion_marca_agua TO app_vendex"); }
+                catch (SQLException e) { logIfPermissionDenied(e, "grant configuracion_marca_agua"); }
+            }
+        } catch (SQLException e) {
+            LOG.log(Level.WARNING, "No se pudo asegurar configuracion_marca_agua", e);
+        }
+    }
+
     public static void ensureLoginBruteForceSchema() {
         String[] ddls = new String[]{
             "ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS intentos_fallidos INTEGER NOT NULL DEFAULT 0",

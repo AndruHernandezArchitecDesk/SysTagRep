@@ -106,6 +106,7 @@
 |---|---|---|---|
 | Ayuda > Asistente de Repuestos | Chat / `#irAsistenteRepuestos` | Chatbot/Asistente IA para consulta de repuestos. | Asistente IA |
 | Ayuda > Configurar IA (Gemini/OpenAI) | — / `#irConfigurarIA` | Configura Gemini u OpenAI para Vetxi; NVIDIA queda para generación de código. | Configurar IA |
+| Administración > Marca de agua PDF | — / `#irMarcaAgua` | Activa y configura la marca de agua compartida en facturas y proformas PDF. | Marca de agua PDF |
 | Ayuda > Acerca de | — / `#acercaDe` | Información de la aplicación, versión y créditos. | Acerca de |
 
 ### Cuenta

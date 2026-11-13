@@ -63,6 +63,7 @@ public class MainApp extends Application {
         DatabaseConnection.ensureRetencionSchema();
         DatabaseConnection.ensureCertificadoEstadoSchema();
         DatabaseConnection.ensureConfiguracionEmailSchema();
+        DatabaseConnection.ensureMarcaAguaPDFSchema();
         DatabaseConnection.ensureLoginBruteForceSchema();
         DatabaseConnection.ensurePermisosGranularesSchema();
         DatabaseConnection.ensureComprobantePendienteSriSchema();
