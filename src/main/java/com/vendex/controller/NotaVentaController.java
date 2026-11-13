@@ -726,6 +726,18 @@ public class NotaVentaController implements Initializable, DocumentoVendexi {
         lblNumNotaVenta.setText(sec.getProximoCodigo());
     }
 
+    /** El cierre descarta el formulario; no hay guardado de borradores. */
+    public boolean tieneCambiosPendientes() {
+        if (itemsDetalle != null && !itemsDetalle.isEmpty()) return true;
+        if (cmbCliente != null && cmbCliente.getValue() != null) return true;
+        return contieneTexto(txtNombre) || contieneTexto(txtIdentificacion) || contieneTexto(txtDireccion)
+                || contieneTexto(txtCorreo) || contieneTexto(txtTelefono);
+    }
+
+    private static boolean contieneTexto(TextField campo) {
+        return campo != null && campo.getText() != null && !campo.getText().isBlank();
+    }
+
     @FXML
     private void guardar() {
         try {

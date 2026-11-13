@@ -608,6 +608,18 @@ public class FacturaController implements Initializable, DocumentoVendexi {
         lblNumFactura.setText(sec.getProximoCodigo());
     }
 
+    /** El cierre descarta el formulario; no hay guardado de borradores. */
+    public boolean tieneCambiosPendientes() {
+        if (itemsDetalle != null && !itemsDetalle.isEmpty()) return true;
+        if (cmbCliente != null && cmbCliente.getValue() != null) return true;
+        return contieneTexto(txtNombre) || contieneTexto(txtIdentificacion) || contieneTexto(txtDireccion)
+                || contieneTexto(txtCorreo) || contieneTexto(txtTelefono);
+    }
+
+    private static boolean contieneTexto(TextField campo) {
+        return campo != null && campo.getText() != null && !campo.getText().isBlank();
+    }
+
     @FXML
     private void guardar() {
         try {
@@ -615,9 +627,8 @@ public class FacturaController implements Initializable, DocumentoVendexi {
 
             String codigo = lblNumFactura.getText();
             if (secuenciaDAO.existeCodigoFactura(codigo)) {
-                new Alert(Alert.AlertType.ERROR, "El número " + codigo + " ya existe en la base de datos, no se puede repetir.").showAndWait();
                 obtenerNumFactura();
-                return;
+                codigo = lblNumFactura.getText();
             }
 
             String ambienteSri = cmbAmbiente.getValue() != null ? cmbAmbiente.getValue() : AppConstants.AMBIENTE_PRUEBAS;
@@ -749,8 +760,7 @@ public class FacturaController implements Initializable, DocumentoVendexi {
             LocalOperationQueue queue = new LocalOperationQueue();
             queue.encolar(op);
 
-            String codigo = lblNumFactura.getText();
-            OfflineUI.mostrarAlertaEncoladaMensaje("Modo OFFLINE\n\nFactura " + codigo + " encolada para sincronizar cuando haya conexión.\n\nLa factura se guardará localmente y se enviará al backend al reconectar.");
+            OfflineUI.mostrarAlertaEncoladaMensaje("Modo OFFLINE\n\nFactura encolada para sincronizar cuando haya conexión.\nEl número definitivo se asignará al registrarla en el servidor.");
 
             itemsDetalle.clear();
             tblDetalle.refresh();

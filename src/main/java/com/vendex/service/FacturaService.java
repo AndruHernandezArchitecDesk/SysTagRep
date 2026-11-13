@@ -172,7 +172,9 @@ public class FacturaService {
                 fechaEmisionFE = ahora.format(DateTimeFormatter.ofPattern(AppConstants.PATRON_FECHA_EMISION));
                 numComprobante = codEstab + "-" + codPtoEmi + "-" + String.format(AppConstants.PATRON_NUMERO_COMPROBANTE, secuencialFE);
 
-                String codigoRegistro = codigo == null || codigo.isBlank() ? numComprobante : codigo;
+                // El código mostrado por el formulario es solo una previsualización. Otra ventana
+                // puede haber consumido ese secuencial; el definitivo sale de esta transacción.
+                String codigoRegistro = numComprobante;
                 FacturaRegistro fr = new FacturaRegistro(empresaId, clienteId, ahora, codigoRegistro, formaPago, sub, ivaCalc, descCalc, totCalc, claveAcceso, numComprobante, ambienteSri);
                 fr.setEstadoSri(AppConstants.ESTADO_PENDIENTE);
                 fr.setSucursalId(sucursalId);

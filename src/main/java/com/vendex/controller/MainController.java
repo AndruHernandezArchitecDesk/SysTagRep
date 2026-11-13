@@ -52,7 +52,10 @@ import org.kordamp.ikonli.javafx.FontIcon;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.prefs.Preferences;
 import com.vendex.dao.LogDAOPostgres;
@@ -121,6 +124,12 @@ public class MainController implements Initializable {
     private final AlertaService alertaService;
 
     private Object controladorVistaActual;
+    private static final int MAX_VENTANAS_POR_VISTA = 2;
+    private final Map<String, List<Stage>> ventanasPorVista = new HashMap<>();
+    private final Map<Stage, Object> controladoresVentana = new IdentityHashMap<>();
+    private final Map<Stage, Integer> numeroVentana = new IdentityHashMap<>();
+    private Stage ventanaMasReciente;
+    private boolean cerrarVentanasPorSesion;
     private boolean sidebarExpandido = true;
     private static final String KEY_SIDEBAR = "sidebar.collapsed";
     private static final double SIDEBAR_ANCHO_ABIERTO = 220;
@@ -130,7 +139,8 @@ public class MainController implements Initializable {
     public void initialize(URL url, ResourceBundle rb) {
         mostrarUsuarioSesion();
         actualizarLogoEncabezado();
-        abrirDashboard1();
+        instalarCierreVentanaPrincipal();
+        cargarVistaPrincipal("/view/DashboardView.fxml");
         if (contenedor.getScene() != null) {
             ThemeManager.aplicarTemaGuardado(contenedor.getScene());
         }
@@ -148,7 +158,12 @@ public class MainController implements Initializable {
     }
 
     public void abrirDashboard1() {
-        cargarVista("/view/DashboardView.fxml");
+        cargarVistaPrincipal("/view/DashboardView.fxml");
+        Stage principal = ventanaPrincipal();
+        if (principal != null) {
+            principal.toFront();
+            principal.requestFocus();
+        }
     }
 
     public void abrirDashboard2() {
@@ -449,6 +464,8 @@ public class MainController implements Initializable {
     private void cerrarSesion() {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "¿Cerrar sesión?", ButtonType.YES, ButtonType.NO);
         if (confirm.showAndWait().orElse(ButtonType.NO) != ButtonType.YES) return;
+        if (!confirmarDescartarDocumentosAbiertos()) return;
+        cerrarVentanasAbiertas();
 
         LoginController.usuarioAutenticado = null;
         com.vendex.util.SesionActual.cerrar();
@@ -475,22 +492,7 @@ public class MainController implements Initializable {
 
     @FXML
     private void irHome() {
-        try {
-            if (controladorVistaActual instanceof AparienciaController apariencia)
-                apariencia.descartarVistaPrevia();
-            FXMLLoader homeLoader = new FXMLLoader(getClass().getResource("/view/MainView.fxml"));
-            VendexControllerFactory.aplicar(homeLoader);
-            Parent home = homeLoader.load();
-            Stage stage = (Stage) contenedor.getScene().getWindow();
-            com.vendex.util.AmbientEffectManager.detach(stage.getScene());
-            Scene scene = new Scene(home);
-            ThemeManager.aplicarTemaGuardado(scene);
-            stage.setScene(scene);
-            com.vendex.util.AmbientEffectManager.attach(scene);
-            controladorVistaActual = null;
-        } catch (IOException e) {
-            logDAO.guardar("MainController", "irHome", e.getMessage(), e);
-        }
+        cargarVistaPrincipal("/view/DashboardView.fxml");
     }
 
     private void actualizarLogoEncabezado() {
@@ -1000,53 +1002,244 @@ public class MainController implements Initializable {
             new Alert(Alert.AlertType.ERROR, "No tienes permiso para esta acción: " + ruta + "\nSolicita a un ADMINISTRADOR que te asigne el permiso.").showAndWait();
             return;
         }
+        List<Stage> abiertas = ventanasPorVista.computeIfAbsent(ruta, ignorada -> new ArrayList<>());
+        abiertas.removeIf(ventana -> !ventana.isShowing());
+        if (abiertas.size() >= MAX_VENTANAS_POR_VISTA) {
+            Stage existente = abiertas.get(abiertas.size() - 1);
+            Alert aviso = new Alert(Alert.AlertType.INFORMATION,
+                    "Ya hay " + MAX_VENTANAS_POR_VISTA + " ventanas abiertas de esta pantalla. "
+                            + "Se activó una de las existentes.", ButtonType.OK);
+            aviso.initOwner(ventanaPrincipal());
+            aviso.setHeaderText("Límite de ventanas alcanzado");
+            aviso.showAndWait();
+            enfocarVentana(existente, controladoresVentana.get(existente));
+            return;
+        }
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(ruta));
+            VendexControllerFactory.aplicar(loader);
+            Parent vista = loader.load();
+            Object controller = loader.getController();
+            conectarControladorVista(controller);
+            aplicarMayusculas(vista);
+            Stage ventana = new Stage();
+            Stage principal = ventanaPrincipal();
+            if (principal != null) ventana.initOwner(principal);
+            int numero = siguienteNumeroVentana(abiertas);
+            ventana.setTitle("Vendex - " + tituloVentana(ruta) + " (" + numero + ")");
+            ventana.getIcons().add(new Image(getClass().getResourceAsStream("/img/inventario.png")));
+            Scene scene = new Scene(vista, anchoInicial(vista), altoInicial(vista));
+            ThemeManager.aplicarTemaGuardado(scene);
+            ventana.setScene(scene);
+
+            controladoresVentana.put(ventana, controller);
+            numeroVentana.put(ventana, numero);
+            abiertas.add(ventana);
+            ventana.focusedProperty().addListener((obs, antes, enfocada) -> {
+                if (enfocada) enfocarVentana(ventana, controller);
+            });
+            ventana.setOnCloseRequest(event -> {
+                if (!cerrarVentanasPorSesion && !confirmarDescartar(controller, ventana)) event.consume();
+            });
+            ventana.setOnHidden(event -> quitarVentana(ruta, ventana));
+            ventana.show();
+            enfocarVentana(ventana, controller);
+        } catch (Exception e) {
+            abiertas.removeIf(ventana -> !ventana.isShowing());
+            mostrarErrorCargaVista(ruta, e);
+        }
+    }
+
+    /** La ventana principal conserva el dashboard y la navegación; los módulos se abren aparte. */
+    private void cargarVistaPrincipal(String ruta) {
+        if (!tienePermisoParaRuta(ruta)) {
+            new Alert(Alert.AlertType.ERROR, "No tienes permiso para esta acción: " + ruta
+                    + "\nSolicita a un ADMINISTRADOR que te asigne el permiso.").showAndWait();
+            return;
+        }
         try {
             if (controladorVistaActual instanceof AparienciaController apariencia)
                 apariencia.descartarVistaPrevia();
             FXMLLoader loader = new FXMLLoader(getClass().getResource(ruta));
             VendexControllerFactory.aplicar(loader);
             Parent vista = loader.load();
-            if (loader.getController() instanceof DashboardController dashboardController) {
-                dashboardController.setMainController(this);
-            } else if (loader.getController() instanceof Dashboard2Controller dashboard2Controller) {
-                dashboard2Controller.setMainController(this);
-            }
+            Object controller = loader.getController();
+            conectarControladorVista(controller);
             aplicarMayusculas(vista);
             contenedor.getChildren().setAll(vista);
-            controladorVistaActual = loader.getController();
+            controladorVistaActual = controller;
             if (asistenteController != null) {
-                asistenteController.setDocumentoActivo(loader.getController() instanceof DocumentoVendexi documento ? documento : null);
+                asistenteController.setDocumentoActivo(controller instanceof DocumentoVendexi documento ? documento : null);
             }
         } catch (Exception e) {
-            java.io.StringWriter sw = new java.io.StringWriter();
-            e.printStackTrace(new java.io.PrintWriter(sw));
-            String detalle = sw.toString();
-            String rutaFinal = ruta;
-            logDAO.guardar("MainController", "cargarVista", detalle, e);
-            String rutaArchivo;
-            try {
-                java.nio.file.Path dir = obtenerDirectorioBase().resolve("vendex-errors");
-                java.nio.file.Files.createDirectories(dir);
-                String timestamp = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
-                rutaArchivo = dir.resolve("error-" + timestamp + ".txt").toString();
-                java.nio.file.Files.writeString(java.nio.file.Paths.get(rutaArchivo), detalle);
-            } catch (Exception ex) {
-                rutaArchivo = null;
-            }
-            String finalRutaArchivo = rutaArchivo;
-            javafx.application.Platform.runLater(() -> {
-                String mensaje = "No se pudo abrir: " + rutaFinal;
-                if (finalRutaArchivo != null) {
-                    mensaje += "\n\nDetalle guardado en:\n" + finalRutaArchivo;
+            mostrarErrorCargaVista(ruta, e);
+        }
+    }
+
+    private void conectarControladorVista(Object controller) {
+        if (controller instanceof DashboardController dashboard) dashboard.setMainController(this);
+        else if (controller instanceof Dashboard2Controller dashboard2) dashboard2.setMainController(this);
+    }
+
+    private Stage ventanaPrincipal() {
+        return contenedor != null && contenedor.getScene() != null
+                && contenedor.getScene().getWindow() instanceof Stage stage ? stage : null;
+    }
+
+    private void instalarCierreVentanaPrincipal() {
+        javafx.application.Platform.runLater(() -> {
+            Stage principal = ventanaPrincipal();
+            if (principal == null) return;
+            principal.setOnCloseRequest(event -> {
+                if (!confirmarDescartarDocumentosAbiertos()) event.consume();
+            });
+            principal.focusedProperty().addListener((obs, antes, enfocada) -> {
+                if (enfocada && asistenteController != null) {
+                    asistenteController.setDocumentoActivo(controladorVistaActual instanceof DocumentoVendexi documento
+                            ? documento : null);
                 }
-                 javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
-                 alert.setTitle("Error al cargar vista");
-                 alert.setHeaderText(mensaje);
-                 alert.setContentText("Revisa el archivo de detalle para copiar el error completo.");
-                 alert.showAndWait();
-             });
-         }
-     }
+            });
+        });
+    }
+
+    private int siguienteNumeroVentana(List<Stage> abiertas) {
+        for (int candidato = 1; candidato <= MAX_VENTANAS_POR_VISTA; candidato++) {
+            final int numero = candidato;
+            if (abiertas.stream().noneMatch(ventana -> numeroVentana.getOrDefault(ventana, 0) == numero)) return candidato;
+        }
+        return abiertas.size() + 1;
+    }
+
+    private void enfocarVentana(Stage ventana, Object controller) {
+        if (ventana == null) return;
+        List<Stage> abiertas = ventanasPorVista.values().stream().filter(lista -> lista.contains(ventana))
+                .findFirst().orElse(null);
+        if (abiertas != null) {
+            abiertas.remove(ventana);
+            abiertas.add(ventana);
+        }
+        ventanaMasReciente = ventana;
+        ventana.toFront();
+        ventana.requestFocus();
+        if (asistenteController != null) {
+            asistenteController.setDocumentoActivo(controller instanceof DocumentoVendexi documento ? documento : null);
+        }
+    }
+
+    private void quitarVentana(String ruta, Stage ventana) {
+        List<Stage> abiertas = ventanasPorVista.get(ruta);
+        if (abiertas != null) {
+            abiertas.remove(ventana);
+            if (abiertas.isEmpty()) ventanasPorVista.remove(ruta);
+        }
+        controladoresVentana.remove(ventana);
+        numeroVentana.remove(ventana);
+        if (ventanaMasReciente == ventana) {
+            ventanaMasReciente = null;
+            if (asistenteController != null) asistenteController.setDocumentoActivo(null);
+        }
+    }
+
+    private boolean tieneCambiosPendientes(Object controller) {
+        if (controller instanceof FacturaController factura) return factura.tieneCambiosPendientes();
+        if (controller instanceof NotaVentaController proforma) return proforma.tieneCambiosPendientes();
+        return false;
+    }
+
+    private boolean confirmarDescartar(Object controller, Stage owner) {
+        if (!tieneCambiosPendientes(controller)) return true;
+        ButtonType descartar = new ButtonType("Cerrar y descartar", javafx.scene.control.ButtonBar.ButtonData.YES);
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
+                "Este documento tiene cambios sin registrar. Si lo cierras, se perderán.", descartar, ButtonType.CANCEL);
+        confirm.setTitle("Cambios pendientes");
+        confirm.setHeaderText("¿Cerrar este documento?");
+        if (owner != null) confirm.initOwner(owner);
+        return confirm.showAndWait().orElse(ButtonType.CANCEL) == descartar;
+    }
+
+    private boolean confirmarDescartarDocumentosAbiertos() {
+        long pendientes = controladoresVentana.values().stream().filter(this::tieneCambiosPendientes).count();
+        if (controladorVistaActual != null && tieneCambiosPendientes(controladorVistaActual)) pendientes++;
+        if (pendientes == 0) return true;
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
+                "Hay " + pendientes + " factura(s) o proforma(s) con cambios sin registrar. "
+                        + "Al cerrar sesión se perderán.",
+                new ButtonType("Cerrar y descartar", javafx.scene.control.ButtonBar.ButtonData.YES), ButtonType.CANCEL);
+        confirm.setTitle("Documentos pendientes");
+        confirm.setHeaderText("¿Cerrar sesión y descartar cambios?");
+        return confirm.showAndWait().orElse(ButtonType.CANCEL).getButtonData()
+                == javafx.scene.control.ButtonBar.ButtonData.YES;
+    }
+
+    private void cerrarVentanasAbiertas() {
+        cerrarVentanasPorSesion = true;
+        try {
+            for (List<Stage> abiertas : new ArrayList<>(ventanasPorVista.values())) {
+                for (Stage ventana : new ArrayList<>(abiertas)) ventana.close();
+            }
+            ventanasPorVista.clear();
+            controladoresVentana.clear();
+            numeroVentana.clear();
+            ventanaMasReciente = null;
+            if (asistenteController != null) asistenteController.setDocumentoActivo(null);
+        } finally {
+            cerrarVentanasPorSesion = false;
+        }
+    }
+
+    private static double anchoInicial(Parent vista) {
+        double ancho = vista.prefWidth(-1);
+        return Double.isFinite(ancho) && ancho >= 650 && ancho <= 1800 ? ancho : 1100;
+    }
+
+    private static double altoInicial(Parent vista) {
+        double alto = vista.prefHeight(-1);
+        return Double.isFinite(alto) && alto >= 450 && alto <= 1200 ? alto : 760;
+    }
+
+    private static String tituloVentana(String ruta) {
+        String archivo = ruta.substring(ruta.lastIndexOf('/') + 1).replace("View.fxml", "");
+        return switch (archivo) {
+            case "Factura" -> "Factura de venta";
+            case "NotaVenta" -> "Proforma";
+            case "IngresoMercaderia" -> "Ingreso de factura";
+            case "NotaCredito" -> "Nota de crédito";
+            case "NotaDebito" -> "Nota de débito";
+            case "GuiaRemision" -> "Guía de remisión";
+            case "Retencion" -> "Retención";
+            case "Cliente" -> "Clientes";
+            case "Proveedor" -> "Proveedores";
+            case "Dashboard2" -> "Dashboard 2";
+            default -> archivo.replaceAll("([a-z])([A-Z])", "$1 $2");
+        };
+    }
+
+    private void mostrarErrorCargaVista(String ruta, Exception e) {
+        java.io.StringWriter sw = new java.io.StringWriter();
+        e.printStackTrace(new java.io.PrintWriter(sw));
+        String detalle = sw.toString();
+        logDAO.guardar("MainController", "cargarVista", detalle, e);
+        String rutaArchivo;
+        try {
+            java.nio.file.Path dir = obtenerDirectorioBase().resolve("vendex-errors");
+            java.nio.file.Files.createDirectories(dir);
+            String timestamp = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
+            rutaArchivo = dir.resolve("error-" + timestamp + ".txt").toString();
+            java.nio.file.Files.writeString(java.nio.file.Paths.get(rutaArchivo), detalle);
+        } catch (Exception ex) {
+            rutaArchivo = null;
+        }
+        String finalRutaArchivo = rutaArchivo;
+        javafx.application.Platform.runLater(() -> {
+            String mensaje = "No se pudo abrir: " + ruta;
+            if (finalRutaArchivo != null) mensaje += "\n\nDetalle guardado en:\n" + finalRutaArchivo;
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Error al cargar vista");
+            alert.setHeaderText(mensaje);
+            alert.setContentText("Revisa el archivo de detalle para copiar el error completo.");
+            alert.showAndWait();
+        });
+    }
 
      private java.nio.file.Path obtenerDirectorioBase() {
          try {
