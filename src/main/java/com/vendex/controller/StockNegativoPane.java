@@ -6,6 +6,7 @@ import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.concurrent.Task;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.input.*;
 import javafx.scene.layout.*;
 import javafx.stage.Window;
 
@@ -14,6 +15,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -22,6 +24,8 @@ import java.util.logging.Logger;
 /** Panel de consulta independiente del formulario. No altera existencias ni precarga productos. */
 final class StockNegativoPane extends VBox {
     @FunctionalInterface interface Consulta { List<StockNegativoItem> listar(int sucursal) throws Exception; }
+    /** Formato de arrastre: entero con el id de inventario del producto de stock negativo. */
+    static final DataFormat FORMATO_ARRASTRE = new DataFormat("vendex/stock-negativo/producto");
     private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private static final Comparator<StockNegativoItem> ORDEN = Comparator.comparing(StockNegativoItem::fecha,
             Comparator.nullsLast(Comparator.reverseOrder())).thenComparing(Comparator.comparingInt(StockNegativoItem::id).reversed());
@@ -32,6 +36,7 @@ final class StockNegativoPane extends VBox {
     private final TableView<StockNegativoItem> tabla = new TableView<>();
     private final Label estado = new Label("Pendiente de actualizar");
     private final Button actualizar = new Button("Actualizar");
+    private IntConsumer accionAgregar;
     private Task<List<StockNegativoItem>> carga;
     private long version;
     private final Runnable stockConfirmado = this::actualizar;
@@ -78,6 +83,7 @@ final class StockNegativoPane extends VBox {
         tabla.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         tabla.setPlaceholder(new Label("Sin productos con stock negativo"));
         tabla.setMinHeight(100); VBox.setVgrow(tabla, Priority.ALWAYS);
+        configurarArrastreYMenu();
         getChildren().addAll(cabecera, criterio, tabla, estado);
         actualizar.setOnAction(e -> actualizar());
         sceneProperty().addListener((o, antes, actual) -> {
@@ -91,6 +97,36 @@ final class StockNegativoPane extends VBox {
     TableView<StockNegativoItem> tabla() { return tabla; }
     Button botonActualizar() { return actualizar; }
     String estado() { return estado.getText(); }
+
+    /** Acción al soltar o elegir «Agregar a esta factura»; recibe el id de inventario. */
+    void alAgregar(IntConsumer accion) { this.accionAgregar = accion; }
+
+    private void configurarArrastreYMenu() {
+        tabla.setRowFactory(tv -> {
+            TableRow<StockNegativoItem> fila = new TableRow<>();
+            ContextMenu menu = new ContextMenu();
+            MenuItem agregar = new MenuItem("Agregar a esta factura");
+            agregar.setOnAction(e -> {
+                StockNegativoItem item = fila.getItem();
+                if (item != null && accionAgregar != null) accionAgregar.accept(item.id());
+            });
+            menu.getItems().add(agregar);
+            fila.contextMenuProperty().bind(
+                    javafx.beans.binding.Bindings.when(fila.emptyProperty()).then((ContextMenu) null).otherwise(menu));
+            fila.setOnDragDetected(e -> {
+                if (fila.isEmpty() || accionAgregar == null) return;
+                StockNegativoItem item = fila.getItem();
+                if (item == null) return;
+                Dragboard db = fila.startDragAndDrop(TransferMode.COPY);
+                ClipboardContent contenido = new ClipboardContent();
+                contenido.put(FORMATO_ARRASTRE, item.id());
+                contenido.putString(item.codigo() + " · " + item.descripcion());
+                db.setContent(contenido);
+                e.consume();
+            });
+            return fila;
+        });
+    }
 
     private void vincularVentana(Window anterior, Window actual) {
         if (anterior != null) anterior.showingProperty().removeListener(mostrando);

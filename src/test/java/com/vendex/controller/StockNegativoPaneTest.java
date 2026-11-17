@@ -98,4 +98,40 @@ class StockNegativoPaneTest {
             fxRun(() -> assertTrue(panel.get().tabla().getItems().isEmpty()));
         } finally { fxRun(() -> ventana.get().close()); }
     }
+
+    @Test void clicDerechoInvocaAccionAgregarConIdDeInventario() throws Exception {
+        var ids = new java.util.concurrent.ConcurrentLinkedQueue<Integer>();
+        var panel = new AtomicReference<StockNegativoPane>();
+        var ventana = new AtomicReference<Stage>();
+        fxRun(() -> {
+            var pane = new StockNegativoPane(s -> List.of(
+                    new StockNegativoItem(42, "COD", "Producto", -3, "2026-01-01T10:00:00")), () -> 1, () -> 1);
+            pane.alAgregar(ids::add);
+            panel.set(pane);
+            Stage stage = new Stage(); stage.setScene(new Scene(pane, 500, 300)); ventana.set(stage); stage.show();
+        });
+        try {
+            esperar(() -> panel.get().tabla().getItems().size() == 1);
+            fxRun(() -> {
+                var tabla = panel.get().tabla();
+                tabla.getSelectionModel().select(0);
+                var fila = (javafx.scene.control.TableRow<StockNegativoItem>) tabla.lookupAll(".table-row-cell").stream()
+                        .filter(n -> n instanceof javafx.scene.control.TableRow<?> r && !r.isEmpty() && r.getIndex() == 0)
+                        .findFirst().orElseThrow();
+                var menu = fila.getContextMenu();
+                assertNotNull(menu, "La fila debe tener menú contextual");
+                assertEquals(1, menu.getItems().size());
+                assertEquals("Agregar a esta factura", menu.getItems().get(0).getText());
+                menu.getItems().get(0).fire();
+            });
+            esperar(() -> !ids.isEmpty());
+            assertEquals(42, ids.peek());
+        } finally { fxRun(() -> ventana.get().close()); }
+    }
+
+    @Test void formatoDeArrastreEsPublicoParaElDestino() {
+        assertNotNull(StockNegativoPane.FORMATO_ARRASTRE);
+        assertNotNull(StockNegativoPane.FORMATO_ARRASTRE.getId());
+        assertTrue(StockNegativoPane.FORMATO_ARRASTRE.getId().contains("vendex/stock-negativo/producto"));
+    }
 }

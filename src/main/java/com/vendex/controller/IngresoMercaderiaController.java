@@ -201,9 +201,11 @@ public class IngresoMercaderiaController implements Initializable {
                     var usuario = com.vendex.util.SesionActual.getUsuario();
                     return usuario == null ? null : usuario.getId();
                 });
+        stockNegativo.alAgregar(this::agregarProductoStockNegativo);
         divisorioStock = new SplitPane(formulario, stockNegativo);
         divisorioStock.setDividerPositions(0.68);
         raizPanelStock.setCenter(divisorioStock);
+        configurarDestinoArrastreProductos();
         actualizarModoPanelStock();
         // La salida/entrada del contenido de BorderPane puede entregar los eventos
         // scene=null/scene!=null en el siguiente pulso; no confundirlos con navegación.
@@ -522,6 +524,93 @@ public class IngresoMercaderiaController implements Initializable {
     private void eliminarProducto(FilaProducto fp) {
         listaProductos.remove(fp);
         calcularTotalFactura();
+    }
+
+    /** Destino de arrastre desde el panel de stock negativo hacia la tabla de productos. */
+    private void configurarDestinoArrastreProductos() {
+        if (tblProductos == null) return;
+        tblProductos.setOnDragOver(e -> {
+            if (e.getDragboard().hasContent(StockNegativoPane.FORMATO_ARRASTRE)) {
+                e.acceptTransferModes(javafx.scene.input.TransferMode.COPY);
+                if (!tblProductos.getStyleClass().contains("drop-destino"))
+                    tblProductos.getStyleClass().add("drop-destino");
+            }
+            e.consume();
+        });
+        tblProductos.setOnDragExited(e -> {
+            tblProductos.getStyleClass().remove("drop-destino");
+            e.consume();
+        });
+        tblProductos.setOnDragDropped(e -> {
+            tblProductos.getStyleClass().remove("drop-destino");
+            var db = e.getDragboard();
+            boolean ok = false;
+            if (db.hasContent(StockNegativoPane.FORMATO_ARRASTRE)
+                    && db.getContent(StockNegativoPane.FORMATO_ARRASTRE) instanceof Integer id) {
+                agregarProductoStockNegativo(id);
+                ok = true;
+            }
+            e.setDropCompleted(ok);
+            e.consume();
+        });
+    }
+
+    /**
+     * Incorpora un producto de stock negativo a la tabla: cantidad inicial 1;
+     * si ya está, suma 1 a su cantidad y recalcula IVA y total de línea.
+     */
+    private void agregarProductoStockNegativo(int inventarioId) {
+        if (modoEdicion || modoEdicionFactura) return;
+        Inventario inv = dao.obtenerPorId(inventarioId);
+        if (inv == null || inv.getSucursalId() != com.vendex.util.SucursalActual.getId()) {
+            new Alert(Alert.AlertType.WARNING, "El producto no pertenece a esta sucursal.").showAndWait();
+            return;
+        }
+        String codInv = com.vendex.service.IngresoStockService.codigo(inv.getCodigo());
+        String tagInv = com.vendex.service.IngresoStockService.codigo(inv.getTagCodigo());
+        for (FilaProducto fp : listaProductos) {
+            boolean mismo = (!codInv.isEmpty() && codInv.equals(com.vendex.service.IngresoStockService.codigo(fp.getCodigoManual())))
+                    || (!tagInv.isEmpty() && tagInv.equals(com.vendex.service.IngresoStockService.codigo(fp.getCodigo())));
+            if (mismo) {
+                fp.cantidadProperty().set(fp.getCantidad() + 1);
+                recalcularLinea(fp);
+                calcularTotalFactura();
+                tblProductos.refresh();
+                return;
+            }
+        }
+        BigDecimal costo = inv.getCostoSinIVA() != null ? inv.getCostoSinIVA() : BigDecimal.ZERO;
+        if (costo.signum() <= 0) {
+            new Alert(Alert.AlertType.WARNING, "El producto no tiene costo de compra registrado.").showAndWait();
+            return;
+        }
+        BigDecimal precioVenta = inv.getPrecioVenta() != null && inv.getPrecioVenta().signum() > 0
+                ? inv.getPrecioVenta() : costo;
+        FilaProducto fp = new FilaProducto(
+                inv.getTagCodigo() != null ? inv.getTagCodigo() : "",
+                inv.getCodigo() != null ? inv.getCodigo() : "",
+                inv.getDescripcion(),
+                inv.getGrupoId(),
+                inv.getMarcaId(),
+                costo,
+                1,
+                precioVenta,
+                0
+        );
+        fp.setEstado(true);
+        recalcularLinea(fp);
+        listaProductos.add(fp);
+        calcularTotalFactura();
+    }
+
+    /** IVA 15% y total de línea a partir de costo y cantidad actuales de la fila. */
+    private void recalcularLinea(FilaProducto fp) {
+        BigDecimal costo = BigDecimal.valueOf(fp.getCostoSinIVA());
+        int cant = fp.getCantidad();
+        BigDecimal iva = costo.multiply(new BigDecimal("0.15")).setScale(3, RoundingMode.HALF_UP);
+        BigDecimal totalLinea = costo.add(iva).multiply(BigDecimal.valueOf(cant)).setScale(3, RoundingMode.HALF_UP);
+        fp.setIva(iva.doubleValue());
+        fp.setTotalLinea(totalLinea.doubleValue());
     }
 
     private void cargarProductoEnFormulario(FilaProducto fp) {

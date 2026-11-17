@@ -275,6 +275,13 @@
 .stock-normal { -fx-background-color: -fx-bg-card; }
 .stock-normal:odd { -fx-background-color: -fx-bg-card-alt; }
 
+/* Destino de arrastre: productos de stock negativo sobre la tabla de ingreso */
+.table-view.drop-destino {
+    -fx-border-color: -fx-accent-primary;
+    -fx-border-width: 2;
+    -fx-border-style: dashed;
+}
+
 /* Login - estructura */
 .login-card {
     -fx-background-radius: 12;

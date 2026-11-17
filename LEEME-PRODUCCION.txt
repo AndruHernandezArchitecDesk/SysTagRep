@@ -1,0 +1,13 @@
+VENDEX — Portable Windows — Producción
+Build: 11 de noviembre de 2026
+
+Requisitos: Windows x64 y Java 17 o superior.
+
+1. Descomprime todos los archivos del ZIP en una carpeta.
+2. Ejecuta run.bat. La consola mostrará el código exacto de máquina antes de abrir Vendex.
+3. Copia ese código respetando mayúsculas, minúsculas, ceros y letras O; úsalo para solicitar una licencia.
+4. La configuración de conexión queda en el perfil local del usuario.
+5. Para cambiar la conexión, ejecuta Reconfigurar-Vendex-BD.bat.
+6. Vendex avisa al arrancar cuando una licencia válida vence dentro de los próximos 10 días.
+
+Las claves CENTRAL requieren estar registradas en la base dbTag del servidor.
