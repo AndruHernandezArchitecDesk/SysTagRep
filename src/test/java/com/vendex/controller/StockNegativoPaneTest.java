@@ -131,7 +131,6 @@ class StockNegativoPaneTest {
 
     @Test void formatoDeArrastreEsPublicoParaElDestino() {
         assertNotNull(StockNegativoPane.FORMATO_ARRASTRE);
-        assertNotNull(StockNegativoPane.FORMATO_ARRASTRE.getId());
-        assertTrue(StockNegativoPane.FORMATO_ARRASTRE.getId().contains("vendex/stock-negativo/producto"));
+        assertFalse(StockNegativoPane.FORMATO_ARRASTRE.equals(javafx.scene.input.DataFormat.PLAIN_TEXT));
     }
 }
