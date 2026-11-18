@@ -84,19 +84,27 @@ Estas pruebas cubren orden/filtrado SQL, fechas
 nulas, sucursal, autorización REST, actualización manual, errores de carga,
 cambio de sucursal, inserción a la derecha y cierre.
 
-## Reposición por código y sucursal
+## Reposición por id, código y sucursal
 
-El guardado utiliza `IngresoStockService`: busca el **código del producto**
-(`inventario.codigo`, que el formulario llama código manual), normalizando espacios
-externos y mayúsculas. No compara descripción, proveedor ni el TAG generado para
-la etiqueta. La sucursal corresponde a la sesión; nunca compensa otra sucursal.
-Los guiones y demás caracteres internos siguen siendo parte del código.
+El guardado utiliza `IngresoStockService`. Cuando la línea proviene del panel de
+stock negativo arrastrada a la tabla, la fila lleva el `inventario_id` y la
+reposición prioriza ese id exacto (incluso si el código está vacío); después
+también compensa los demás lotes del mismo código, como siempre. En líneas
+agregadas a mano solo se empareja por el **código del producto**
+(`inventario.codigo`, que el formulario llama código manual), normalizando
+espacios externos y mayúsculas. No compara descripción, proveedor ni el TAG
+generado para la etiqueta. La sucursal corresponde a la sesión; nunca compensa
+otra sucursal. Los guiones y demás caracteres internos siguen siendo parte del
+código.
 
 | Stock antes | Compra | Stock confirmado | Panel negativo |
 |---:|---:|---:|---|
 | −5 | 3 | −2 | Sigue visible con −2 |
 | −5 | 5 | 0 | Desaparece |
 | −5 | 8 | 3 | Desaparece |
+
+El producto **solo desaparece del panel tras Guardar**, y solo si el saldo ya no
+es negativo. Agregar la línea al formulario no altera existencias ni el panel.
 
 Se mantiene el ID y el TAG del producto existente, incluyendo temporales vendidos
 antes de recibir la mercadería. Los ingresos posteriores del mismo código suman

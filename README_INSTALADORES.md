@@ -71,6 +71,10 @@ Pulsa **Probar conexión**, espera el ✓ verde y luego **Guardar**. La config q
   Java 17 o 21 LTS. En la validación visual se reprodujo desde
   `com.sun.marlin.OffHeapArray`, el renderizador incluido con JavaFX, usando Java 25.
   La línea `has been called by ...` permite confirmar el origen en cada instalación.
+* **`XSetErrorHandler() called with a GDK error trap pushed. Don't do that.`:**
+  aviso de GDK/Linux al mezclar AWT (`Desktop.browse`, `java.awt.Color` en PDFs)
+  con JavaFX. Es benigno: no rompe el flujo ni impide abrir enlaces o generar
+  PDFs; se documenta y no requiere cambio de código.
 
 ## 8. Vetxi capibara
 

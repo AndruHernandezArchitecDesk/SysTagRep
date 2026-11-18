@@ -569,9 +569,11 @@ public class IngresoMercaderiaController implements Initializable {
         String codInv = com.vendex.service.IngresoStockService.codigo(inv.getCodigo());
         String tagInv = com.vendex.service.IngresoStockService.codigo(inv.getTagCodigo());
         for (FilaProducto fp : listaProductos) {
-            boolean mismo = (!codInv.isEmpty() && codInv.equals(com.vendex.service.IngresoStockService.codigo(fp.getCodigoManual())))
+            boolean mismo = fp.getInventarioId() == inventarioId
+                    || (!codInv.isEmpty() && codInv.equals(com.vendex.service.IngresoStockService.codigo(fp.getCodigoManual())))
                     || (!tagInv.isEmpty() && tagInv.equals(com.vendex.service.IngresoStockService.codigo(fp.getCodigo())));
             if (mismo) {
+                if (fp.getInventarioId() <= 0) fp.setInventarioId(inventarioId);
                 fp.cantidadProperty().set(fp.getCantidad() + 1);
                 recalcularLinea(fp);
                 calcularTotalFactura();
@@ -597,6 +599,7 @@ public class IngresoMercaderiaController implements Initializable {
                 precioVenta,
                 0
         );
+        fp.setInventarioId(inventarioId);
         fp.setEstado(true);
         recalcularLinea(fp);
         listaProductos.add(fp);
@@ -785,6 +788,7 @@ public class IngresoMercaderiaController implements Initializable {
             else new com.vendex.service.IngresoStockService().guardar(productosIngresados,
                     modoEdicionFactura ? facturaEditadaNumero : null, facturaEditadaProveedorId);
             com.vendex.util.InventarioEventos.notificar();
+            if (stockNegativo != null) stockNegativo.actualizar();
 
             // Generar hoja A4 en background para no colgar la UI (como InventarioController)
             final String facturaNumFinal = numFactura;
@@ -937,6 +941,7 @@ public class IngresoMercaderiaController implements Initializable {
             i.setPrecioVenta(BigDecimal.valueOf(fp.getPrecioVenta()));
             i.setTagCodigo(fp.getCodigo());
             i.setCodigo(fp.getCodigoManual());
+            if (fp.getInventarioId() > 0) i.setId(fp.getInventarioId());
             i.setEstado(!esServicioLogistico(fp));
         } else {
             i.setDescripcion(descripcionIngresada());
@@ -1054,6 +1059,7 @@ public class IngresoMercaderiaController implements Initializable {
             fp.setIva(iva.doubleValue());
             fp.setTotalLinea(l.getTotalLinea() != null ? l.getTotalLinea().doubleValue() : 0);
             fp.setEstado(!esServicioLogistico(fp));
+            fp.setInventarioId(inv.getId());
             listaProductos.add(fp);
         }
 
@@ -1456,6 +1462,7 @@ public class IngresoMercaderiaController implements Initializable {
         private final DoubleProperty precioVenta;
         private final IntegerProperty margen;
         private boolean estado = true;
+        private int inventarioId;
 
         public FilaProducto(String codigo, String codigoManual, String descripcion, int grupoId, int marcaId,
                             BigDecimal costoSinIVA, int cantidad, BigDecimal precioVenta, int margen) {
@@ -1493,5 +1500,7 @@ public class IngresoMercaderiaController implements Initializable {
         public IntegerProperty margenProperty() { return margen; }
         public boolean getEstado() { return estado; }
         public void setEstado(boolean estado) { this.estado = estado; }
+        public int getInventarioId() { return inventarioId; }
+        public void setInventarioId(int inventarioId) { this.inventarioId = inventarioId; }
     }
 }

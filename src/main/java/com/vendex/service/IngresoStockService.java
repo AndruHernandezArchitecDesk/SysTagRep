@@ -102,16 +102,38 @@ public class IngresoStockService {
         producto.setCodigo(cod);
         boolean servicio = Boolean.FALSE.equals(producto.getEstado()) || "000".equals(cod)
                 || "SERVICIO LOGISTICO".equalsIgnoreCase(producto.getDescripcion());
-        if (!servicio && !cod.isEmpty()) {
+        if (!servicio && (producto.getId() > 0 || !cod.isEmpty())) {
             List<Existente> existentes = new ArrayList<>();
-            try (PreparedStatement ps = con.prepareStatement("SELECT id, tag_codigo, cantidad FROM inventario "
-                    + "WHERE sucursal_id=? AND estado=true AND UPPER(TRIM(codigo))=? "
-                    + "ORDER BY CASE WHEN cantidad<0 THEN 0 ELSE 1 END, id FOR UPDATE")) {
-                ps.setInt(1, producto.getSucursalId()); ps.setString(2, cod);
-                try (ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) existentes.add(new Existente(rs.getInt("id"), rs.getInt("cantidad"), rs.getString("tag_codigo")));
+            var vistos = new java.util.HashSet<Integer>();
+            // Prioriza el id exacto (fila arrastrada desde stock negativo).
+            if (producto.getId() > 0) {
+                try (PreparedStatement ps = con.prepareStatement("SELECT id, tag_codigo, cantidad FROM inventario "
+                        + "WHERE id=? AND sucursal_id=? AND estado=true FOR UPDATE")) {
+                    ps.setInt(1, producto.getId()); ps.setInt(2, producto.getSucursalId());
+                    try (ResultSet rs = ps.executeQuery()) {
+                        while (rs.next()) {
+                            int id = rs.getInt("id");
+                            if (vistos.add(id)) existentes.add(new Existente(id, rs.getInt("cantidad"), rs.getString("tag_codigo")));
+                        }
+                    }
                 }
             }
+            // También compensa los demás lotes del mismo código (comportamiento histórico).
+            if (!cod.isEmpty()) {
+                try (PreparedStatement ps = con.prepareStatement("SELECT id, tag_codigo, cantidad FROM inventario "
+                        + "WHERE sucursal_id=? AND estado=true AND UPPER(TRIM(codigo))=? "
+                        + "ORDER BY CASE WHEN cantidad<0 THEN 0 ELSE 1 END, id FOR UPDATE")) {
+                    ps.setInt(1, producto.getSucursalId()); ps.setString(2, cod);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        while (rs.next()) {
+                            int id = rs.getInt("id");
+                            if (vistos.add(id)) existentes.add(new Existente(id, rs.getInt("cantidad"), rs.getString("tag_codigo")));
+                        }
+                    }
+                }
+            }
+            // Los negativos primero, sin importar el orden de las consultas.
+            existentes.sort((a, b) -> Integer.compare(a.cantidad() < 0 ? 0 : 1, b.cantidad() < 0 ? 0 : 1));
             if (!existentes.isEmpty()) {
                 // Si quedaron lotes duplicados de versiones anteriores, compensar
                 // primero todos sus negativos antes de dejar un excedente positivo.

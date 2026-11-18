@@ -101,6 +101,27 @@ class IngresoStockServiceTest {
         assertEquals(2, valor("SELECT COUNT(*) FROM inventario"));
     }
 
+    @Test void reposicionPorInventarioIdActualizaLaFilaArrastradaAunqueCodigoVacio() throws Exception {
+        int id = negativo("", -4, 7);
+        Inventario ingreso = compra("", 4, 7, "F-ID");
+        ingreso.setId(id);
+        service.guardar(List.of(ingreso), null, 0);
+        assertEquals(0, valor("SELECT cantidad FROM inventario WHERE id=" + id));
+        assertEquals(1, valor("SELECT COUNT(*) FROM inventario"), "No debe crear una fila nueva");
+        assertTrue(dao.listarStockNegativoPorFecha(7).isEmpty());
+    }
+
+    @Test void reposicionPorInventarioIdConservaOtrosLotesDelMismoCodigo() throws Exception {
+        int arrastrado = negativo("LOTE", -3, 7);
+        int otro = negativo("LOTE", -2, 7);
+        Inventario ingreso = compra("LOTE", 4, 7, "F-LOTES");
+        ingreso.setId(arrastrado);
+        service.guardar(List.of(ingreso), null, 0);
+        assertEquals(0, valor("SELECT cantidad FROM inventario WHERE id=" + arrastrado));
+        assertEquals(-1, valor("SELECT cantidad FROM inventario WHERE id=" + otro));
+        assertEquals(2, valor("SELECT COUNT(*) FROM inventario"));
+    }
+
     @Test void coincideSoloCodigoYSucursalNoDescripcionNiTag() throws Exception {
         int a = negativo("AB-1", -5, 7); int otraSucursal = negativo("AB-1", -20, 8);
         int parecido = negativo("AB1", -9, 7);
