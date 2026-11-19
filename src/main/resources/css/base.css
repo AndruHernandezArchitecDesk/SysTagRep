@@ -184,7 +184,7 @@
 }
 
 .window-control:hover {
-    -fx-background-color: -fx-bg-hover;
+    -fx-background-color: -fx-bg-card-alt;
 }
 
 .window-control-close:hover {
