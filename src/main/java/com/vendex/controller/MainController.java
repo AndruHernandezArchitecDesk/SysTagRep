@@ -24,12 +24,14 @@ import javafx.fxml.Initializable;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.Cursor;
 import javafx.concurrent.Task;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.MenuButton;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ContextMenu;
@@ -42,11 +44,14 @@ import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.DataFormat;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.io.IOException;
@@ -113,6 +118,9 @@ public class MainController implements Initializable {
     private HBox quickAccessBar;
 
     @FXML
+    private HBox barraVentanasMinimizadas;
+
+    @FXML
     private HBox headerBar;
 
     private final AccesoDirectoDAO accesoDirectoDAO = new AccesoDirectoDAOPostgres();
@@ -128,6 +136,8 @@ public class MainController implements Initializable {
     private final Map<String, List<Stage>> ventanasPorVista = new HashMap<>();
     private final Map<Stage, Object> controladoresVentana = new IdentityHashMap<>();
     private final Map<Stage, Integer> numeroVentana = new IdentityHashMap<>();
+    private final Map<Stage, String> rutasVentana = new IdentityHashMap<>();
+    private final java.util.Set<Stage> ventanasMinimizadas = java.util.Collections.newSetFromMap(new IdentityHashMap<>());
     private Stage ventanaMasReciente;
     private boolean cerrarVentanasPorSesion;
     private boolean sidebarExpandido = true;
@@ -1008,7 +1018,7 @@ public class MainController implements Initializable {
             return;
         }
         List<Stage> abiertas = ventanasPorVista.computeIfAbsent(ruta, ignorada -> new ArrayList<>());
-        abiertas.removeIf(ventana -> !ventana.isShowing());
+        abiertas.removeIf(ventana -> !ventana.isShowing() && !ventanasMinimizadas.contains(ventana));
         if (abiertas.size() >= MAX_VENTANAS_POR_VISTA) {
             Stage existente = abiertas.get(abiertas.size() - 1);
             Alert aviso = new Alert(Alert.AlertType.INFORMATION,
@@ -1028,29 +1038,43 @@ public class MainController implements Initializable {
             conectarControladorVista(controller);
             aplicarMayusculas(vista);
             Stage ventana = new Stage();
+            ventana.initStyle(StageStyle.UNDECORATED);
             Stage principal = ventanaPrincipal();
             if (principal != null) ventana.initOwner(principal);
+            ventana.setResizable(true);
+            ventana.setMinWidth(650);
+            ventana.setMinHeight(450);
             int numero = siguienteNumeroVentana(abiertas);
             ventana.setTitle("Vendex - " + tituloVentana(ruta) + " (" + numero + ")");
             ventana.getIcons().add(new Image(getClass().getResourceAsStream("/img/inventario.png")));
-            Scene scene = new Scene(vista, anchoInicial(vista), altoInicial(vista));
+            BorderPane raizVentana = new BorderPane(vista);
+            raizVentana.setTop(crearBarraSuperiorVentana(ventana, ruta));
+            Scene scene = new Scene(raizVentana, anchoInicial(vista), altoInicial(vista) + 36);
             ThemeManager.aplicarTemaGuardado(scene);
             ventana.setScene(scene);
+            configurarRedimensionVentana(scene, ventana);
 
             controladoresVentana.put(ventana, controller);
             numeroVentana.put(ventana, numero);
+            rutasVentana.put(ventana, ruta);
             abiertas.add(ventana);
+            ventana.iconifiedProperty().addListener((obs, antes, minimizada) -> {
+                if (minimizada) minimizarVentanaDentroDeVendex(ventana);
+            });
             ventana.focusedProperty().addListener((obs, antes, enfocada) -> {
                 if (enfocada) enfocarVentana(ventana, controller);
             });
             ventana.setOnCloseRequest(event -> {
                 if (!cerrarVentanasPorSesion && !confirmarDescartar(controller, ventana)) event.consume();
             });
-            ventana.setOnHidden(event -> quitarVentana(ruta, ventana));
+            ventana.setOnHidden(event -> {
+                if (!ventanasMinimizadas.contains(ventana)) quitarVentana(ruta, ventana);
+            });
             ventana.show();
+            actualizarBarraVentanasMinimizadas();
             enfocarVentana(ventana, controller);
         } catch (Exception e) {
-            abiertas.removeIf(ventana -> !ventana.isShowing());
+            abiertas.removeIf(ventana -> !ventana.isShowing() && !ventanasMinimizadas.contains(ventana));
             mostrarErrorCargaVista(ruta, e);
         }
     }
@@ -1117,6 +1141,10 @@ public class MainController implements Initializable {
 
     private void enfocarVentana(Stage ventana, Object controller) {
         if (ventana == null) return;
+        if (ventanasMinimizadas.contains(ventana)) {
+            restaurarVentana(ventana, false);
+            return;
+        }
         List<Stage> abiertas = ventanasPorVista.values().stream().filter(lista -> lista.contains(ventana))
                 .findFirst().orElse(null);
         if (abiertas != null) {
@@ -1132,6 +1160,7 @@ public class MainController implements Initializable {
     }
 
     private void quitarVentana(String ruta, Stage ventana) {
+        ventanasMinimizadas.remove(ventana);
         List<Stage> abiertas = ventanasPorVista.get(ruta);
         if (abiertas != null) {
             abiertas.remove(ventana);
@@ -1139,10 +1168,186 @@ public class MainController implements Initializable {
         }
         controladoresVentana.remove(ventana);
         numeroVentana.remove(ventana);
+        rutasVentana.remove(ventana);
         if (ventanaMasReciente == ventana) {
             ventanaMasReciente = null;
             if (asistenteController != null) asistenteController.setDocumentoActivo(null);
         }
+        actualizarBarraVentanasMinimizadas();
+    }
+
+    /** Oculta el Stage minimizado y lo conserva accesible en la barra inferior de Vendex. */
+    private void minimizarVentanaDentroDeVendex(Stage ventana) {
+        if (ventana == null || ventanasMinimizadas.contains(ventana)) return;
+        ventanasMinimizadas.add(ventana);
+        javafx.application.Platform.runLater(() -> {
+            if (!ventanasMinimizadas.contains(ventana)) return;
+            ventana.setIconified(false);
+            ventana.hide();
+            if (ventanaMasReciente == ventana) {
+                ventanaMasReciente = null;
+                if (asistenteController != null) asistenteController.setDocumentoActivo(null);
+            }
+            actualizarBarraVentanasMinimizadas();
+        });
+    }
+
+    private void restaurarVentana(Stage ventana, boolean maximizar) {
+        if (ventana == null || !controladoresVentana.containsKey(ventana)) return;
+        ventanasMinimizadas.remove(ventana);
+        ventana.setIconified(false);
+        if (!ventana.isShowing()) ventana.show();
+        if (maximizar) ventana.setMaximized(true);
+        actualizarBarraVentanasMinimizadas();
+        enfocarVentana(ventana, controladoresVentana.get(ventana));
+    }
+
+    private HBox crearBarraSuperiorVentana(Stage ventana, String ruta) {
+        Label titulo = new Label(tituloVentana(ruta) + " · Ventana " + numeroVentana.getOrDefault(ventana, 1));
+        titulo.setStyle("-fx-font-weight: bold; -fx-padding: 0 8 0 6;");
+        HBox espacio = new HBox();
+        HBox.setHgrow(espacio, Priority.ALWAYS);
+
+        Button minimizar = new Button("—");
+        minimizar.setId("minimizar-ventana");
+        minimizar.getStyleClass().add("window-control");
+        minimizar.setTooltip(new Tooltip("Minimizar a la barra de ventanas de Vendex"));
+        minimizar.setOnAction(event -> minimizarVentanaDentroDeVendex(ventana));
+
+        Button maximizar = new Button();
+        maximizar.setId("maximizar-ventana");
+        maximizar.getStyleClass().add("window-control");
+        maximizar.setTooltip(new Tooltip("Maximizar o restaurar esta pantalla"));
+        Runnable actualizarIconoMaximizar = () -> maximizar.setText(ventana.isMaximized() ? "❐" : "□");
+        actualizarIconoMaximizar.run();
+        ventana.maximizedProperty().addListener((obs, anterior, actual) -> actualizarIconoMaximizar.run());
+        maximizar.setOnAction(event -> ventana.setMaximized(!ventana.isMaximized()));
+
+        Button cerrar = new Button("×");
+        cerrar.setId("cerrar-ventana");
+        cerrar.getStyleClass().addAll("window-control", "window-control-close");
+        cerrar.setTooltip(new Tooltip("Cerrar esta pantalla"));
+        cerrar.setOnAction(event -> ventana.close());
+
+        HBox barra = new HBox(6, titulo, espacio, minimizar, maximizar, cerrar);
+        barra.setId("barra-superior-ventana");
+        barra.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        barra.setStyle("-fx-padding: 4 8 4 8; -fx-background-color: -fx-bg-card-alt; "
+                + "-fx-border-color: -fx-border; -fx-border-width: 0 0 1 0;");
+
+        final double[] arrastre = new double[4];
+        barra.setOnMousePressed(event -> {
+            if (event.getTarget() instanceof Button || ventana.isMaximized()) return;
+            arrastre[0] = event.getScreenX(); arrastre[1] = event.getScreenY();
+            arrastre[2] = ventana.getX(); arrastre[3] = ventana.getY();
+        });
+        barra.setOnMouseDragged(event -> {
+            if (event.getTarget() instanceof Button || ventana.isMaximized()) return;
+            ventana.setX(arrastre[2] + event.getScreenX() - arrastre[0]);
+            ventana.setY(arrastre[3] + event.getScreenY() - arrastre[1]);
+        });
+        barra.setOnMouseClicked(event -> {
+            if (!(event.getTarget() instanceof Button) && event.getClickCount() == 2)
+                ventana.setMaximized(!ventana.isMaximized());
+        });
+        return barra;
+    }
+
+    /** Redimensionamiento por los bordes de la ventana sin decoración nativa. */
+    private void configurarRedimensionVentana(Scene scene, Stage ventana) {
+        final double borde = 7;
+        final Cursor[] cursorActivo = {Cursor.DEFAULT};
+        final double[] inicio = new double[6]; // x, y, ancho, alto, puntero x, puntero y
+        final boolean[] redimensionando = {false};
+
+        scene.addEventFilter(MouseEvent.MOUSE_MOVED, event -> {
+            if (!redimensionando[0] && !ventana.isMaximized()) {
+                cursorActivo[0] = cursorBorde(event.getSceneX(), event.getSceneY(), scene.getWidth(), scene.getHeight(), borde);
+                scene.setCursor(cursorActivo[0]);
+            }
+        });
+        scene.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
+            if (ventana.isMaximized() || cursorActivo[0] == Cursor.DEFAULT) return;
+            redimensionando[0] = true;
+            inicio[0] = ventana.getX(); inicio[1] = ventana.getY();
+            inicio[2] = ventana.getWidth(); inicio[3] = ventana.getHeight();
+            inicio[4] = event.getScreenX(); inicio[5] = event.getScreenY();
+            event.consume();
+        });
+        scene.addEventFilter(MouseEvent.MOUSE_DRAGGED, event -> {
+            if (!redimensionando[0]) return;
+            double dx = event.getScreenX() - inicio[4], dy = event.getScreenY() - inicio[5];
+            Cursor cursor = cursorActivo[0];
+            boolean oeste = cursor == Cursor.W_RESIZE || cursor == Cursor.NW_RESIZE || cursor == Cursor.SW_RESIZE;
+            boolean este = cursor == Cursor.E_RESIZE || cursor == Cursor.NE_RESIZE || cursor == Cursor.SE_RESIZE;
+            boolean norte = cursor == Cursor.N_RESIZE || cursor == Cursor.NW_RESIZE || cursor == Cursor.NE_RESIZE;
+            boolean sur = cursor == Cursor.S_RESIZE || cursor == Cursor.SW_RESIZE || cursor == Cursor.SE_RESIZE;
+            double ancho = este ? inicio[2] + dx : oeste ? inicio[2] - dx : inicio[2];
+            double alto = sur ? inicio[3] + dy : norte ? inicio[3] - dy : inicio[3];
+            ancho = Math.max(ventana.getMinWidth(), ancho);
+            alto = Math.max(ventana.getMinHeight(), alto);
+            ventana.setWidth(ancho); ventana.setHeight(alto);
+            if (oeste) ventana.setX(inicio[0] + inicio[2] - ancho);
+            if (norte) ventana.setY(inicio[1] + inicio[3] - alto);
+            event.consume();
+        });
+        scene.addEventFilter(MouseEvent.MOUSE_RELEASED, event -> {
+            if (!redimensionando[0]) return;
+            redimensionando[0] = false;
+            event.consume();
+        });
+    }
+
+    private static Cursor cursorBorde(double x, double y, double ancho, double alto, double borde) {
+        boolean oeste = x <= borde, este = x >= ancho - borde;
+        boolean norte = y <= borde, sur = y >= alto - borde;
+        if (norte && oeste) return Cursor.NW_RESIZE;
+        if (norte && este) return Cursor.NE_RESIZE;
+        if (sur && oeste) return Cursor.SW_RESIZE;
+        if (sur && este) return Cursor.SE_RESIZE;
+        if (norte) return Cursor.N_RESIZE;
+        if (sur) return Cursor.S_RESIZE;
+        if (oeste) return Cursor.W_RESIZE;
+        if (este) return Cursor.E_RESIZE;
+        return Cursor.DEFAULT;
+    }
+
+    /** Un botón por tipo de pantalla; instancias repetidas se despliegan en su menú. */
+    private void actualizarBarraVentanasMinimizadas() {
+        if (barraVentanasMinimizadas == null) return;
+        barraVentanasMinimizadas.getChildren().clear();
+        Map<String, List<Stage>> agrupadas = new java.util.TreeMap<>((a, b) -> {
+            int comparacion = tituloVentana(a).compareToIgnoreCase(tituloVentana(b));
+            return comparacion != 0 ? comparacion : a.compareToIgnoreCase(b);
+        });
+        for (Stage ventana : ventanasMinimizadas) {
+            String ruta = rutasVentana.get(ventana);
+            if (ruta != null && controladoresVentana.containsKey(ventana))
+                agrupadas.computeIfAbsent(ruta, ignorada -> new ArrayList<>()).add(ventana);
+        }
+        for (var entrada : agrupadas.entrySet()) {
+            List<Stage> instancias = entrada.getValue();
+            instancias.sort(java.util.Comparator.comparingInt(v -> numeroVentana.getOrDefault(v, 0)));
+            MenuButton grupo = new MenuButton(tituloVentana(entrada.getKey())
+                    + (instancias.size() > 1 ? " (" + instancias.size() + ")" : ""));
+            grupo.setId("ventanas-minimizadas-" + entrada.getKey().replaceAll("[^A-Za-z0-9]+", "-"));
+            grupo.setTooltip(new Tooltip(instancias.size() > 1
+                    ? "Ventanas minimizadas de " + tituloVentana(entrada.getKey())
+                    : "Restaurar o maximizar " + tituloVentana(entrada.getKey())));
+            for (Stage ventana : instancias) {
+                MenuItem restaurar = new MenuItem("Restaurar: " + ventana.getTitle());
+                restaurar.setOnAction(event -> restaurarVentana(ventana, false));
+                MenuItem maximizar = new MenuItem("Maximizar: " + ventana.getTitle());
+                maximizar.setOnAction(event -> restaurarVentana(ventana, true));
+                grupo.getItems().addAll(restaurar, maximizar);
+                if (instancias.size() > 1 && ventana != instancias.get(instancias.size() - 1))
+                    grupo.getItems().add(new javafx.scene.control.SeparatorMenuItem());
+            }
+            barraVentanasMinimizadas.getChildren().add(grupo);
+        }
+        boolean hayMinimizadas = !agrupadas.isEmpty();
+        barraVentanasMinimizadas.setVisible(hayMinimizadas);
+        barraVentanasMinimizadas.setManaged(hayMinimizadas);
     }
 
     private boolean tieneCambiosPendientes(Object controller) {
@@ -1185,7 +1390,10 @@ public class MainController implements Initializable {
             ventanasPorVista.clear();
             controladoresVentana.clear();
             numeroVentana.clear();
+            rutasVentana.clear();
+            ventanasMinimizadas.clear();
             ventanaMasReciente = null;
+            actualizarBarraVentanasMinimizadas();
             if (asistenteController != null) asistenteController.setDocumentoActivo(null);
         } finally {
             cerrarVentanasPorSesion = false;

@@ -113,6 +113,9 @@ class FxmlSmokeTest {
             Object controller = cargar("/view/MainView.fxml");
             assertNotNull(controller, "controller MainController");
             assertNotNull(controller.getClass().getDeclaredField("quickAccessBar"), "campo quickAccessBar");
+            java.lang.reflect.Field dock = controller.getClass().getDeclaredField("barraVentanasMinimizadas");
+            dock.setAccessible(true);
+            assertNotNull(dock.get(controller), "barra inferior para ventanas minimizadas cableada desde FXML");
             java.lang.reflect.Field asistente = controller.getClass().getDeclaredField("asistenteController");
             asistente.setAccessible(true);
             assertNotNull(asistente.get(controller), "asistente único inyectado desde fx:include");
