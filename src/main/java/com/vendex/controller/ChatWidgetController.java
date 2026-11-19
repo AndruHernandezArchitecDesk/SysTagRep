@@ -99,6 +99,8 @@ public class ChatWidgetController {
     private MascotaAnimaciones animaciones;
     private GuiaFormulario guia;
     private boolean arrastrando;
+    private boolean modoDormir;
+    private javafx.scene.control.MenuItem itemModoDormir;
     private double inicioMouseX, inicioMouseY, inicioMascotaX, inicioMascotaY;
     private double posicionX, posicionY;
     private final java.util.prefs.Preferences preferencias = java.util.prefs.Preferences.userRoot().node("/com/tag/vendex/asistente");
@@ -117,6 +119,7 @@ public class ChatWidgetController {
 
     @FXML
     public void initialize() {
+        modoDormir = preferencias.getBoolean("modoDormir", false);
         actualizarBadge();
         configurarMascota();
         iniciarFiltrosVehiculo();
@@ -236,6 +239,11 @@ public class ChatWidgetController {
             item.setOnAction(e -> cambiarMascota(tipo));
             menu.getItems().add(item);
         }
+        menu.getItems().add(new javafx.scene.control.SeparatorMenuItem());
+        itemModoDormir = new javafx.scene.control.MenuItem();
+        itemModoDormir.setOnAction(e -> alternarModoDormir());
+        menu.getItems().add(itemModoDormir);
+        actualizarIndicadorModoDormir();
         bubbleButton.setContextMenu(menu);
         bubbleButton.addEventFilter(javafx.scene.input.MouseEvent.MOUSE_PRESSED, e -> {
             if (!e.isPrimaryButtonDown()) return;
@@ -297,7 +305,38 @@ public class ChatWidgetController {
         boolean visible = rootStack.getScene() != null && rootStack.getScene().getWindow() != null
                 && rootStack.getScene().getWindow().isShowing() && rootStack.getScene().getWindow().isFocused()
                 && !(rootStack.getScene().getWindow() instanceof javafx.stage.Stage stage && stage.isIconified());
-        animaciones.setActivo(visible && (guia == null || !guia.activa()));
+        animaciones.setActivo(visible && !modoDormir && (guia == null || !guia.activa()));
+    }
+
+    void alternarModoDormir() {
+        modoDormir = !modoDormir;
+        preferencias.putBoolean("modoDormir", modoDormir);
+        if (modoDormir) {
+            ocultarSugerencias();
+            chatPanel.setVisible(false);
+            finalizarSesionVendexi();
+            animaciones.setActivo(false);
+        } else {
+            actualizarReposo();
+        }
+        actualizarIndicadorModoDormir();
+    }
+
+    boolean estaDormida() { return modoDormir; }
+
+    private void actualizarIndicadorModoDormir() {
+        if (itemModoDormir != null)
+            itemModoDormir.setText(modoDormir ? "Activar Vetxi" : "Desactivar Vetxi (modo dormir)");
+        if (bubbleButton != null) {
+            bubbleButton.setOpacity(modoDormir ? 0.62 : 1.0);
+            bubbleButton.setAccessibleText(modoDormir
+                    ? "Vetxi está dormida y quieta. Clic derecho para despertarla."
+                    : "Vetxi, asistente. Arrastra para mover; pulsa para conversar. Clic derecho para opciones.");
+            if (bubbleButton.getTooltip() != null)
+                bubbleButton.getTooltip().setText(modoDormir
+                        ? "Vetxi está dormida y quieta. Clic derecho para despertarla."
+                        : "Soy Vetxi. Pulsa para conversar, arrastra para mover o haz clic derecho para opciones.");
+        }
     }
 
     private void liberar() {
@@ -361,6 +400,7 @@ public class ChatWidgetController {
     }
 
     @FXML private void onMascota() {
+        if (modoDormir) return;
         if (arrastrando) { arrastrando = false; return; }
         terminarGuia();
         if (!pendientes.isEmpty()) mostrarSugerencias(); else onToggleChat();
@@ -450,7 +490,7 @@ public class ChatWidgetController {
         }
         indiceSugerencia = 0;
         actualizarContador();
-        if (!pendientes.isEmpty()) {
+        if (!pendientes.isEmpty() && !modoDormir) {
             animaciones.avisar();
             // No desplazar un chat que el usuario está leyendo o escribiendo.
             if (!chatPanel.isVisible()) mostrarSugerencias();
@@ -476,6 +516,7 @@ public class ChatWidgetController {
     }
 
     @FXML void mostrarSugerencias() {
+        if (modoDormir) return;
         if (guia != null && guia.activa()) return;
         if (pendientes.isEmpty()) return;
         if (chatPanel.isVisible()) onToggleChat();
@@ -549,6 +590,7 @@ public class ChatWidgetController {
 
     @FXML
     public void onToggleChat() {
+        if (modoDormir) return;
         animaciones.registrarActividad();
         boolean mostrar = !chatPanel.isVisible();
         if (mostrar) ocultarSugerencias();

@@ -27,12 +27,16 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class VendexiMascotaTest {
     private String mascotaAnterior;
+    private boolean modoDormirAnterior;
     @org.junit.jupiter.api.BeforeEach void guardarPreferenciaMascota() {
-        mascotaAnterior = java.util.prefs.Preferences.userRoot().node("/com/tag/vendex/asistente").get("mascota", null);
+        var prefs = java.util.prefs.Preferences.userRoot().node("/com/tag/vendex/asistente");
+        mascotaAnterior = prefs.get("mascota", null);
+        modoDormirAnterior = prefs.getBoolean("modoDormir", false);
     }
     @org.junit.jupiter.api.AfterEach void restaurarPreferenciaMascota() {
         var prefs = java.util.prefs.Preferences.userRoot().node("/com/tag/vendex/asistente");
         if (mascotaAnterior == null) prefs.remove("mascota"); else prefs.put("mascota", mascotaAnterior);
+        prefs.putBoolean("modoDormir", modoDormirAnterior);
     }
 
     @Test void cambiarMascota_conservaDocumentoYDetieneMotorAnterior() throws Exception {
@@ -165,10 +169,54 @@ class VendexiMascotaTest {
         });
     }
 
+    @Test
+    void menuDerechoDesactivaVetxiPausaMovimientoYConservaSugerenciasHastaDespertar() throws Exception {
+        fx(() -> {
+            java.util.prefs.Preferences.userRoot().node("/com/tag/vendex/asistente").putBoolean("modoDormir", false);
+            var c = cargar(sinIa());
+            var boton = (Button) campo(c, "bubbleButton");
+            var motor = (VetxiAnimaciones) campo(c, "animaciones");
+            motor.setActivo(true);
+
+            var opcionDormir = boton.getContextMenu().getItems().stream()
+                    .filter(i -> "Desactivar Vetxi (modo dormir)".equals(i.getText())).findFirst().orElseThrow();
+            opcionDormir.fire();
+            assertTrue(c.estaDormida());
+            assertFalse((boolean) campoObjeto(motor, "activo"), "el motor de movimiento debe detenerse al dormir");
+            assertEquals("Activar Vetxi", boton.getContextMenu().getItems().stream()
+                    .filter(i -> "Activar Vetxi".equals(i.getText())).findFirst().orElseThrow().getText());
+            assertTrue(java.util.prefs.Preferences.userRoot().node("/com/tag/vendex/asistente")
+                    .getBoolean("modoDormir", false), "el modo queda recordado");
+
+            Documento doc = new Documento();
+            c.setDocumentoActivo(doc);
+            c.recibirSugerencias(doc, revision(c), List.of(sugerencia(904, 8)));
+            assertEquals(1, ((List<?>) campo(c, "pendientes")).size(), "la sugerencia pendiente se conserva");
+            assertFalse(((Region) campo(c, "sugerenciaBubble")).isVisible(), "no debe aparecer un globo al dormir");
+
+            boton.getContextMenu().getItems().stream().filter(i -> "Activar Vetxi".equals(i.getText()))
+                    .findFirst().orElseThrow().fire();
+            assertFalse(c.estaDormida());
+            assertFalse(((Region) campo(c, "sugerenciaBubble")).isVisible(), "despertar no abre el globo sin pedirlo");
+            c.mostrarSugerencias();
+            assertTrue(((Region) campo(c, "sugerenciaBubble")).isVisible(), "el usuario recupera sugerencias manualmente");
+            c.setDocumentoActivo(null);
+        });
+    }
+
     private Object campo(ChatWidgetController c, String nombre) throws Exception {
-        var f = ChatWidgetController.class.getDeclaredField(nombre);
-        f.setAccessible(true);
-        return f.get(c);
+        return campoObjeto(c, nombre);
+    }
+
+    private Object campoObjeto(Object objeto, String nombre) throws Exception {
+        for (Class<?> tipo = objeto.getClass(); tipo != null; tipo = tipo.getSuperclass()) {
+            try {
+                var f = tipo.getDeclaredField(nombre);
+                f.setAccessible(true);
+                return f.get(objeto);
+            } catch (NoSuchFieldException ignorado) { }
+        }
+        throw new NoSuchFieldException(nombre);
     }
 
     private long revision(ChatWidgetController c) throws Exception { return (long) campo(c, "revisionDocumento"); }
