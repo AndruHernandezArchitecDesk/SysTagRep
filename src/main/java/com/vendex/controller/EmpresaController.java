@@ -1,6 +1,7 @@
 package com.vendex.controller;
 
 import com.vendex.dao.EmpresaDAO;
+import com.vendex.dao.MarcaAguaPDFDAOPostgres;
 import com.vendex.model.Empresa;
 import com.vendex.util.DatabaseInputLimits;
 import com.vendex.util.EmpresaLogo;
@@ -15,6 +16,7 @@ import javafx.stage.FileChooser;
 
 import java.io.File;
 import java.io.InputStream;
+import java.io.ByteArrayOutputStream;
 import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -130,6 +132,7 @@ public class EmpresaController implements Initializable {
 
     private void guardar() {
         try {
+            String logoAnterior = empresaActual.getLogoUrl();
             String ruc = txtRuc.getText() != null ? txtRuc.getText().trim() : "";
             String nombre = txtRazonSocial.getText() != null ? txtRazonSocial.getText().trim() : "";
             if (nombre.isEmpty()) {
@@ -140,6 +143,7 @@ public class EmpresaController implements Initializable {
                 estado("El RUC debe tener 13 dígitos numéricos.", true);
                 return;
             }
+            boolean actualizarMarcaAgua = logoPendiente != null;
             if (logoPendiente != null) {
                 try {
                     empresaActual.setLogoUrl(EmpresaLogo.guardarLogo(logoPendiente));
@@ -170,9 +174,31 @@ public class EmpresaController implements Initializable {
                 ok = empresaDAO.actualizar(empresaActual);
             }
             if (ok) {
-                new Alert(Alert.AlertType.INFORMATION, "Empresa guardada correctamente.").showAndWait();
+                if (actualizarMarcaAgua) EmpresaLogo.eliminarLogoAnterior(logoAnterior, empresaActual.getLogoUrl());
+                String errorSincronizarLogo = null;
+                if (actualizarMarcaAgua) {
+                    try (InputStream logo = EmpresaLogo.abrirLogoStream(empresaActual.getLogoUrl())) {
+                        if (logo == null) throw new IllegalStateException("No se pudo volver a abrir el logo guardado.");
+                        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+                        logo.transferTo(bytes);
+                        new com.vendex.service.MarcaAguaLogoService(new MarcaAguaPDFDAOPostgres())
+                                .sincronizar(bytes.toByteArray());
+                    } catch (Exception ex) {
+                        errorSincronizarLogo = ex.getMessage();
+                    }
+                }
                 cargarDatosEmpresa();
                 LogoManager.recargar();
+                if (errorSincronizarLogo == null) {
+                    new Alert(Alert.AlertType.INFORMATION, "Empresa guardada correctamente."
+                            + (actualizarMarcaAgua ? " El logo de la marca de agua también fue actualizado." : ""))
+                            .showAndWait();
+                } else {
+                    estado("Empresa guardada, pero no se pudo actualizar el logo compartido de la marca de agua.", true);
+                    new Alert(Alert.AlertType.WARNING,
+                            "Los datos de Mi Empresa se guardaron, pero el logo de marca de agua no se pudo sincronizar:\n"
+                                    + errorSincronizarLogo + "\n\nRevisa la conexión y vuelve a guardar el logo.").showAndWait();
+                }
             } else {
                 estado("Error al guardar la empresa.", true);
             }

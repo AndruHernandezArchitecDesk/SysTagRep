@@ -44,6 +44,7 @@ Sin Docker CI. Probar local: `psql -c "DROP DATABASE vendex_test; CREATE DATABAS
 ## Si falla migración
 
 - Solo esquema: `V24__corrige_V3.sql` hacia adelante.
+- Si al guardar «Mi Empresa» aparece que falta `empresa.obligado_contabilidad`, ejecutar Flyway en el host central para aplicar `V44__reparar_obligado_contabilidad_empresa.sql` (o correr ese SQL como `postgres` contra la BD afectada). V44 es idempotente y repara también bases que registraron V35 sin conservar la columna.
 - Datos: restaurar `pg_dump -Fc` pre-migración (`RECUPERACION_DR.md`) + `V*` corregida. Hacer backup manual antes de `V*` riesgosa.
 
 ## Archivos

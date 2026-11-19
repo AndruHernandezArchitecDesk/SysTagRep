@@ -20,28 +20,44 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class MarcaAguaPDFTest {
     @Test
-    void watermarkIsRenderedOnEveryPageWithBothLayouts() throws Exception {
+    void watermarkOverlaysOpaqueDetailRowsOnEveryPageOfInvoiceAndProforma() throws Exception {
         byte[] logo = crearLogoDePrueba();
-        for (MarcaAguaPDFConfig.Distribucion distribucion : MarcaAguaPDFConfig.Distribucion.values()) {
-            MarcaAguaPDFConfig config = new MarcaAguaPDFConfig(true, true, distribucion, 0.14f, logo);
-            File pdf = Files.createTempFile("marca-agua-test-", ".pdf").toFile();
-            try (java.io.FileOutputStream output = new java.io.FileOutputStream(pdf)) {
-                Document document = new Document(new Rectangle(PageSize.A4.getWidth(), PageSize.A4.getHeight() / 2));
-                PdfWriter writer = PdfWriter.getInstance(document, output);
-                assertTrue(MarcaAguaPDF.configurar(writer, MarcaAguaPDF.TipoDocumento.PROFORMA, config));
-                document.open();
-                for (int i = 0; i < 45; i++) document.add(new Paragraph("Detalle de prueba " + i));
-                document.close();
-                try (PdfReader reader = new PdfReader(pdf.getAbsolutePath())) {
-                    assertTrue(reader.getNumberOfPages() > 1, "la muestra debe abarcar varias páginas");
-                    for (int page = 1; page <= reader.getNumberOfPages(); page++) {
-                        var resources = reader.getPageN(page).getAsDict(com.lowagie.text.pdf.PdfName.RESOURCES);
-                        assertNotNull(resources.getAsDict(com.lowagie.text.pdf.PdfName.XOBJECT),
-                                "cada página debe incluir el logo como XObject de marca de agua");
+        for (MarcaAguaPDF.TipoDocumento tipo : MarcaAguaPDF.TipoDocumento.values()) {
+            for (MarcaAguaPDFConfig.Distribucion distribucion : MarcaAguaPDFConfig.Distribucion.values()) {
+                MarcaAguaPDFConfig config = new MarcaAguaPDFConfig(true, true, distribucion, 0.14f, logo);
+                File pdf = Files.createTempFile("marca-agua-test-", ".pdf").toFile();
+                try (java.io.FileOutputStream output = new java.io.FileOutputStream(pdf)) {
+                    Rectangle pageSize = tipo == MarcaAguaPDF.TipoDocumento.PROFORMA
+                            ? new Rectangle(PageSize.A4.getWidth(), PageSize.A4.getHeight() / 2) : PageSize.A4;
+                    Document document = new Document(pageSize);
+                    PdfWriter writer = PdfWriter.getInstance(document, output);
+                    assertTrue(MarcaAguaPDF.configurar(writer, tipo, config));
+                    document.open();
+                    com.lowagie.text.pdf.PdfPTable detalle = new com.lowagie.text.pdf.PdfPTable(1);
+                    for (int i = 0; i < 8; i++) {
+                        var celda = new com.lowagie.text.pdf.PdfPCell(new Paragraph("Fila de detalle opaca " + i));
+                        celda.setBackgroundColor(java.awt.Color.WHITE);
+                        celda.setFixedHeight(24);
+                        detalle.addCell(celda);
                     }
+                    document.add(detalle);
+                    for (int i = 0; i < 45; i++) document.add(new Paragraph("Detalle de prueba " + i));
+                    document.close();
+                    try (PdfReader reader = new PdfReader(pdf.getAbsolutePath())) {
+                        assertTrue(reader.getNumberOfPages() > 1, "la muestra debe abarcar varias páginas");
+                        for (int page = 1; page <= reader.getNumberOfPages(); page++) {
+                            var resources = reader.getPageN(page).getAsDict(com.lowagie.text.pdf.PdfName.RESOURCES);
+                            assertNotNull(resources.getAsDict(com.lowagie.text.pdf.PdfName.XOBJECT),
+                                    "cada página debe incluir el logo como XObject de marca de agua");
+                            String stream = new String(reader.getPageContent(page),
+                                    java.nio.charset.StandardCharsets.ISO_8859_1);
+                            assertTrue(stream.lastIndexOf(" Do") > stream.lastIndexOf("Tj"),
+                                    "la marca debe dibujarse después de las filas de detalle opacas en cada página");
+                        }
+                    }
+                } finally {
+                    Files.deleteIfExists(pdf.toPath());
                 }
-            } finally {
-                Files.deleteIfExists(pdf.toPath());
             }
         }
     }

@@ -11,7 +11,7 @@ import java.nio.file.StandardCopyOption;
 /**
  * Logo de la empresa (vista "Mi Empresa").
  * El archivo elegido se copia a una carpeta estable por equipo
- * (~/.vendex/logos/logo-empresa.&lt;ext&gt;) y se guarda su ruta en empresa.logo_url.
+ * (~/.vendex/logos/logo-empresa-&lt;id&gt;.&lt;ext&gt;) y se guarda su ruta en empresa.logo_url.
  * Los documentos (etiquetas JPG, PDFs) resuelven el logo con fallback al recurso bundled.
  */
 public final class EmpresaLogo {
@@ -39,13 +39,32 @@ public final class EmpresaLogo {
             String e = nombre.substring(punto);
             if (e.matches("\\.(png|jpg|jpeg|gif)")) ext = e.equals(".jpeg") ? ".jpg" : e;
         }
-        Path destino = dirLogos().resolve(NOMBRE_BASE + ext);
-        // limpia extensiones previas para no dejar huérfanos
-        for (String vieja : new String[]{".png", ".jpg", ".gif"}) {
-            try { Files.deleteIfExists(dirLogos().resolve(NOMBRE_BASE + vieja)); } catch (Exception ignored) {}
-        }
+        Path destino = dirLogos().resolve(NOMBRE_BASE + "-" + java.util.UUID.randomUUID() + ext);
+        // No borrar otras extensiones antes de confirmar el UPDATE de empresa.logo_url:
+        // si el guardado en BD falla, el logo que aún referencia la empresa debe seguir existiendo.
         Files.copy(origen.toPath(), destino, StandardCopyOption.REPLACE_EXISTING);
         return destino.toAbsolutePath().toString();
+    }
+
+    /** Elimina el archivo anterior solo después de confirmar en BD la nueva ruta. */
+    public static void eliminarLogoAnterior(String anterior, String actual) {
+        Path pathAnterior = resolverArchivo(anterior);
+        Path pathActual = resolverArchivo(actual);
+        if (pathAnterior == null || pathAnterior.equals(pathActual)) return;
+        Path carpeta = dirLogos().toAbsolutePath().normalize();
+        if (!carpeta.equals(pathAnterior.getParent()) || !pathAnterior.getFileName().toString().startsWith(NOMBRE_BASE)) return;
+        try { Files.deleteIfExists(pathAnterior); } catch (Exception ignored) { }
+    }
+
+    private static Path resolverArchivo(String valor) {
+        if (valor == null || valor.isBlank()) return null;
+        try {
+            Path path = valor.startsWith("file:")
+                    ? Paths.get(new java.net.URI(valor)) : Paths.get(valor);
+            return path.toAbsolutePath().normalize();
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     /** Ruta del logo configurado en la empresa, o null si no hay / no existe el archivo. */

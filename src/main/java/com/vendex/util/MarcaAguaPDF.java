@@ -29,7 +29,7 @@ import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/** Dibuja el logo como marca de agua debajo del contenido en todas las páginas. */
+/** Dibuja el logo como marca de agua translúcida encima del contenido en todas las páginas. */
 public final class MarcaAguaPDF {
     private static final Logger LOG = Logger.getLogger(MarcaAguaPDF.class.getName());
     private static final int MAX_LOGO_BYTES = 5 * 1024 * 1024;
@@ -154,7 +154,10 @@ public final class MarcaAguaPDF {
 
         @Override
         public void onEndPage(PdfWriter writer, Document document) {
-            PdfContentByte canvas = writer.getDirectContentUnder();
+            // Se dibuja al final de la página: las celdas opacas del detalle (en especial
+            // las filas blancas de proforma) ya no pueden recortar partes del logo. La
+            // opacidad configurable mantiene legibles textos y valores debajo.
+            PdfContentByte canvas = writer.getDirectContent();
             canvas.saveState();
             try {
                 PdfGState transparency = new PdfGState();
