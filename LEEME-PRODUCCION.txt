@@ -1,5 +1,5 @@
 VENDEX — Portable Windows — Producción
-Build: 11 de noviembre de 2026
+Build: 19 de noviembre de 2026
 
 Requisitos: Windows x64 y Java 17 o superior.
 
@@ -9,5 +9,10 @@ Requisitos: Windows x64 y Java 17 o superior.
 4. La configuración de conexión queda en el perfil local del usuario.
 5. Para cambiar la conexión, ejecuta Reconfigurar-Vendex-BD.bat.
 6. Vendex avisa al arrancar cuando una licencia válida vence dentro de los próximos 10 días.
+7. Antes de actualizar a esta versión, el administrador debe ejecutar
+   actualizar_logo_compartido_dbTag.sql como postgres contra la base dbTag.
+   El script agrega las columnas necesarias de Mi Empresa y el logo compartido.
+   Después, en Mi Empresa, selecciona el logo TAG y pulsa Guardar una vez para
+   almacenarlo para todos los equipos.
 
 Las claves CENTRAL requieren estar registradas en la base dbTag del servidor.

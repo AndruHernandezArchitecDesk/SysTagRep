@@ -177,7 +177,12 @@ public class MainController implements Initializable {
     }
 
     public void abrirDashboard2() {
-        cargarVista("/view/Dashboard2View.fxml");
+        cargarVistaPrincipal("/view/Dashboard2View.fxml");
+        Stage principal = ventanaPrincipal();
+        if (principal != null) {
+            principal.toFront();
+            principal.requestFocus();
+        }
     }
 
     public void abrirAlertas() {

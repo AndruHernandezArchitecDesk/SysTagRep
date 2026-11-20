@@ -45,6 +45,8 @@ Sin Docker CI. Probar local: `psql -c "DROP DATABASE vendex_test; CREATE DATABAS
 
 - Solo esquema: `V24__corrige_V3.sql` hacia adelante.
 - Si al guardar «Mi Empresa» aparece que falta `empresa.obligado_contabilidad`, ejecutar Flyway en el host central para aplicar `V44__reparar_obligado_contabilidad_empresa.sql` (o correr ese SQL como `postgres` contra la BD afectada). V44 es idempotente y repara también bases que registraron V35 sin conservar la columna.
+- `V45__logo_empresa_compartido.sql` agrega `empresa.logo_bytes BYTEA` y migra a esa columna el logo previamente guardado en `configuracion_marca_agua`, si existe. Para actualizar manualmente la base productiva `dbTag`, usar `scripts/actualizar_logo_compartido_dbTag.sql` conectado como `postgres`; es idempotente. Al guardar un logo nuevo en Mi Empresa, Vendex lo almacena como bytes compartidos y los demás clientes dejan de depender de la ruta local del equipo que lo cargó.
+- El logo compartido está limitado a 5 MB y se almacena una sola vez en `empresa.logo_bytes`. Después de aplicar el script/migración, abrir **Mi Empresa**, seleccionar el logo TAG y guardarlo una vez para cargar los bytes compartidos. En modo API también hay que desplegar la nueva versión del backend para que transporte el campo `logoBytes`.
 - Datos: restaurar `pg_dump -Fc` pre-migración (`RECUPERACION_DR.md`) + `V*` corregida. Hacer backup manual antes de `V*` riesgosa.
 
 ## Archivos

@@ -47,7 +47,8 @@ public class EmpresaDAOPostgres implements EmpresaDAO {
     public boolean actualizar(Empresa empresa) {
         String sql = "UPDATE empresa SET ruc = ?, razon_social = ?, titulo = ?, sucursal = ?, "
                 + "direccion_calle_principal = ?, direccion_calle_secundaria = ?, telefono = ?, celular = ?, "
-                + "correo = ?, logo_url = ?, agente_retencion = ?, resolucion = ?, obligado_contabilidad = ?, estado = ? "
+                + "correo = ?, logo_url = ?, logo_bytes = COALESCE(?, logo_bytes), agente_retencion = ?, "
+                + "resolucion = ?, obligado_contabilidad = ?, estado = ? "
                 + "WHERE id = ?";
 
         try (Connection con = new DatabaseConnection().getConnection();
@@ -63,11 +64,12 @@ public class EmpresaDAOPostgres implements EmpresaDAO {
             ps.setString(8, empresa.getCelular());
             ps.setString(9, empresa.getCorreo());
             ps.setString(10, empresa.getLogoUrl());
-            ps.setString(11, empresa.getAgenteRetencion());
-            ps.setString(12, empresa.getResolucion());
-            ps.setString(13, empresa.getObligadoContabilidad());
-            ps.setBoolean(14, empresa.isEstado());
-            ps.setInt(15, empresa.getId());
+            ps.setBytes(11, empresa.getLogoBytes());
+            ps.setString(12, empresa.getAgenteRetencion());
+            ps.setString(13, empresa.getResolucion());
+            ps.setString(14, empresa.getObligadoContabilidad());
+            ps.setBoolean(15, empresa.isEstado());
+            ps.setInt(16, empresa.getId());
 
             int filasAfectadas = ps.executeUpdate();
             return filasAfectadas > 0;
@@ -80,8 +82,8 @@ public class EmpresaDAOPostgres implements EmpresaDAO {
 
     public Empresa crear(Empresa empresa) {
         String sql = "INSERT INTO empresa(ruc, razon_social, titulo, sucursal, direccion_calle_principal, "
-                + "direccion_calle_secundaria, telefono, celular, correo, logo_url, agente_retencion, resolucion, "
-                + "obligado_contabilidad, estado) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id";
+                + "direccion_calle_secundaria, telefono, celular, correo, logo_url, logo_bytes, agente_retencion, resolucion, "
+                + "obligado_contabilidad, estado) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id";
 
         try (Connection con = new DatabaseConnection().getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -96,10 +98,11 @@ public class EmpresaDAOPostgres implements EmpresaDAO {
             ps.setString(8, empresa.getCelular());
             ps.setString(9, empresa.getCorreo());
             ps.setString(10, empresa.getLogoUrl());
-            ps.setString(11, empresa.getAgenteRetencion());
-            ps.setString(12, empresa.getResolucion());
-            ps.setString(13, empresa.getObligadoContabilidad());
-            ps.setBoolean(14, empresa.isEstado());
+            ps.setBytes(11, empresa.getLogoBytes());
+            ps.setString(12, empresa.getAgenteRetencion());
+            ps.setString(13, empresa.getResolucion());
+            ps.setString(14, empresa.getObligadoContabilidad());
+            ps.setBoolean(15, empresa.isEstado());
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) empresa.setId(rs.getInt(1));
@@ -125,6 +128,7 @@ public class EmpresaDAOPostgres implements EmpresaDAO {
         e.setCelular(rs.getString("celular"));
         e.setCorreo(rs.getString("correo"));
         try { e.setLogoUrl(rs.getString("logo_url")); } catch (SQLException ignore) {}
+        try { e.setLogoBytes(rs.getBytes("logo_bytes")); } catch (SQLException ignore) {}
         e.setAgenteRetencion(rs.getString("agente_retencion"));
         e.setResolucion(rs.getString("resolucion"));
         try { e.setObligadoContabilidad(rs.getString("obligado_contabilidad")); } catch (SQLException ignore) {}

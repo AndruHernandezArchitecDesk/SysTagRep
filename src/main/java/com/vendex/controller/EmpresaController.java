@@ -1,7 +1,6 @@
 package com.vendex.controller;
 
 import com.vendex.dao.EmpresaDAO;
-import com.vendex.dao.MarcaAguaPDFDAOPostgres;
 import com.vendex.model.Empresa;
 import com.vendex.util.DatabaseInputLimits;
 import com.vendex.util.EmpresaLogo;
@@ -14,9 +13,10 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.FileChooser;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
-import java.io.ByteArrayOutputStream;
+import java.nio.file.Files;
 import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -34,6 +34,7 @@ public class EmpresaController implements Initializable {
     private final EmpresaDAO empresaDAO;
     private Empresa empresaActual;
     private File logoPendiente;
+    private static final int MAX_LOGO_BYTES = 5 * 1024 * 1024;
 
     @FXML private TextField txtRuc;
     @FXML private TextField txtRazonSocial;
@@ -96,6 +97,12 @@ public class EmpresaController implements Initializable {
 
     private void mostrarLogo() {
         try {
+            byte[] logoBytes = empresaActual.getLogoBytes();
+            if (logoBytes != null && logoBytes.length > 0) {
+                imgLogo.setImage(new Image(new ByteArrayInputStream(logoBytes), 180, 90, true, true));
+                if (lblLogoRuta != null) lblLogoRuta.setText("Logo compartido en la base de datos");
+                return;
+            }
             String ruta = EmpresaLogo.rutaLogoConfigurado();
             Image img = null;
             if (ruta != null && !ruta.startsWith("/img/")) {
@@ -104,7 +111,7 @@ public class EmpresaController implements Initializable {
             }
             if (img == null) {
                 String recurso = (ruta != null) ? ruta : EmpresaLogo.LOGO_RECURSO;
-                try (InputStream is = getClass().getResourceAsStream(recurso)) {
+                try (InputStream is = EmpresaLogo.abrirLogoStream(recurso)) {
                     if (is != null) img = new Image(is);
                 }
             }
@@ -143,15 +150,20 @@ public class EmpresaController implements Initializable {
                 estado("El RUC debe tener 13 dígitos numéricos.", true);
                 return;
             }
-            boolean actualizarMarcaAgua = logoPendiente != null;
+            boolean actualizarLogoCompartido = logoPendiente != null;
             if (logoPendiente != null) {
                 try {
+                    if (logoPendiente.length() > MAX_LOGO_BYTES)
+                        throw new IllegalArgumentException("El logo no puede superar 5 MB.");
+                    byte[] original = Files.readAllBytes(logoPendiente.toPath());
+                    byte[] compartido = com.vendex.util.MarcaAguaPDF.normalizarLogo(original);
                     empresaActual.setLogoUrl(EmpresaLogo.guardarLogo(logoPendiente));
+                    empresaActual.setLogoBytes(compartido);
                 } catch (Exception e) {
-                    estado("No se pudo copiar el logo: " + e.getMessage(), true);
+                    estado("No se pudo preparar el logo compartido: " + e.getMessage(), true);
                     return;
                 }
-            }
+            } else empresaActual.setLogoBytes(null); // null significa conservar los bytes actuales.
 
             empresaActual.setRuc(ruc);
             empresaActual.setRazonSocial(nombre);
@@ -174,31 +186,15 @@ public class EmpresaController implements Initializable {
                 ok = empresaDAO.actualizar(empresaActual);
             }
             if (ok) {
-                if (actualizarMarcaAgua) EmpresaLogo.eliminarLogoAnterior(logoAnterior, empresaActual.getLogoUrl());
-                String errorSincronizarLogo = null;
-                if (actualizarMarcaAgua) {
-                    try (InputStream logo = EmpresaLogo.abrirLogoStream(empresaActual.getLogoUrl())) {
-                        if (logo == null) throw new IllegalStateException("No se pudo volver a abrir el logo guardado.");
-                        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-                        logo.transferTo(bytes);
-                        new com.vendex.service.MarcaAguaLogoService(new MarcaAguaPDFDAOPostgres())
-                                .sincronizar(bytes.toByteArray());
-                    } catch (Exception ex) {
-                        errorSincronizarLogo = ex.getMessage();
-                    }
-                }
+                if (actualizarLogoCompartido) {
+                    EmpresaLogo.eliminarLogoAnterior(logoAnterior, empresaActual.getLogoUrl());
+                    EmpresaLogo.actualizarCache(empresaActual);
+                } else EmpresaLogo.invalidarCache();
                 cargarDatosEmpresa();
                 LogoManager.recargar();
-                if (errorSincronizarLogo == null) {
-                    new Alert(Alert.AlertType.INFORMATION, "Empresa guardada correctamente."
-                            + (actualizarMarcaAgua ? " El logo de la marca de agua también fue actualizado." : ""))
-                            .showAndWait();
-                } else {
-                    estado("Empresa guardada, pero no se pudo actualizar el logo compartido de la marca de agua.", true);
-                    new Alert(Alert.AlertType.WARNING,
-                            "Los datos de Mi Empresa se guardaron, pero el logo de marca de agua no se pudo sincronizar:\n"
-                                    + errorSincronizarLogo + "\n\nRevisa la conexión y vuelve a guardar el logo.").showAndWait();
-                }
+                new Alert(Alert.AlertType.INFORMATION, "Empresa guardada correctamente."
+                        + (actualizarLogoCompartido ? " El logo compartido quedó guardado en dbTag para todos los equipos." : ""))
+                        .showAndWait();
             } else {
                 estado("Error al guardar la empresa.", true);
             }

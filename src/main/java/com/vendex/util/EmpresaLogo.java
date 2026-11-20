@@ -9,15 +9,25 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
 /**
- * Logo de la empresa (vista "Mi Empresa").
- * El archivo elegido se copia a una carpeta estable por equipo
- * (~/.vendex/logos/logo-empresa-&lt;id&gt;.&lt;ext&gt;) y se guarda su ruta en empresa.logo_url.
- * Los documentos (etiquetas JPG, PDFs) resuelven el logo con fallback al recurso bundled.
+ * Logo compartido de la empresa. La fuente canónica son los bytes de empresa.logo_bytes;
+ * logo_url y el archivo ~/.vendex/logos son únicamente compatibilidad/caché local.
+ * Clientes antiguos sin bytes compartidos conservan el fallback por ruta y recurso bundled.
  */
 public final class EmpresaLogo {
 
     public static final String LOGO_RECURSO = "/img/LogoVendex.png";
     private static final String NOMBRE_BASE = "logo-empresa";
+    private static final int MAX_LOGO_BYTES = 5 * 1024 * 1024;
+    private static final long CACHE_LOGO_MILLIS = 60_000;
+    private static volatile LogoCompartido cacheLogo;
+    private static volatile long cacheLogoHasta;
+
+    private record LogoCompartido(String ruta, byte[] bytes) {
+        private LogoCompartido {
+            bytes = bytes == null ? null : bytes.clone();
+        }
+        @Override public byte[] bytes() { return bytes == null ? null : bytes.clone(); }
+    }
 
     private EmpresaLogo() {}
 
@@ -67,35 +77,65 @@ public final class EmpresaLogo {
         }
     }
 
-    /** Ruta del logo configurado en la empresa, o null si no hay / no existe el archivo. */
+    /** Ruta local heredada del logo, o null si no existe archivo accesible en este equipo. */
     public static String rutaLogoConfigurado() {
-        try {
-            var dao = com.vendex.config.AppContext.getInstance().empresaDAO;
-            var lista = dao.listar();
-            if (lista == null || lista.isEmpty()) return null;
-            String url = lista.get(0).getLogoUrl();
-            if (url == null || url.isBlank()) return null;
-            String limpio = url.trim();
-            // file:/// o ruta absoluta
-            if (limpio.startsWith("file:")) {
-                try {
-                    File f = new File(new java.net.URI(limpio));
-                    if (f.isFile()) return f.getAbsolutePath();
-                    return null;
-                } catch (Exception e) { return null; }
+        return resolverRuta(obtenerLogoCompartido().ruta());
+    }
+
+    /** Bytes de la fila compartida en PostgreSQL; null cuando aún no hay logo migrado. */
+    public static byte[] logoBytesCompartidos() {
+        return obtenerLogoCompartido().bytes();
+    }
+
+    /** Refresca en memoria el caché después de guardar desde esta computadora. */
+    public static void actualizarCache(com.vendex.model.Empresa empresa) {
+        if (empresa == null) { invalidarCache(); return; }
+        cacheLogo = new LogoCompartido(empresa.getLogoUrl(), bytesValidos(empresa.getLogoBytes()));
+        cacheLogoHasta = System.currentTimeMillis() + CACHE_LOGO_MILLIS;
+    }
+
+    public static void invalidarCache() {
+        cacheLogoHasta = 0;
+    }
+
+    private static LogoCompartido obtenerLogoCompartido() {
+        LogoCompartido cache = cacheLogo;
+        if (cache != null && System.currentTimeMillis() < cacheLogoHasta) return cache;
+        synchronized (EmpresaLogo.class) {
+            cache = cacheLogo;
+            if (cache != null && System.currentTimeMillis() < cacheLogoHasta) return cache;
+            try {
+                var empresas = com.vendex.config.AppContext.getInstance().empresaDAO.listar();
+                if (empresas != null && !empresas.isEmpty()) {
+                    var empresa = empresas.get(0);
+                    cache = new LogoCompartido(empresa.getLogoUrl(), bytesValidos(empresa.getLogoBytes()));
+                } else cache = new LogoCompartido(null, null);
+            } catch (Exception ignored) {
+                cache = new LogoCompartido(null, null);
             }
-            if (limpio.startsWith("/")) {
-                // ¿recurso bundled o ruta absoluta de otro SO? prueba archivo primero
-                File f = new File(limpio);
-                if (f.isFile()) return f.getAbsolutePath();
-                return limpio; // se intentará como recurso
-            }
-            File f = new File(limpio);
-            if (f.isFile()) return f.getAbsolutePath();
-            return null;
-        } catch (Exception e) {
-            return null;
+            cacheLogo = cache;
+            cacheLogoHasta = System.currentTimeMillis() + CACHE_LOGO_MILLIS;
+            return cache;
         }
+    }
+
+    private static byte[] bytesValidos(byte[] bytes) {
+        return bytes != null && bytes.length > 0 && bytes.length <= MAX_LOGO_BYTES ? bytes : null;
+    }
+
+    private static String resolverRuta(String valor) {
+        if (valor == null || valor.isBlank()) return null;
+        String limpio = valor.trim();
+        try {
+            if (limpio.startsWith("file:")) {
+                File archivo = new File(new java.net.URI(limpio));
+                return archivo.isFile() ? archivo.getAbsolutePath() : null;
+            }
+        } catch (Exception ignored) { return null; }
+        File archivo = new File(limpio);
+        if (archivo.isFile()) return archivo.getAbsolutePath();
+        // Los recursos empaquetados no son rutas relativas de empresa.
+        return limpio.startsWith("/img/") ? limpio : null;
     }
 
     /** Para EtiquetaUtil: ruta de archivo si hay logo configurado, si no el recurso bundled. */
@@ -104,31 +144,29 @@ public final class EmpresaLogo {
         return (cfg != null && !cfg.isBlank()) ? cfg : LOGO_RECURSO;
     }
 
-    /** Stream del logo: archivo configurado → recurso indicado → bundled. Null si nada abre. */
+    /** Stream del logo: bytes compartidos → archivo heredado local → recurso empaquetado. */
     public static InputStream abrirLogoStream(String preferido) {
-        // 1. archivo configurado en la empresa
-        try {
-            String cfg = rutaLogoConfigurado();
-            if (cfg != null && !cfg.startsWith("/img/")) {
-                File f = new File(cfg);
-                if (f.isFile()) return new FileInputStream(f);
-            }
-        } catch (Exception ignored) {}
+        LogoCompartido logo = obtenerLogoCompartido();
+        byte[] bytes = logo.bytes();
+        if (bytes != null && bytes.length > 0) return new java.io.ByteArrayInputStream(bytes);
+        InputStream archivoConfigurado = abrirArchivo(resolverRuta(logo.ruta()));
+        if (archivoConfigurado != null) return archivoConfigurado;
         // 2. preferido: archivo o recurso
-        if (preferido != null && !preferido.isBlank()) {
-            try {
-                File f = new File(preferido);
-                if (f.isFile()) return new FileInputStream(f);
-            } catch (Exception ignored) {}
-            try {
-                InputStream rs = EmpresaLogo.class.getResourceAsStream(preferido);
-                if (rs != null) return rs;
-            } catch (Exception ignored) {}
+        InputStream elegido = abrirArchivo(resolverRuta(preferido));
+        if (elegido != null) return elegido;
+        if (preferido != null && preferido.startsWith("/img/")) {
+            InputStream recurso = EmpresaLogo.class.getResourceAsStream(preferido);
+            if (recurso != null) return recurso;
         }
         // 3. bundled
+        return EmpresaLogo.class.getResourceAsStream(LOGO_RECURSO);
+    }
+
+    private static InputStream abrirArchivo(String ruta) {
+        if (ruta == null || ruta.startsWith("/img/")) return null;
         try {
-            return EmpresaLogo.class.getResourceAsStream(LOGO_RECURSO);
-        } catch (Exception ignored) {}
-        return null;
+            File archivo = new File(ruta);
+            return archivo.isFile() ? new FileInputStream(archivo) : null;
+        } catch (Exception ignored) { return null; }
     }
 }

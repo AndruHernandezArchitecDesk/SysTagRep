@@ -72,14 +72,15 @@ public final class MarcaAguaController implements Initializable {
             cmbDistribucion.setValue(cfg.getDistribucion() == MarcaAguaPDFConfig.Distribucion.REPETIDA
                     ? "Varios logos repetidos" : "Logo único centrado");
             sldOpacidad.setValue(cfg.getOpacidad());
-            byte[] logoGuardado = cfg.getLogoBytes();
+            byte[] logoGuardado = EmpresaLogo.logoBytesCompartidos();
+            if (logoGuardado == null || logoGuardado.length == 0) logoGuardado = cfg.getLogoBytes();
             if (logoGuardado != null && logoGuardado.length > 0) {
                 logoBytes = MarcaAguaPDF.normalizarLogo(logoGuardado);
                 lblLogoEstado.setText("Logo compartido cargado desde dbTag.");
                 mostrarLogo(logoBytes);
             } else {
                 cargarLogoEmpresaLocal();
-                lblLogoEstado.setText("No hay logo compartido guardado. El logo de Mi Empresa está listo para sincronizar al guardar.");
+                lblLogoEstado.setText("El logo compartido se carga desde Mi Empresa al guardarlo en dbTag.");
             }
             estado("Configuración compartida cargada desde dbTag.", false);
         } catch (Exception e) {
@@ -155,9 +156,12 @@ public final class MarcaAguaController implements Initializable {
                 estado("Selecciona o carga un logo antes de activar la marca de agua.", true);
                 return;
             }
-            dao.guardar(configuracionActual(false));
-            estado("Configuración y logo guardados en dbTag. Se aplicarán a todos los equipos conectados.", false);
-            lblLogoEstado.setText("Logo compartido guardado en dbTag.");
+            MarcaAguaPDFConfig actual = configuracionActual(false);
+            // El logo canónico vive en empresa.logo_bytes; no duplicarlo en esta configuración.
+            dao.guardar(new MarcaAguaPDFConfig(actual.isFacturaActiva(), actual.isProformaActiva(),
+                    actual.getDistribucion(), actual.getOpacidad(), null));
+            estado("Configuración guardada en dbTag; el logo compartido se carga desde Mi Empresa.", false);
+            lblLogoEstado.setText("Logo compartido cargado desde Mi Empresa.");
             new Alert(Alert.AlertType.INFORMATION,
                     "La marca de agua compartida quedó guardada. Facturas y proformas nuevas usarán esta configuración.").showAndWait();
         } catch (Exception e) {

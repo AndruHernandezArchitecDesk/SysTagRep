@@ -12,6 +12,7 @@ public class Empresa {
     private String celular;
     private String correo;
     private String logoUrl;
+    private byte[] logoBytes;
     private String agenteRetencion;
     private String resolucion;
     private String obligadoContabilidad;
@@ -119,6 +120,15 @@ public class Empresa {
         this.logoUrl = logoUrl;
     }
 
+    /** Bytes compartidos del logo para que todos los clientes carguen el mismo archivo. */
+    public byte[] getLogoBytes() {
+        return logoBytes == null ? null : logoBytes.clone();
+    }
+
+    public void setLogoBytes(byte[] logoBytes) {
+        this.logoBytes = logoBytes == null ? null : logoBytes.clone();
+    }
+
     public String getAgenteRetencion() {
         return agenteRetencion;
     }
@@ -152,5 +162,4 @@ public class Empresa {
     }
 
 }
-
 

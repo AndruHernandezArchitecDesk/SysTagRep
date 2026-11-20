@@ -42,7 +42,14 @@ public final class MarcaAguaPDF {
     /** Lee la configuración única compartida desde la base central. */
     public static boolean configurar(PdfWriter writer, TipoDocumento tipo) {
         try {
-            return configurar(writer, tipo, new MarcaAguaPDFDAOPostgres().obtener());
+            MarcaAguaPDFConfig configuracion = new MarcaAguaPDFDAOPostgres().obtener();
+            byte[] logoEmpresa = EmpresaLogo.logoBytesCompartidos();
+            if (logoEmpresa != null && logoEmpresa.length > 0) {
+                configuracion = new MarcaAguaPDFConfig(configuracion.isFacturaActiva(),
+                        configuracion.isProformaActiva(), configuracion.getDistribucion(),
+                        configuracion.getOpacidad(), logoEmpresa);
+            }
+            return configurar(writer, tipo, configuracion);
         } catch (Exception e) {
             if (e instanceof java.sql.SQLException sql && "42P01".equals(sql.getSQLState())) {
                 LOG.fine("La configuración compartida de marca de agua aún no está migrada; el PDF sale sin marca.");

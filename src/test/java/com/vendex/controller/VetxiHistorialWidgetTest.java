@@ -39,6 +39,7 @@ class VetxiHistorialWidgetTest {
     private final VetxiHistorialDAO dao = new VetxiHistorialDAOPostgres();
     private final List<ChatWidgetController> widgets = new ArrayList<>();
     private final AtomicInteger consultasIA = new AtomicInteger();
+    private String modoDormirAnterior;
     private final VendexiConsumoService medicion = new VendexiConsumoService(null) {
         @Override public long iniciarSesion(String modulo, String tipo) { return -1; }
         @Override public void finalizarSesion(long id) {}
@@ -49,6 +50,9 @@ class VetxiHistorialWidgetTest {
         Platform.setImplicitExit(false);
     }
     @BeforeEach void prepararSql() throws Exception {
+        var prefs = java.util.prefs.Preferences.userRoot().node("/com/tag/vendex/asistente");
+        modoDormirAnterior = prefs.get("modoDormir", null);
+        prefs.putBoolean("modoDormir", false);
         // AppContext incluye un DAO legacy cuyo constructor crea una tabla con SERIAL.
         DatabaseConnection.setConnectionParams("jdbc:hsqldb:mem:vetxi_widget_" + UUID.randomUUID() + ";sql.syntax_pgs=true", "sa", "");
         DatabaseConnection.ensureVetxiHistorialSchema();
@@ -66,6 +70,9 @@ class VetxiHistorialWidgetTest {
             var executor = (java.util.concurrent.ExecutorService) campo(widget, "hiloHistorial");
             if (executor != null) assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
         }
+        var prefs = java.util.prefs.Preferences.userRoot().node("/com/tag/vendex/asistente");
+        if (modoDormirAnterior == null) prefs.remove("modoDormir");
+        else prefs.put("modoDormir", modoDormirAnterior);
         DatabaseConnection.resetToDefault();
     }
 

@@ -32,6 +32,7 @@ class VendexiMascotaTest {
         var prefs = java.util.prefs.Preferences.userRoot().node("/com/tag/vendex/asistente");
         mascotaAnterior = prefs.get("mascota", null);
         modoDormirAnterior = prefs.getBoolean("modoDormir", false);
+        prefs.putBoolean("modoDormir", false);
     }
     @org.junit.jupiter.api.AfterEach void restaurarPreferenciaMascota() {
         var prefs = java.util.prefs.Preferences.userRoot().node("/com/tag/vendex/asistente");
@@ -383,6 +384,21 @@ class VendexiMascotaTest {
                 assertNull(campo(c, "documentoActivo"));
                 assertFalse(((Parent) campo(c, "capibara")).lookup("#lentes").isVisible());
                 assertTrue(((Button) campo(c, "btnVerificar")).isDisabled());
+
+                var contenedorField = MainController.class.getDeclaredField("contenedor");
+                contenedorField.setAccessible(true);
+                var contenedor = (javafx.scene.layout.StackPane) contenedorField.get(main);
+                int ventanasAntes = javafx.stage.Window.getWindows().size();
+                main.abrirDashboard2();
+                var vistaActualField = MainController.class.getDeclaredField("controladorVistaActual");
+                vistaActualField.setAccessible(true);
+                assertInstanceOf(Dashboard2Controller.class, vistaActualField.get(main));
+                assertEquals(1, contenedor.getChildren().size(), "Dashboard 2 reemplaza el contenido del principal");
+                assertEquals(ventanasAntes, javafx.stage.Window.getWindows().size(), "no se abre otro Stage");
+                main.abrirDashboard1();
+                assertInstanceOf(DashboardController.class, vistaActualField.get(main));
+                assertEquals(1, contenedor.getChildren().size(), "el retorno vuelve a usar el mismo contenedor");
+                assertEquals(ventanasAntes, javafx.stage.Window.getWindows().size(), "el retorno tampoco crea ventanas");
             } finally {
                 com.vendex.util.SesionActual.cerrar();
             }
