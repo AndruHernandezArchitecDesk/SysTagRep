@@ -7,9 +7,9 @@
 
 .root {
     -fx-font-family: "Lato";
-    -fx-bg-page: #F1F8E9;
+    -fx-bg-page: #E9F3E4;
     -fx-bg-card: #FFFFFF;
-    -fx-bg-card-alt: #E8F5E9;
+    -fx-bg-card-alt: #DFF0DF;
     -fx-text-primary: #263D2A;
     -fx-text-secondary: #526B55;
     -fx-accent-primary: #43A047;
@@ -20,13 +20,13 @@
     -fx-accent-danger: #B91C1C;
     -fx-accent-info: #1565C0;
     -fx-accent-green: #2E7D32;
-    -fx-border: #A5D6A7;
+    -fx-border: #8FC99B;
     -fx-selection-bg: #C8E6C9;
     -fx-selection-text: #1B5E20;
     -fx-placeholder: #718A74;
     -fx-gemini-blue: #4285F4;
-    -fx-sidebar-bg: #2E7D32;
-    -fx-sidebar-text: #FFFFFF;
+    -fx-sidebar-bg: #41654A;
+    -fx-sidebar-text: #F1F8E9;
     -fx-focus: #1B5E20;
     -fx-action-secondary: #607D8B;
     -fx-action-cancel: #78909C;
@@ -35,6 +35,17 @@
     -fx-background-color: -fx-bg-page;
     -fx-text-fill: -fx-text-primary;
     -fx-accent: -fx-focus;
+    -fx-background-image: url("../img/arbol-nature-breeze.png");
+    -fx-background-position: center center;
+    -fx-background-repeat: no-repeat;
+    -fx-background-size: 900px 900px;
+}
+
+.theme-nature-breeze .scroll-pane .viewport {
+    -fx-background-image: url("../img/arbol-nature-breeze.png");
+    -fx-background-position: center center;
+    -fx-background-repeat: no-repeat;
+    -fx-background-size: 900px 900px;
 }
 
 .button { -fx-text-fill: -fx-text-primary; }
@@ -47,13 +58,13 @@
 .button-cancel { -fx-background-color: -fx-action-cancel; }
 
 .sidebar { -fx-background-color: -fx-sidebar-bg; }
-.sidebar-user-section, .sidebar-footer-section { -fx-background-color: #27692B; }
-.sidebar-footer-section { -fx-border-color: #66BB6A transparent transparent transparent; }
+.sidebar-user-section, .sidebar-footer-section { -fx-background-color: #35553E; }
+.sidebar-footer-section { -fx-border-color: #5F8A6A transparent transparent transparent; }
 .sidebar .label, .nav-group, .nav-item { -fx-text-fill: -fx-sidebar-text; }
-.nav-item .font-icon, .nav-group .font-icon { -fx-icon-color: #E8F5E9; }
-.nav-item:hover, .nav-group:hover { -fx-background-color: #388E3C; }
-.nav-item:pressed, .nav-item:selected { -fx-background-color: #81C784; -fx-text-fill: #1B5E20; }
-.sidebar-item-active { -fx-background-color: #C8E6C9; -fx-text-fill: #1B5E20; }
+.nav-item .font-icon, .nav-group .font-icon { -fx-icon-color: #E4F0E7; }
+.nav-item:hover, .nav-group:hover { -fx-background-color: #4C7456; }
+.nav-item:pressed, .nav-item:selected { -fx-background-color: #5F8A66; -fx-text-fill: #F1F8E9; }
+.sidebar-item-active { -fx-background-color: #D3E3D6; -fx-text-fill: #2A4030; }
 .sidebar-item-active .font-icon, .quick-access-btn .font-icon { -fx-icon-color: -fx-accent-primary; }
 .quick-access-btn { -fx-background-color: -fx-bg-card; -fx-text-fill: -fx-text-primary; -fx-border-color: -fx-border; }
 .quick-access-btn:hover { -fx-background-color: -fx-bg-card-alt; -fx-border-color: -fx-accent-primary; }
