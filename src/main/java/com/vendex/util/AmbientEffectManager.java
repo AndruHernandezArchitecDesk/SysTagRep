@@ -73,6 +73,15 @@ public final class AmbientEffectManager {
         }
     }
 
+    /** Refresh the saved appearance on every scene that has an ambient layer. */
+    public static void refreshAll() {
+        java.util.List<Scene> escenas;
+        synchronized (REGISTRATIONS) {
+            escenas = new java.util.ArrayList<>(REGISTRATIONS.keySet());
+        }
+        for (Scene scene : escenas) refresh(scene);
+    }
+
     public static void detach(Scene scene) {
         Registration registration = REGISTRATIONS.remove(scene);
         if (registration == null) return;

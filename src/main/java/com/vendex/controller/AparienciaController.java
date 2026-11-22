@@ -157,10 +157,10 @@ public class AparienciaController implements Initializable {
         intensidadGuardada = intensity;
         velocidadGuardada = ambientSpeed;
         opcionAmbientalEditada = true;
-        if (escena != null) {
-            ThemeManager.preview(escena, theme);
-            AmbientEffectManager.refresh(escena);
-        }
+        // El cambio debe reflejarse en todo el sistema ya, no solo en esta ventana:
+        // la ventana principal, los módulos y las ventanas minimizadas reestilizan aquí.
+        ThemeManager.aplicarATodasLasEscenas(theme);
+        AmbientEffectManager.refreshAll();
         lblEstado.setText("Apariencia guardada localmente en este equipo.");
     }
 
@@ -179,9 +179,9 @@ public class AparienciaController implements Initializable {
 
     /** Called by the navigator when leaving an uncommitted preview. */
     public void descartarVistaPrevia() {
-        if (escena == null) return;
-        ThemeManager.preview(escena, temaGuardado);
-        AmbientEffectManager.preview(escena, temaGuardado, animacionesGuardadas,
-                intensidadGuardada, velocidadGuardada);
+        // Restaura el tema guardado en todas las escenas: la vista previa pudo
+        // haberse dejado en esta ventana y el resto nunca debió cambiar.
+        ThemeManager.aplicarATodasLasEscenas(temaGuardado);
+        AmbientEffectManager.refreshAll();
     }
 }

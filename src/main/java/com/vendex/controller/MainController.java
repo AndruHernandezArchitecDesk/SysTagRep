@@ -1171,6 +1171,10 @@ public class MainController implements Initializable {
             abiertas.remove(ventana);
             if (abiertas.isEmpty()) ventanasPorVista.remove(ruta);
         }
+        // Cerrar Apariencia sin pulsar Aplicar descarta la vista previa en todo el
+        // sistema. Si ya se aplicó es un restablecimiento sin efecto (mismo tema).
+        if (controladoresVentana.get(ventana) instanceof AparienciaController apariencia)
+            apariencia.descartarVistaPrevia();
         controladoresVentana.remove(ventana);
         numeroVentana.remove(ventana);
         rutasVentana.remove(ventana);

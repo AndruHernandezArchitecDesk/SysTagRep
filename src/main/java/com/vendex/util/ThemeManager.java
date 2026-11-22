@@ -29,6 +29,11 @@ public class ThemeManager {
 
     private static boolean fontsLoaded;
 
+    // Escenas activas (ventana principal, módulos, modales, login). Claves débiles:
+    // al cerrarse la ventana la entrada se elimina sola al hacerse garbage.
+    private static final java.util.Map<Scene, Boolean> ESCENAS_ACTIVAS =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
     /** Register bundled families before CSS resolves them, including standalone scenes. */
     public static synchronized void cargarFuentes() {
         if (fontsLoaded) return;
@@ -128,7 +133,21 @@ public class ThemeManager {
         // clear() y add(), cuando la paleta todavía no existe en la escena.
         if (!scene.getStylesheets().equals(stylesheets)) scene.getStylesheets().setAll(stylesheets);
         if (root != null && scene.getWindow() != null && scene.getWindow().isShowing()) root.applyCss();
+        ESCENAS_ACTIVAS.put(scene, Boolean.TRUE);
         if (persist) guardarTema(theme);
+    }
+
+    /**
+     * Re-aplica el tema guardado a todas las escenas abiertas (ventana principal,
+     * módulos, modales y minimizadas), sin persistir de nuevo. Usado por la pantalla
+     * Apariencia para que el cambio sea inmediato en todo el sistema.
+     */
+    public static void aplicarATodasLasEscenas(Theme theme) {
+        java.util.List<Scene> escenas;
+        synchronized (ESCENAS_ACTIVAS) {
+            escenas = new java.util.ArrayList<>(ESCENAS_ACTIVAS.keySet());
+        }
+        for (Scene scene : escenas) apply(scene, theme, false);
     }
 
     public static Theme getCurrentTheme() {
