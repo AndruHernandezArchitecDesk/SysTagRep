@@ -1,5 +1,12 @@
 /* Nature Breeze: paleta verde natural que reutiliza el set de componentes claros. */
+.label, .button, .toggle-button, .text-input, .combo-box-base,
+.list-cell, .table-cell, .tree-cell, .menu-item, .menu-bar, .tab-pane,
+.chart, .theme-text, .scramble-title, .login-titulo, .login-subtitulo {
+    -fx-font-family: "Lato";
+}
+
 .root {
+    -fx-font-family: "Lato";
     -fx-bg-page: #F1F8E9;
     -fx-bg-card: #FFFFFF;
     -fx-bg-card-alt: #E8F5E9;

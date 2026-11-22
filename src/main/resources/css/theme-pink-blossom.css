@@ -1,6 +1,13 @@
 /* Pink Blossom: el tema Organic aporta las reglas de componentes; aquí se define
    la paleta y se reemplazan acentos fijos propios de ese tema. */
+.label, .button, .toggle-button, .text-input, .combo-box-base,
+.list-cell, .table-cell, .tree-cell, .menu-item, .menu-bar, .tab-pane,
+.chart, .theme-text, .scramble-title, .login-titulo, .login-subtitulo {
+    -fx-font-family: "Nunito";
+}
+
 .root {
+    -fx-font-family: "Nunito";
     -fx-bg-page: #FFF5F9;
     -fx-bg-card: #FFFFFF;
     -fx-bg-card-alt: #FCE7F3;

@@ -3,8 +3,6 @@ package com.vendex.util;
 import javafx.animation.AnimationTimer;
 import javafx.animation.PauseTransition;
 import javafx.scene.control.Label;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.util.Duration;
 
@@ -32,7 +30,7 @@ public class ScrambleText {
         this.finalText = finalText;
         this.staggerNanos = staggerNanos;
         this.scrambleNanos = scrambleNanos;
-        node.setFont(Font.font("Monospaced", FontWeight.BOLD, node.getFont().getSize()));
+        node.getStyleClass().add("scramble-title");
         node.setAccessibleText(finalText);
     }
 
@@ -46,7 +44,7 @@ public class ScrambleText {
         this.finalText = finalText;
         this.staggerNanos = staggerNanos;
         this.scrambleNanos = scrambleNanos;
-        node.setFont(Font.font("Monospaced", FontWeight.BOLD, node.getFont().getSize()));
+        node.getStyleClass().add("scramble-title");
         node.setAccessibleText(finalText);
     }
 

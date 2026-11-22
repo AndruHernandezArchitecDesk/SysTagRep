@@ -27,6 +27,24 @@ public class ThemeManager {
 
     private static final Preferences PREFS = Preferences.userRoot().node("/com/tag/vendex");
 
+    private static boolean fontsLoaded;
+
+    /** Register bundled families before CSS resolves them, including standalone scenes. */
+    public static synchronized void cargarFuentes() {
+        if (fontsLoaded) return;
+        for (String file : new String[]{"SourceSans3-Regular.ttf", "SourceSans3-Bold.ttf",
+                "JetBrainsMono-Regular.ttf", "JetBrainsMono-Medium.ttf",
+                "Nunito-Regular.ttf", "Nunito-Bold.ttf", "Lato-Regular.ttf", "Lato-Bold.ttf"}) {
+            try (java.io.InputStream stream = ThemeManager.class.getResourceAsStream("/fonts/" + file)) {
+                if (stream == null || javafx.scene.text.Font.loadFont(stream, 12) == null)
+                    throw new IllegalStateException("No se pudo cargar la fuente: " + file);
+            } catch (java.io.IOException ex) {
+                throw new IllegalStateException("No se pudo leer la fuente: " + file, ex);
+            }
+        }
+        fontsLoaded = true;
+    }
+
     public enum Theme {
         ORGANIC("organic", "Organic", ThemeManager.ORGANIC, false),
         CYBERPUNK("cyberpunk", "Cyberpunk", ThemeManager.CYBERPUNK, true),
@@ -73,6 +91,7 @@ public class ThemeManager {
 
     private static void apply(Scene scene, Theme requested, boolean persist) {
         if (scene == null) return;
+        cargarFuentes();
         Theme theme = requested == null ? Theme.ORGANIC : requested;
         String themeFile = theme.stylesheet();
         if (ThemeManager.class.getResource(themeFile) == null) {

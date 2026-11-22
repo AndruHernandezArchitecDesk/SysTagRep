@@ -2,6 +2,13 @@
 /* Guía visual unificada: teal #0F766E + crema + grises neutros */
 
 /* ========== VARIABLES ========== */
+/* Familias explícitas: JavaFX no resuelve de forma fiable font-family: inherit. */
+.label, .button, .toggle-button, .text-input, .combo-box-base,
+.list-cell, .table-cell, .tree-cell, .menu-item, .menu-bar, .tab-pane,
+.chart, .theme-text, .scramble-title, .login-titulo, .login-subtitulo {
+    -fx-font-family: "Source Sans 3";
+}
+
 .root {
     /* Fondos */
     -fx-bg-page:        #FBF7EE;
@@ -36,7 +43,7 @@
     -fx-sidebar-text:   #3F3A34;
 
     /* Fuente */
-    -fx-font-family: "Segoe UI";
+    -fx-font-family: "Source Sans 3";
     -fx-background-color: -fx-bg-page;
     -fx-text-fill: -fx-text-primary;
     -fx-accent: -fx-accent-primary;
@@ -311,7 +318,6 @@
 .login-titulo { -fx-fill: -fx-text-primary; -fx-font-size: 18px; -fx-font-weight: bold; }
 .login-subtitulo {
     -fx-fill: -fx-accent-primary;
-    -fx-font-family: "System";
     -fx-font-size: 17px;
     -fx-font-weight: bold;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.16), 4, 0, 0, 1);

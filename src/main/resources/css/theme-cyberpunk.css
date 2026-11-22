@@ -2,6 +2,12 @@
 /* Acento primario alineado a teal #0F766E para coherencia de marca */
 
 /* ========== VARIABLES ========== */
+.label, .button, .toggle-button, .text-input, .combo-box-base,
+.list-cell, .table-cell, .tree-cell, .menu-item, .menu-bar, .tab-pane,
+.chart, .theme-text, .scramble-title, .login-titulo, .login-subtitulo {
+    -fx-font-family: "JetBrains Mono";
+}
+
 .root {
     -fx-bg-page:        #0D0E14;
     -fx-bg-card:        #14151F;
@@ -231,7 +237,6 @@
 .login-titulo { -fx-fill: #C9CDD6; }
 .login-subtitulo {
     -fx-fill: -fx-accent-primary;
-    -fx-font-family: "System";
     -fx-font-size: 17px;
     -fx-font-weight: bold;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.16), 4, 0, 0, 1);

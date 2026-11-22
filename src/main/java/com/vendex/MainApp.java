@@ -164,10 +164,7 @@ public class MainApp extends Application {
     }
 
     private void cargarFuentes() {
-        try { Font.loadFont(getClass().getResourceAsStream("/fonts/Nunito-Regular.ttf"), 12); } catch (Exception ignored) {}
-        try { Font.loadFont(getClass().getResourceAsStream("/fonts/Nunito-Medium.ttf"), 12); } catch (Exception ignored) {}
-        try { Font.loadFont(getClass().getResourceAsStream("/fonts/JetBrainsMono-Regular.ttf"), 12); } catch (Exception ignored) {}
-        try { Font.loadFont(getClass().getResourceAsStream("/fonts/JetBrainsMono-Medium.ttf"), 12); } catch (Exception ignored) {}
+        ThemeManager.cargarFuentes();
     }
 
     private void mostrarWizardDb(boolean obligatorio) throws Exception {

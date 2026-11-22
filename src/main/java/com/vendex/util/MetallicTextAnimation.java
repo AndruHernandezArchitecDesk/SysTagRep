@@ -110,6 +110,7 @@ public class MetallicTextAnimation {
     private static Text styledText(String value, Font font) {
         Text t = new Text(value);
         t.setFont(font);
+        t.getStyleClass().add("theme-text");
         return t;
     }
 
