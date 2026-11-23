@@ -163,4 +163,25 @@ class VetxiAnimacionesTest {
             }
         });
     }
+
+    @Test void modoDormir_congelaLaPose_aunqueSeAbraDocumento() throws Exception {
+        fx(() -> {
+            try (var e = new Escenario()) {
+                e.motor.setDurmiendo(true);
+                assertTrue(e.dibujo.lookup("#dormido").isVisible(), "Zzz visible al dormir");
+                assertFalse(e.dibujo.lookup("#ojoIzquierdo").isVisible());
+                assertFalse(e.dibujo.lookup("#lentes").isVisible());
+                e.motor.setTrabajando(true); // como abrir factura o proforma
+                assertTrue(e.dibujo.lookup("#dormido").isVisible(), "abrir factura no cambia la pose dormida");
+                assertFalse(e.dibujo.lookup("#lentes").isVisible());
+                assertFalse(e.dibujo.lookup("#libreta").isVisible());
+                assertEquals(VetxiAnimaciones.Estado.REPOSO, e.motor.estado());
+                e.motor.setDurmiendo(false);
+                assertFalse(e.dibujo.lookup("#dormido").isVisible());
+                assertTrue(e.dibujo.lookup("#ojoIzquierdo").isVisible());
+                assertTrue(e.dibujo.lookup("#lentes").isVisible(), "al despertar recupera la pose del documento");
+                assertTrue(e.dibujo.lookup("#libreta").isVisible());
+            }
+        });
+    }
 }

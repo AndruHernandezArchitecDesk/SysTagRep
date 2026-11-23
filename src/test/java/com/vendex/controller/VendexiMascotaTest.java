@@ -205,6 +205,48 @@ class VendexiMascotaTest {
         });
     }
 
+    @Test
+    void dormida_seVeConZzz_yNoCambiaAlAbrirFactura() throws Exception {
+        fx(() -> {
+            var c = cargar(sinIa());
+            var boton = (Button) campo(c, "bubbleButton");
+            var capibara = (Parent) campo(c, "capibara");
+
+            boton.getContextMenu().getItems().stream()
+                    .filter(i -> "Desactivar Vetxi (modo dormir)".equals(i.getText())).findFirst().orElseThrow().fire();
+            assertTrue(c.estaDormida());
+            assertTrue(capibara.lookup("#dormido").isVisible(), "Zzz visible al dormir");
+            assertFalse(capibara.lookup("#ojoIzquierdo").isVisible(), "ojos cerrados al dormir");
+            assertFalse(capibara.lookup("#lentes").isVisible());
+
+            Documento doc = new Documento();
+            c.setDocumentoActivo(doc);
+            assertTrue(capibara.lookup("#dormido").isVisible(), "abrir factura no cambia la pose dormida");
+            assertFalse(capibara.lookup("#lentes").isVisible());
+
+            c.recibirSugerencias(doc, revision(c), List.of(sugerencia(904, 8)));
+            assertEquals(1, ((List<?>) campo(c, "pendientes")).size());
+            assertFalse(((Label) campo(c, "contadorSugerencias")).isVisible(), "el badge queda oculto mientras duerme");
+
+            c.cambiarMascota("vendexi");
+            var robot = (Parent) campo(c, "capibara");
+            assertTrue(c.estaDormida(), "el cambio de mascota conserva el modo dormir");
+            assertTrue(robot.lookup("#dormido").isVisible(), "el robot también duerme con Zzz");
+            assertFalse(robot.lookup("#ojos").isVisible());
+            assertFalse(robot.lookup("#computadora").isVisible(), "sin portátil mientras duerme");
+            assertFalse(((Label) campo(c, "contadorSugerencias")).isVisible());
+
+            boton.getContextMenu().getItems().stream()
+                    .filter(i -> "Activar Vetxi".equals(i.getText())).findFirst().orElseThrow().fire();
+            assertFalse(c.estaDormida());
+            assertFalse(robot.lookup("#dormido").isVisible());
+            assertTrue(robot.lookup("#ojos").isVisible());
+            assertTrue(robot.lookup("#computadora").isVisible(), "al despertar retoma la pose del documento");
+            assertTrue(((Label) campo(c, "contadorSugerencias")).isVisible(), "el badge vuelve al despertar");
+            c.setDocumentoActivo(null);
+        });
+    }
+
     private Object campo(ChatWidgetController c, String nombre) throws Exception {
         return campoObjeto(c, nombre);
     }

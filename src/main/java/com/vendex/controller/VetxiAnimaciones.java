@@ -21,15 +21,17 @@ final class VetxiAnimaciones implements MascotaAnimaciones {
     private final Group dibujo;
     private final Region mascota, superficie;
     private final Node lentes, libreta, lapiz, pataRascado, pulgas, pataTrasera, pataDelantera;
+    private final Node ojoIzquierdo, ojoDerecho, brilloIzquierdo, brilloDerecho, dormido;
     private final BooleanSupplier libre;
     private final BiConsumer<Double, Double> mover;
     private final LongSupplier reloj;
     private final Timeline vigilancia;
     private final ScaleTransition respiracion;
     private Animation accion, escritura, aviso;
+    private FadeTransition sueno;
     private Timeline paseo;
     private Estado estado = Estado.REPOSO;
-    private boolean activo, trabajando;
+    private boolean activo, trabajando, durmiendo;
     private long ultimaActividad, proximoRascado, proximoPaseo;
 
     VetxiAnimaciones(Group dibujo, Region mascota, Region superficie,
@@ -44,6 +46,9 @@ final class VetxiAnimaciones implements MascotaAnimaciones {
         lentes = nodo("lentes"); libreta = nodo("libreta"); lapiz = nodo("lapiz");
         pataRascado = nodo("pataRascado"); pulgas = nodo("pulgas");
         pataTrasera = nodo("pataTrasera"); pataDelantera = nodo("pataDelantera");
+        ojoIzquierdo = nodo("ojoIzquierdo"); ojoDerecho = nodo("ojoDerecho");
+        brilloIzquierdo = nodo("brilloIzquierdo"); brilloDerecho = nodo("brilloDerecho");
+        dormido = nodo("dormido");
         respiracion = new ScaleTransition(Duration.seconds(2.2), dibujo);
         respiracion.setFromY(1); respiracion.setToY(1.035);
         respiracion.setAutoReverse(true); respiracion.setCycleCount(Animation.INDEFINITE);
@@ -63,6 +68,7 @@ final class VetxiAnimaciones implements MascotaAnimaciones {
     Estado estado() { return estado; }
 
     public void setActivo(boolean valor) {
+        if (durmiendo) valor = false;
         if (activo == valor) return;
         activo = valor;
         if (valor) {
@@ -85,6 +91,27 @@ final class VetxiAnimaciones implements MascotaAnimaciones {
         detenerAccion();
         ultimaActividad = reloj.getAsLong();
         mostrarPose();
+    }
+
+    @Override public void setDurmiendo(boolean valor) {
+        if (durmiendo == valor) return;
+        durmiendo = valor;
+        if (valor) {
+            vigilancia.stop(); respiracion.stop();
+            detenerAccion();
+            if (aviso != null) aviso.stop();
+            mascota.setScaleX(1); mascota.setScaleY(1);
+            activo = false;
+            mostrarPose();
+            var parpadeo = new FadeTransition(Duration.seconds(1.4), dormido);
+            parpadeo.setFromValue(0.55); parpadeo.setToValue(1.0);
+            parpadeo.setAutoReverse(true); parpadeo.setCycleCount(Animation.INDEFINITE);
+            sueno = parpadeo; parpadeo.playFromStart();
+        } else {
+            if (sueno != null) { sueno.stop(); sueno = null; }
+            dormido.setVisible(false);
+            mostrarPose();
+        }
     }
 
     public void registrarActividad() {
@@ -137,6 +164,19 @@ final class VetxiAnimaciones implements MascotaAnimaciones {
     }
 
     private void mostrarPose() {
+        if (durmiendo) {
+            if (escritura != null) { escritura.stop(); escritura = null; }
+            lentes.setVisible(false); libreta.setVisible(false); lapiz.setVisible(false);
+            pataRascado.setVisible(false); pulgas.setVisible(false);
+            pataTrasera.setVisible(true);
+            ojoIzquierdo.setVisible(false); ojoDerecho.setVisible(false);
+            brilloIzquierdo.setVisible(false); brilloDerecho.setVisible(false);
+            dormido.setVisible(true);
+            return;
+        }
+        dormido.setVisible(false);
+        ojoIzquierdo.setVisible(true); ojoDerecho.setVisible(true);
+        brilloIzquierdo.setVisible(true); brilloDerecho.setVisible(true);
         boolean escribiendo = trabajando && estado != Estado.PASEANDO && estado != Estado.RASCANDO;
         lentes.setVisible(escribiendo); libreta.setVisible(escribiendo); lapiz.setVisible(escribiendo);
         pataRascado.setVisible(estado == Estado.RASCANDO); pulgas.setVisible(estado == Estado.RASCANDO);

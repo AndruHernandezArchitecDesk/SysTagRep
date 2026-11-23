@@ -2,6 +2,7 @@
 <?import javafx.scene.Group?>
 <?import javafx.scene.paint.*?>
 <?import javafx.scene.shape.*?>
+<?import javafx.scene.text.Text?>
 <!-- Vetxi de frente. Las piezas conservan su identidad para las animaciones locales. -->
 <Group xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" mouseTransparent="true">
     <fx:define>
@@ -52,8 +53,8 @@
     <SVGPath content="M 29 27 Q 32 25 35 27 M 65 27 Q 68 25 71 27" fill="TRANSPARENT" stroke="#A2734C" strokeWidth="1.2" strokeLineCap="ROUND"/>
     <Circle fx:id="ojoIzquierdo" centerX="33" centerY="33" radius="3.4" fill="#352A23"/>
     <Circle fx:id="ojoDerecho" centerX="67" centerY="33" radius="3.4" fill="#352A23"/>
-    <Circle centerX="32" centerY="31.8" radius="1.1" fill="#FFF9E9"/>
-    <Circle centerX="66" centerY="31.8" radius="1.1" fill="#FFF9E9"/>
+    <Circle fx:id="brilloIzquierdo" centerX="32" centerY="31.8" radius="1.1" fill="#FFF9E9"/>
+    <Circle fx:id="brilloDerecho" centerX="66" centerY="31.8" radius="1.1" fill="#FFF9E9"/>
     <Rectangle x="29" y="36" width="42" height="22" arcWidth="20" arcHeight="18" fill="$hocicoSuave"/>
     <SVGPath content="M 41 41 Q 50 37 59 41 L 57 45 Q 50 48 43 45 Z" fill="#80583E"/>
     <Ellipse centerX="45" centerY="42.5" radiusX="1.6" radiusY="1.2" fill="#493326"/>
@@ -94,5 +95,14 @@
         <Ellipse centerX="12" centerY="16" radiusX="1.6" radiusY="2.2" fill="#65452E"/>
         <Ellipse centerX="20" centerY="10" radiusX="1.3" radiusY="1.8" fill="#65452E"/>
         <SVGPath content="M 10 15 L 8 13 M 14 15 L 16 13 M 18 9 L 16 7 M 22 9 L 24 7" stroke="#80583F" strokeWidth="0.8"/>
+    </Group>
+
+    <!-- Pose de sueño (modo dormir): ojos cerrados y Zzz; oculta ojos abiertos por el motor. -->
+    <Group fx:id="dormido" visible="false">
+        <SVGPath content="M 29.6 33 Q 33 36.6 36.4 33" fill="TRANSPARENT" stroke="#352A23" strokeWidth="1.6" strokeLineCap="ROUND"/>
+        <SVGPath content="M 63.6 33 Q 67 36.6 70.4 33" fill="TRANSPARENT" stroke="#352A23" strokeWidth="1.6" strokeLineCap="ROUND"/>
+        <Text x="70" y="17" text="z" fill="#5D7A63" style="-fx-font-size: 8px; -fx-font-weight: bold;"/>
+        <Text x="78" y="11" text="z" fill="#5D7A63" style="-fx-font-size: 11px; -fx-font-weight: bold;"/>
+        <Text x="87" y="5" text="Z" fill="#5D7A63" style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
     </Group>
 </Group>

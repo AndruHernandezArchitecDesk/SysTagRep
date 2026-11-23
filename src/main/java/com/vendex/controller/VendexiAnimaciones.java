@@ -14,7 +14,7 @@ import java.util.function.BooleanSupplier;
 final class VendexiAnimaciones implements MascotaAnimaciones {
     private static final double BRAZO_RELAX = 0;
     private final Group dibujo;
-    private final Node halo, cabeza, ojos, sonrisa, computadora, teclas, escaneo, holograma, brazoTeclado;
+    private final Node halo, cabeza, ojos, sonrisa, computadora, teclas, escaneo, holograma, brazoTeclado, dormido;
     private final Rotate brazoSaludo, giroCabeza, giroTeclado;
     private final Rotate codoSaludo, codoTeclado, manoSaludo, manoTeclado;
     private final Rotate balanceoSaludo = new Rotate(0, 63, 58), balanceoTeclado = new Rotate(0, 30, 59);
@@ -26,8 +26,9 @@ final class VendexiAnimaciones implements MascotaAnimaciones {
     private final Timeline vigilancia;
     private PauseTransition esperaParpadeo, esperaGesto;
     private Animation parpadeo, gesto, saludo, escritura, mostrarPortatil;
+    private javafx.animation.FadeTransition sueno;
     private Timeline paseo;
-    private boolean activo, trabajando;
+    private boolean activo, trabajando, durmiendo;
     private long ultimaActividad = System.nanoTime();
 
     VendexiAnimaciones(Group dibujo, BooleanSupplier libre, javafx.scene.layout.Region mascota,
@@ -39,7 +40,7 @@ final class VendexiAnimaciones implements MascotaAnimaciones {
         this.mover = mover;
         halo = nodo("halo"); cabeza = nodo("cabeza"); ojos = nodo("ojos"); sonrisa = nodo("sonrisa");
         computadora = nodo("computadora"); teclas = nodo("teclas"); escaneo = nodo("escaneo");
-        holograma = nodo("holograma"); brazoTeclado = nodo("brazoTeclado");
+        holograma = nodo("holograma"); brazoTeclado = nodo("brazoTeclado"); dormido = nodo("dormido");
         brazoSaludo = transform("brazoSaludo");
         giroCabeza = transform("cabeza");
         giroTeclado = transform("brazoTeclado");
@@ -103,6 +104,7 @@ final class VendexiAnimaciones implements MascotaAnimaciones {
     }
 
     @Override public void setActivo(boolean valor) {
+        if (durmiendo) valor = false;
         if (activo == valor) return;
         activo = valor;
         ultimaActividad = System.nanoTime();
@@ -115,9 +117,9 @@ final class VendexiAnimaciones implements MascotaAnimaciones {
             if (mostrarPortatil != null) { mostrarPortatil.stop(); mostrarPortatil = null; }
             dibujo.setTranslateY(0); halo.setOpacity(0.3); ojos.setScaleY(1); ojos.setTranslateX(0);
             cabeza.setScaleX(1); cabeza.setScaleY(1); giroCabeza.setAngle(0);
-            computadora.setVisible(trabajando);
+            computadora.setVisible(trabajando && !durmiendo);
             dejarPoseReposo();
-            if (trabajando) fijarPoseTrabajo();
+            if (trabajando && !durmiendo) fijarPoseTrabajo();
         }
     }
 
@@ -128,11 +130,43 @@ final class VendexiAnimaciones implements MascotaAnimaciones {
         ultimaActividad = System.nanoTime();
         detenerTimersVida(); detenerSaludo(); detenerGesto(); detenerEscritura();
         detenerPaseo();
+        if (durmiendo) return; // La pose dormida no cambia al abrir factura/proforma.
         if (valor) {
             if (activo) iniciarTrabajo(); else { fijarPoseTrabajo(); computadora.setVisible(true); }
         } else {
             cerrarPortatil(); dejarPoseReposo();
             if (activo) { respiracion.playFromStart(); iniciarVidaEnReposo(); }
+        }
+    }
+
+    @Override public void setDurmiendo(boolean valor) {
+        if (durmiendo == valor) return;
+        durmiendo = valor;
+        if (valor) {
+            vigilancia.stop(); respiracion.stop(); detenerTimersVida(); detenerBrazos();
+            detenerPaseo(); detenerSaludo(); detenerGesto(); detenerEscritura();
+            if (mostrarPortatil != null) { mostrarPortatil.stop(); mostrarPortatil = null; }
+            activo = false;
+            dibujo.setTranslateY(0); halo.setOpacity(0.3); ojos.setScaleY(1); ojos.setTranslateX(0);
+            cabeza.setScaleX(1); cabeza.setScaleY(1); giroCabeza.setAngle(0);
+            dejarPoseReposo();
+            computadora.setVisible(false);
+            ojos.setVisible(false);
+            dormido.setVisible(true);
+            var parpadeo = new javafx.animation.FadeTransition(Duration.seconds(1.4), dormido);
+            parpadeo.setFromValue(0.55); parpadeo.setToValue(1.0);
+            parpadeo.setAutoReverse(true); parpadeo.setCycleCount(Animation.INDEFINITE);
+            sueno = parpadeo; parpadeo.playFromStart();
+        } else {
+            if (sueno != null) { sueno.stop(); sueno = null; }
+            dormido.setVisible(false);
+            ojos.setVisible(true);
+            if (activo) {
+                respiracion.play(); vigilancia.playFromStart();
+                if (trabajando) iniciarTrabajo(); else iniciarVidaEnReposo();
+            } else if (trabajando) {
+                fijarPoseTrabajo(); computadora.setVisible(true);
+            }
         }
     }
 

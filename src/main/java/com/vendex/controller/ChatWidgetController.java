@@ -218,9 +218,11 @@ public class ChatWidgetController {
         bubbleButton.setAccessibleText("Vetxi, asistente. Arrastra para mover; pulsa para abrir. Clic derecho para Guía o cambiar mascota.");
         animaciones = nuevo;
         String modulo = documentoActivo == null ? "" : documentoActivo.contextoVendexi().modulo;
+        nuevo.setDurmiendo(modoDormir);
         animaciones.setTrabajando("factura".equals(modulo) || "proforma".equals(modulo));
         preferencias.put("mascota", robot ? "vendexi" : "capibara");
         actualizarReposo();
+        actualizarIndicadorModoDormir();
     }
 
     private void configurarMascota() {
@@ -311,6 +313,8 @@ public class ChatWidgetController {
     void alternarModoDormir() {
         modoDormir = !modoDormir;
         preferencias.putBoolean("modoDormir", modoDormir);
+        terminarGuia(); // La guía restauraría la visibilidad previa de las piezas al cerrarse.
+        animaciones.setDurmiendo(modoDormir);
         if (modoDormir) {
             ocultarSugerencias();
             chatPanel.setVisible(false);
@@ -318,6 +322,7 @@ public class ChatWidgetController {
             animaciones.setActivo(false);
         } else {
             actualizarReposo();
+            actualizarContador();
         }
         actualizarIndicadorModoDormir();
     }
@@ -416,6 +421,7 @@ public class ChatWidgetController {
     }
 
     void iniciarGuia() {
+        if (modoDormir) return;
         if (guia != null && guia.activa()) { terminarGuia(); return; }
         javafx.scene.Parent formulario = documentoActivo == null ? null : documentoActivo.formularioGuia();
         if (formulario == null || !"factura".equals(documentoActivo.contextoVendexi().modulo)) {
@@ -510,7 +516,7 @@ public class ChatWidgetController {
 
     private void actualizarContador() {
         contadorSugerencias.setText(Integer.toString(pendientes.size()));
-        contadorSugerencias.setVisible(!pendientes.isEmpty());
+        contadorSugerencias.setVisible(!pendientes.isEmpty() && !modoDormir);
         btnPendientes.setText("Sugerencias (" + pendientes.size() + ")");
         btnPendientes.setDisable(pendientes.isEmpty());
     }

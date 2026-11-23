@@ -4,6 +4,7 @@
 <?import javafx.scene.shape.*?>
 <?import javafx.scene.effect.DropShadow?>
 <?import javafx.scene.transform.Rotate?>
+<?import javafx.scene.text.Text?>
 <!-- Arte vectorial inspirado en la referencia aprobada; fondo realmente transparente. -->
 <Group xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" mouseTransparent="true" scaleX="-1">
   <fx:define>
@@ -73,6 +74,15 @@
     <effect><DropShadow color="#087BFF" radius="3" spread="0.4"/></effect>
     <SVGPath fx:id="ojoIzquierdo" content="M 32 35 Q 36 25 42 33" fill="TRANSPARENT" stroke="#19F1FF" strokeWidth="3.2" strokeLineCap="ROUND"/>
     <SVGPath fx:id="ojoDerecho" content="M 55 31 Q 59 21 65 29" fill="TRANSPARENT" stroke="#19F1FF" strokeWidth="3.2" strokeLineCap="ROUND"/>
+  </Group>
+  <!-- Pose de sueño (modo dormir): ojos cerrados y Zzz; el motor oculta #ojos. -->
+  <Group fx:id="dormido" visible="false">
+    <SVGPath content="M 32 34 Q 36 39 42 32" fill="TRANSPARENT" stroke="#19F1FF" strokeWidth="3.2" strokeLineCap="ROUND"/>
+    <SVGPath content="M 55 30 Q 59 35 65 28" fill="TRANSPARENT" stroke="#19F1FF" strokeWidth="3.2" strokeLineCap="ROUND"/>
+    <!-- La raíz está espejada (scaleX=-1): cada Text se contra-espeja sobre su propio centro. -->
+    <Text x="76" y="16" scaleX="-1" text="z" fill="#19D9FF" style="-fx-font-size: 8px; -fx-font-weight: bold;"/>
+    <Text x="83" y="10" scaleX="-1" text="z" fill="#19D9FF" style="-fx-font-size: 11px; -fx-font-weight: bold;"/>
+    <Text x="91" y="4" scaleX="-1" text="Z" fill="#19D9FF" style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
   </Group>
   <Group fx:id="sonrisa">
     <SVGPath content="M 44 40 Q 50 42 55 37 Q 52 45 44 40 Z" fill="#19D9FF"/>
