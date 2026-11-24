@@ -48,11 +48,11 @@
                         <FontIcon iconLiteral="fas-palette" iconSize="16"/>
                     </graphic>
                 </Button>
-                <Button onAction="#irHome" styleClass="btn-orden" prefHeight="28" prefWidth="42">
+                <Button onAction="#irUsuarios" styleClass="btn-orden" prefHeight="28" prefWidth="42">
                     <graphic>
                         <FontIcon iconLiteral="fas-user" iconSize="16"/>
                     </graphic>
-                    <tooltip><Tooltip text="Inicio"/></tooltip>
+                    <tooltip><Tooltip text="Usuarios"/></tooltip>
                 </Button>
             </HBox>
 
