@@ -445,7 +445,7 @@ public class PrestamoController implements Initializable {
             TextField txtMonto = new TextField();
             txtMonto.setPromptText("0.00");
             TextField txtTasa = new TextField();
-            txtTasa.setPromptText("16.50 (% total del préstamo)");
+            txtTasa.setPromptText("16.50 (% total del préstamo). Vacío = sin interés");
             ComboBox<String> cmbPeriodicidad = new ComboBox<>(FXCollections.observableArrayList(PERIODICIDADES));
             cmbPeriodicidad.setValue("MENSUAL");
             TextField txtCuotas = new TextField();
@@ -485,7 +485,7 @@ public class PrestamoController implements Initializable {
             form.add(cmbEntidad, 1, 0);
             form.add(crearEtiquetaPrestamo("Monto principal ($):"), 0, 1);
             form.add(txtMonto, 1, 1);
-            form.add(crearEtiquetaPrestamo("Interés total del préstamo (%):"), 0, 2);
+            form.add(crearEtiquetaPrestamo("Interés total del préstamo (%) — opcional:"), 0, 2);
             form.add(txtTasa, 1, 2);
             form.add(crearEtiquetaPrestamo("Periodicidad:"), 0, 3);
             form.add(cmbPeriodicidad, 1, 3);
@@ -527,7 +527,7 @@ public class PrestamoController implements Initializable {
             Runnable preview = () -> {
                 try {
                     BigDecimal monto = parse(txtMonto.getText());
-                    BigDecimal tasa = parse(txtTasa.getText());
+                    BigDecimal tasa = parseTasaOpcional(txtTasa.getText());
                     int n = (int) parse(txtCuotas.getText()).doubleValue();
                     if (monto == null || tasa == null || n <= 0) {
                         lblCuota.setText("Cuota fija: $—");
@@ -575,7 +575,7 @@ public class PrestamoController implements Initializable {
             btnGuardar.setOnAction(e -> {
                 try {
                     BigDecimal monto = parse(txtMonto.getText());
-                    BigDecimal tasa = parse(txtTasa.getText());
+                    BigDecimal tasa = parseTasaOpcional(txtTasa.getText());
                     int n = (int) parse(txtCuotas.getText()).doubleValue();
                     String per = "SEMANAL".equals(cmbPeriodicidad.getValue()) ? "S" : "M";
                     EntidadFinanciera entidad = cmbEntidad.getValue();
@@ -998,7 +998,7 @@ public class PrestamoController implements Initializable {
     private BigDecimal calcularCuotaPreview(TextField monto, TextField tasa, TextField cuotas) {
         try {
             BigDecimal m = parse(monto.getText());
-            BigDecimal t = parse(tasa.getText());
+            BigDecimal t = parseTasaOpcional(tasa.getText());
             int n = (int) parse(cuotas.getText()).doubleValue();
             if (m == null || t == null || n <= 0) return null;
             return PrestamoService.calcularCuotaInteresTotal(m, t, n);
@@ -1010,6 +1010,12 @@ public class PrestamoController implements Initializable {
     private static BigDecimal parse(String s) {
         if (s == null || s.trim().isEmpty()) throw new NumberFormatException("vacío");
         return new BigDecimal(s.trim().replace(",", "."));
+    }
+
+    /** Tasa del préstamo opcional: vacío equivale a 0% (sin interés). */
+    static BigDecimal parseTasaOpcional(String s) {
+        if (s == null || s.trim().isEmpty()) return BigDecimal.ZERO;
+        return parse(s);
     }
 
     private Label crearLabel(String texto) {

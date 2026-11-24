@@ -272,6 +272,20 @@ class PrestamoServiceTest {
     private static BigDecimal TASA_5() { return new BigDecimal("5"); }
 
     @Test
+    void crearPrestamo_sinInteres_totalIgualAlCapital() {
+        when(prestamoDAO.insertar(any())).thenReturn(42);
+        Prestamo p = service.crearPrestamo(1, new BigDecimal("1000"), BigDecimal.ZERO, "M", 6,
+                LocalDate.of(2026, 1, 1), null, null, null);
+        assertEquals(0, p.getTotalAPagar().compareTo(new BigDecimal("1000.00")));
+        assertEquals(0, p.getTotalInteres().compareTo(BigDecimal.ZERO));
+        assertEquals(0, p.getCuotaMonto().compareTo(new BigDecimal("166.67")));
+        Mockito.verify(prestamoDAO).insertarCuotas(argThat(cuotas -> cuotas.size() == 6
+                && cuotas.stream().allMatch(c -> c.getInteres().signum() == 0)
+                && cuotas.stream().map(PrestamoCuota::getMonto).reduce(BigDecimal.ZERO, BigDecimal::add)
+                        .compareTo(new BigDecimal("1000.00")) == 0));
+    }
+
+    @Test
     void interesTotal7000A72Cuotas_cierraCapitalEInteresExactos() {
         var cuotas = PrestamoService.generarCuotasInteresTotal(1, new BigDecimal("7000"),
                 new BigDecimal("16.5"), 72, "M", LocalDate.of(2026, 1, 1));
