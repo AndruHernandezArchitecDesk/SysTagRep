@@ -71,36 +71,46 @@ public class RetencionController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        ComboFilter.habilitar(cmbTipoIdSujeto, FXCollections.observableArrayList("04", "05", "06"));
-        cmbTipoIdSujeto.setValue("04");
+        ComboFilter.habilitar(cmbTipoIdSujeto, FXCollections.observableArrayList(TiposIdSri.items()));
+        cmbTipoIdSujeto.setValue(TiposIdSri.defaultItem());
         ComboFilter.habilitar(cmbAmbiente, FXCollections.observableArrayList(AppConstants.AMBIENTE_PRUEBAS, AppConstants.AMBIENTE_PRODUCCION));
         cmbAmbiente.setValue(ConfigAmbiente.cargar());
         cmbAmbiente.valueProperty().addListener((o, old, v) -> ConfigAmbiente.guardar(v));
         String[] f = ConfigFirma.cargar(); rutaP12 = f[0]; claveP12 = f[1];
-        ComboFilter.habilitar(cmbCodSustento, FXCollections.observableArrayList("01", "02", "03"));
-        cmbCodSustento.setValue("01");
-        ComboFilter.habilitar(cmbCodDocSustento, FXCollections.observableArrayList("01", "04", "05"));
-        cmbCodDocSustento.setValue("01");
-        ComboFilter.habilitar(cmbCodigo, FXCollections.observableArrayList("1", "2"));
-        cmbCodigo.setValue("1");
-        // tabla retenciones códigos desde tabla_retencion
+        ComboFilter.habilitar(cmbCodSustento, FXCollections.observableArrayList(RetencionCatalogosSri.codSustentoItems()));
+        cmbCodSustento.setValue(RetencionCatalogosSri.defaultCodSustento());
+        ComboFilter.habilitar(cmbCodDocSustento, FXCollections.observableArrayList(RetencionCatalogosSri.codDocSustentoItems()));
+        cmbCodDocSustento.setValue(RetencionCatalogosSri.defaultCodDocSustento());
+        ComboFilter.habilitar(cmbCodigo, FXCollections.observableArrayList(RetencionCatalogosSri.impuestoItems()));
+        cmbCodigo.setValue(RetencionCatalogosSri.defaultImpuesto());
+        // tabla retenciones: etiqueta "codigo - descripcion (%)", se guarda solo el codigo
         try {
             var vigentes = tablaDAO.listarVigentes();
-            ObservableList<String> codigos = FXCollections.observableArrayList();
-            for (var t : vigentes) codigos.add(t.getCodigoRetencion() + " - " + t.getDescripcion() + " (" + t.getPorcentaje() + "%)");
-            // simplificado: solo códigos
-            ObservableList<String> soloCodigos = FXCollections.observableArrayList();
-            for (var t : vigentes) soloCodigos.add(t.getCodigoRetencion());
-            ComboFilter.habilitar(cmbCodigoRetencion, soloCodigos);
+            ObservableList<String> itemsRet = FXCollections.observableArrayList();
+            for (var t : vigentes) itemsRet.add(t.getCodigoRetencion() + " - " + t.getDescripcion() + " (" + t.getPorcentaje() + "%)");
+            ComboFilter.habilitar(cmbCodigoRetencion, itemsRet);
             cmbCodigoRetencion.getSelectionModel().selectedItemProperty().addListener((o, old, sel) -> {
                 if (sel != null) {
-                    var porc = tablaDAO.obtenerPorcentajeVigente(sel);
+                    String codigoRet = RetencionCatalogosSri.codigo(sel);
+                    var porc = tablaDAO.obtenerPorcentajeVigente(codigoRet);
                     if (porc != null) txtPorcentaje.setText(porc.toPlainString());
                     // autocompletar codigo tipo según tabla
-                    for (var t : vigentes) if (t.getCodigoRetencion().equals(sel)) { cmbCodigo.setValue(t.getTipo()); break; }
+                    for (var t : vigentes) if (t.getCodigoRetencion().equals(codigoRet)) {
+                        String imp = RetencionCatalogosSri.itemDeImpuesto(t.getTipo());
+                        cmbCodigo.setValue(imp != null ? imp : RetencionCatalogosSri.defaultImpuesto());
+                        break;
+                    }
                 }
             });
-        } catch (Exception e) { ComboFilter.habilitar(cmbCodigoRetencion, FXCollections.observableArrayList("303","312","725","723","322")); }
+        } catch (Exception e) {
+            ComboFilter.habilitar(cmbCodigoRetencion, FXCollections.observableArrayList(
+                "303 - Honorarios profesionales (10.00%)",
+                "312 - Transporte privado pasajeros (1.00%)",
+                "725 - IVA bienes (30.00%)",
+                "723 - IVA servicios (70.00%)",
+                "322 - Seguros y reaseguros (1.75%)"
+            ));
+        }
 
         // periodo fiscal por defecto MM/YYYY actual
         txtPeriodoFiscal.setText(LocalDate.now().format(DateTimeFormatter.ofPattern("MM/yyyy")));
@@ -115,8 +125,8 @@ public class RetencionController implements Initializable {
                 txtRazonSujeto.setText(sel.getNombre());
                 txtIdentSujeto.setText(sel.getIdentificacion());
                 String id = sel.getIdentificacion();
-                if (id != null && id.length() == 13) cmbTipoIdSujeto.setValue("04");
-                else if (id != null && id.length() == 10) cmbTipoIdSujeto.setValue("05");
+                if (id != null && id.length() == 13) cmbTipoIdSujeto.setValue(TiposIdSri.itemDe("04"));
+                else if (id != null && id.length() == 10) cmbTipoIdSujeto.setValue(TiposIdSri.itemDe("05"));
             }
         });
         txtBase.textProperty().addListener((o, old, v) -> recalcularValor());
@@ -177,8 +187,10 @@ public class RetencionController implements Initializable {
             BigDecimal total = new BigDecimal(totalStr.trim());
             if (total.compareTo(BigDecimal.ZERO) <= 0) { new Alert(Alert.AlertType.WARNING, "Total > 0.").showAndWait(); return; }
             RetencionService.DocSustentoInput d = new RetencionService.DocSustentoInput(num.trim(), fecha, total);
-            d.codSustento = cmbCodSustento.getValue()!=null?cmbCodSustento.getValue():"01";
-            d.codDocSustento = cmbCodDocSustento.getValue()!=null?cmbCodDocSustento.getValue():"01";
+            String codSustento = RetencionCatalogosSri.codigo(cmbCodSustento.getValue());
+            d.codSustento = codSustento != null && !codSustento.isBlank() ? codSustento : "01";
+            String codDocSustento = RetencionCatalogosSri.codigo(cmbCodDocSustento.getValue());
+            d.codDocSustento = codDocSustento != null && !codDocSustento.isBlank() ? codDocSustento : "01";
             docs.add(d);
             tblDocs.getSelectionModel().select(d);
             onDocSeleccionado(d);
@@ -198,8 +210,8 @@ public class RetencionController implements Initializable {
     @FXML
     private void agregarRetencion() {
         if (docSeleccionado == null) { new Alert(Alert.AlertType.WARNING, "Seleccione un documento sustento primero.").showAndWait(); return; }
-        String cod = cmbCodigo.getValue();
-        String codRet = cmbCodigoRetencion.getValue();
+        String cod = RetencionCatalogosSri.codigo(cmbCodigo.getValue());
+        String codRet = RetencionCatalogosSri.codigo(cmbCodigoRetencion.getValue());
         String baseStr = txtBase.getText();
         String porcStr = txtPorcentaje.getText();
         if (cod==null||codRet==null||baseStr==null||porcStr==null||baseStr.trim().isEmpty()||porcStr.trim().isEmpty()) {
@@ -241,7 +253,7 @@ public class RetencionController implements Initializable {
             if (docs.isEmpty()) throw new IllegalArgumentException("Agregue al menos un documento sustento.");
             for (var d : docs) if (d.retenciones.isEmpty()) throw new IllegalArgumentException("Documento "+d.numDocSustento+" sin retenciones.");
             String periodo = txtPeriodoFiscal.getText();
-            String tipoId = cmbTipoIdSujeto.getValue();
+            String tipoId = TiposIdSri.codigo(cmbTipoIdSujeto.getValue());
             String razon = txtRazonSujeto.getText();
             String ident = txtIdentSujeto.getText();
             Integer provId = cmbProveedor.getValue()!=null ? cmbProveedor.getValue().getId() : null;
@@ -289,7 +301,7 @@ public class RetencionController implements Initializable {
         try {
             if (docs.isEmpty()) throw new IllegalArgumentException("Agregue al menos un documento sustento.");
             String periodo = txtPeriodoFiscal.getText();
-            String tipoId = cmbTipoIdSujeto.getValue();
+            String tipoId = TiposIdSri.codigo(cmbTipoIdSujeto.getValue());
             String razon = txtRazonSujeto.getText();
             String ident = txtIdentSujeto.getText();
             Integer provId = cmbProveedor.getValue()!=null ? cmbProveedor.getValue().getId() : null;

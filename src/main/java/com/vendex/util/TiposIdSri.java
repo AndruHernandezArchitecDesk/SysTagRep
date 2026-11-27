@@ -24,6 +24,14 @@ public final class TiposIdSri {
         return ITEMS[0];
     }
 
+    public static String itemDe(String codigo) {
+        if (codigo == null) return null;
+        for (String item : ITEMS) {
+            if (item.startsWith(codigo + "-")) return item;
+        }
+        return null;
+    }
+
     public static String codigo(String item) {
         if (item == null || item.isBlank()) return item;
         return item.split("-", 2)[0].trim();
