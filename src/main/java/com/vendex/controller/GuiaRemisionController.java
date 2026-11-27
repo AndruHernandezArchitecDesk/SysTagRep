@@ -70,8 +70,8 @@ public class GuiaRemisionController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        ComboFilter.habilitar(cmbTipoIdTransportista, FXCollections.observableArrayList("04", "05", "06"));
-        cmbTipoIdTransportista.setValue("04");
+        ComboFilter.habilitar(cmbTipoIdTransportista, FXCollections.observableArrayList(TiposIdSri.items()));
+        cmbTipoIdTransportista.setValue(TiposIdSri.defaultItem());
         ComboFilter.habilitar(cmbAmbiente, FXCollections.observableArrayList(AppConstants.AMBIENTE_PRUEBAS, AppConstants.AMBIENTE_PRODUCCION));
         cmbAmbiente.setValue(ConfigAmbiente.cargar());
         cmbAmbiente.valueProperty().addListener((o, old, v) -> ConfigAmbiente.guardar(v));
@@ -213,7 +213,8 @@ public class GuiaRemisionController implements Initializable {
             String razonTrans = txtRazonTransportista.getText();
             String rucTrans = txtRucTransportista.getText();
             String placa = txtPlaca.getText();
-            String tipoIdTrans = cmbTipoIdTransportista.getValue();
+            String tipoIdTrans = TiposIdSri.codigo(cmbTipoIdTransportista.getValue());
+            if (tipoIdTrans==null||!TiposIdSri.esValido(tipoIdTrans)) throw new IllegalArgumentException("Seleccione un tipo de identificacion valido.");
             LocalDate ini = dpFechaIni.getValue();
             LocalDate fin = dpFechaFin.getValue();
             String ambiente = cmbAmbiente.getValue()!=null? cmbAmbiente.getValue(): AppConstants.AMBIENTE_PRUEBAS;
@@ -273,7 +274,8 @@ public class GuiaRemisionController implements Initializable {
             String razonTrans = txtRazonTransportista.getText();
             String rucTrans = txtRucTransportista.getText();
             String placa = txtPlaca.getText();
-            String tipoIdTrans = cmbTipoIdTransportista.getValue();
+            String tipoIdTrans = TiposIdSri.codigo(cmbTipoIdTransportista.getValue());
+            if (tipoIdTrans==null||!TiposIdSri.esValido(tipoIdTrans)) throw new IllegalArgumentException("Seleccione un tipo de identificacion valido.");
             LocalDate ini = dpFechaIni.getValue();
             LocalDate fin = dpFechaFin.getValue();
             String ambiente = cmbAmbiente.getValue()!=null? cmbAmbiente.getValue(): AppConstants.AMBIENTE_PRUEBAS;
