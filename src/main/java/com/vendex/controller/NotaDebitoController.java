@@ -66,8 +66,8 @@ public class NotaDebitoController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        ComboFilter.habilitar(cmbFormaPago, FXCollections.observableArrayList("01","02","03","04","05","06","07","08","09","10","11","12","13","14","15","16","17","18","19","20"));
-        cmbFormaPago.setValue("01");
+        ComboFilter.habilitar(cmbFormaPago, FXCollections.observableArrayList(FormasPagoSri.items()));
+        cmbFormaPago.setValue(FormasPagoSri.defaultItem());
         ComboFilter.habilitar(cmbAmbiente, FXCollections.observableArrayList(AppConstants.AMBIENTE_PRUEBAS, AppConstants.AMBIENTE_PRODUCCION));
         cmbAmbiente.setValue(ConfigAmbiente.cargar());
         cmbAmbiente.valueProperty().addListener((o,old,v)-> ConfigAmbiente.guardar(v));
@@ -164,8 +164,8 @@ public class NotaDebitoController implements Initializable {
             FacturaRegistro fr = cmbFactura.getValue();
             if (fr==null) throw new IllegalArgumentException("Seleccione una factura autorizada.");
             if (motivos.isEmpty()) throw new IllegalArgumentException("Agregue al menos un motivo.");
-            String formaPago = cmbFormaPago.getValue();
-            if (formaPago==null||formaPago.trim().isEmpty()) throw new IllegalArgumentException("Seleccione una forma de pago.");
+            String formaPago = FormasPagoSri.codigo(cmbFormaPago.getValue());
+            if (formaPago==null||!FormasPagoSri.esValido(formaPago)) throw new IllegalArgumentException("Seleccione una forma de pago valida.");
             String ambiente = cmbAmbiente.getValue()!=null? cmbAmbiente.getValue(): AppConstants.AMBIENTE_PRUEBAS;
             File dir = obtenerDirEscritorio();
             Empresa emp = empresaDAO.listar().isEmpty()?null:empresaDAO.listar().get(0);
@@ -192,8 +192,8 @@ public class NotaDebitoController implements Initializable {
             FacturaRegistro fr = cmbFactura.getValue();
             if (fr==null) throw new IllegalArgumentException("Seleccione una factura autorizada.");
             if (motivos.isEmpty()) throw new IllegalArgumentException("Agregue al menos un motivo.");
-            String formaPago = cmbFormaPago.getValue();
-            if (formaPago==null||formaPago.trim().isEmpty()) throw new IllegalArgumentException("Seleccione una forma de pago.");
+            String formaPago = FormasPagoSri.codigo(cmbFormaPago.getValue());
+            if (formaPago==null||!FormasPagoSri.esValido(formaPago)) throw new IllegalArgumentException("Seleccione una forma de pago valida.");
             String ambiente = cmbAmbiente.getValue()!=null? cmbAmbiente.getValue(): AppConstants.AMBIENTE_PRUEBAS;
 
             java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();

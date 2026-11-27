@@ -106,6 +106,21 @@ class XmlSriBuilderTest {
                 "infoFactura puede contener contribuyenteEspecial de 3+ caracteres");
     }
 
+    @Test
+    void construirFactura_formaPagoTarjetaCredito_usaCodigo19() throws Exception {
+        List<Object[]> detalles = List.<Object[]>of(
+            new Object[]{"001", "Aceite 5W30", "1", "26.96", "0.00", "26.96"}
+        );
+        String xml = XmlSriBuilder.construirFactura(
+                "PRUEBAS", CLAVE, "1790000000001", "TAG REPUESTOS",
+                "001", "001", 1, "Av. Principal",
+                "", "SI", "04", "Cliente Prueba", "1790000000002",
+                "Quito", "26.96", "0.00", "31.00", "0.00",
+                "Tarjeta de Crédito", "12/08/2026", detalles);
+        assertTrue(xml.contains("<formaPago>19</formaPago>"),
+                "Tarjeta de Credito debe mapearse a forma de pago 19 del SRI");
+    }
+
     private Element elementoHijo(Element padre, String nombre) {
         for (int i = 0; i < padre.getChildNodes().getLength(); i++) {
             if (padre.getChildNodes().item(i) instanceof Element

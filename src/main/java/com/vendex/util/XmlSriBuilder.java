@@ -208,14 +208,13 @@ public class XmlSriBuilder {
 
     private static String mapearFormaPago(String formaPago) {
         if (formaPago == null) return "01";
-        switch (formaPago) {
-            case "Efectivo": return "01";
-            case "Tarjeta de Crédito": return "02";
-            case "Tarjeta de Débito": return "03";
-            case "Transferencia": return "20";
-            case "Depósito": return "20";
-            case "Cheque": return "04";
-            default: return "01";
-        }
+        return switch (formaPago) {
+            case "Efectivo" -> "01";
+            case "Tarjeta de Crédito" -> "19";
+            case "Tarjeta de Débito" -> "16";
+            case "Cheque", "Transferencia", "Depósito" -> "20";
+            case "TAG Crédito" -> "01";
+            default -> "01";
+        };
     }
 }
