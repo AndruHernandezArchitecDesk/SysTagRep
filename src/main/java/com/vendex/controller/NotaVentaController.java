@@ -544,33 +544,17 @@ public class NotaVentaController implements Initializable, DocumentoVendexi {
         if (i == null) return;
 
         int stockDisponible = calcularStockDisponible(i);
-        if (stockDisponible <= 0) {
-            Alert alert = new Alert(Alert.AlertType.WARNING);
-            alert.setTitle("Stock insuficiente");
-            alert.setHeaderText(null);
-            alert.setContentText("No hay stock disponible para: " + i.getDescripcion());
-            alert.showAndWait();
-            return;
-        }
 
         TextInputDialog dialog = new TextInputDialog("1");
         dialog.setTitle("Cantidad");
         dialog.setHeaderText(i.getDescripcion());
-        dialog.setContentText("Stock disponible: " + stockDisponible + "\nCantidad a vender:");
+        dialog.setContentText("Stock disponible: " + stockDisponible
+                + " (la proforma no descuenta inventario)\nCantidad a vender:");
 
         dialog.showAndWait().ifPresent(cantStr -> {
             try {
                 int cant = Integer.parseInt(cantStr);
                 if (cant <= 0) return;
-
-                if (cant > stockDisponible) {
-                    Alert alert = new Alert(Alert.AlertType.WARNING);
-                    alert.setTitle("Stock insuficiente");
-                    alert.setHeaderText(null);
-                    alert.setContentText("La cantidad ingresada (" + cant + ") excede el stock disponible (" + stockDisponible + ").");
-                    alert.showAndWait();
-                    return;
-                }
 
                 boolean existe = false;
                 for (DetalleVenta d : itemsDetalle) {
