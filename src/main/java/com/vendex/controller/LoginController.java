@@ -7,6 +7,7 @@ import com.vendex.model.PuntoEmision;
 import com.vendex.util.LogoManager;
 import com.vendex.util.PoliticaBloqueo;
 import com.vendex.util.ThemeManager;
+import com.vendex.util.UpperCaseTextFormatter;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
@@ -55,6 +56,10 @@ public class LoginController implements Initializable {
         if (imgLogo != null) {
             imgLogo.imageProperty().bind(LogoManager.logoProperty());
         }
+        // El login siempre usa mayúsculas, incluso al recargar la vista tras cerrar sesión
+        // (MainController.cerrarSesion no pasa por MainApp.aplicarMayusculas).
+        UpperCaseTextFormatter.apply(txtUsuario);
+        UpperCaseTextFormatter.apply(txtPassword);
         txtPassword.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.ENTER) ingresar();
         });
